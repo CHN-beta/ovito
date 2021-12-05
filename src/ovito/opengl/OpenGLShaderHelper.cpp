@@ -423,8 +423,7 @@ void OpenGLShaderHelper::setupVertexAndInstanceIDOpenGL2()
         // In GLSL 1.20, the 'gl_VertexID' and 'gl_InstanceID' special variables are not available.
         // Then we have to emulate them by providing a buffer-backed vertex attribute named 'vertexID' instead.
         
-        struct VertexIDCacheKey {};
-        std::pair<QOpenGLBuffer, GLsizei>& buf = OpenGLResourceManager::instance()->lookup<std::pair<QOpenGLBuffer, GLsizei>>(RendererResourceKey<VertexIDCacheKey>{}, _renderer->currentResourceFrame());
+        std::pair<QOpenGLBuffer, GLsizei>& buf = OpenGLResourceManager::instance()->lookup<std::pair<QOpenGLBuffer, GLsizei>>(RendererResourceKey<struct VertexIDCache>{}, _renderer->currentResourceFrame());
 
         if(!buf.first.isCreated() || buf.second < verticesPerInstance() * instanceCount()) {
             buf.second = verticesPerInstance() * instanceCount();
@@ -476,7 +475,7 @@ void OpenGLShaderHelper::drawArraysOpenGL2(GLenum mode)
     else if(instanceCount() > 1) {
         // Use glMultiDrawArrays() if available to draw all instanced in one go.
         if(_renderer->glMultiDrawArrays) {
-            RendererResourceKey<OpenGLShaderHelper, GLsizei, GLsizei> indexArrayCacheKey{ instanceCount(), verticesPerInstance() };
+            RendererResourceKey<struct IndexArrayCache, GLsizei, GLsizei> indexArrayCacheKey{ instanceCount(), verticesPerInstance() };
             std::pair<std::vector<GLint>, std::vector<GLsizei>>& indexArrays = OpenGLResourceManager::instance()->lookup<std::pair<std::vector<GLint>, std::vector<GLsizei>>>(indexArrayCacheKey, _renderer->currentResourceFrame());
             if(indexArrays.first.empty()) {
                 // Fill the two arrays needed for glMultiDrawArrays().

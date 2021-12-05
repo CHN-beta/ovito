@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,7 +22,7 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/core/utilities/mesh/TriMesh.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "SurfaceMeshAccess.h"
 #include "SurfaceMesh.h"
@@ -524,7 +524,7 @@ void SurfaceMeshAccess::constructConvexHull(std::vector<Point3> vecs, FloatType 
 /******************************************************************************
 * Triangulates the polygonal faces of this mesh and outputs the results as a TriMesh object.
 ******************************************************************************/
-void SurfaceMeshAccess::convertToTriMesh(TriMesh& outputMesh, bool smoothShading, const boost::dynamic_bitset<>& faceSubset, std::vector<size_t>* originalFaceMap, bool autoGenerateOppositeFaces) const
+void SurfaceMeshAccess::convertToTriMesh(TriMeshObject& outputMesh, bool smoothShading, const boost::dynamic_bitset<>& faceSubset, std::vector<size_t>* originalFaceMap, bool autoGenerateOppositeFaces) const
 {
 	size_type faceCount = this->faceCount();
 	OVITO_ASSERT(faceSubset.empty() || faceSubset.size() == faceCount);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,7 +51,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, ExecutionContext executionContext, TimeInterval validityInterval) override;
+	virtual Future<EnginePtr> createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) override;
 
 private:
 
@@ -61,32 +61,32 @@ private:
 	public:
 
 		/// Constructor.
-		AtomicStrainEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+		AtomicStrainEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
 				ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,
 				ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
 				FloatType cutoff, AffineMappingType affineMapping, bool useMinimumImageConvention,
 				bool calculateDeformationGradients, bool calculateStrainTensors,
 				bool calculateNonaffineSquaredDisplacements, bool calculateRotations, bool calculateStretchTensors,
 				bool selectInvalidParticles) :
-			RefConfigEngineBase(dataSource, executionContext, validityInterval, positions, simCell, refPositions, simCellRef,
+			RefConfigEngineBase(request, validityInterval, positions, simCell, refPositions, simCellRef,
 				std::move(identifiers), std::move(refIdentifiers), affineMapping, useMinimumImageConvention),
 			_cutoff(cutoff),
-			_displacements(ParticlesObject::OOClass().createStandardProperty(dataset, refPositions->size(), ParticlesObject::DisplacementProperty, false, executionContext)),
-			_shearStrains(ParticlesObject::OOClass().createUserProperty(dataset, fingerprint.particleCount(), PropertyObject::Float, 1, 0, tr("Shear Strain"), false)),
-			_volumetricStrains(ParticlesObject::OOClass().createUserProperty(dataset, fingerprint.particleCount(), PropertyObject::Float, 1, 0, tr("Volumetric Strain"), false)),
-			_strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::StrainTensorProperty, false, executionContext) : nullptr),
-			_deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::DeformationGradientProperty, false, executionContext) : nullptr),
-			_nonaffineSquaredDisplacements(calculateNonaffineSquaredDisplacements ? ParticlesObject::OOClass().createUserProperty(dataset, fingerprint.particleCount(), PropertyObject::Float, 1, 0, tr("Nonaffine Squared Displacement"), false) : nullptr),
-			_invalidParticles(selectInvalidParticles ? ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::SelectionProperty, false, executionContext) : nullptr),
-			_rotations(calculateRotations ? ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::RotationProperty, false, executionContext) : nullptr),
-			_stretchTensors(calculateStretchTensors ? ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::StretchTensorProperty, false, executionContext) : nullptr),
+			_displacements(ParticlesObject::OOClass().createStandardProperty(request.dataset(), refPositions->size(), ParticlesObject::DisplacementProperty, false, request.initializationHints())),
+			_shearStrains(ParticlesObject::OOClass().createUserProperty(request.dataset(), fingerprint.particleCount(), PropertyObject::Float, 1, 0, tr("Shear Strain"), false)),
+			_volumetricStrains(ParticlesObject::OOClass().createUserProperty(request.dataset(), fingerprint.particleCount(), PropertyObject::Float, 1, 0, tr("Volumetric Strain"), false)),
+			_strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::StrainTensorProperty, false, request.initializationHints()) : nullptr),
+			_deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::DeformationGradientProperty, false, request.initializationHints()) : nullptr),
+			_nonaffineSquaredDisplacements(calculateNonaffineSquaredDisplacements ? ParticlesObject::OOClass().createUserProperty(request.dataset(), fingerprint.particleCount(), PropertyObject::Float, 1, 0, tr("Nonaffine Squared Displacement"), false) : nullptr),
+			_invalidParticles(selectInvalidParticles ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::SelectionProperty, false, request.initializationHints()) : nullptr),
+			_rotations(calculateRotations ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::RotationProperty, false, request.initializationHints()) : nullptr),
+			_stretchTensors(calculateStretchTensors ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::StretchTensorProperty, false, request.initializationHints()) : nullptr),
 			_inputFingerprint(std::move(fingerprint)) {}
 
 		/// Computes the modifier's results.
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		/// Returns the property storage that contains the computed per-particle shear strain values.
 		const PropertyPtr& shearStrains() const { return _shearStrains; }

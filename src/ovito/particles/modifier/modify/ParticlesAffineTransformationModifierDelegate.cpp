@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,7 +47,7 @@ QVector<DataObjectReference> ParticlesAffineTransformationModifierDelegate::OOMe
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
-PipelineStatus ParticlesAffineTransformationModifierDelegate::apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus ParticlesAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	if(const ParticlesObject* inputParticles = state.getObject<ParticlesObject>()) {
 		inputParticles->verifyIntegrity();
@@ -59,7 +59,7 @@ PipelineStatus ParticlesAffineTransformationModifierDelegate::apply(Modifier* mo
 		PropertyAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
 
 		// Determine transformation matrix.
-		AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(modifier);
+		AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
 		const AffineTransformation tm = mod->effectiveAffineTransformation(state);
 
 		if(mod->selectionOnly()) {
@@ -118,10 +118,10 @@ bool VectorParticlePropertiesAffineTransformationModifierDelegate::isTransformab
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
-PipelineStatus VectorParticlePropertiesAffineTransformationModifierDelegate::apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus VectorParticlePropertiesAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	// Determine transformation matrix.
-	AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(modifier);
+	AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
 
 	if(const ParticlesObject* inputParticles = state.getObject<ParticlesObject>()) {
 		for(const PropertyObject* inputProperty : inputParticles->properties()) {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -61,10 +61,10 @@ public:
 	Q_INVOKABLE UnwrapTrajectoriesModifier(DataSet* dataset) : Modifier(dataset) {}
 
 	/// Modifies the input data.
-	virtual Future<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 };
 
 /**
@@ -98,10 +98,10 @@ public:
 	const UnflipData& unflipRecords() const { return _unflipRecords; }
 
 	/// Processes all frames of the input trajectory to detect periodic crossings of the particles.
-	SharedFuture<> detectPeriodicCrossings(TimePoint time);
+	SharedFuture<> detectPeriodicCrossings(TimePoint time, ObjectInitializationHints initializationHints);
 
 	/// Unwraps the current particle coordinates.
-	void unwrapParticleCoordinates(TimePoint time, PipelineFlowState& state);
+	void unwrapParticleCoordinates(const ModifierEvaluationRequest& request, PipelineFlowState& state);
 
 	/// Rescales the times of all animation keys from the old animation interval to the new interval.
 	virtual void rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval) override;
@@ -151,6 +151,7 @@ private:
 	std::unordered_map<qlonglong,Point3> _previousPositions;
 	DataOORef<const SimulationCellObject> _previousCell;
 	std::array<int,3> _currentFlipState{{0,0,0}};
+	ObjectInitializationHints _initializationHints;
 };
 
 }	// End of namespace

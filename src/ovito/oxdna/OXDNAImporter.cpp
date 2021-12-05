@@ -128,7 +128,7 @@ void OXDNAImporter::FrameLoader::loadFile()
 
 		// Check if the topology file exists.
 		if(!topoFileUrl.isValid() || (topoFileUrl.isLocalFile() && !QFileInfo::exists(topoFileUrl.toLocalFile()))) {
-			if(executionContext() == ExecutionContext::Interactive) {
+			if(initializationHints().testFlag(LoadUserDefaults)) {
 				throw Exception(tr("Could not locate corresponding topology file for oxDNA configuration file '%1'.\n"
 					"Tried automatically inferred path:\n\n%2\n\nBut the path does not exist. Please pick the topology file manually.")
 						.arg(frame().sourceFile.fileName())
@@ -162,17 +162,17 @@ void OXDNAImporter::FrameLoader::loadFile()
 
 	// Create a special visual element for rendering the nucleotides.
 	if(!dynamic_object_cast<NucleotidesVis>(particles()->visElement()))
-		particles()->setVisElement(OORef<NucleotidesVis>::create(dataset(), executionContext()));
+		particles()->setVisElement(OORef<NucleotidesVis>::create(dataset(), initializationHints()));
 
 	// Define nucleobase types.
-	PropertyAccess<int> baseProperty = particles()->createProperty(ParticlesObject::NucleobaseTypeProperty, false, executionContext());
+	PropertyAccess<int> baseProperty = particles()->createProperty(ParticlesObject::NucleobaseTypeProperty, false, initializationHints());
 	addNumericType(ParticlesObject::OOClass(), baseProperty.buffer(), 1, QStringLiteral("T"));
 	addNumericType(ParticlesObject::OOClass(), baseProperty.buffer(), 2, QStringLiteral("C"));
 	addNumericType(ParticlesObject::OOClass(), baseProperty.buffer(), 3, QStringLiteral("G"));
 	addNumericType(ParticlesObject::OOClass(), baseProperty.buffer(), 4, QStringLiteral("A"));
 
 	// Define strands list.
-	PropertyAccess<int> strandsProperty = particles()->createProperty(ParticlesObject::DNAStrandProperty, false, executionContext());
+	PropertyAccess<int> strandsProperty = particles()->createProperty(ParticlesObject::DNAStrandProperty, false, initializationHints());
 	for(int i = 1; i <= numStrands; i++)
 		addNumericType(ParticlesObject::OOClass(), strandsProperty.buffer(), i, {});
 
@@ -209,7 +209,7 @@ void OXDNAImporter::FrameLoader::loadFile()
 
 	// Create and fill bonds topology storage.
 	setBondCount(bonds.size());
-	PropertyAccess<ParticleIndexPair> bondTopologyProperty = this->bonds()->createProperty(BondsObject::TopologyProperty, false, executionContext());
+	PropertyAccess<ParticleIndexPair> bondTopologyProperty = this->bonds()->createProperty(BondsObject::TopologyProperty, false, initializationHints());
 	boost::copy(bonds, bondTopologyProperty.begin());
 
 	// Open oxDNA configuration file for reading.
@@ -262,7 +262,7 @@ void OXDNAImporter::FrameLoader::loadFile()
 	columnMapping.mapStandardColumn(14, ParticlesObject::AngularVelocityProperty, 2);
 
 	// Parse data table.
-	InputColumnReader columnParser(columnMapping, particles(), executionContext(), false);
+	InputColumnReader columnParser(columnMapping, particles(), initializationHints(), false);
 	for(size_t i = 0; i < numNucleotidesLong; i++) {
 		if(!setProgressValueIntermittent(i)) return;
 		try {

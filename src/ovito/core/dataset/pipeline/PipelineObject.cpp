@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,6 +27,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
+#include <ovito/core/app/Application.h>
 
 namespace Ovito {
 
@@ -40,11 +41,22 @@ PipelineObject::PipelineObject(DataSet* dataset) : ActiveObject(dataset)
 }
 
 /******************************************************************************
+* Asks the pipeline stage to compute the preliminary results in a synchronous 
+* fashion at the current animation time.
+******************************************************************************/
+PipelineFlowState PipelineObject::evaluateSynchronousAtCurrentTime() 
+{ 
+	return evaluateSynchronous(PipelineEvaluationRequest(
+		Application::instance()->executionContext() == ExecutionContext::Interactive ? LoadUserDefaults : LoadFactoryDefaults,
+		dataset()->animationSettings()->time()));
+}
+
+/******************************************************************************
 * Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
 ******************************************************************************/
-PipelineFlowState PipelineObject::evaluateSynchronous(TimePoint time) 
+PipelineFlowState PipelineObject::evaluateSynchronous(const PipelineEvaluationRequest& request) 
 { 
-	return {}; 
+	return {};
 }
 
 /******************************************************************************

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,12 +43,12 @@ TargetObject::TargetObject(DataSet* dataset) : DataObject(dataset)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void TargetObject::initializeObject(ExecutionContext executionContext)
+void TargetObject::initializeObject(ObjectInitializationHints hints)
 {
-	if(!visElement())
-		setVisElement(OORef<TargetVis>::create(dataset(), executionContext));
+	if(!visElement() && !hints.testFlag(WithoutVisElement))
+		setVisElement(OORef<TargetVis>::create(dataset(), hints));
 
-	DataObject::initializeObject(executionContext);
+	DataObject::initializeObject(hints);
 }
 
 /******************************************************************************
@@ -67,57 +67,41 @@ PipelineStatus TargetVis::render(TimePoint time, const ConstDataObjectPath& path
 
 	if(!renderer->isBoundingBoxPass()) {
 
-		// The key type used for caching the rendering primitives:
-		using CacheKey = std::tuple<
-			CompatibleRendererGroup,	// The scene renderer
-			Color						// Display color
-		>;
+		// Cache the line vertices for the icon.
+		RendererResourceKey<struct WireframeCube, DataSet*> cacheKey{ renderer->dataset() };
+		auto& vertexPositions = dataset()->visCache().get<ConstDataBufferPtr>(std::move(cacheKey));
 
-		// The value stored in the vis cache.
-		struct CacheValue {
-			std::shared_ptr<LinePrimitive> iconRendering;
-			std::shared_ptr<LinePrimitive> iconPicking;
-		};
-
-		// Determine icon color depending on selection state.
-		Color color = ViewportSettings::getSettings().viewportColor(contextNode->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS);
-
-		// Lookup the rendering primitive in the vis cache.
-		auto& visCache = dataset()->visCache().get<CacheValue>(CacheKey(renderer, color));
-
-		// Check if we already have a valid rendering primitive that is up to date.
-		if(!visCache.iconRendering || !visCache.iconPicking) {
-
-			// Initialize geometry of wireframe cube.
-			static const Point3 linePoints[] = {
-					{-1, -1, -1}, { 1,-1,-1},
-					{-1, -1,  1}, { 1,-1, 1},
-					{-1, -1, -1}, {-1,-1, 1},
-					{ 1, -1, -1}, { 1,-1, 1},
-					{-1,  1, -1}, { 1, 1,-1},
-					{-1,  1,  1}, { 1, 1, 1},
-					{-1,  1, -1}, {-1, 1, 1},
-					{ 1,  1, -1}, { 1, 1, 1},
-					{-1, -1, -1}, {-1, 1,-1},
-					{ 1, -1, -1}, { 1, 1,-1},
-					{ 1, -1,  1}, { 1, 1, 1},
-					{-1, -1,  1}, {-1, 1, 1}
+		// Initialize geometry of wireframe cube.
+		if(!vertexPositions) {
+			const Point3 linePoints[] = {
+				{-1, -1, -1}, { 1,-1,-1},
+				{-1, -1,  1}, { 1,-1, 1},
+				{-1, -1, -1}, {-1,-1, 1},
+				{ 1, -1, -1}, { 1,-1, 1},
+				{-1,  1, -1}, { 1, 1,-1},
+				{-1,  1,  1}, { 1, 1, 1},
+				{-1,  1, -1}, {-1, 1, 1},
+				{ 1,  1, -1}, { 1, 1, 1},
+				{-1, -1, -1}, {-1, 1,-1},
+				{ 1, -1, -1}, { 1, 1,-1},
+				{ 1, -1,  1}, { 1, 1, 1},
+				{-1, -1,  1}, {-1, 1, 1}
 			};
-			DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(renderer->dataset(), ExecutionContext::Scripting, sizeof(linePoints) / sizeof(Point3), DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(renderer->dataset(), sizeof(linePoints) / sizeof(Point3), DataBuffer::Float, 3, 0, false);
 			boost::copy(linePoints, vertices.begin());
-
-			visCache.iconRendering = renderer->createLinePrimitive();
-			visCache.iconRendering->setPositions(vertices.take());
-			visCache.iconRendering->setUniformColor(color);
-
-			visCache.iconPicking = renderer->createLinePrimitive();
-			visCache.iconPicking->setLineWidth(renderer->defaultLinePickingWidth());
-			visCache.iconPicking->setPositions(visCache.iconRendering->positions());
-			visCache.iconPicking->setUniformColor(color);
+			vertexPositions = vertices.take();
 		}
 
+		// Create line rendering primitive.
+		LinePrimitive iconPrimitive;
+		iconPrimitive.setUniformColor(ViewportSettings::getSettings().viewportColor(contextNode->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS));
+		iconPrimitive.setPositions(vertexPositions);
+		if(renderer->isPicking())
+			iconPrimitive.setLineWidth(renderer->defaultLinePickingWidth());
+
+		// Render the lines.
 		renderer->beginPickObject(contextNode);
-		renderer->renderLines(renderer->isPicking() ? visCache.iconPicking : visCache.iconRendering);
+		renderer->renderLines(iconPrimitive);
 		renderer->endPickObject();
 	}
 	else {

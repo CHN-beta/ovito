@@ -302,10 +302,10 @@ void DLPOLYImporter::FrameLoader::loadFile()
 
 	// Create particle properties.
 	setParticleCount(positions.size());
-	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
+	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, initializationHints());
 	boost::copy(positions, posProperty.begin());
 
-	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, initializationHints());
 	boost::transform(atom_types, typeProperty.begin(), [&](const QString& typeName) {
 		return addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), typeName)->numericId();
 	});
@@ -315,27 +315,27 @@ void DLPOLYImporter::FrameLoader::loadFile()
 	typeProperty.buffer()->sortElementTypesByName();
 	
 	if(identifiers.size() == positions.size()) {
-		PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, false, executionContext());
+		PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, false, initializationHints());
 		boost::copy(identifiers, identifierProperty.begin());
 	}
 	if(levcfg > 0) {
-		PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty, false, executionContext());
+		PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty, false, initializationHints());
 		boost::copy(velocities, velocityProperty.begin());
 	}
 	if(levcfg > 1) {
-		PropertyAccess<Vector3> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty, false, executionContext());
+		PropertyAccess<Vector3> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty, false, initializationHints());
 		boost::copy(forces, forceProperty.begin());
 	}
 	if(masses.size() == positions.size()) {
-		PropertyAccess<FloatType> massProperty = particles()->createProperty(ParticlesObject::MassProperty, false, executionContext());
+		PropertyAccess<FloatType> massProperty = particles()->createProperty(ParticlesObject::MassProperty, false, initializationHints());
 		boost::copy(masses, massProperty.begin());
 	}
 	if(charges.size() == positions.size()) {
-		PropertyAccess<FloatType> chargeProperty = particles()->createProperty(ParticlesObject::ChargeProperty, false, executionContext());
+		PropertyAccess<FloatType> chargeProperty = particles()->createProperty(ParticlesObject::ChargeProperty, false, initializationHints());
 		boost::copy(charges, chargeProperty.begin());
 	}
 	if(displacementMagnitudes.size() == positions.size()) {
-		PropertyAccess<FloatType> displProperty = particles()->createProperty(ParticlesObject::DisplacementMagnitudeProperty, false, executionContext());
+		PropertyAccess<FloatType> displProperty = particles()->createProperty(ParticlesObject::DisplacementMagnitudeProperty, false, initializationHints());
 		boost::copy(displacementMagnitudes, displProperty.begin());
 	}
 

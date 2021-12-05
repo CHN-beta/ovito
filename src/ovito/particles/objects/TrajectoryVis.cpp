@@ -58,12 +58,12 @@ TrajectoryVis::TrajectoryVis(DataSet* dataset) : DataVis(dataset),
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void TrajectoryVis::initializeObject(ExecutionContext executionContext)
+void TrajectoryVis::initializeObject(ObjectInitializationHints hints)
 {
 	// Create a color mapping object for pseudo-color visualization of a trajectory property.
-	setColorMapping(OORef<PropertyColorMapping>::create(dataset(), executionContext));
+	setColorMapping(OORef<PropertyColorMapping>::create(dataset(), hints));
 
-	DataVis::initializeObject(executionContext);
+	DataVis::initializeObject(hints);
 }
 
 /******************************************************************************
@@ -140,8 +140,7 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 	}
 
 	// The key type used for caching the rendering primitive:
-	using CacheKey = std::tuple<
-		CompatibleRendererGroup,// Scene renderer
+	using CacheKey = RendererResourceKey<struct TrajectoryVisCache,
 		ConstDataObjectRef,		// Trajectory data object
 		FloatType,				// Line width
 		Color,					// Line color,
@@ -154,8 +153,8 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 
 	// The data structure stored in the vis cache.
 	struct CacheValue {
-		std::shared_ptr<CylinderPrimitive> segments;
-		std::shared_ptr<ParticlePrimitive> corners;
+		CylinderPrimitive segments;
+		ParticlePrimitive corners;
 		ConstDataBufferPtr cornerPseudoColors;
 	};
 
@@ -163,7 +162,6 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 
 	// Look up the rendering primitives in the vis cache.
 	auto& visCache = dataset()->visCache().get<CacheValue>(CacheKey(
-			renderer,
 			trajObj,
 			lineWidth(),
 			lineColor(),
@@ -178,11 +176,11 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 			? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading;
 
 	// Check if we already have valid rendering primitives that are up to date.
-	if(!visCache.segments || !visCache.corners) {
+	if(!visCache.segments.basePositions() || !visCache.corners.positions()) {
 
 		// Update the rendering primitives.
-		visCache.segments.reset();
-		visCache.corners.reset();
+		visCache.segments.setPositions(nullptr, nullptr);
+		visCache.corners.setPositions(nullptr);
 		visCache.cornerPseudoColors.reset();
 
 		FloatType lineRadius = lineWidth() / 2;
@@ -198,13 +196,13 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 			if(posProperty && timeProperty && idProperty && posProperty.size() >= 2) {
 
 				// Determine the number of line segments and corner points to render.
-				DataBufferAccessAndRef<Point3> cornerPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
-				DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
-				DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
-				DataBufferAccessAndRef<Color> cornerColors = colorProperty ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false) : nullptr;
-				DataBufferAccessAndRef<Color> segmentColors = colorProperty ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false) : nullptr;
-				DataBufferAccessAndRef<FloatType> cornerPseudoColors = pseudoColorArray ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 1, 0, false) : nullptr;
-				DataBufferAccessAndRef<FloatType> segmentPseudoColors = pseudoColorArray ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 1, 0, false) : nullptr;
+				DataBufferAccessAndRef<Point3> cornerPoints = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3, 0, false);
+				DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3, 0, false);
+				DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3, 0, false);
+				DataBufferAccessAndRef<Color> cornerColors = colorProperty ? DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3, 0, false) : nullptr;
+				DataBufferAccessAndRef<Color> segmentColors = colorProperty ? DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3, 0, false) : nullptr;
+				DataBufferAccessAndRef<FloatType> cornerPseudoColors = pseudoColorArray ? DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 1, 0, false) : nullptr;
+				DataBufferAccessAndRef<FloatType> segmentPseudoColors = pseudoColorArray ? DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 1, 0, false) : nullptr;
 				const Point3* pos = posProperty.cbegin();
 				const int* sampleTime = timeProperty.cbegin();
 				const qlonglong* id = idProperty.cbegin();
@@ -259,18 +257,22 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 				}
 
 				// Create rendering primitive for the line segments.
-				visCache.segments = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, static_cast<CylinderPrimitive::ShadingMode>(shadingMode()), CylinderPrimitive::HighQuality);
-				visCache.segments->setColors(segmentColors ? segmentColors.take() : segmentPseudoColors.take());
-				visCache.segments->setUniformColor(lineColor());
-				visCache.segments->setUniformRadius(lineRadius);
-				visCache.segments->setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
+				visCache.segments.setShape(CylinderPrimitive::CylinderShape);
+				visCache.segments.setShadingMode(static_cast<CylinderPrimitive::ShadingMode>(shadingMode()));
+				visCache.segments.setRenderingQuality(CylinderPrimitive::HighQuality);
+				visCache.segments.setColors(segmentColors ? segmentColors.take() : segmentPseudoColors.take());
+				visCache.segments.setUniformColor(lineColor());
+				visCache.segments.setUniformRadius(lineRadius);
+				visCache.segments.setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
 
 				// Create rendering primitive for the corner points.
-				visCache.corners = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, cornerShadingMode, ParticlePrimitive::HighQuality);
-				visCache.corners->setPositions(cornerPoints.take());
-				visCache.corners->setUniformColor(lineColor());
-				visCache.corners->setColors(cornerColors.take());
-				visCache.corners->setUniformRadius(lineRadius);
+				visCache.corners.setParticleShape(ParticlePrimitive::SphericalShape);
+				visCache.corners.setShadingMode(cornerShadingMode);
+				visCache.corners.setRenderingQuality(ParticlePrimitive::HighQuality);
+				visCache.corners.setPositions(cornerPoints.take());
+				visCache.corners.setUniformColor(lineColor());
+				visCache.corners.setColors(cornerColors.take());
+				visCache.corners.setUniformRadius(lineRadius);
 
 				// Save the pseudo-colors of the corner spheres. They will be converted to RGB colors below.
 				visCache.cornerPseudoColors = cornerPseudoColors.take();
@@ -278,21 +280,21 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 		}
 	}
 
-	if(!visCache.segments)
+	if(!visCache.segments.basePositions())
 		return status;
 
 	// Update the color mapping.
-	visCache.segments->setPseudoColorMapping(colorMapping()->pseudoColorMapping());
+	visCache.segments.setPseudoColorMapping(colorMapping()->pseudoColorMapping());
 
 	// Convert the pseudocolors of the corner spheres to RGB colors if necessary.
 	if(visCache.cornerPseudoColors) {
 		// Perform a cache lookup to check if latest pseudocolors have already been mapped to RGB colors.
-		auto& cornerColorsUpToDate = dataset()->visCache().get<bool>(std::make_pair(visCache.cornerPseudoColors, visCache.segments->pseudoColorMapping()));
+		auto& cornerColorsUpToDate = dataset()->visCache().get<bool>(std::make_pair(visCache.cornerPseudoColors, visCache.segments.pseudoColorMapping()));
 		if(!cornerColorsUpToDate) {
 			// Create an RGB color array, which will be filled and then assigned to the ParticlesPrimitive.
-			DataBufferAccessAndRef<Color> cornerColorsArray = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, visCache.cornerPseudoColors->size(), DataBuffer::Float, 3, 0, false);
-			boost::transform(ConstDataBufferAccess<FloatType>(visCache.cornerPseudoColors), cornerColorsArray.begin(), [&](FloatType v) { return visCache.segments->pseudoColorMapping().valueToColor(v); });
-			visCache.corners->setColors(cornerColorsArray.take());
+			DataBufferAccessAndRef<Color> cornerColorsArray = DataBufferPtr::create(dataset(), visCache.cornerPseudoColors->size(), DataBuffer::Float, 3, 0, false);
+			boost::transform(ConstDataBufferAccess<FloatType>(visCache.cornerPseudoColors), cornerColorsArray.begin(), [&](FloatType v) { return visCache.segments.pseudoColorMapping().valueToColor(v); });
+			visCache.corners.setColors(cornerColorsArray.take());
 			cornerColorsUpToDate = true;
 		}
 	}

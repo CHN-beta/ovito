@@ -118,7 +118,7 @@ void ParaViewPVDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceIm
 Future<PipelineFlowState> ParaViewPVDImporter::loadFrame(const LoadOperationRequest& request)
 {
 	// Detect format of the referenced file and create an importer for it.
-	OORef<FileImporter> importer = FileImporter::autodetectFileFormat(dataset(), request.executionContext, request.fileHandle, childImporter());
+	OORef<FileImporter> importer = FileImporter::autodetectFileFormat(dataset(), request.initializationHints, request.fileHandle, childImporter());
 
 	// This works only for FileSourceImporters.
 	// Files formats handled by other kinds of importers will be skipped.

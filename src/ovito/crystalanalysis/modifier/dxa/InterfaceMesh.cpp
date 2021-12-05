@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -120,7 +120,7 @@ bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstPropertyA
 	OVITO_ASSERT(regionCount() == 1);
 
 	// Construct a one-sided surface mesh.
-	ManifoldConstructionHelper manifoldConstructor(ExecutionContext::Scripting, tessellation(), *this, alpha, false, structureAnalysis().positions());
+	ManifoldConstructionHelper manifoldConstructor(ObjectInitializationHint::LoadFactoryDefaults, tessellation(), *this, alpha, false, structureAnalysis().positions());
 	if(!manifoldConstructor.construct(tetrahedronRegion, promise, prepareMeshFace))
 		return false;
 

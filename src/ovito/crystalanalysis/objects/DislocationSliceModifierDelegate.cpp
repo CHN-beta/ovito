@@ -45,16 +45,16 @@ QVector<DataObjectReference> DislocationSliceModifierDelegate::OOMetaClass::getA
 /******************************************************************************
 * Performs the actual rejection of particles.
 ******************************************************************************/
-PipelineStatus DislocationSliceModifierDelegate::apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus DislocationSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	SliceModifier* mod = static_object_cast<SliceModifier>(modifier);
+	SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
 	if(mod->createSelection())
 		return PipelineStatus::Success;
 
 	// Obtain modifier parameter values.
 	Plane3 plane;
 	FloatType sliceWidth;
-	std::tie(plane, sliceWidth) = mod->slicingPlane(time, state.mutableStateValidity(), state);
+	std::tie(plane, sliceWidth) = mod->slicingPlane(request.time(), state.mutableStateValidity(), state);
 
 	for(const DataObject* obj : state.data()->objects()) {
 		if(const DislocationNetworkObject* inputDislocations = dynamic_object_cast<DislocationNetworkObject>(obj)) {

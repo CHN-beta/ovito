@@ -73,7 +73,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 	
 protected:
 
@@ -81,7 +81,7 @@ protected:
 	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 

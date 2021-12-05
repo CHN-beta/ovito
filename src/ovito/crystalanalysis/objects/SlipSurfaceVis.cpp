@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,7 +26,7 @@
 #include <ovito/crystalanalysis/objects/DislocationVis.h>
 #include <ovito/mesh/surface/RenderableSurfaceMesh.h>
 #include <ovito/core/rendering/SceneRenderer.h>
-#include <ovito/core/utilities/mesh/TriMesh.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include "SlipSurfaceVis.h"
@@ -84,7 +84,7 @@ void SlipSurfaceVis::PrepareMeshEngine::determineFaceColors()
 {
     ConstPropertyAccess<int> phaseProperty = _microstructure.regionProperty(SurfaceMeshRegions::PhaseProperty);
     auto originalFace = _originalFaceMap.begin();
-    for(TriMeshFace& face : _surfaceMesh.faces()) {
+    for(TriMeshFace& face : _surfaceMesh->faces()) {
         int materialIndex = 0;
         int region = _microstructure.faceRegion(*originalFace);
         int phaseId = phaseProperty[region];

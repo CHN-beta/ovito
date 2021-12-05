@@ -58,7 +58,7 @@ void VoxelGrid::OOMetaClass::initialize()
 /******************************************************************************
 * Creates a storage object for standard voxel properties.
 ******************************************************************************/
-PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t voxelCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
+PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t voxelCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -80,7 +80,7 @@ PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataSet* data
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, executionContext, voxelCount, dataType, componentCount, stride,
+	PropertyPtr property = PropertyPtr::create(dataset, initializationHints, voxelCount, dataType, componentCount, stride,
 								propertyName, false, type, componentNames);
 
 	if(initializeMemory) {
@@ -102,13 +102,13 @@ VoxelGrid::VoxelGrid(DataSet* dataset, const QString& title) : PropertyContainer
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void VoxelGrid::initializeObject(ExecutionContext executionContext)
+void VoxelGrid::initializeObject(ObjectInitializationHints hints)
 {
 	// Create and attach a default visualization element for rendering the grid.
-	if(!visElement())
-		setVisElement(OORef<VoxelGridVis>::create(dataset(), executionContext));
+	if(!visElement() && !hints.testFlag(WithoutVisElement))
+		setVisElement(OORef<VoxelGridVis>::create(dataset(), hints));
 
-	PropertyContainer::initializeObject(executionContext);
+	PropertyContainer::initializeObject(hints);
 }
 
 /******************************************************************************

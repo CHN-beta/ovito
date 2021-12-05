@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,7 +55,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, ExecutionContext executionContext, TimeInterval validityInterval) override;
+	virtual Future<EnginePtr> createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) override;
 
 private:
 
@@ -65,10 +65,10 @@ private:
 	public:
 
 		/// Constructor.
-		WignerSeitzAnalysisEngine(const PipelineObject* dataSource, ExecutionContext executionContext, const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+		WignerSeitzAnalysisEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
 				PipelineFlowState referenceState, ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef, AffineMappingType affineMapping,
 				ConstPropertyPtr typeProperty, int ptypeMinId, int ptypeMaxId, ConstPropertyPtr referenceTypeProperty, ConstPropertyPtr referenceIdentifierProperty) :
-			RefConfigEngineBase(dataSource, executionContext, validityInterval, std::move(positions), simCell, std::move(refPositions), simCellRef,
+			RefConfigEngineBase(request, validityInterval, std::move(positions), simCell, std::move(refPositions), simCellRef,
 				nullptr, nullptr, affineMapping, false),
 			_typeProperty(std::move(typeProperty)),
 			_ptypeMinId(ptypeMinId), _ptypeMaxId(ptypeMaxId),
@@ -80,7 +80,7 @@ private:
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		/// Returns the number of vacant sites found during the last analysis run.
 		size_t vacancyCount() const { return _vacancyCount; }

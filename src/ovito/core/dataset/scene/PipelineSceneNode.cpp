@@ -67,11 +67,20 @@ PipelineSceneNode::~PipelineSceneNode() // NOLINT
 * Performs a synchronous evaluation of the pipeline yielding only preliminary results.
 ******************************************************************************/
 const PipelineFlowState& PipelineSceneNode::evaluatePipelineSynchronous(bool includeVisElements)
+{
+	return evaluatePipelineSynchronous(includeVisElements, 
+		Application::instance()->executionContext() == ExecutionContext::Interactive ? LoadUserDefaults : LoadFactoryDefaults);
+}
+
+/******************************************************************************
+* Performs a synchronous evaluation of the pipeline yielding only preliminary results.
+******************************************************************************/
+const PipelineFlowState& PipelineSceneNode::evaluatePipelineSynchronous(bool includeVisElements, ObjectInitializationHints initializationHints)
 {	
-	TimePoint time = dataset()->animationSettings()->time();
+	PipelineEvaluationRequest request(initializationHints, dataset()->animationSettings()->time());
 	return includeVisElements ? 
-		_pipelineRenderingCache.evaluatePipelineSynchronous(time) : 
-		_pipelineCache.evaluatePipelineSynchronous(time);
+		_pipelineRenderingCache.evaluatePipelineSynchronous(request) : 
+		_pipelineCache.evaluatePipelineSynchronous(request);
 }
 
 /******************************************************************************
@@ -321,14 +330,14 @@ QString PipelineSceneNode::objectTitle() const
 * Applies a modifier by appending it to the end of the node's modification
 * pipeline.
 ******************************************************************************/
-ModifierApplication* PipelineSceneNode::applyModifier(Modifier* modifier)
+ModifierApplication* PipelineSceneNode::applyModifier(Modifier* modifier, ObjectInitializationHints initializationHints)
 {
 	OVITO_ASSERT(modifier);
 
 	OORef<ModifierApplication> modApp = modifier->createModifierApplication();
 	modApp->setModifier(modifier);
 	modApp->setInput(dataProvider());
-	modifier->initializeModifier(dataset()->animationSettings()->time(), modApp, Application::instance()->executionContext());
+	modifier->initializeModifier(ModifierInitializationRequest(initializationHints, dataset()->animationSettings()->time(), modApp));
 	setDataProvider(modApp);
 	return modApp;
 }

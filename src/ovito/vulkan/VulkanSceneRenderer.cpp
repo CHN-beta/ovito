@@ -142,19 +142,6 @@ void VulkanSceneRenderer::aboutToBeDeleted()
 }
 
 /******************************************************************************
-* Determines if this renderer can share geometry data and other resources with
-* the given other renderer.
-******************************************************************************/
-bool VulkanSceneRenderer::sharesResourcesWith(SceneRenderer* otherRenderer) const
-{
-	// Two Vulkan renderers are compatible when they use the same logical Vulkan device.
-	if(VulkanSceneRenderer* otherVulkanRenderer = dynamic_object_cast<VulkanSceneRenderer>(otherRenderer)) {
-		return context() == otherVulkanRenderer->context();
-    }
-	return false;
-}
-
-/******************************************************************************
 * Creates the Vulkan resources needed by this renderer.
 ******************************************************************************/
 void VulkanSceneRenderer::initResources()

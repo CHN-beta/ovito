@@ -128,8 +128,8 @@ void CIFImporter::FrameLoader::loadFile()
 		// Parse list of atomic sites.
 		std::vector<gemmi::SmallStructure::Site> sites = structure.get_all_unit_cell_sites();
 		setParticleCount(sites.size());
-		PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
-		PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+		PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, initializationHints());
+		PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, initializationHints());
 		Point3* posIter = posProperty.begin();
 		int* typeIter = typeProperty.begin();
 		bool hasOccupancy = false;

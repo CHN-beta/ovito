@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,20 +30,16 @@
 #include <ovito/core/Core.h>
 #include <ovito/stdobj/StdObj.h>
 
-namespace Ovito {
-	namespace Mesh {
-		using namespace Ovito::StdObj;
-		class TriMeshObject;
-		class TriMeshVis;
-		class SurfaceMesh;
-		class SurfaceMeshAccess;
-		class SurfaceMeshVis;
-		class SurfaceMeshVertices;
-		class SurfaceMeshFaces;
-		class SurfaceMeshRegions;
-		class RenderableSurfaceMesh;
-		class HalfEdgeMesh;
-	}
+namespace Ovito::Mesh {
+	using namespace Ovito::StdObj;
+	class SurfaceMesh;
+	class SurfaceMeshAccess;
+	class SurfaceMeshVis;
+	class SurfaceMeshVertices;
+	class SurfaceMeshFaces;
+	class SurfaceMeshRegions;
+	class RenderableSurfaceMesh;
+	class HalfEdgeMesh;
 }
 
 #endif

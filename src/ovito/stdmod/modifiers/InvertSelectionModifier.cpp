@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,7 @@
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
-#include <ovito/core/app/Application.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "InvertSelectionModifier.h"
 
 namespace Ovito::StdMod {
@@ -43,13 +43,13 @@ InvertSelectionModifier::InvertSelectionModifier(DataSet* dataset) : GenericProp
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void InvertSelectionModifier::evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void InvertSelectionModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	if(!subject())
 		throwException(tr("No data element type set."));
 
    	PropertyContainer* container = state.expectMutableLeafObject(subject());
-	PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty, true, Application::instance()->executionContext());
+	PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty, true, request.initializationHints());
 	for(int& s : selProperty)
 		s = !s;
 }

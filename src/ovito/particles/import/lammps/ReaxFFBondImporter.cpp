@@ -236,7 +236,7 @@ void ReaxFFBondImporter::FrameLoader::loadFile()
 	{
 		// Create bonds storage.
 		setBondCount(reaxBonds.size());
-		PropertyAccess<ParticleIndexPair> bondParticleIdentifiersProperty = bonds()->createProperty(BondsObject::ParticleIdentifiersProperty, false, executionContext());
+		PropertyAccess<ParticleIndexPair> bondParticleIdentifiersProperty = bonds()->createProperty(BondsObject::ParticleIdentifiersProperty, false, initializationHints());
 		std::transform(reaxBonds.cbegin(), reaxBonds.cend(), bondParticleIdentifiersProperty.begin(), [](const ReaxFFBond& bond) { return bond.atoms; });
 
 		// Create bond property for the bond order.
@@ -245,9 +245,9 @@ void ReaxFFBondImporter::FrameLoader::loadFile()
 
 		// Create particle properties.
 		setParticleCount(reaxAtoms.size());
-		PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, false, executionContext());
+		PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, false, initializationHints());
 		std::transform(reaxAtoms.cbegin(), reaxAtoms.cend(), identifierProperty.begin(), [](const ReaxFFAtom& atom) { return atom.id; });
-		PropertyAccess<FloatType> chargeProperty = particles()->createProperty(ParticlesObject::ChargeProperty, false, executionContext());
+		PropertyAccess<FloatType> chargeProperty = particles()->createProperty(ParticlesObject::ChargeProperty, false, initializationHints());
 		std::transform(reaxAtoms.cbegin(), reaxAtoms.cend(), chargeProperty.begin(), [](const ReaxFFAtom& atom) { return atom.q; });
 		PropertyAccess<FloatType> atomBondOrderProperty = particles()->createProperty(QStringLiteral("Atom Bond Order"), PropertyObject::Float, 1, 0, false);
 		std::transform(reaxAtoms.cbegin(), reaxAtoms.cend(), atomBondOrderProperty.begin(), [](const ReaxFFAtom& atom) { return atom.abo; });

@@ -67,12 +67,12 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
@@ -82,10 +82,14 @@ private:
 	public:
 
 		/// Constructor.
-		ComputePolyhedraEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions,
+		ComputePolyhedraEngine(const ModifierEvaluationRequest& request, 
+				ConstPropertyPtr positions,
 				ConstPropertyPtr selection, 
-				ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages, DataOORef<SurfaceMesh> mesh, std::vector<ConstPropertyPtr> particleProperties) :
-			Engine(dataSource, executionContext),
+				ConstPropertyPtr bondTopology, 
+				ConstPropertyPtr bondPeriodicImages, 
+				DataOORef<SurfaceMesh> mesh, 
+				std::vector<ConstPropertyPtr> particleProperties) :
+			Engine(request),
 			_positions(std::move(positions)),
 			_selection(std::move(selection)),
 			_bondTopology(std::move(bondTopology)),
@@ -97,7 +101,7 @@ private:
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		/// Returns the simulation cell geometry.
 		const SimulationCellObject* cell() const { return _mesh->domain(); }

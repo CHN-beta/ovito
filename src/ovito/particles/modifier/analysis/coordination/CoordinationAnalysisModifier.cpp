@@ -63,7 +63,7 @@ bool CoordinationAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollect
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	// Get the current positions.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -106,7 +106,7 @@ Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngi
 	}
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<CoordinationAnalysisEngine>(modApp, executionContext, dataset(), particles, posProperty, selectionProperty, inputCell,
+	return std::make_shared<CoordinationAnalysisEngine>(request, particles, posProperty, selectionProperty, inputCell,
 		cutoff(), rdfSampleCount, typeProperty, std::move(uniqueTypeIds));
 }
 
@@ -244,18 +244,18 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 /******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
-void CoordinationAnalysisModifier::CoordinationAnalysisEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void CoordinationAnalysisModifier::CoordinationAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 
 	if(_inputFingerprint.hasChanged(particles))
-		modApp->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
 	// Output coordination numbers as a new particle property.
 	particles->createProperty(coordinationNumbers());
 
 	// Output RDF histogram(s).
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("coordination-rdf"), modApp, ExecutionContext::Scripting, DataTable::Line, tr("Radial distribution function"), rdfY());
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("coordination-rdf"), request.modApp(), request.initializationHints(), DataTable::Line, tr("Radial distribution function"), rdfY());
 	table->setIntervalStart(0);
 	table->setIntervalEnd(cutoff());
 	table->setAxisLabelX(tr("Pair separation distance"));

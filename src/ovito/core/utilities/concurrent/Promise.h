@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/oo/InitializationHints.h>
 #include "Task.h"
 #include "MainThreadTask.h"
 #include "TaskManager.h"
@@ -351,6 +352,12 @@ public:
 	/// Destructor.
 	~SynchronousOperation() { reset(); }
 
+	/// Returns how to initialize newly created objects.
+	ObjectInitializationHints initializationHints() const { return _initializationHints; }
+
+	/// Changes how to initialize newly created objects.
+	void setInitializationHints(ObjectInitializationHints hints) { _initializationHints = hints; }
+
 	/// Puts the task into the 'finished' state and detaches this SynchronousOperation object from the task.
 	void reset() {
 		if(isValid()) {
@@ -366,17 +373,17 @@ public:
 
 	/// Creates a new synchronous operation that should be used when performing some long-running work in in the main thread.
 	/// The factory method registers the task with the given task manager and puts it into the 'started' state.
-	static SynchronousOperation create(TaskManager& taskManager, bool startedState = true) {
+	static SynchronousOperation create(TaskManager& taskManager, ObjectInitializationHints initializationHints, bool startedState = true) {
 		SynchronousOperation op(std::make_shared<TaskWithResultStorage<MainThreadTask, tuple_type>>(
 			typename TaskWithResultStorage<MainThreadTask, tuple_type>::no_result_init_t(),
-			startedState ? Task::State(Task::Started) : Task::NoState, &taskManager), true);
+			startedState ? Task::State(Task::Started) : Task::NoState, &taskManager), initializationHints, true);
 		taskManager.addTaskInternal(op.task());
 		return op;
 	}
 
 	/// Creates a promise that can be used just for signaling the completion of an asynchronous operation.
-	static SynchronousOperation createSignal(TaskManager& taskManager) {
-		return SynchronousOperation(std::make_shared<Task>(Task::Started, &taskManager), true);
+	static SynchronousOperation createSignal(TaskManager& taskManager, ObjectInitializationHints initializationHints) {
+		return SynchronousOperation(std::make_shared<Task>(Task::Started, &taskManager), initializationHints, true);
 	}
 
 	/// Creates a child operation that executes within the context of this parent operation.
@@ -390,7 +397,7 @@ public:
 			OVITO_ASSERT(task()->taskManager());
 
 			// Create the task object for the child operation.
-			SynchronousOperation subOperation = SynchronousOperation::create(*task()->taskManager(), true);
+			SynchronousOperation subOperation = SynchronousOperation::create(*task()->taskManager(), initializationHints(), true);
 
 			// Ensure that the child operation gets canceled together with the parent operation.
 			this->finally(Ovito::detail::InlineExecutor(), false, [subTask = subOperation.task()](const TaskPtr& task) {
@@ -408,15 +415,18 @@ public:
 		}
 		else {
 			// Create a promise that is referring to the same task object.
-			return SynchronousOperation(task(), false);
-		}	
+			return SynchronousOperation(task(), initializationHints(), false);
+		}
 	}
 
 private:
 
 	/// Constructor.
-	SynchronousOperation(TaskPtr p, bool isMaster) noexcept :
-		Promise<>(std::move(p)), _isMaster(isMaster) {}
+	SynchronousOperation(TaskPtr p, ObjectInitializationHints initializationHints, bool isMaster) noexcept :
+		Promise<>(std::move(p)), _initializationHints(initializationHints), _isMaster(isMaster) {}
+
+	/// Indicates how to initialize newly created objects.
+	ObjectInitializationHints _initializationHints;
 
 	/// Indicates whether this SynchronousOperation is managing the shared task object or not.
 	bool _isMaster;

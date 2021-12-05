@@ -65,11 +65,11 @@ bool AmbientOcclusionModifier::OOMetaClass::isApplicableTo(const DataCollection&
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	if(Application::instance()->headlessMode())
 		throwException(tr("The ambient occlusion modifier requires OpenGL support and cannot be used when program is running in headless mode. "
-						  "Please run program on a machine where access to graphics hardware is available."));
+						  "Please run program in an environment where access to graphics hardware is available. On Linux this requires a local X server."));
 
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -96,28 +96,28 @@ Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(c
 	OvitoClassPtr rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "OffscreenOpenGLSceneRenderer");
 	if(!rendererClass)
 		throwException(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
-	OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClass->createInstance(dataset(), ExecutionContext::Scripting));
+	OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClass->createInstance(dataset(), ObjectInitializationHint::LoadFactoryDefaults));
 
 	// Activate picking mode, because we want to render particles using false colors.
 	renderer->setPicking(true);
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<AmbientOcclusionEngine>(modApp, executionContext, dataset(), validityInterval, particles, resolution, samplingCount(), posProperty, std::move(radii), boundingBox, std::move(renderer));
+	return std::make_shared<AmbientOcclusionEngine>(request, validityInterval, particles, resolution, samplingCount(), posProperty, std::move(radii), boundingBox, std::move(renderer));
 }
 
 /******************************************************************************
 * Compute engine constructor.
 ******************************************************************************/
-AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
+AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
 		ConstPropertyPtr particleRadii, const Box3& boundingBox, OORef<SceneRenderer> renderer) :
-	Engine(dataSource, executionContext, validityInterval),
+	Engine(request, validityInterval),
 	_resolution(resolution),
 	_samplingCount(std::max(1,samplingCount)),
 	_positions(std::move(positions)),
 	_particleRadii(std::move(particleRadii)),
 	_boundingBox(boundingBox),
 	_renderer(std::move(renderer)),
-	_brightness(ParticlesObject::OOClass().createUserProperty(dataset, fingerprint.particleCount(), PropertyObject::Float, 1, 0, QStringLiteral("Brightness"), true)),
+	_brightness(DataBufferPtr::create(request.dataset(), ObjectInitializationHint::LoadFactoryDefaults, fingerprint.particleCount(), PropertyObject::Float, 1, 0, true)),
 	_inputFingerprint(std::move(fingerprint))
 {
 	OVITO_ASSERT(_particleRadii->size() == _positions->size());
@@ -142,7 +142,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 		_renderer->startRender(nullptr, nullptr, frameBufferRect.size());
 		try {
 			// The buffered particle geometry used for rendering the particles.
-			std::shared_ptr<ParticlePrimitive> particleBuffer;
+			ParticlePrimitive particleBuffer;
 
 			setProgressMaximum(_samplingCount);
 			for(int sample = 0; sample < _samplingCount; sample++) {
@@ -178,10 +178,11 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 				_renderer->setWorldTransform(AffineTransformation::Identity());
 				try {
 					// Create particle buffer.
-					if(!particleBuffer) {
-						particleBuffer = _renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::FlatShading, ParticlePrimitive::LowQuality);
-						particleBuffer->setPositions(positions());
-						particleBuffer->setRadii(particleRadii());
+					if(!particleBuffer.positions()) {
+						particleBuffer.setShadingMode(ParticlePrimitive::FlatShading);
+						particleBuffer.setRenderingQuality(ParticlePrimitive::LowQuality);
+						particleBuffer.setPositions(positions());
+						particleBuffer.setRadii(particleRadii());
 					}
 					_renderer->renderParticles(particleBuffer);
 				}
@@ -199,7 +200,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 
 				// Extract brightness values from rendered image.
 				const QImage& image = frameBuffer.image();
-				PropertyAccess<FloatType> brightnessValues(brightness());
+				DataBufferAccess<FloatType> brightnessValues(brightness());
 				for(int y = 0; y < _resolution; y++) {
 					const QRgb* pixel = reinterpret_cast<const QRgb*>(image.scanLine(y));
 					for(int x = 0; x < _resolution; x++, ++pixel) {
@@ -229,7 +230,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 
 		// Normalize brightness values by particle area.
 		ConstPropertyAccess<FloatType> radiusArray(particleRadii());
-		PropertyAccess<FloatType> brightnessValues(brightness());
+		DataBufferAccess<FloatType> brightnessValues(brightness());
 		auto r = radiusArray.cbegin();
 		for(FloatType& b : brightnessValues) {
 			if(*r != 0)
@@ -257,14 +258,14 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 /******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
-void AmbientOcclusionModifier::AmbientOcclusionEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void AmbientOcclusionModifier::AmbientOcclusionEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	AmbientOcclusionModifier* modifier = static_object_cast<AmbientOcclusionModifier>(modApp->modifier());
+	AmbientOcclusionModifier* modifier = static_object_cast<AmbientOcclusionModifier>(request.modifier());
 	OVITO_ASSERT(modifier);
 
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 	if(_inputFingerprint.hasChanged(particles))
-		modApp->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 	OVITO_ASSERT(brightness() && particles->elementCount() == brightness()->size());
 
 	// Get effective intensity.
@@ -272,8 +273,8 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::applyResults(TimePoint ti
 	if(intensity == 0 || particles->elementCount() == 0) return;
 
 	// Get output property object.
-	ConstPropertyAccess<FloatType> brightnessValues(brightness());
-	PropertyAccess<Color> colorProperty = particles->createProperty(ParticlesObject::ColorProperty, true, Application::instance()->executionContext(), {particles});
+	ConstDataBufferAccess<FloatType> brightnessValues(brightness());
+	PropertyAccess<Color> colorProperty = particles->createProperty(ParticlesObject::ColorProperty, true, request.initializationHints(), {particles});
 	const FloatType* b = brightnessValues.cbegin();
 	for(Color& c : colorProperty) {
 		FloatType factor = FloatType(1) - intensity + (*b);

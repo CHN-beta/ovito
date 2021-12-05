@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,7 +57,7 @@ ElasticStrainModifier::ElasticStrainModifier(DataSet* dataset) : StructureIdenti
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void ElasticStrainModifier::initializeObject(ExecutionContext executionContext)
+void ElasticStrainModifier::initializeObject(ObjectInitializationHints hints)
 {
 	// Create the structure types.
 	ParticleType::PredefinedStructureType predefTypes[] = {
@@ -70,21 +70,21 @@ void ElasticStrainModifier::initializeObject(ExecutionContext executionContext)
 	};
 	OVITO_STATIC_ASSERT(sizeof(predefTypes)/sizeof(predefTypes[0]) == StructureAnalysis::NUM_LATTICE_TYPES);
 	for(int id = 0; id < StructureAnalysis::NUM_LATTICE_TYPES; id++) {
-		DataOORef<MicrostructurePhase> stype = DataOORef<MicrostructurePhase>::create(dataset(), executionContext);
+		DataOORef<MicrostructurePhase> stype = DataOORef<MicrostructurePhase>::create(dataset(), hints);
 		stype->setNumericId(id);
 		stype->setDimensionality(MicrostructurePhase::Dimensionality::Volumetric);
 		stype->setName(ParticleType::getPredefinedStructureTypeName(predefTypes[id]));
-		stype->setColor(ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), stype->name(), id, executionContext));
+		stype->setColor(ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), stype->name(), id, hints));
 		addStructureType(std::move(stype));
 	}
 
-	StructureIdentificationModifier::initializeObject(executionContext);
+	StructureIdentificationModifier::initializeObject(hints);
 }
 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ElasticStrainModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> ElasticStrainModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	// Get modifier inputs.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -101,7 +101,7 @@ Future<AsynchronousModifier::EnginePtr> ElasticStrainModifier::createEngine(cons
 	}
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<ElasticStrainEngine>(modApp, executionContext, dataset(), particles, posProperty,
+	return std::make_shared<ElasticStrainEngine>(request, particles, posProperty,
 			simCell, inputCrystalStructure(), std::move(preferredCrystalOrientations),
 			calculateDeformationGradients(), calculateStrainTensors(),
 			latticeConstant(), axialRatio(), pushStrainTensorsForward());

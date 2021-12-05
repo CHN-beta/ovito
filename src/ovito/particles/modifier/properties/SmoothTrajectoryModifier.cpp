@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -61,9 +61,9 @@ bool SmoothTrajectoryModifier::OOMetaClass::isApplicableTo(const DataCollection&
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/
-TimeInterval SmoothTrajectoryModifier::validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const
+TimeInterval SmoothTrajectoryModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
-	TimeInterval iv = Modifier::validityInterval(request, modApp);
+	TimeInterval iv = Modifier::validityInterval(request);
 	// Interpolation results will only be valid for the duration of the current frame.
 	iv.intersect(request.time());
 	return iv;
@@ -111,14 +111,14 @@ void SmoothTrajectoryModifier::restrictInputValidityInterval(TimeInterval& iv) c
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> SmoothTrajectoryModifier::evaluate(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<PipelineFlowState> SmoothTrajectoryModifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	// Determine the current frame, preferably from the attribute stored with the pipeline flow state.
 	// If the source frame attribute is not present, fall back to inferring it from the current animation time.
 	int currentFrame = input.data() ? input.data()->sourceFrame() : -1;
 	if(currentFrame < 0)
-		currentFrame = modApp->animationTimeToSourceFrame(request.time());
-	TimePoint time1 = modApp->sourceFrameToAnimationTime(currentFrame);
+		currentFrame = request.modApp()->animationTimeToSourceFrame(request.time());
+	TimePoint time1 = request.modApp()->sourceFrameToAnimationTime(currentFrame);
 
 	// If we are exactly on a source frame, there is no need to interpolate between frames.
 	if(time1 == request.time() && smoothingWindowSize() <= 1) {
@@ -131,17 +131,17 @@ Future<PipelineFlowState> SmoothTrajectoryModifier::evaluate(const PipelineEvalu
 	if(smoothingWindowSize() == 1) {
 		// Perform interpolation between two consecutive frames.
 		int nextFrame = currentFrame + 1;
-		TimePoint time2 = modApp->sourceFrameToAnimationTime(nextFrame);
+		TimePoint time2 = request.modApp()->sourceFrameToAnimationTime(nextFrame);
 
 		// Obtain the subsequent input frame by evaluating the upstream pipeline.
 		PipelineEvaluationRequest frameRequest = request;
 		frameRequest.setTime(time2);
 
 		// Wait for the second frame to become available.
-		return modApp->evaluateInput(frameRequest)
-			.then(executor(), [this, time = request.time(), modApp, state = input, time1, time2](const PipelineFlowState& nextState) mutable {
+		return request.modApp()->evaluateInput(frameRequest)
+			.then(executor(), [this, request, state = input, time1, time2](const PipelineFlowState& nextState) mutable {
 				// Compute interpolated state.
-				interpolateState(state, nextState, modApp, time, time1, time2);
+				interpolateState(state, nextState, request, time1, time2);
 				return std::move(state);
 			});
 	}
@@ -152,21 +152,21 @@ Future<PipelineFlowState> SmoothTrajectoryModifier::evaluate(const PipelineEvalu
 
 		// Prepare the upstream pipeline request.
 		PipelineEvaluationRequest frameRequest = request;
-		frameRequest.setTime(modApp->sourceFrameToAnimationTime(startFrame));
+		frameRequest.setTime(request.modApp()->sourceFrameToAnimationTime(startFrame));
 
 		// List of animation times at which to evaluate the upstream pipeline.
 		std::vector<TimePoint> otherTimes;
 		otherTimes.reserve(endFrame - startFrame);
 		for(int frame = startFrame; frame <= endFrame; frame++) {
 			if(frame != currentFrame)
-				otherTimes.push_back(modApp->sourceFrameToAnimationTime(frame));
+				otherTimes.push_back(request.modApp()->sourceFrameToAnimationTime(frame));
 		}
 
 		// Obtain the range of input frames from the upstream pipeline.
-		return modApp->evaluateInputMultiple(frameRequest, std::move(otherTimes))
-			.then(executor(), false, [this, state = input, modApp, time = request.time()](const std::vector<PipelineFlowState>& otherStates) mutable {
+		return request.modApp()->evaluateInputMultiple(frameRequest, std::move(otherTimes))
+			.then(executor(), false, [this, state = input, request](const std::vector<PipelineFlowState>& otherStates) mutable {
 				// Compute smoothed state.
-				averageState(state, otherStates, modApp, time);
+				averageState(state, otherStates, request);
 				return std::move(state);
 			});
 	}
@@ -175,32 +175,32 @@ Future<PipelineFlowState> SmoothTrajectoryModifier::evaluate(const PipelineEvalu
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void SmoothTrajectoryModifier::evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void SmoothTrajectoryModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	// Determine the current frame, preferably from the attribute stored with the pipeline flow state.
 	// If the source frame attribute is not present, fall back to inferring it from the current animation time.
 	int currentFrame = state.data() ? state.data()->sourceFrame() : -1;
 	if(currentFrame < 0)
-		currentFrame = modApp->animationTimeToSourceFrame(time);
-	TimePoint time1 = modApp->sourceFrameToAnimationTime(currentFrame);
+		currentFrame = request.modApp()->animationTimeToSourceFrame(request.time());
+	TimePoint time1 = request.modApp()->sourceFrameToAnimationTime(currentFrame);
 
 	// If we are exactly on a source frame, there is no need to interpolate between two consecutive frames.
-	if(time1 == time && smoothingWindowSize() <= 1) {
+	if(time1 == request.time() && smoothingWindowSize() <= 1) {
 		// The validity of the resulting state is restricted to the current animation time.
-		state.intersectStateValidity(time);
+		state.intersectStateValidity(request.time());
 		return;
 	}
 
 	if(smoothingWindowSize() == 1) {
 		// Perform interpolation between two consecutive frames.
 		int nextFrame = currentFrame + 1;
-		TimePoint time2 = modApp->sourceFrameToAnimationTime(nextFrame);
+		TimePoint time2 = request.modApp()->sourceFrameToAnimationTime(nextFrame);
 
 		// Get the second frame.
-		const PipelineFlowState& state2 = modApp->evaluateInputSynchronous(time2); 
+		const PipelineFlowState& state2 = request.modApp()->evaluateInputSynchronous(PipelineEvaluationRequest(request.initializationHints(), time2)); 
 
 		// Perform the actual interpolation calculation.
-		interpolateState(state, state2, modApp, time, time1, time2);
+		interpolateState(state, state2, request, time1, time2);
 	}
 	else {
 		// Perform averaging of several frames. Determine frame interval.
@@ -212,29 +212,29 @@ void SmoothTrajectoryModifier::evaluateSynchronous(TimePoint time, ModifierAppli
 		otherStates.reserve(endFrame - startFrame);
 		for(int frame = startFrame; frame <= endFrame; frame++) {
 			if(frame != currentFrame) {
-				TimePoint time2 = modApp->sourceFrameToAnimationTime(frame);
-				otherStates.push_back(modApp->evaluateInputSynchronous(time2));
+				TimePoint time2 = request.modApp()->sourceFrameToAnimationTime(frame);
+				otherStates.push_back(request.modApp()->evaluateInputSynchronous(PipelineEvaluationRequest(request.initializationHints(), time2)));
 			}
 		}
 
 		// Compute smoothed state.
-		averageState(state, otherStates, modApp, time);
+		averageState(state, otherStates, request);
 	}
 }
 
 /******************************************************************************
 * Computes the interpolated state between two input states.
 ******************************************************************************/
-void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const PipelineFlowState& state2, ModifierApplication* modApp, TimePoint time, TimePoint time1, TimePoint time2)
+void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const PipelineFlowState& state2, const ModifierEvaluationRequest& request, TimePoint time1, TimePoint time2)
 {
 	OVITO_ASSERT(!dataset()->undoStack().isRecording());
 
 	// Make sure the obtained reference configuration is valid and ready to use.
 	if(state2.status().type() == PipelineStatus::Error)
-		throwException(tr("Input state for frame %1 is not available: %2").arg(modApp->animationTimeToSourceFrame(time2)).arg(state2.status().text()));
+		throwException(tr("Input state for frame %1 is not available: %2").arg(request.modApp()->animationTimeToSourceFrame(time2)).arg(state2.status().text()));
 
 	OVITO_ASSERT(time2 > time1);
-	FloatType t = (FloatType)(time - time1) / (time2 - time1);
+	FloatType t = (FloatType)(request.time() - time1) / (time2 - time1);
 	if(t < 0) t = 0;
 	else if(t > 1) t = 1;
 
@@ -252,7 +252,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 	ConstPropertyAccess<qlonglong> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
 	ConstPropertyAccess<qlonglong> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
 	ParticlesObject* outputParticles = state1.makeMutable(particles1);
-	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, true, Application::instance()->executionContext());
+	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, true, request.initializationHints());
 	std::unordered_map<qlonglong, size_t> idmap;
 	if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
 
@@ -303,7 +303,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 
 	// Interpolate particle orientations.
 	if(ConstPropertyAccess<Quaternion> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
-		PropertyAccess<Quaternion> outputOrientations = outputParticles->createProperty(ParticlesObject::OrientationProperty, true, Application::instance()->executionContext());
+		PropertyAccess<Quaternion> outputOrientations = outputParticles->createProperty(ParticlesObject::OrientationProperty, true, request.initializationHints());
 		if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
 			auto id = idProperty1.cbegin();
 			for(Quaternion& q1 : outputOrientations) {
@@ -357,13 +357,13 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 	}
 
 	// The validity of the interpolated state is restricted to the current animation time.
-	state1.intersectStateValidity(time);
+	state1.intersectStateValidity(request.time());
 }
 
 /******************************************************************************
 * Computes the averaged state from several input states.
 ******************************************************************************/
-void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std::vector<PipelineFlowState>& otherStates, ModifierApplication* modApp, TimePoint time)
+void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std::vector<PipelineFlowState>& otherStates, const ModifierEvaluationRequest& request)
 {
 	OVITO_ASSERT(!dataset()->undoStack().isRecording());
 
@@ -376,11 +376,11 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 
 	// Create a modifiable copy of the particle coordinates array.
 	ParticlesObject* outputParticles = state1.makeMutable(particles1);
-	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, true, Application::instance()->executionContext());
+	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, true, request.initializationHints());
 
 	// Create output orientations array if smoothing particle orientations.
 	PropertyAccess<Quaternion> outputOrientations = particles1->getProperty(ParticlesObject::OrientationProperty)
-		? outputParticles->createProperty(ParticlesObject::OrientationProperty, true, Application::instance()->executionContext())
+		? outputParticles->createProperty(ParticlesObject::OrientationProperty, true, request.initializationHints())
 		: nullptr;
 
 	// Create copies of all scalar continuous particle properties.
@@ -546,7 +546,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 	}
 
 	// The validity of the interpolated state is restricted to the current animation time.
-	state1.intersectStateValidity(time);
+	state1.intersectStateValidity(request.time());
 }
 
 }	// End of namespace

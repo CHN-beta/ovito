@@ -73,19 +73,22 @@ public:
 	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;
 
 	/// \brief Asks the object for the result of the upstream data pipeline.
-	SharedFuture<PipelineFlowState> evaluateInput(const PipelineEvaluationRequest& request);
+	SharedFuture<PipelineFlowState> evaluateInput(const PipelineEvaluationRequest& request) const;
 
 	/// \brief Asks the object for the result of the upstream data pipeline at several animation times.
-	Future<std::vector<PipelineFlowState>> evaluateInputMultiple(const PipelineEvaluationRequest& request, std::vector<TimePoint> times);
+	Future<std::vector<PipelineFlowState>> evaluateInputMultiple(const PipelineEvaluationRequest& request, std::vector<TimePoint> times) const;
 
 	/// \brief Requests the preliminary computation results from the upstream data pipeline.
-	PipelineFlowState evaluateInputSynchronous(TimePoint time) const { return input() ? input()->evaluateSynchronous(time) : PipelineFlowState(); }
+	PipelineFlowState evaluateInputSynchronous(const PipelineEvaluationRequest& request) const { return input() ? input()->evaluateSynchronous(request) : PipelineFlowState(); }
+
+	/// \brief Compute the preliminary results of the upstream pipeline in a synchronous fashion at the current animation time.
+	PipelineFlowState evaluateInputSynchronousAtCurrentTime() const;
 
 	/// \brief Asks the object for the result of the data pipeline.
 	virtual SharedFuture<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request) override;
 
 	/// \brief Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
-	virtual PipelineFlowState evaluateSynchronous(TimePoint time) override;
+	virtual PipelineFlowState evaluateSynchronous(const PipelineEvaluationRequest& request) override;
 
 	/// \brief Returns the number of animation frames this pipeline object can provide.
 	virtual int numberOfSourceFrames() const override;
@@ -142,7 +145,7 @@ protected:
 	virtual Future<PipelineFlowState> evaluateInternal(const PipelineEvaluationRequest& request) override;
 
 	/// \brief Lets the pipeline stage compute a preliminary result in a synchronous fashion.
-	virtual PipelineFlowState evaluateInternalSynchronous(TimePoint time) override;
+	virtual PipelineFlowState evaluateInternalSynchronous(const PipelineEvaluationRequest& request) override;
 
 	/// \brief Decides whether a preliminary viewport update is performed after this pipeline object has been
 	///        evaluated but before the rest of the pipeline is complete.
@@ -175,5 +178,37 @@ private:
 #define SET_MODIFIER_APPLICATION_TYPE(ModifierClass, ModifierApplicationClass) \
 	static const int __modAppSetter##ModifierClass = (Ovito::ModifierApplication::registry().registerModAppClass(&ModifierClass::OOClass(), &ModifierApplicationClass::OOClass()), 0);
 
+/**
+ * Data structure representing the evaluation of a single modifier application.
+ */
+class ModifierEvaluationRequest : public PipelineEvaluationRequest
+{
+public:
+
+	/// Constructor.
+	ModifierEvaluationRequest(const PipelineEvaluationRequest& pipelineRequest, const ModifierApplication* modApp) :
+		PipelineEvaluationRequest(pipelineRequest), _modApp(const_cast<ModifierApplication*>(modApp)) {}
+
+	/// Constructor.
+	ModifierEvaluationRequest(ObjectInitializationHints initializationHints, TimePoint time, const ModifierApplication* modApp) :
+		PipelineEvaluationRequest(initializationHints, time), _modApp(const_cast<ModifierApplication*>(modApp)) {}
+
+	/// Returns the modifier application being evaluated.
+	ModifierApplication* modApp() const { return _modApp; }
+
+	/// Returns the modifier being evaluated.
+	Modifier* modifier() const { return modApp()->modifier(); }
+
+	/// Returns the dataset the modifier belongs to.
+	DataSet* dataset() const { return modApp()->dataset(); }
+
+private:
+
+	/// The modifier application being evaluated.
+	ModifierApplication* _modApp;
+};
+
+// Data structure passed to Modifier::initializeModifier():
+using ModifierInitializationRequest = ModifierEvaluationRequest;
 
 }	// End of namespace

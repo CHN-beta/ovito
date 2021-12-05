@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,29 +24,16 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/rendering/LinePrimitive.h>
 
 namespace Ovito {
 
-class OpenGLSceneRenderer; // defined in OpenGLSceneRenderer.h
-
-/**
- * \brief This class is responsible for rendering line primitives using OpenGL.
- */
-class OpenGLLinePrimitive : public LinePrimitive
-{
-public:
-
-	/// \brief Renders the geometry.
-	void render(OpenGLSceneRenderer* renderer);
-
-protected:
-
-	/// \brief Renders the lines using GL_LINES mode.
-	void renderThinLines(OpenGLSceneRenderer* renderer);
-
-	/// \brief Renders the lines using polygons.
-	void renderThickLines(OpenGLSceneRenderer* renderer);
+/// Bit flags that can be passed to the OORef<>::create() factory method when instantiating an object class.
+enum ObjectInitializationHint {
+    LoadFactoryDefaults = 0,		//< Perform standard object initialization using hard-coded defaults.
+    LoadUserDefaults    = (1<<0),	//< Load user-defined standard values from the application settings store.
+    WithoutVisElement   = (1<<1),	//< Do not attach a standard visual element when creating a new data object.
 };
+Q_DECLARE_FLAGS(ObjectInitializationHints, ObjectInitializationHint);
+Q_DECLARE_OPERATORS_FOR_FLAGS(ObjectInitializationHints);
 
 }	// End of namespace

@@ -201,12 +201,12 @@ void GroImporter::FrameLoader::loadFile()
 	setParticleCount(numParticles);
 
 	// Create particle properties.
-	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, true, executionContext());
-	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, true, initializationHints());
+	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, initializationHints());
 	PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int, 1, 0, false);
 	PropertyAccess<int> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int, 1, 0, false);
 	PropertyAccess<qlonglong> residueNumberProperty = particles()->createProperty(QStringLiteral("Residue Identifier"), PropertyObject::Int64, 1, 0, false);
-	PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, true, executionContext());
+	PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, true, initializationHints());
 	PropertyAccess<Vector3> velocityProperty;
 
 	// Give these particle properties new titles, which are displayed in the GUI under the file source.
@@ -369,7 +369,7 @@ void GroImporter::FrameLoader::loadFile()
 			for(const char* c2 = c + 1; *c2 != '\0' && *c2 != '.'; ++c2)
 				columnWidth++;
 			if(!velocityProperty)
-				velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty, false, executionContext());
+				velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty, false, initializationHints());
 			Vector3& v = velocityProperty[atomIndex];
 			for(size_t dim = 0; dim < 3; dim++) {
 				token_end = token + columnWidth;

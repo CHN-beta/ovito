@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "WrapPeriodicImagesModifier.h"
 
 namespace Ovito::Particles {
@@ -43,7 +44,7 @@ bool WrapPeriodicImagesModifier::OOMetaClass::isApplicableTo(const DataCollectio
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void WrapPeriodicImagesModifier::evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void WrapPeriodicImagesModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	const SimulationCellObject* simCellObj = state.expectObject<SimulationCellObject>();
 	std::array<bool, 3> pbc = simCellObj->pbcFlags();
@@ -70,7 +71,7 @@ void WrapPeriodicImagesModifier::evaluateSynchronous(TimePoint time, ModifierApp
 	// Wrap bonds by adjusting their PBC shift vectors.
 	if(outputParticles->bonds()) {
 		if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-			PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, true, Application::instance()->executionContext());
+			PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, true, request.initializationHints());
 			for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
 				size_t particleIndex1 = topologyProperty[bondIndex][0];
 				size_t particleIndex2 = topologyProperty[bondIndex][1];

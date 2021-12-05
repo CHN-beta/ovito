@@ -41,9 +41,7 @@ namespace Ovito::CrystalAnalysis {
 * Constructor.
 ******************************************************************************/
 DislocationAnalysisEngine::DislocationAnalysisEngine(
-		const PipelineObject* dataSource, 
-		ExecutionContext executionContext, 
-		DataSet* dataset,
+		const ModifierEvaluationRequest& request,
 		ParticleOrderingFingerprint fingerprint,
 		ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes,
 		int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
@@ -52,12 +50,12 @@ DislocationAnalysisEngine::DislocationAnalysisEngine(
 		std::vector<Matrix3> preferredCrystalOrientations,
 		bool onlyPerfectDislocations, int defectMeshSmoothingLevel, DataOORef<SurfaceMesh> defectMesh, DataOORef<SurfaceMesh> outputInterfaceMesh,
 		int lineSmoothingLevel, FloatType linePointInterval) :
-	StructureIdentificationModifier::StructureIdentificationEngine(dataSource, executionContext, dataset, std::move(fingerprint), positions, simCell, structureTypes, std::move(particleSelection)),
+	StructureIdentificationModifier::StructureIdentificationEngine(request, std::move(fingerprint), positions, simCell, structureTypes, std::move(particleSelection)),
 	_simCellVolume(simCell->volume3D()),
 	_structureAnalysis(std::make_unique<StructureAnalysis>(positions, simCell, (StructureAnalysis::LatticeStructureType)inputCrystalStructure, selection(), structures(), std::move(preferredCrystalOrientations), !onlyPerfectDislocations)),
 	_tessellation(std::make_unique<DelaunayTessellation>()),
 	_elasticMapping(std::make_unique<ElasticMapping>(*_structureAnalysis, *_tessellation)),
-	_interfaceMesh(std::make_unique<InterfaceMesh>(dataset, *_elasticMapping)),
+	_interfaceMesh(std::make_unique<InterfaceMesh>(request.dataset(), *_elasticMapping)),
 	_dislocationTracer(std::make_unique<DislocationTracer>(*_interfaceMesh, _structureAnalysis->clusterGraph(), maxTrialCircuitSize, maxCircuitElongation)),
 	_inputCrystalStructure(inputCrystalStructure),
 	_crystalClusters(crystalClusters),
@@ -283,10 +281,10 @@ void DislocationAnalysisEngine::perform()
 /******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
-void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void DislocationAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	DislocationAnalysisModifier* modifier = static_object_cast<DislocationAnalysisModifier>(modApp->modifier());
-	StructureIdentificationEngine::applyResults(time, modApp, state);
+	DislocationAnalysisModifier* modifier = static_object_cast<DislocationAnalysisModifier>(request.modifier());
+	StructureIdentificationEngine::applyResults(request, state);
 
 	// Output defect mesh.
 	state.addObjectWithUniqueId<SurfaceMesh>(_defectMesh);
@@ -298,11 +296,11 @@ void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication
 	// Output cluster graph.
 	if(const ClusterGraphObject* oldClusterGraph = state.getObject<ClusterGraphObject>())
 		state.removeObject(oldClusterGraph);
-	ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(modApp, Application::instance()->executionContext());
+	ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(request.modApp(), request.initializationHints());
 	clusterGraphObj->setStorage(clusterGraph());
 
 	// Output dislocations.
-	DislocationNetworkObject* dislocationsObj = state.createObject<DislocationNetworkObject>(modApp, Application::instance()->executionContext());
+	DislocationNetworkObject* dislocationsObj = state.createObject<DislocationNetworkObject>(request.modApp(), request.initializationHints());
 	dislocationsObj->setStorage(dislocationNetwork());
 	while(!dislocationsObj->crystalStructures().empty())
 		dislocationsObj->removeCrystalStructure(dislocationsObj->crystalStructures().size()-1);
@@ -317,16 +315,16 @@ void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication
 		particles->createProperty(atomClusters());
 	}
 
-	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.OTHER"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_OTHER)), modApp);
-	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.FCC"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_FCC)), modApp);
-	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.HCP"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_HCP)), modApp);
-	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.BCC"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_BCC)), modApp);
-	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.CubicDiamond"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_CUBIC_DIAMOND)), modApp);
-	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.HexagonalDiamond"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_HEX_DIAMOND)), modApp);
-	state.addAttribute(QStringLiteral("DislocationAnalysis.cell_volume"), QVariant::fromValue(simCellVolume()), modApp);
+	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.OTHER"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_OTHER)), request.modApp());
+	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.FCC"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_FCC)), request.modApp());
+	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.HCP"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_HCP)), request.modApp());
+	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.BCC"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_BCC)), request.modApp());
+	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.CubicDiamond"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_CUBIC_DIAMOND)), request.modApp());
+	state.addAttribute(QStringLiteral("DislocationAnalysis.counts.HexagonalDiamond"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_HEX_DIAMOND)), request.modApp());
+	state.addAttribute(QStringLiteral("DislocationAnalysis.cell_volume"), QVariant::fromValue(simCellVolume()), request.modApp());
 
 	// Compute dislocation line statistics.
-	FloatType totalLineLength = generateDislocationStatistics(modApp, Application::instance()->executionContext(), state, dislocationsObj, false, dislocationsObj->structureById(modifier->inputCrystalStructure()));
+	FloatType totalLineLength = generateDislocationStatistics(request.modApp(), request.initializationHints(), state, dislocationsObj, false, dislocationsObj->structureById(modifier->inputCrystalStructure()));
 	size_t totalSegmentCount = dislocationsObj->storage()->segments().size();	
 
 	if(totalSegmentCount == 0)
@@ -339,7 +337,7 @@ void DislocationAnalysisEngine::applyResults(TimePoint time, ModifierApplication
 * Computes statistical information on the identified dislocation lines and 
 * outputs it to the pipeline as data tables and global attributes.
 ******************************************************************************/
-FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const PipelineObject* dataSource, ExecutionContext executionContext, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure)
+FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const PipelineObject* dataSource, ObjectInitializationHints initializationHints, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure)
 {
 	std::map<const BurgersVectorFamily*,FloatType> dislocationLengths;
 	std::map<const BurgersVectorFamily*,int> segmentCounts;
@@ -394,7 +392,7 @@ FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const Pipeli
 
 	DataTable* lengthTableObj = replaceDataObjects ? state.getMutableLeafObject<DataTable>(DataTable::OOClass(), QStringLiteral("disloc-lengths")) : nullptr;
 	if(!lengthTableObj)
-		lengthTableObj = state.createObject<DataTable>(QStringLiteral("disloc-lengths"), dataSource, executionContext, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation lengths"), dislocationLengthsProperty.take(), dislocationTypeIds.take());
+		lengthTableObj = state.createObject<DataTable>(QStringLiteral("disloc-lengths"), dataSource, initializationHints, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation lengths"), dislocationLengthsProperty.take(), dislocationTypeIds.take());
 	else
 		lengthTableObj->setContent(maxId+1, DataRefVector<PropertyObject>{{ dislocationLengthsProperty.take(), dislocationTypeIds.take() }});
 	
@@ -410,7 +408,7 @@ FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const Pipeli
 
 	DataTable* countTableObj = replaceDataObjects ? state.getMutableLeafObject<DataTable>(DataTable::OOClass(), QStringLiteral("disloc-counts")) : nullptr;
 	if(!countTableObj)
-		countTableObj = state.createObject<DataTable>(QStringLiteral("disloc-counts"), dataSource, executionContext, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation counts"), dislocationCountsProperty.take());
+		countTableObj = state.createObject<DataTable>(QStringLiteral("disloc-counts"), dataSource, initializationHints, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation counts"), dislocationCountsProperty.take());
 	else
 		countTableObj->setContent(maxId+1, DataRefVector<PropertyObject>{{ dislocationCountsProperty.take() }});
 	countTableObj->insertProperty(0, xProperty);

@@ -52,20 +52,20 @@ ColorByTypeModifier::ColorByTypeModifier(DataSet* dataset) : GenericPropertyModi
 * This method is called by the system when the modifier has been inserted
 * into a pipeline.
 ******************************************************************************/
-void ColorByTypeModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
+void ColorByTypeModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
-	GenericPropertyModifier::initializeModifier(time, modApp, executionContext);
+	GenericPropertyModifier::initializeModifier(request);
 
 	if(sourceProperty().isNull() && subject()) {
 
 		// When the modifier is first inserted, automatically select the most recently added
 		// typed property (in GUI mode) or the canonical type property (in script mode).
-		const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
+		const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			PropertyReference bestProperty;
 			for(const PropertyObject* property : container->properties()) {
 				if(property->isTypedProperty()) {
-					if(executionContext == ExecutionContext::Interactive || property->type() == PropertyObject::GenericTypeProperty) {
+					if(request.initializationHints().testFlag(LoadUserDefaults) || property->type() == PropertyObject::GenericTypeProperty) {
 						bestProperty = PropertyReference(subject().dataClass(), property);
 					}
 				}
@@ -91,7 +91,7 @@ void ColorByTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void ColorByTypeModifier::evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 #ifdef OVITO_BUILD_BASIC
 	throwException(tr("%1: This program feature is only available in OVITO Pro. Please visit our website www.ovito.org for more information.").arg(objectTitle()));
@@ -133,7 +133,7 @@ void ColorByTypeModifier::evaluateSynchronous(TimePoint time, ModifierApplicatio
 	}
 
 	// Create the color output property.
-	PropertyAccess<Color> colorProperty = container->createProperty(PropertyObject::GenericColorProperty, (bool)selectionProperty, Application::instance()->executionContext(), objectPath);
+	PropertyAccess<Color> colorProperty = container->createProperty(PropertyObject::GenericColorProperty, (bool)selectionProperty, request.initializationHints(), objectPath);
 
 	// Access selection array.
 	ConstPropertyAccessAndRef<int> selection(std::move(selectionProperty));

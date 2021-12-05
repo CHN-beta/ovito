@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,8 +37,12 @@ class OVITO_CORE_EXPORT PipelineEvaluationRequest
 {
 public:
 
-	/// Constructs a request object that will evaluate the pipeline at the given animation time.
-	PipelineEvaluationRequest(TimePoint time = 0, bool breakOnError = false) : _time(time), _breakOnError(breakOnError), _cachingIntervals(time) {}
+	/// Constructs a request object for evaluating the pipeline at a certain animation time.
+	PipelineEvaluationRequest(ObjectInitializationHints initializationHints, TimePoint time = 0, bool breakOnError = false) : 
+		_initializationHints(initializationHints), 
+		_time(time), 
+		_breakOnError(breakOnError), 
+		_cachingIntervals(time) {}
 
 	/// Returns the animation time at which the pipeline is being evaluated.
 	TimePoint time() const { return _time; }
@@ -48,6 +52,9 @@ public:
 
 	/// Returns whether the pipeline system should stop the evaluation as soon as a first error occurs in one of the modifiers.
 	bool breakOnError() const { return _breakOnError; }
+
+	/// Returns how to initialize new objects created by the pipeline. This depends on whether we are running in the GUI or a scripting context.
+	ObjectInitializationHints initializationHints() const { return _initializationHints;}
 
 	/// Returns the animation time intervals over which the pipeline should pre-cache the state.
 	const TimeIntervalUnion& cachingIntervals() const { return _cachingIntervals; }
@@ -62,6 +69,9 @@ private:
 
 	/// Makes the pipeline system stop the evaluation as soon as a first error occurs in one of the modifiers.
 	bool _breakOnError = false;
+
+	/// Indicates how to initialize new objects created by the pipeline. This depends on whether we are running in the GUI or a scripting context.
+	ObjectInitializationHints _initializationHints;
 
 	/// Indicates to the upstream pipeline stages which animation frames they should keep in the cache.
 	TimeIntervalUnion _cachingIntervals;
@@ -98,7 +108,7 @@ public:
 private:
 
 	/// Request that triggered the pipeline evaluation.
-	PipelineEvaluationRequest _request;
+	PipelineEvaluationRequest _request{ObjectInitializationHint::LoadFactoryDefaults};
 
 	/// Pipeline currently being evaluated.
 	PipelineSceneNode* _pipeline = nullptr;

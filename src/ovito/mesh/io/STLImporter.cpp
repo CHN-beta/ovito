@@ -22,8 +22,8 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
-#include <ovito/mesh/tri/TriMeshObject.h>
-#include <ovito/mesh/tri/TriMeshVis.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
+#include <ovito/core/dataset/data/mesh/TriMeshVis.h>
 #include "STLImporter.h"
 
 #include <QtEndian>
@@ -91,8 +91,12 @@ void STLImporter::FrameLoader::loadFile()
 {
 	setProgressText(tr("Reading STL file %1").arg(fileHandle().toString()));
 
-	// Create mesh data structure.
-	TriMeshPtr mesh = std::make_shared<TriMesh>();
+	// Add mesh to the data collection.
+	TriMeshObject* mesh = state().getMutableObject<TriMeshObject>();
+	if(!mesh)
+		mesh = state().createObject<TriMeshObject>(dataSource(), initializationHints());
+	else
+		mesh->clear();
 
 	// Open file for reading assuming it is an ascii STL file.
 	CompressedTextReader stream(fileHandle());
@@ -207,14 +211,8 @@ void STLImporter::FrameLoader::loadFile()
 	mesh->removeDuplicateVertices(1e-8 * mesh->boundingBox().size().length());
 	mesh->determineEdgeVisibility();
 
-	// Add mesh to the data collection.
-	TriMeshObject* meshObj = state().getMutableObject<TriMeshObject>();
-	if(!meshObj)
-		meshObj = state().createObject<TriMeshObject>(dataSource(), executionContext());
-	meshObj->setMesh(std::move(mesh));
-
 	// Show some stats to the user.
-	state().setStatus(tr("%1 vertices, %2 triangles").arg(meshObj->mesh()->vertexCount()).arg(meshObj->mesh()->faceCount()));
+	state().setStatus(tr("%1 vertices, %2 triangles").arg(mesh->vertexCount()).arg(mesh->faceCount()));
 }
 
 }	// End of namespace

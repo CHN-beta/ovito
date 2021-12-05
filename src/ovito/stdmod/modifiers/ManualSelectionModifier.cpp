@@ -25,7 +25,6 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/app/Application.h>
 #include "ManualSelectionModifier.h"
 
 namespace Ovito::StdMod {
@@ -50,13 +49,13 @@ ManualSelectionModifier::ManualSelectionModifier(DataSet* dataset) : GenericProp
 * This method is called by the system when the modifier has been inserted
 * into a pipeline.
 ******************************************************************************/
-void ManualSelectionModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
+void ManualSelectionModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
-	Modifier::initializeModifier(time, modApp, executionContext);
+	Modifier::initializeModifier(request);
 
 	// Take a snapshot of the existing selection state at the time the modifier is created.
-	if(!getSelectionSet(modApp, false)) {
-		resetSelection(modApp, modApp->evaluateInputSynchronous(time));
+	if(!getSelectionSet(request.modApp(), false)) {
+		resetSelection(request.modApp(), request.modApp()->evaluateInputSynchronous(request));
 	}
 }
 
@@ -68,7 +67,8 @@ void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor* fie
 	// Whenever the subject of this modifier is changed, reset the selection.
 	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded()) {
 		for(ModifierApplication* modApp : modifierApplications()) {
-			resetSelection(modApp, modApp->evaluateInputSynchronous(dataset()->animationSettings()->time()));
+			ModifierEvaluationRequest request(ObjectInitializationHint::LoadUserDefaults, dataset()->animationSettings()->time(), modApp);
+			resetSelection(modApp, modApp->evaluateInputSynchronous(request));
 		}
 	}
 	GenericPropertyModifier::propertyChanged(field);
@@ -77,10 +77,10 @@ void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor* fie
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void ManualSelectionModifier::evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void ManualSelectionModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	// Retrieve the selection stored in the modifier application.
-	ElementSelectionSet* selectionSet = getSelectionSet(modApp, false);
+	ElementSelectionSet* selectionSet = getSelectionSet(request.modApp(), false);
 	if(!selectionSet)
 		throwException(tr("No stored selection set available. Please reset the selection state."));
 
@@ -89,7 +89,7 @@ void ManualSelectionModifier::evaluateSynchronous(TimePoint time, ModifierApplic
 		container->verifyIntegrity();
 
 		PipelineStatus status = selectionSet->applySelection(
-				container->createProperty(PropertyObject::GenericSelectionProperty, false, Application::instance()->executionContext()),
+				container->createProperty(PropertyObject::GenericSelectionProperty, false, request.initializationHints()),
 				container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty) ?
 					container->getProperty(PropertyObject::GenericIdentifierProperty) : nullptr);
 

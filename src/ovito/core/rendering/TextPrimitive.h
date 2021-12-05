@@ -35,29 +35,26 @@ class OVITO_CORE_EXPORT TextPrimitive : public PrimitiveBase
 {
 public:
 
-	/// \brief Constructor.
-	TextPrimitive() = default;
-
 	/// \brief Sets the text to be rendered.
-	virtual void setText(const QString& text) { _text = text; }
+	void setText(const QString& text) { _text = text; }
 
 	/// \brief Returns the number of vertices stored in the buffer.
 	const QString& text() const { return _text; }
 
 	/// \brief Sets the text color.
-	virtual void setColor(const ColorA& color) { _color = color; }
+	void setColor(const ColorA& color) { _color = color; }
 
 	/// \brief Returns the text color.
 	const ColorA& color() const { return _color; }
 
 	/// \brief Sets the text background color.
-	virtual void setBackgroundColor(const ColorA& color) { _backgroundColor = color; }
+	void setBackgroundColor(const ColorA& color) { _backgroundColor = color; }
 
 	/// \brief Returns the text background color.
 	const ColorA& backgroundColor() const { return _backgroundColor; }
 
 	/// Sets the text font.
-	virtual void setFont(const QFont& font) { _font = font; }
+	void setFont(const QFont& font) { _font = font; }
 
 	/// Returns the text font.
 	const QFont& font() const { return _font; }

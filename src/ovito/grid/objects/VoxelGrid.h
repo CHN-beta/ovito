@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,7 +44,7 @@ class OVITO_GRID_EXPORT VoxelGrid : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// \brief Create a storage object for standard voxel properties.
-		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t voxelCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t voxelCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const override;
 
 	protected:
 
@@ -72,7 +72,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 
 	/// Returns the spatial domain this voxel grid is embedded in after making sure it
 	/// can safely be modified.

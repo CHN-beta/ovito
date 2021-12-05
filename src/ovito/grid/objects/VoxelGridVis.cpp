@@ -26,7 +26,7 @@
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/utilities/mesh/TriMesh.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
 #include "VoxelGridVis.h"
 
 namespace Ovito::Grid {
@@ -55,15 +55,15 @@ VoxelGridVis::VoxelGridVis(DataSet* dataset) : DataVis(dataset),
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void VoxelGridVis::initializeObject(ExecutionContext executionContext)
+void VoxelGridVis::initializeObject(ObjectInitializationHints hints)
 {
 	// Create animation controller for the transparency parameter.
-	setTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
+	setTransparencyController(ControllerManager::createFloatController(dataset(), hints));
 
 	// Create a color mapping object for pseudo-color visualization of a grid property.
-	setColorMapping(OORef<PropertyColorMapping>::create(dataset(), executionContext));
+	setColorMapping(OORef<PropertyColorMapping>::create(dataset(), hints));
 
-	DataVis::initializeObject(executionContext);
+	DataVis::initializeObject(hints);
 }
 
 /******************************************************************************
@@ -128,8 +128,7 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 	OVITO_ASSERT(!(colorArray && pseudoColorArray));
 
 	// The key type used for caching the geometry primitive:
-	using CacheKey = std::tuple<
-		CompatibleRendererGroup,	// Scene renderer
+	using CacheKey = RendererResourceKey<struct VoxelGridSurface,
 		ConstDataObjectRef,			// Voxel grid object
 		ConstDataObjectRef,			// Color property
 		ConstDataObjectRef,			// Pseudo-color property
@@ -141,7 +140,7 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 
 	// The values stored in the vis cache.
 	struct CacheValue {
-		std::shared_ptr<MeshPrimitive> volumeFaces;
+		MeshPrimitive volumeFaces;
         OORef<ObjectPickInfo> pickInfo;
 	};
 
@@ -156,7 +155,6 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 
 	// Look up the rendering primitive in the vis cache.
 	auto& primitives = dataset()->visCache().get<CacheValue>(CacheKey(
-		renderer, 
 		gridObj, 
 		colorProperty, 
 		pseudoColorProperty, 
@@ -166,24 +164,23 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 		interpolateColors()));
 
 	// Check if we already have valid rendering primitives that are up to date.
-	if(!primitives.volumeFaces) {
+	if(!primitives.volumeFaces.mesh()) {
 		// Determine the number of triangle faces to create per voxel cell.
 		size_t trianglesPerCell = 2;
 		if(interpolateColors()) {
 			if(colorArray || pseudoColorArray)
 				trianglesPerCell = 8;
 		}
-		primitives.volumeFaces = renderer->createMeshPrimitive();
 		primitives.pickInfo = new VoxelGridPickInfo(this, gridObj, trianglesPerCell);
 		if(gridObj->domain()) {
-			TriMesh mesh;
+			DataOORef<TriMeshObject> mesh = DataOORef<TriMeshObject>::create(dataset(), ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement);
 			if(colorArray) {
-				if(interpolateColors()) mesh.setHasVertexColors(true);
-				else mesh.setHasFaceColors(true);
+				if(interpolateColors()) mesh->setHasVertexColors(true);
+				else mesh->setHasFaceColors(true);
 			}
 			else if(pseudoColorArray) {
-				if(interpolateColors()) mesh.setHasVertexPseudoColors(true);
-				else mesh.setHasFacePseudoColors(true);
+				if(interpolateColors()) mesh->setHasVertexPseudoColors(true);
+				else mesh->setHasFacePseudoColors(true);
 			}
 			VoxelGrid::GridDimensions gridDims = gridObj->shape();
 			std::array<bool, 3> pbcFlags = gridObj->domain()->pbcFlags();
@@ -209,29 +206,29 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 				Point3 origin = Point3::Origin() + gridObj->domain()->cellMatrix().translation();
 				if(oppositeSide) origin += gridObj->domain()->cellMatrix().column(dim3);
 
-				int baseVertexCount = mesh.vertexCount();
-				int baseFaceCount = mesh.faceCount();
+				auto baseVertexCount = mesh->vertexCount();
+				auto baseFaceCount = mesh->faceCount();
 
 				if(!interpolateColors() || (!colorArray && !pseudoColorArray)) {
 					OVITO_ASSERT(trianglesPerCell == 2);
 
 					// Create two triangles per voxel face. 
-					mesh.setVertexCount(baseVertexCount + nx * ny);
-					mesh.setFaceCount(baseFaceCount + 2 * (nx-1) * (ny-1));
+					mesh->setVertexCount(baseVertexCount + nx * ny);
+					mesh->setFaceCount(baseFaceCount + 2 * (nx-1) * (ny-1));
 
 					// Create vertices.
-					auto vertex = mesh.vertices().begin() + baseVertexCount;
+					auto vertex = mesh->vertices().begin() + baseVertexCount;
 					for(int iy = 0; iy < ny; iy++) {
 						for(int ix = 0; ix < nx; ix++) {
 							*vertex++ = origin + (ix * dx) + (iy * dy);
 						}
 					}
-					OVITO_ASSERT(vertex == mesh.vertices().end());
+					OVITO_ASSERT(vertex == mesh->vertices().end());
 
 					// Create triangles.
-					auto face = mesh.faces().begin() + baseFaceCount;
-					ColorA* faceColor = colorArray ? mesh.faceColors().data() + baseFaceCount : nullptr;
-					FloatType* facePseudoColor = pseudoColorArray ? mesh.facePseudoColors().data() + baseFaceCount : nullptr;
+					auto face = mesh->faces().begin() + baseFaceCount;
+					ColorA* faceColor = colorArray ? mesh->faceColors().data() + baseFaceCount : nullptr;
+					FloatType* facePseudoColor = pseudoColorArray ? mesh->facePseudoColors().data() + baseFaceCount : nullptr;
 					for(int iy = 0; iy < ny - 1; iy++) {
 						for(int ix = 0; ix < nx - 1; ix++) {
 							face->setVertices(baseVertexCount + iy * nx + ix, baseVertexCount + iy * nx + ix+1, baseVertexCount + (iy+1) * nx + ix+1);
@@ -256,7 +253,7 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 							}
 						}
 					}
-					OVITO_ASSERT(face == mesh.faces().end());
+					OVITO_ASSERT(face == mesh->faces().end());
 				}
 				else if(pseudoColorArray) {
 					OVITO_ASSERT(trianglesPerCell == 8);
@@ -264,11 +261,11 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 					int verts_per_row = verts_per_voxel * (nx - 1) + 2;
 
 					// Generate 8 triangles per voxel cell face.
-					mesh.setVertexCount(baseVertexCount + verts_per_row * (ny-1) + (nx - 1) * 2 + 1);
-					mesh.setFaceCount(baseFaceCount + 8 * (nx-1) * (ny-1));
+					mesh->setVertexCount(baseVertexCount + verts_per_row * (ny-1) + (nx - 1) * 2 + 1);
+					mesh->setFaceCount(baseFaceCount + 8 * (nx-1) * (ny-1));
 
 					// Create vertices.
-					auto vertex = mesh.vertices().begin() + baseVertexCount;
+					auto vertex = mesh->vertices().begin() + baseVertexCount;
 					for(int iy = 0; iy < ny; iy++) {
 						for(int ix = 0; ix < nx; ix++) {
 							// Create four vertices per voxel face.
@@ -282,10 +279,10 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 								*vertex++ = corner + FloatType(0.5) * (dx + dy);
 						}
 					}
-					OVITO_ASSERT(vertex == mesh.vertices().end());
+					OVITO_ASSERT(vertex == mesh->vertices().end());
 
 					// Compute pseudo-color of vertices located in the center of voxel faces.
-					FloatType* vertexColor = mesh.vertexPseudoColors().data() + baseVertexCount;
+					FloatType* vertexColor = mesh->vertexPseudoColors().data() + baseVertexCount;
 					for(int iy = 0; iy < ny - 1; iy++, vertexColor += 2) {
 						for(int ix = 0; ix < nx - 1; ix++, vertexColor += 4) {
 							coords[dim1] = ix;
@@ -305,7 +302,7 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 					}
 
 					// Compute color of vertices located on the horizontal grid lines of the voxel grid.
-					vertexColor = mesh.vertexPseudoColors().data() + baseVertexCount;
+					vertexColor = mesh->vertexPseudoColors().data() + baseVertexCount;
 					if(!pbcFlags[dim2]) {
 						for(int ix = 0; ix < nx - 1; ix++)
 							vertexColor[ix * verts_per_voxel + 1] = vertexColor[ix * verts_per_voxel + 3];
@@ -378,7 +375,7 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 						vertexColor[(ny - 1) * verts_per_row + (nx - 1) * 2] = vertexColor[(ny - 1) * verts_per_row];
 
 					// Create triangles.
-					auto face = mesh.faces().begin() + baseFaceCount;
+					auto face = mesh->faces().begin() + baseFaceCount;
 					for(int iy = 0; iy < ny - 1; iy++) {
 						for(int ix = 0; ix < nx - 1; ix++) {
 							bool is_x_border = (ix == nx - 2);
@@ -410,7 +407,7 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 							++face;
 						}
 					}
-					OVITO_ASSERT(face == mesh.faces().end());				
+					OVITO_ASSERT(face == mesh->faces().end());				
 				}
 				else {
 					OVITO_ASSERT(trianglesPerCell == 8);
@@ -418,11 +415,11 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 					int verts_per_row = verts_per_voxel * (nx - 1) + 2;
 
 					// Generate 8 triangles per voxel cell face.
-					mesh.setVertexCount(baseVertexCount + verts_per_row * (ny-1) + (nx - 1) * 2 + 1);
-					mesh.setFaceCount(baseFaceCount + 8 * (nx-1) * (ny-1));
+					mesh->setVertexCount(baseVertexCount + verts_per_row * (ny-1) + (nx - 1) * 2 + 1);
+					mesh->setFaceCount(baseFaceCount + 8 * (nx-1) * (ny-1));
 
 					// Create vertices.
-					auto vertex = mesh.vertices().begin() + baseVertexCount;
+					auto vertex = mesh->vertices().begin() + baseVertexCount;
 					for(int iy = 0; iy < ny; iy++) {
 						for(int ix = 0; ix < nx; ix++) {
 							// Create four vertices per voxel face.
@@ -436,10 +433,10 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 								*vertex++ = corner + FloatType(0.5) * (dx + dy);
 						}
 					}
-					OVITO_ASSERT(vertex == mesh.vertices().end());
+					OVITO_ASSERT(vertex == mesh->vertices().end());
 
 					// Compute color of vertices located in the center of voxel faces.
-					ColorA* vertexColor = mesh.vertexColors().data() + baseVertexCount;
+					ColorA* vertexColor = mesh->vertexColors().data() + baseVertexCount;
 					for(int iy = 0; iy < ny - 1; iy++, vertexColor += 2) {
 						for(int ix = 0; ix < nx - 1; ix++, vertexColor += 4) {
 							coords[dim1] = ix;
@@ -459,7 +456,7 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 					}
 
 					// Compute color of vertices located on the horizontal grid lines of the voxel grid.
-					vertexColor = mesh.vertexColors().data() + baseVertexCount;
+					vertexColor = mesh->vertexColors().data() + baseVertexCount;
 					if(!pbcFlags[dim2]) {
 						for(int ix = 0; ix < nx - 1; ix++)
 							vertexColor[ix * verts_per_voxel + 1] = vertexColor[ix * verts_per_voxel + 3];
@@ -532,7 +529,7 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 						vertexColor[(ny - 1) * verts_per_row + (nx - 1) * 2] = vertexColor[(ny - 1) * verts_per_row];
 
 					// Create triangles.
-					auto face = mesh.faces().begin() + baseFaceCount;
+					auto face = mesh->faces().begin() + baseFaceCount;
 					for(int iy = 0; iy < ny - 1; iy++) {
 						for(int ix = 0; ix < nx - 1; ix++) {
 							bool is_x_border = (ix == nx - 2);
@@ -564,7 +561,7 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 							++face;
 						}
 					}
-					OVITO_ASSERT(face == mesh.faces().end());
+					OVITO_ASSERT(face == mesh->faces().end());
 				}
 			};
 
@@ -576,15 +573,15 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 				createFacesForSide(2, 0, 1, false);
 				createFacesForSide(2, 0, 1, true);
 			}
-			primitives.volumeFaces->setMesh(std::move(mesh));
-			primitives.volumeFaces->setUniformColor(ColorA(1,1,1,alpha));
-			primitives.volumeFaces->setEmphasizeEdges(highlightGridLines());
-			primitives.volumeFaces->setCullFaces(false);
+			primitives.volumeFaces.setMesh(std::move(mesh));
+			primitives.volumeFaces.setUniformColor(ColorA(1,1,1,alpha));
+			primitives.volumeFaces.setEmphasizeEdges(highlightGridLines());
+			primitives.volumeFaces.setCullFaces(false);
 		}
 	}
 
 	// Update the color mapping.
-	primitives.volumeFaces->setPseudoColorMapping(colorMapping()->pseudoColorMapping());
+	primitives.volumeFaces.setPseudoColorMapping(colorMapping()->pseudoColorMapping());
 
 	renderer->beginPickObject(contextNode, primitives.pickInfo);
 	renderer->renderMesh(primitives.volumeFaces);

@@ -288,7 +288,7 @@ void ColorCodingModifierEditor::autoRangeChanged()
 	if(!modApp) return;
 
 	// Request the modifier's pipeline output.
-	const PipelineFlowState& state = modApp->evaluateSynchronous(dataset()->animationSettings()->time());
+	const PipelineFlowState& state = modApp->evaluateSynchronousAtCurrentTime();
 
 	QVariant minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
 	QVariant maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
@@ -322,7 +322,7 @@ FloatType ColorCodingModifierEditor::computeRangeValue(FloatType t) const
 		}
 		else {
 			if(ModifierApplication* modApp = modifierApplication()) {
-				const PipelineFlowState& state = modApp->evaluateSynchronous(dataset()->animationSettings()->time());
+				const PipelineFlowState& state = modApp->evaluateSynchronousAtCurrentTime();
 				QVariant minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
 				QVariant maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
 				if(minValue.isValid() && maxValue.isValid()) {
@@ -346,7 +346,7 @@ void ColorCodingModifierEditor::onColorGradientSelected(int index)
 	OvitoClassPtr descriptor = _colorGradientList->itemData(index).value<OvitoClassPtr>();
 	if(descriptor) {
 		undoableTransaction(tr("Change color gradient"), [descriptor, mod]() {
-			OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(mod->dataset(), ExecutionContext::Interactive));
+			OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(mod->dataset(), ObjectInitializationHint::LoadUserDefaults));
 			if(gradient) {
 				mod->setColorGradient(gradient);
 
@@ -379,7 +379,7 @@ void ColorCodingModifierEditor::onAdjustRange()
 	OVITO_CHECK_OBJECT_POINTER(mod);
 
 	undoableTransaction(tr("Adjust range"), [mod]() {
-		mod->adjustRange();
+		mod->adjustRange(ObjectInitializationHint::LoadUserDefaults);
 	});
 }
 
@@ -393,7 +393,7 @@ void ColorCodingModifierEditor::onAdjustRangeGlobal()
 
 	undoableTransaction(tr("Adjust range"), [this, mod]() {
 		ProgressDialog progressDialog(container(), mod->dataset()->taskManager(), tr("Determining property value range"));
-		mod->adjustRangeGlobal(progressDialog.createOperation());
+		mod->adjustRangeGlobal(ObjectInitializationHint::LoadUserDefaults, progressDialog.createOperation());
 	});
 }
 
@@ -454,7 +454,7 @@ QIcon ColorCodingModifierEditor::iconFromColorMapClass(OvitoClassPtr clazz)
 	if(dataset) {
 		try {
 			// Create a temporary instance of the color map class.
-			OORef<ColorCodingGradient> map = static_object_cast<ColorCodingGradient>(clazz->createInstance(dataset, ExecutionContext::Interactive));
+			OORef<ColorCodingGradient> map = static_object_cast<ColorCodingGradient>(clazz->createInstance(dataset, ObjectInitializationHint::LoadUserDefaults));
 			if(map) {
 				QIcon icon = iconFromColorMap(map);
 				iconCache.insert(std::make_pair(clazz, icon));

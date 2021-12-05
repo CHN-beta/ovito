@@ -417,7 +417,7 @@ void XYZImporter::FrameLoader::loadFile()
 	}
 
 	// Parse data columns.
-	InputColumnReader columnParser(_columnMapping, particles(), executionContext());
+	InputColumnReader columnParser(_columnMapping, particles(), initializationHints());
 	try {
 		for(size_t i = 0; i < numParticlesLong; i++) {
 			if(!setProgressValueIntermittent(i)) return;

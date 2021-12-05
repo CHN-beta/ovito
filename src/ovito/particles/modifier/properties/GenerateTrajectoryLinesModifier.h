@@ -66,16 +66,16 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 	
 	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	/// Returns the the custom time interval.
 	TimeInterval customInterval() const { return TimeInterval(_customIntervalStart, _customIntervalEnd); }
 
 	/// Updates the stored trajectories from the source particle object.
-	bool generateTrajectories(Promise<>&& operation);
+	bool generateTrajectories(SynchronousOperation operation);
 
 private:
 

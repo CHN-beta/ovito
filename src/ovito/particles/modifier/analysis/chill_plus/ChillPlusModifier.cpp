@@ -50,24 +50,24 @@ ChillPlusModifier::ChillPlusModifier(DataSet* dataset) : StructureIdentification
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void ChillPlusModifier::initializeObject(ExecutionContext executionContext)
+void ChillPlusModifier::initializeObject(ObjectInitializationHints hints)
 {
 	// Create the structure types.
-    createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
-    createStructureType(HEXAGONAL_ICE, ParticleType::PredefinedStructureType::HEXAGONAL_ICE, executionContext);
-    createStructureType(CUBIC_ICE, ParticleType::PredefinedStructureType::CUBIC_ICE, executionContext);
-    createStructureType(INTERFACIAL_ICE, ParticleType::PredefinedStructureType::INTERFACIAL_ICE, executionContext);
-    createStructureType(HYDRATE, ParticleType::PredefinedStructureType::HYDRATE, executionContext);
-    createStructureType(INTERFACIAL_HYDRATE, ParticleType::PredefinedStructureType::INTERFACIAL_HYDRATE, executionContext);
+    createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, hints);
+    createStructureType(HEXAGONAL_ICE, ParticleType::PredefinedStructureType::HEXAGONAL_ICE, hints);
+    createStructureType(CUBIC_ICE, ParticleType::PredefinedStructureType::CUBIC_ICE, hints);
+    createStructureType(INTERFACIAL_ICE, ParticleType::PredefinedStructureType::INTERFACIAL_ICE, hints);
+    createStructureType(HYDRATE, ParticleType::PredefinedStructureType::HYDRATE, hints);
+    createStructureType(INTERFACIAL_HYDRATE, ParticleType::PredefinedStructureType::INTERFACIAL_HYDRATE, hints);
 
-	StructureIdentificationModifier::initializeObject(executionContext);
+	StructureIdentificationModifier::initializeObject(hints);
 }
 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get modifier input.
     const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -81,7 +81,7 @@ Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const Pi
     const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<ChillPlusEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty, cutoff());
+    return std::make_shared<ChillPlusEngine>(request, particles, posProperty, simCell, structureTypes(), selectionProperty, cutoff());
 }
 
 /******************************************************************************
@@ -201,17 +201,17 @@ ChillPlusModifier::StructureType ChillPlusModifier::ChillPlusEngine::determineSt
 /******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
-void ChillPlusModifier::ChillPlusEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void ChillPlusModifier::ChillPlusEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-    StructureIdentificationEngine::applyResults(time, modApp, state);
+    StructureIdentificationEngine::applyResults(request, state);
 
     // Also output structure type counts, which have been computed by the base class.
-    state.addAttribute(QStringLiteral("ChillPlus.counts.OTHER"), QVariant::fromValue(getTypeCount(OTHER)), modApp);
-    state.addAttribute(QStringLiteral("ChillPlus.counts.CUBIC_ICE"), QVariant::fromValue(getTypeCount(CUBIC_ICE)), modApp);
-    state.addAttribute(QStringLiteral("ChillPlus.counts.HEXAGONAL_ICE"), QVariant::fromValue(getTypeCount(HEXAGONAL_ICE)), modApp);
-    state.addAttribute(QStringLiteral("ChillPlus.counts.INTERFACIAL_ICE"), QVariant::fromValue(getTypeCount(INTERFACIAL_ICE)), modApp);
-    state.addAttribute(QStringLiteral("ChillPlus.counts.HYDRATE"), QVariant::fromValue(getTypeCount(HYDRATE)), modApp);
-    state.addAttribute(QStringLiteral("ChillPlus.counts.INTERFACIAL_HYDRATE"), QVariant::fromValue(getTypeCount(INTERFACIAL_HYDRATE)), modApp);
+    state.addAttribute(QStringLiteral("ChillPlus.counts.OTHER"), QVariant::fromValue(getTypeCount(OTHER)), request.modApp());
+    state.addAttribute(QStringLiteral("ChillPlus.counts.CUBIC_ICE"), QVariant::fromValue(getTypeCount(CUBIC_ICE)), request.modApp());
+    state.addAttribute(QStringLiteral("ChillPlus.counts.HEXAGONAL_ICE"), QVariant::fromValue(getTypeCount(HEXAGONAL_ICE)), request.modApp());
+    state.addAttribute(QStringLiteral("ChillPlus.counts.INTERFACIAL_ICE"), QVariant::fromValue(getTypeCount(INTERFACIAL_ICE)), request.modApp());
+    state.addAttribute(QStringLiteral("ChillPlus.counts.HYDRATE"), QVariant::fromValue(getTypeCount(HYDRATE)), request.modApp());
+    state.addAttribute(QStringLiteral("ChillPlus.counts.INTERFACIAL_HYDRATE"), QVariant::fromValue(getTypeCount(INTERFACIAL_HYDRATE)), request.modApp());
 }
 
 std::pair<float, float> ChillPlusModifier::ChillPlusEngine::polar_asimuthal(const Vector3& delta)

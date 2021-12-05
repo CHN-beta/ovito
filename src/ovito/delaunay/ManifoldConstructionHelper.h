@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -58,8 +58,8 @@ public:
 public:
 
 	/// Constructor.
-	ManifoldConstructionHelper(ExecutionContext executionContext, DelaunayTessellation& tessellation, SurfaceMeshAccess& outputMesh, FloatType alpha, bool createRegions,
-			const PropertyObject* positions) : _executionContext(executionContext), _tessellation(tessellation), _mesh(outputMesh), _alpha(alpha), _createRegions(createRegions), _positions(positions) { OVITO_ASSERT(_tessellation.simCell()); }
+	ManifoldConstructionHelper(ObjectInitializationHints initializationHints, DelaunayTessellation& tessellation, SurfaceMeshAccess& outputMesh, FloatType alpha, bool createRegions,
+			const PropertyObject* positions) : _initializationHints(initializationHints), _tessellation(tessellation), _mesh(outputMesh), _alpha(alpha), _createRegions(createRegions), _positions(positions) { OVITO_ASSERT(_tessellation.simCell()); }
 
 	/// Returns the number of filled regions that have been identified.
 	SurfaceMeshAccess::size_type filledRegionCount() const { return _filledRegionCount; }
@@ -88,7 +88,7 @@ public:
 		if(_createRegions) {
 
 			// Create the "Region" face property in the output mesh.
-			_mesh.createFaceProperty(SurfaceMeshFaces::RegionProperty, false, _executionContext);
+			_mesh.createFaceProperty(SurfaceMeshFaces::RegionProperty, false, _initializationHints);
 
 			if(!formFilledRegions(task))
 				return false;
@@ -463,7 +463,7 @@ private:
 			return false;
 
 		// Create the 'Volume' property for the identified regions.
- 		_mesh.createRegionProperty(SurfaceMeshRegions::VolumeProperty, true, _executionContext);
+ 		_mesh.createRegionProperty(SurfaceMeshRegions::VolumeProperty, true, _initializationHints);
 
 		task.nextProgressSubStep();
 		task.setProgressMaximum(_tessellation.numberOfTetrahedra());
@@ -1042,7 +1042,7 @@ private:
 
 		// Construct convex hull of remaining line segments.
 		if(!_convexHullMesh)
-			_convexHullMesh.reset(DataOORef<SurfaceMesh>::create(_mesh.topology()->dataset(), ExecutionContext::Scripting));
+			_convexHullMesh.reset(DataOORef<SurfaceMesh>::create(_mesh.topology()->dataset(), ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement));
 		else
 			_convexHullMesh.clearMesh();
 		_convexHullMesh.constructConvexHull(std::vector<Point3>(lineSegments, lineSegments + numPoints));
@@ -1081,7 +1081,7 @@ private:
 	FloatType _alpha;
 
 	/// Indicates whether this algorithm is executed in an interactive or a scripting context.
-	ExecutionContext _executionContext;
+	ObjectInitializationHints _initializationHints;
 
 	/// Controls the grouping of Delaunay cells into volumetric regions and the generation
 	/// of a two-sided surface mesh.

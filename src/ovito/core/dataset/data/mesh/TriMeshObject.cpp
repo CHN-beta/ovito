@@ -21,22 +21,38 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/io/CompressedTextWriter.h>
-#include "TriMesh.h"
+#include "TriMeshObject.h"
+#include "TriMeshVis.h"
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(TriMeshObject);
+
 /******************************************************************************
-* Constructs an empty mesh.
+* Default constructor.
 ******************************************************************************/
-TriMesh::TriMesh()
+TriMeshObject::TriMeshObject(DataSet* dataset) : DataObject(dataset)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void TriMeshObject::initializeObject(ObjectInitializationHints hints)
+{
+	if(!visElement() && !hints.testFlag(WithoutVisElement))
+		setVisElement(OORef<TriMeshVis>::create(dataset(), hints));
+
+	DataObject::initializeObject(hints);
 }
 
 /******************************************************************************
 * Clears all vertices and faces.
 ******************************************************************************/
-void TriMesh::clear()
+void TriMeshObject::clear()
 {
 	_vertices.clear();
 	_faces.clear();
@@ -55,7 +71,7 @@ void TriMesh::clear()
 /******************************************************************************
 * Sets the number of vertices in this mesh.
 ******************************************************************************/
-void TriMesh::setVertexCount(int n)
+void TriMeshObject::setVertexCount(int n)
 {
 	_vertices.resize(n);
 	if(_hasVertexColors)
@@ -67,7 +83,7 @@ void TriMesh::setVertexCount(int n)
 /******************************************************************************
 * Sets the number of faces in this mesh.
 ******************************************************************************/
-void TriMesh::setFaceCount(int n)
+void TriMeshObject::setFaceCount(int n)
 {
 	_faces.resize(n);
 	if(_hasFaceColors)
@@ -82,17 +98,20 @@ void TriMesh::setFaceCount(int n)
 * Adds a new triangle face and returns a reference to it.
 * The new face is NOT initialized by this method.
 ******************************************************************************/
-TriMeshFace& TriMesh::addFace()
+TriMeshFace& TriMeshObject::addFace()
 {
 	setFaceCount(faceCount() + 1);
 	return _faces.back();
 }
 
 /******************************************************************************
-* Saves the mesh to the given stream.
+* Saves the class' contents to the given stream.
 ******************************************************************************/
-void TriMesh::saveToStream(SaveStream& stream)
+void TriMeshObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
+	DataObject::saveToStream(stream, excludeRecomputableData);
+
+	stream.beginChunk(0x01);
 	stream.beginChunk(0x03);
 
 	// Save vertices.
@@ -127,58 +146,65 @@ void TriMesh::saveToStream(SaveStream& stream)
 	}
 
 	stream.endChunk();
+	stream.endChunk();
 }
 
 /******************************************************************************
-* Loads the mesh from the given stream.
+* Loads the class' contents from the given stream.
 ******************************************************************************/
-void TriMesh::loadFromStream(LoadStream& stream)
+void TriMeshObject::loadFromStream(ObjectLoadStream& stream)
 {
-	int formatVersion = stream.expectChunkRange(0x00, 0x03);
+	DataObject::loadFromStream(stream);
 
 	// Reset mesh.
 	clear();
 
-	// Load vertices.
-	stream >> _vertices;
+	if(stream.expectChunkRange(0x00, 0x01) != 0) {
+		int formatVersion = stream.expectChunkRange(0x00, 0x03);
 
-	// Load per-vertex RGBA colors.
-	stream >> _hasVertexColors;
-	stream >> _vertexColors;
-	OVITO_ASSERT(_vertexColors.size() == _vertices.size() || !_hasVertexColors);
+		// Load vertices.
+		stream >> _vertices;
 
-	if(formatVersion >= 2) {
-		// Load per-face RGBA colors.
-		stream >> _hasFaceColors;
-		stream >> _faceColors;
+		// Load per-vertex RGBA colors.
+		stream >> _hasVertexColors;
+		stream >> _vertexColors;
+		OVITO_ASSERT(_vertexColors.size() == _vertices.size() || !_hasVertexColors);
+
+		if(formatVersion >= 2) {
+			// Load per-face RGBA colors.
+			stream >> _hasFaceColors;
+			stream >> _faceColors;
+		}
+
+		if(formatVersion >= 3) {
+			// Load normals (three per face).
+			stream >> _hasNormals;
+			stream >> _normals;
+		}
+
+		// Load faces.
+		int nFaces;
+		stream >> nFaces;
+		_faces.resize(nFaces);
+		for(TriMeshFace& face : faces()) {
+			stream >> face._flags;
+			stream >> face._vertices[0];
+			stream >> face._vertices[1];
+			stream >> face._vertices[2];
+			stream >> face._smoothingGroups;
+			stream >> face._materialIndex;
+		}
+
+		stream.closeChunk();
 	}
-
-	if(formatVersion >= 3) {
-		// Load normals (three per face).
-		stream >> _hasNormals;
-		stream >> _normals;
-	}
-
-	// Load faces.
-	int nFaces;
-	stream >> nFaces;
-	_faces.resize(nFaces);
-	for(TriMeshFace& face : faces()) {
-		stream >> face._flags;
-		stream >> face._vertices[0];
-		stream >> face._vertices[1];
-		stream >> face._vertices[2];
-		stream >> face._smoothingGroups;
-		stream >> face._materialIndex;
-	}
-
 	stream.closeChunk();
 }
+
 
 /******************************************************************************
 * Flip the orientation of all faces.
 ******************************************************************************/
-void TriMesh::flipFaces()
+void TriMeshObject::flipFaces()
 {
 	for(TriMeshFace& face : faces()) {
 		face.setVertices(face.vertex(2), face.vertex(1), face.vertex(0));
@@ -201,7 +227,7 @@ void TriMesh::flipFaces()
 /******************************************************************************
 * Performs a ray intersection calculation.
 ******************************************************************************/
-bool TriMesh::intersectRay(const Ray3& ray, FloatType& t, Vector3& normal, int& faceIndex, bool backfaceCull) const
+bool TriMeshObject::intersectRay(const Ray3& ray, FloatType& t, Vector3& normal, int& faceIndex, bool backfaceCull) const
 {
 	FloatType bestT = FLOATTYPE_MAX;
 	int index = 0;
@@ -262,7 +288,7 @@ bool TriMesh::intersectRay(const Ray3& ray, FloatType& t, Vector3& normal, int& 
 /******************************************************************************
 * Exports the triangle mesh to a VTK file.
 ******************************************************************************/
-void TriMesh::saveToVTK(CompressedTextWriter& stream)
+void TriMeshObject::saveToVTK(CompressedTextWriter& stream)
 {
 	stream << "# vtk DataFile Version 3.0\n";
 	stream << "# Triangle mesh\n";
@@ -286,7 +312,7 @@ void TriMesh::saveToVTK(CompressedTextWriter& stream)
 /******************************************************************************
 * Exports the triangle mesh to a Wavefront .obj file.
 ******************************************************************************/
-void TriMesh::saveToOBJ(CompressedTextWriter& stream)
+void TriMeshObject::saveToOBJ(CompressedTextWriter& stream)
 {
 	stream << "# Wavefront OBJ file written by OVITO\n";
 	stream << "# List of geometric vertices:\n";
@@ -304,9 +330,9 @@ void TriMesh::saveToOBJ(CompressedTextWriter& stream)
 /******************************************************************************
 * Clips the mesh at the given plane.
 ******************************************************************************/
-void TriMesh::clipAtPlane(const Plane3& plane)
+void TriMeshObject::clipAtPlane(const Plane3& plane)
 {
-	TriMesh clippedMesh;
+	TriMeshObject clippedMesh(dataset());
 	clippedMesh.setHasVertexColors(hasVertexColors());
 	clippedMesh.setHasVertexPseudoColors(hasVertexPseudoColors());
 	clippedMesh.setHasFaceColors(hasFaceColors());
@@ -464,7 +490,7 @@ void TriMesh::clipAtPlane(const Plane3& plane)
 /******************************************************************************
 * Determines the visibility of face edges depending on the angle between the normals of adjacent faces.
 ******************************************************************************/
-void TriMesh::determineEdgeVisibility(FloatType thresholdAngle)
+void TriMeshObject::determineEdgeVisibility(FloatType thresholdAngle)
 {
 	FloatType dotThreshold = std::cos(thresholdAngle);
 
@@ -524,7 +550,7 @@ void TriMesh::determineEdgeVisibility(FloatType thresholdAngle)
 * Identifies duplicate vertices and merges them into a single vertex shared
 * by multiple faces.
 ******************************************************************************/
-void TriMesh::removeDuplicateVertices(FloatType epsilon)
+void TriMeshObject::removeDuplicateVertices(FloatType epsilon)
 {
 	std::vector<int> remapping(vertexCount(), -1);
 
@@ -569,7 +595,7 @@ void TriMesh::removeDuplicateVertices(FloatType epsilon)
 * The resolution parameter controls the number of subdivision iterations and determines the
 * resulting vertices/faces of the mesh. 
 ******************************************************************************/
-TriMesh TriMesh::createIcosphere(int resolution)
+void TriMeshObject::createIcosphere(int resolution)
 {
 	OVITO_ASSERT(resolution >= 0);
 
@@ -590,20 +616,20 @@ TriMesh TriMesh::createIcosphere(int resolution)
 		{6,1,10}, {9,0,11}, {9,11,2}, {9,2,5}, {7,2,11}
 	};
 
-	TriMesh mesh;
-	mesh.setVertexCount(sizeof(vertices) / sizeof(vertices[0]));
-	mesh.setFaceCount(sizeof(triangles) / sizeof(triangles[0]));
-	boost::range::copy(vertices, mesh.vertices().begin());
-	for(int i = 0; i < mesh.faceCount(); i++)
-		mesh.face(i).setVertices(triangles[i][2], triangles[i][1], triangles[i][0]);
+	clear();
+	setVertexCount(sizeof(vertices) / sizeof(vertices[0]));
+	setFaceCount(sizeof(triangles) / sizeof(triangles[0]));
+	boost::range::copy(vertices, this->vertices().begin());
+	for(int i = 0; i < faceCount(); i++)
+		face(i).setVertices(triangles[i][2], triangles[i][1], triangles[i][0]);
 
 	using Lookup = std::map<std::pair<int, int>, int>;
 
 	for(int i = 0; i < resolution; i++) {
 		Lookup lookup;
-		QVector<TriMeshFace> newFaces(mesh.faceCount() * 4);
+		QVector<TriMeshFace> newFaces(faceCount() * 4);
 		auto newFace = newFaces.begin();
-		for(TriMeshFace& face : mesh.faces()) {
+		for(TriMeshFace& face : faces()) {
 			std::array<int, 3> mid;
 			for(int edge = 0; edge < 3; edge++) {
 				int first = face.vertex(edge);
@@ -613,12 +639,12 @@ TriMesh TriMesh::createIcosphere(int resolution)
 				if(key.first > key.second)
 					std::swap(key.first, key.second);
 				
-				auto inserted = lookup.insert({key, mesh.vertexCount()});
+				auto inserted = lookup.insert({key, vertexCount()});
 				if(inserted.second) {
-					const Vector3& edge0 = mesh.vertex(first) - Point3::Origin();
-					const Vector3& edge1 = mesh.vertex(second) - Point3::Origin();
+					const Vector3& edge0 = vertex(first) - Point3::Origin();
+					const Vector3& edge1 = vertex(second) - Point3::Origin();
 					Point3 point = Point3::Origin() + (edge0 + edge1).normalized();
-					mesh.addVertex(point);
+					addVertex(point);
 				}
 				
 				mid[edge] =  inserted.first->second;
@@ -628,10 +654,8 @@ TriMesh TriMesh::createIcosphere(int resolution)
 			(*newFace++).setVertices(face.vertex(2), mid[2], mid[1]);
 			(*newFace++).setVertices(mid[0], mid[1], mid[2]);
 		}
-		mesh._faces = std::move(newFaces);
+		_faces = std::move(newFaces);
 	}
-	
-	return mesh;
 }
 
 }	// End of namespace

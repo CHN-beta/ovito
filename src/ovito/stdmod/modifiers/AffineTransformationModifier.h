@@ -72,7 +72,7 @@ public:
 	Q_INVOKABLE SimulationCellAffineTransformationModifierDelegate(DataSet* dataset) : AffineTransformationModifierDelegate(dataset) {}
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
 /**
@@ -110,13 +110,13 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;
+	virtual void initializeObject(ObjectInitializationHints hints) override;
 
 	/// This method is called by the system after the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext) override;
+	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
 	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	/// Returns the effective affine transformation matrix to be applied to points.
 	/// It depends on the linear matrix, the translation vector, relative/target cell mode, and 

@@ -235,21 +235,20 @@ void ViewportConfiguration::loadFromStreamComplete(ObjectLoadStream& stream)
 	if(!layoutRootCell()) {
 		OVITO_ASSERT(viewports().size() == 4);
 
-		ExecutionContext executionContext = Application::instance()->executionContext();
-		OORef<ViewportLayoutCell> rootCell = OORef<ViewportLayoutCell>::create(dataset(), executionContext);
+		OORef<ViewportLayoutCell> rootCell = OORef<ViewportLayoutCell>::create(dataset(), ObjectInitializationHint::LoadUserDefaults);
 		rootCell->setSplitDirection(ViewportLayoutCell::Horizontal);
-		rootCell->addChild(OORef<ViewportLayoutCell>::create(dataset(), executionContext));
-		rootCell->addChild(OORef<ViewportLayoutCell>::create(dataset(), executionContext));
+		rootCell->addChild(OORef<ViewportLayoutCell>::create(dataset(), ObjectInitializationHint::LoadUserDefaults));
+		rootCell->addChild(OORef<ViewportLayoutCell>::create(dataset(), ObjectInitializationHint::LoadUserDefaults));
 
 		rootCell->children()[0]->setSplitDirection(ViewportLayoutCell::Vertical);
-		rootCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(dataset(), executionContext));
-		rootCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(dataset(), executionContext));
+		rootCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(dataset(), ObjectInitializationHint::LoadUserDefaults));
+		rootCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(dataset(), ObjectInitializationHint::LoadUserDefaults));
 		rootCell->children()[0]->children()[0]->setViewport(viewports().size() > 0 ? viewports()[0] : nullptr); // Upper left
 		rootCell->children()[0]->children()[1]->setViewport(viewports().size() > 2 ? viewports()[2] : nullptr); // Lower left
 
 		rootCell->children()[1]->setSplitDirection(ViewportLayoutCell::Vertical);
-		rootCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(dataset(), executionContext));
-		rootCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(dataset(), executionContext));
+		rootCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(dataset(), ObjectInitializationHint::LoadUserDefaults));
+		rootCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(dataset(), ObjectInitializationHint::LoadUserDefaults));
 		rootCell->children()[1]->children()[0]->setViewport(viewports().size() > 1 ? viewports()[1] : nullptr); // Upper right
 		rootCell->children()[1]->children()[1]->setViewport(viewports().size() > 3 ? viewports()[3] : nullptr); // Lower right
 		setLayoutRootCell(std::move(rootCell));

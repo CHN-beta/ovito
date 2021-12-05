@@ -56,25 +56,25 @@ AffineTransformationModifier::AffineTransformationModifier(DataSet* dataset) : M
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void AffineTransformationModifier::initializeObject(ExecutionContext executionContext)
+void AffineTransformationModifier::initializeObject(ObjectInitializationHints hints)
 {
 	// Generate the list of delegate objects.
-	createModifierDelegates(AffineTransformationModifierDelegate::OOClass(), executionContext);
+	createModifierDelegates(AffineTransformationModifierDelegate::OOClass(), hints);
 	
-	MultiDelegatingModifier::initializeObject(executionContext);
+	MultiDelegatingModifier::initializeObject(hints);
 }
 
 /******************************************************************************
 * This method is called by the system when the modifier has been inserted
 * into a PipelineObject.
 ******************************************************************************/
-void AffineTransformationModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
+void AffineTransformationModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
-	MultiDelegatingModifier::initializeModifier(time, modApp, executionContext);
+	MultiDelegatingModifier::initializeModifier(request);
 
 	// Take the simulation cell from the input object as the default destination cell geometry for absolute scaling.
 	if(targetCell() == AffineTransformation::Zero()) {
-		const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
+		const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
 		if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>())
 			setTargetCell(cell->cellMatrix());
 	}
@@ -83,7 +83,7 @@ void AffineTransformationModifier::initializeModifier(TimePoint time, ModifierAp
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void AffineTransformationModifier::evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void AffineTransformationModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	// Validate parameters and input data.
 	if(!relativeMode()) {
@@ -93,7 +93,7 @@ void AffineTransformationModifier::evaluateSynchronous(TimePoint time, ModifierA
 	}
 
 	// Apply all enabled modifier delegates to the input data.
-	MultiDelegatingModifier::evaluateSynchronous(time, modApp, state);
+	MultiDelegatingModifier::evaluateSynchronous(request, state);
 }
 
 /******************************************************************************
@@ -134,9 +134,9 @@ QVector<DataObjectReference> SimulationCellAffineTransformationModifierDelegate:
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
-PipelineStatus SimulationCellAffineTransformationModifierDelegate::apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus SimulationCellAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(modifier);
+	const AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
 	const AffineTransformation tm = mod->effectiveAffineTransformation(state);
 
 	// Transform the SimulationCellObject.

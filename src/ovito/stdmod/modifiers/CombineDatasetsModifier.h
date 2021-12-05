@@ -81,13 +81,13 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 
 	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	/// Modifies the input data.
-	virtual Future<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 	/// Returns the number of animation frames this modifier can provide.
 	virtual int numberOfSourceFrames(int inputFrames) const override {
@@ -116,7 +116,7 @@ public:
 	}
 
 	/// Implementation method, which performs the merging of two pipeline states.
-	void combineDatasets(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state, const PipelineFlowState& secondaryState);
+	void combineDatasets(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& secondaryState);
 
 protected:
 

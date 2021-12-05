@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //  Copyright 2020 Peter Mahler Larsen
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -289,9 +289,7 @@ public:
 
 	/// Constructor.
 	GrainSegmentationEngine1(
-			const PipelineObject* dataSource, 
-			ExecutionContext executionContext, 
-			DataSet* dataset, 
+			const ModifierEvaluationRequest& request, 
 			ParticleOrderingFingerprint fingerprint, 
 			ConstPropertyPtr positions,
 			ConstPropertyPtr structureProperty,
@@ -306,7 +304,7 @@ public:
 	virtual void perform() override;
 
 	/// Injects the computed results into the data pipeline.
-	virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	/// This method is called by the system whenever a parameter of the modifier changes.
 	/// The method can be overriden by subclasses to indicate to the caller whether the engine object should be 
@@ -324,10 +322,7 @@ public:
 	}
 
 	/// Creates another engine that performs the next stage of the computation. 
-	virtual std::shared_ptr<Engine> createContinuationEngine(ModifierApplication* modApp, const PipelineFlowState& input) override;
-
-	/// Returns the global dataset object.
-	DataSet* dataset() const { return _dataset; }
+	virtual std::shared_ptr<Engine> createContinuationEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 	/// Returns the property storage that contains the input particle positions.
 	const ConstPropertyPtr& positions() const { return _positions; }
@@ -428,9 +423,6 @@ private:
 	// A hardcoded cutoff, in degrees, used for skipping low-weight edges in Node Pair Sampling mode
 	static constexpr FloatType _misorientationThreshold = 4.0;
 
-	/// The global dataset object.
-	DataSet* _dataset;
-
 	// The linkage criterion used in the merge algorithm
 	GrainSegmentationModifier::MergeAlgorithm _algorithmType;
 
@@ -503,26 +495,24 @@ public:
 
 	/// Constructor.
 	GrainSegmentationEngine2(
-			const PipelineObject* dataSource, 
-			ExecutionContext executionContext, 
-			DataSet* dataset, 
+			const ModifierEvaluationRequest& request, 
 			std::shared_ptr<GrainSegmentationEngine1> engine1,
 			FloatType mergingThreshold, 
 			bool adoptOrphanAtoms, 
 			size_t minGrainAtomCount) :
-		Engine(dataSource, executionContext),
+		Engine(request),
 		_engine1(std::move(engine1)),
 		_numParticles(_engine1->_numParticles),
 		_mergingThreshold(mergingThreshold),
 		_adoptOrphanAtoms(adoptOrphanAtoms),
 		_minGrainAtomCount(minGrainAtomCount),
-		_atomClusters(ParticlesObject::OOClass().createUserProperty(dataset, _numParticles, PropertyObject::Int64, 1, 0, QStringLiteral("Grain"), true)) {}
+		_atomClusters(ParticlesObject::OOClass().createUserProperty(request.dataset(), _numParticles, PropertyObject::Int64, 1, 0, QStringLiteral("Grain"), true)) {}
 	
 	/// Performs the computation.
 	virtual void perform() override;
 
 	/// Injects the computed results into the data pipeline.
-	virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	/// This method is called by the system whenever a parameter of the modifier changes.
 	/// The method can be overriden by subclasses to indicate to the caller whether the engine object should be 
@@ -536,12 +526,8 @@ public:
 		return Engine::modifierChanged(event);
 	}
 
-	/// Returns the global dataset object.
-	DataSet* dataset() const { return _engine1->dataset(); }
-
 	/// Returns the array storing the cluster ID of each particle.
 	const PropertyPtr& atomClusters() const { return _atomClusters; }
-
 
 	struct PQNode {
 		qlonglong cluster;

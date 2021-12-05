@@ -73,7 +73,7 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
 	QString gridIdentifier = loadRequest().dataBlockPrefix;
 	VoxelGrid* gridObj = state().getMutableLeafObject<VoxelGrid>(VoxelGrid::OOClass(), gridIdentifier);
 	if(!gridObj) {
-		gridObj = state().createObject<VoxelGrid>(dataSource(), executionContext());
+		gridObj = state().createObject<VoxelGrid>(dataSource(), initializationHints());
 		gridObj->setIdentifier(gridIdentifier);
 		VoxelGridVis* vis = gridObj->visElement<VoxelGridVis>();
 		if(!gridIdentifier.isEmpty()) {

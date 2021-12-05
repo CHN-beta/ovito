@@ -204,9 +204,9 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
 
 			// Create particle properties.
 			setParticleCount(natoms);
-			posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
-			PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
-			PropertyAccess<FloatType> massProperty = particles()->createProperty(ParticlesObject::MassProperty, true, executionContext());
+			posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, initializationHints());
+			PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, initializationHints());
+			PropertyAccess<FloatType> massProperty = particles()->createProperty(ParticlesObject::MassProperty, true, initializationHints());
 
 			// Add the registered atom types.
 			for(int i = 0; i < ntypes; i++) {

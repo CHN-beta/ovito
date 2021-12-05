@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,15 +35,15 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshSliceModifierDelegate);
 /******************************************************************************
 * Performs the slicing of a surface mesh.
 ******************************************************************************/
-PipelineStatus SurfaceMeshSliceModifierDelegate::apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus SurfaceMeshSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	SliceModifier* mod = static_object_cast<SliceModifier>(modifier);
+	SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
 	QString statusMessage;
 
 	// Obtain modifier parameter values.
 	Plane3 plane;
 	FloatType sliceWidth;
-	std::tie(plane, sliceWidth) = mod->slicingPlane(time, state.mutableStateValidity(), state);
+	std::tie(plane, sliceWidth) = mod->slicingPlane(request.time(), state.mutableStateValidity(), state);
 	sliceWidth /= 2;
 	bool invert = mod->inverse();
 
@@ -66,7 +66,7 @@ PipelineStatus SurfaceMeshSliceModifierDelegate::apply(Modifier* modifier, Pipel
 				// Create a mesh vertex selection.
 				if(SurfaceMeshVertices* outputVertices = outputMesh->makeVerticesMutable()) {
 					ConstPropertyAccess<Point3> vertexPositionProperty = outputVertices->expectProperty(SurfaceMeshVertices::PositionProperty);
-					PropertyAccess<int> vertexSelectionProperty = outputVertices->createProperty(SurfaceMeshVertices::SelectionProperty, false, Application::instance()->executionContext());
+					PropertyAccess<int> vertexSelectionProperty = outputVertices->createProperty(SurfaceMeshVertices::SelectionProperty, false, request.initializationHints());
 					size_t numSelectedVertices = 0;
 					boost::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {
 						bool selectionState = 
@@ -82,7 +82,7 @@ PipelineStatus SurfaceMeshSliceModifierDelegate::apply(Modifier* modifier, Pipel
 
 					// Create a mesh face selection.
 					if(SurfaceMeshFaces* outputFaces = outputMesh->makeFacesMutable()) {
-						PropertyAccess<int> faceSelectionProperty = outputFaces->createProperty(SurfaceMeshFaces::SelectionProperty, false, Application::instance()->executionContext());
+						PropertyAccess<int> faceSelectionProperty = outputFaces->createProperty(SurfaceMeshFaces::SelectionProperty, false, request.initializationHints());
 						size_t numSelectedFaces = 0;
 						const SurfaceMeshTopology* topology = outputMesh->topology();
 						auto firstFaceEdge = topology->firstFaceEdges().cbegin();

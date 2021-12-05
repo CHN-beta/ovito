@@ -67,7 +67,7 @@ public:
 	ReferenceConfigurationModifier(DataSet* dataset);
 
 	/// Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const override;
+	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
 	/// Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
 	virtual void inputCachingHints(TimeIntervalUnion& cachingIntervals, ModifierApplication* modApp) override;
@@ -82,10 +82,10 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, ExecutionContext executionContext, TimeInterval validityInterval) = 0;
+	virtual Future<EnginePtr> createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) = 0;
 
 	/// Base class for compute engines that make use of a reference configuration.
 	class OVITO_PARTICLES_EXPORT RefConfigEngineBase : public Engine
@@ -93,7 +93,7 @@ protected:
 	public:
 
 		/// Constructor.
-		RefConfigEngineBase(const PipelineObject* dataSource, ExecutionContext executionContext, 
+		RefConfigEngineBase(const ModifierEvaluationRequest& request, 
 				const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
 				ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,
 				ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,

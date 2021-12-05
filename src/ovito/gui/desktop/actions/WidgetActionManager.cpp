@@ -111,10 +111,10 @@ void WidgetActionManager::on_NewPipelineFileSource_triggered()
 		ViewportSuspender noUpdates(dataset());
 
 		// Create the FileSource.
-		OORef<FileSource> fileSource = OORef<FileSource>::create(dataset(), Application::instance()->executionContext());
+		OORef<FileSource> fileSource = OORef<FileSource>::create(dataset(), ObjectInitializationHint::LoadUserDefaults);
 
 		// Create pipeline scene node.
-		OORef<PipelineSceneNode> pipeline = OORef<PipelineSceneNode>::create(dataset(), Application::instance()->executionContext());
+		OORef<PipelineSceneNode> pipeline = OORef<PipelineSceneNode>::create(dataset(), ObjectInitializationHint::LoadUserDefaults);
 		pipeline->setDataProvider(fileSource);
 
 		// Insert pipeline into scene.

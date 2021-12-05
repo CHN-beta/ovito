@@ -48,7 +48,7 @@ class OVITO_STDMOD_EXPORT ColorCodingModifierDelegate : public ModifierDelegate
 public:
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 
 	/// Returns the type of input property container that this delegate can process.
 	PropertyContainerClassPtr inputContainerClass() const {
@@ -106,10 +106,10 @@ public:
 
 	/// Loads the user-defined default values of this object's parameter fields from the
 	/// application's settings store.
-	virtual void initializeObject(ExecutionContext executionContext) override;
+	virtual void initializeObject(ObjectInitializationHints hints) override;
 
 	/// Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const override;
+	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
 	/// Returns the range start value.
 	FloatType startValue() const { return startValueController() ? startValueController()->currentFloatValue() : 0; }
@@ -125,7 +125,7 @@ public:
 
 	/// Sets the start and end value to the minimum and maximum value of the selected input property
 	/// determined over the entire animation sequence.
-	bool adjustRangeGlobal(Promise<>&& operation);
+	bool adjustRangeGlobal(ObjectInitializationHints initializationHints, Promise<>&& operation);
 
 	/// Returns the current delegate of this modifier.
 	ColorCodingModifierDelegate* delegate() const {
@@ -144,7 +144,7 @@ public Q_SLOTS:
 
 	/// Sets the start and end value to the minimum and maximum value of the selected input property.
 	/// Returns true if successful.
-	bool adjustRange();
+	bool adjustRange(ObjectInitializationHints initializationHints);
 
 	/// Swaps the minimum and maximum values to reverse the color scale.
 	void reverseRange();
@@ -152,7 +152,7 @@ public Q_SLOTS:
 protected:
 
 	/// This method is called by the system after the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext) override;
+	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
 	/// Determines the range of values in the input data for the selected property.
 	bool determinePropertyValueRange(const PipelineFlowState& state, FloatType& min, FloatType& max) const;

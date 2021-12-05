@@ -218,7 +218,7 @@ void ParcasFileImporter::FrameLoader::loadFile()
 
     	PropertyObject* property;
 		if(propertyType != ParticlesObject::UserProperty)
-			property = particles()->createProperty(propertyType, true, executionContext());
+			property = particles()->createProperty(propertyType, true, initializationHints());
 		else
 			property = particles()->createProperty(propertyName, PropertyObject::Float, 1, 0, true);
 		extraProperties.emplace_back(property);
@@ -236,9 +236,9 @@ void ParcasFileImporter::FrameLoader::loadFile()
 	simulationCell()->setPbcFlags(box_x < 0, box_y < 0, box_z < 0);
 
 	// Create the required standard properties.
-	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
-	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
-	PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, false, executionContext());
+	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, initializationHints());
+	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, initializationHints());
+	PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty, false, initializationHints());
 
 	// Create particle types list.
     std::vector<std::array<char,5>> types(maxtype - mintype + 1);

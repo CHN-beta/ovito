@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -562,7 +562,7 @@ QVariant DataCollection::getAttributeValue(const PipelineObject* dataSource, con
 ******************************************************************************/
 AttributeDataObject* DataCollection::addAttribute(const QString& key, QVariant value, const PipelineObject* dataSource)
 {
-	return createObject<AttributeDataObject>(key, dataSource, ExecutionContext::Scripting, std::move(value));
+	return createObject<AttributeDataObject>(key, dataSource, ObjectInitializationHint::LoadFactoryDefaults, std::move(value));
 }
 
 /******************************************************************************
@@ -581,7 +581,7 @@ AttributeDataObject* DataCollection::setAttribute(const QString& key, QVariant v
 			}
 		}
 	}
-	return createObject<AttributeDataObject>(key, dataSource, ExecutionContext::Scripting, std::move(value));
+	return createObject<AttributeDataObject>(key, dataSource, ObjectInitializationHint::LoadFactoryDefaults, std::move(value));
 }
 
 /******************************************************************************

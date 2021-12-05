@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,7 +59,7 @@ AtomicStrainModifier::AtomicStrainModifier(DataSet* dataset) : ReferenceConfigur
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> AtomicStrainModifier::createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, ExecutionContext executionContext, TimeInterval validityInterval)
+Future<AsynchronousModifier::EnginePtr> AtomicStrainModifier::createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval)
 {
 	// Get the current particle positions.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -90,7 +90,7 @@ Future<AsynchronousModifier::EnginePtr> AtomicStrainModifier::createEngineIntern
 	const PropertyObject* refIdentifierProperty = refParticles->getProperty(ParticlesObject::IdentifierProperty);
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<AtomicStrainEngine>(modApp, executionContext, dataset(), validityInterval, particles, posProperty, inputCell, refPosProperty, refCell,
+	return std::make_shared<AtomicStrainEngine>(request, validityInterval, particles, posProperty, inputCell, refPosProperty, refCell,
 			identifierProperty, refIdentifierProperty,
 			cutoff(), affineMapping(), useMinimumImageConvention(), calculateDeformationGradients(), calculateStrainTensors(),
 			calculateNonaffineSquaredDisplacements(), calculateRotations(), calculateStretchTensors(), selectInvalidParticles());
@@ -325,12 +325,12 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
 /******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
-void AtomicStrainModifier::AtomicStrainEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void AtomicStrainModifier::AtomicStrainEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 
 	if(_inputFingerprint.hasChanged(particles))
-		modApp->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
 	OVITO_ASSERT(shearStrains());
 	OVITO_ASSERT(shearStrains()->size() == particles->elementCount());
@@ -359,7 +359,7 @@ void AtomicStrainModifier::AtomicStrainEngine::applyResults(TimePoint time, Modi
 	if(stretchTensors())
 		particles->createProperty(stretchTensors());
 
-	state.addAttribute(QStringLiteral("AtomicStrain.invalid_particle_count"), QVariant::fromValue(numInvalidParticles()), modApp);
+	state.addAttribute(QStringLiteral("AtomicStrain.invalid_particle_count"), QVariant::fromValue(numInvalidParticles()), request.modApp());
 
 	if(numInvalidParticles() != 0)
 		state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Could not compute local deformation for %1 particles because of too few neighbors. Increase cutoff radius to include more neighbors.").arg(numInvalidParticles())));

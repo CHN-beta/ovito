@@ -60,7 +60,7 @@ bool SimplifyMicrostructureModifier::OOMetaClass::isApplicableTo(const DataColle
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> SimplifyMicrostructureModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> SimplifyMicrostructureModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	// Get modifier input.
 	const Microstructure* microstructure = input.getObject<Microstructure>();
@@ -68,7 +68,7 @@ Future<AsynchronousModifier::EnginePtr> SimplifyMicrostructureModifier::createEn
 		throwException(tr("No microstructure found in the modifier's input."));
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<SimplifyMicrostructureEngine>(modApp, executionContext, microstructure, smoothingLevel(), kPB(), lambda());
+	return std::make_shared<SimplifyMicrostructureEngine>(request, microstructure, smoothingLevel(), kPB(), lambda());
 }
 
 /******************************************************************************
@@ -139,7 +139,7 @@ void SimplifyMicrostructureModifier::SimplifyMicrostructureEngine::smoothMeshIte
 /******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
-void SimplifyMicrostructureModifier::SimplifyMicrostructureEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void SimplifyMicrostructureModifier::SimplifyMicrostructureEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	// Output simplified microstructure to the pipeline state, overwriting the input microstructure.
 	if(const Microstructure* existingMicrostructure = state.getObject<Microstructure>())

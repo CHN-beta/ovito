@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,9 +35,9 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshReplicateModifierDelegate);
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
-PipelineStatus SurfaceMeshReplicateModifierDelegate::apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus SurfaceMeshReplicateModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	ReplicateModifier* mod = static_object_cast<ReplicateModifier>(modifier);
+	ReplicateModifier* mod = static_object_cast<ReplicateModifier>(request.modifier());
 
 	std::array<int,3> nPBC;
 	nPBC[0] = std::max(mod->numImagesX(),1);

@@ -25,14 +25,14 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
-#include <ovito/core/utilities/mesh/TriMesh.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
 #include "PrimitiveBase.h"
 #include "PseudoColorMapping.h"
 
 namespace Ovito {
 
 /**
- * \brief A triangle mesh to be rendered by a SceneRenderer implementation.
+ * \brief A triangle mesh to be rendered by a scene renderer.
  */
 class OVITO_CORE_EXPORT MeshPrimitive : public PrimitiveBase
 {
@@ -45,17 +45,17 @@ public:
 	Q_ENUMS(DepthSortingMode);
 
 	/// Sets the mesh to be stored in this buffer object.
-	virtual void setMesh(const TriMesh& mesh, DepthSortingMode depthSortingMode = AnyShapeMode) {
-		// Create a shallow copy of the mesh and store it in this buffer object.
-		_mesh = mesh;
+	void setMesh(DataOORef<const TriMeshObject> mesh, DepthSortingMode depthSortingMode = AnyShapeMode) {
+		_mesh = std::move(mesh);
 		_isMeshFullyOpaque.reset();
+		_depthSortingMode = depthSortingMode;
 	}
 
 	/// \brief Returns the number of triangle faces stored in the buffer.
-	int faceCount() { return _mesh.faceCount(); }
+	int faceCount() { return _mesh ? _mesh->faceCount() : 0; }
 
 	/// Returns the triangle mesh stored in this geometry buffer.
-	const TriMesh& mesh() const { return _mesh; }
+	const DataOORef<const TriMeshObject>& mesh() const { return _mesh; }
 
 	/// \brief Enables or disables the culling of triangles not facing the viewer.
 	void setCullFaces(bool enable) { _cullFaces = enable; }
@@ -67,13 +67,13 @@ public:
 	bool emphasizeEdges() const { return _emphasizeEdges; }
 
 	/// Sets whether mesh edges are rendered as wireframe.
-	virtual void setEmphasizeEdges(bool emphasizeEdges) { _emphasizeEdges = emphasizeEdges; }
+	void setEmphasizeEdges(bool emphasizeEdges) { _emphasizeEdges = emphasizeEdges; }
 
 	/// Indicates whether the mesh is fully opaque (no semi-transparent colors).
 	bool isFullyOpaque() const;
 
 	/// Sets the rendering color to be used if the mesh doesn't have per-vertex colors.
-	virtual void setUniformColor(const ColorA& color) { 
+	void setUniformColor(const ColorA& color) { 
 		_uniformColor = color; 
 		_isMeshFullyOpaque.reset();
 	}
@@ -85,7 +85,7 @@ public:
 	const std::vector<ColorA>& materialColors() const { return _materialColors; }
 
 	/// Sets array of materials referenced by the materialIndex() field of the mesh faces.
-	virtual void setMaterialColors(std::vector<ColorA> colors) { 
+	void setMaterialColors(std::vector<ColorA> colors) { 
 		_materialColors = std::move(colors); 
 		_isMeshFullyOpaque.reset();
 	}
@@ -99,7 +99,7 @@ public:
 	}
 
 	/// Activates rendering of multiple instances of the mesh.
-	virtual void setInstancedRendering(ConstDataBufferPtr perInstanceTMs, ConstDataBufferPtr perInstanceColors) {
+	void setInstancedRendering(ConstDataBufferPtr perInstanceTMs, ConstDataBufferPtr perInstanceColors) {
 		OVITO_ASSERT(perInstanceTMs);
 		OVITO_ASSERT(!perInstanceColors || perInstanceTMs->size() == perInstanceColors->size());
 		OVITO_ASSERT(!perInstanceColors || perInstanceColors->stride() == sizeof(ColorA));
@@ -129,6 +129,9 @@ public:
 		_faceSelectionColor = color;
 	}
 
+	/// Returns how a rasterizing renderer should handle semi-transparent meshes.
+	DepthSortingMode depthSortingMode() const { return _depthSortingMode; }
+
 private:
 
 	/// Controls the culling of triangles not facing the viewer.
@@ -141,7 +144,7 @@ private:
 	std::vector<ColorA> _materialColors;
 
 	/// The mesh storing the geometry.
-	TriMesh _mesh;
+	DataOORef<const TriMeshObject> _mesh;
 
 	/// The rendering color to be used if the mesh doesn't have per-vertex colors.
 	ColorA _uniformColor{1,1,1,1};
@@ -160,6 +163,9 @@ private:
 
 	/// The color used for rendering all selected faces.
 	Color _faceSelectionColor{1,0,0};
+
+	/// Controls how a rasterizing renderer should handle semi-transparent meshes.
+	DepthSortingMode _depthSortingMode = AnyShapeMode;
 };
 
 }	// End of namespace

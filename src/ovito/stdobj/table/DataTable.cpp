@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,7 +54,7 @@ void DataTable::OOMetaClass::initialize()
 /******************************************************************************
 * Creates a storage object for standard data table properties.
 ******************************************************************************/
-PropertyPtr DataTable::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
+PropertyPtr DataTable::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -77,7 +77,7 @@ PropertyPtr DataTable::OOMetaClass::createStandardPropertyInternal(DataSet* data
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	return PropertyPtr::create(dataset, executionContext, elementCount, dataType, componentCount, stride,
+	return PropertyPtr::create(dataset, initializationHints, elementCount, dataType, componentCount, stride,
 			propertyName, initializeMemory, type, componentNames);
 }
 
@@ -112,7 +112,7 @@ ConstPropertyPtr DataTable::getXValues() const
 	}
 	else if(const PropertyObject* yProperty = getY()) {
 		if(elementCount() != 0 && (intervalStart() != 0 || intervalEnd() != 0)) {
-			PropertyAccessAndRef<FloatType> xdata = OOClass().createStandardProperty(dataset(), elementCount(), XProperty, false, ExecutionContext::Scripting);
+			PropertyAccessAndRef<FloatType> xdata = OOClass().createStandardProperty(dataset(), elementCount(), XProperty, false, ObjectInitializationHint::LoadFactoryDefaults);
 			xdata.buffer()->setName(axisLabelX());
 			FloatType binSize = (intervalEnd() - intervalStart()) / xdata.size();
 			FloatType x = intervalStart() + binSize * FloatType(0.5);

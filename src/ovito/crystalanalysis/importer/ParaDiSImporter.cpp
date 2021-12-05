@@ -69,9 +69,9 @@ void ParaDiSImporter::FrameLoader::loadFile()
 		microstructureObj = state().makeMutable(existingMicrostructure);
 	}
 	else {
-		microstructureObj = state().createObject<Microstructure>(dataSource(), executionContext());
+		microstructureObj = state().createObject<Microstructure>(dataSource(), initializationHints() | ObjectInitializationHint::WithoutVisElement);
 		// Create a visual element for the dislocation lines.
-		microstructureObj->setVisElement(OORef<DislocationVis>::create(dataset(), executionContext()));
+		microstructureObj->setVisElement(OORef<DislocationVis>::create(dataset(), initializationHints()));
 	}
 	MicrostructureAccess microstructure(microstructureObj);
     microstructure.clearMesh();
@@ -254,11 +254,10 @@ void ParaDiSImporter::FrameLoader::loadFile()
 	PropertyObject* phaseProperty = microstructureObj->makeRegionsMutable()->expectMutableProperty(SurfaceMeshRegions::PhaseProperty);
 	DataOORef<MicrostructurePhase> phase = dynamic_object_cast<MicrostructurePhase>(phaseProperty->elementType(latticeStructure));
 	if(!phaseProperty->elementType(latticeStructure)) {
-		DataOORef<MicrostructurePhase> phase = new MicrostructurePhase(dataset());
+		DataOORef<MicrostructurePhase> phase = DataOORef<MicrostructurePhase>::create(dataset(), initializationHints());
 		phase->setNumericId(latticeStructure);
 		phase->setName(ParticleType::getPredefinedStructureTypeName(latticeStructure));
-        phase->initializeObject(executionContext());
-        phase->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), executionContext());
+        phase->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), initializationHints());
     	if(latticeStructure == ParticleType::PredefinedStructureType::BCC) {
             phase->setCrystalSymmetryClass(MicrostructurePhase::CrystalSymmetryClass::CubicSymmetry);
             if(phase->burgersVectorFamilies().empty()) {

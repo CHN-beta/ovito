@@ -69,14 +69,14 @@ public:
 	public:
 
 		/// Constructor.
-		AmbientOcclusionEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
+		AmbientOcclusionEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
 			ConstPropertyPtr particleRadii, const Box3& boundingBox, OORef<SceneRenderer> renderer);
 
 		/// Computes the modifier's results.
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		/// This method is called by the system whenever a parameter of the modifier changes.
 		/// The method can be overriden by subclasses to indicate to the caller whether the engine object should be 
@@ -89,7 +89,7 @@ public:
 		}
 
 		/// Returns the property storage that contains the computed per-particle brightness values.
-		const PropertyPtr& brightness() const { return _brightness; }
+		const DataBufferPtr& brightness() const { return _brightness; }
 
 		/// Returns the data buffer containing the input particle positions.
 		const ConstPropertyPtr& positions() const { return _positions; }
@@ -105,7 +105,7 @@ public:
 		ConstPropertyPtr _positions;
 		ConstPropertyPtr _particleRadii;
 		const Box3 _boundingBox;
-		PropertyPtr _brightness;
+		DataBufferPtr _brightness;
 		ParticleOrderingFingerprint _inputFingerprint;
 	};
 
@@ -117,7 +117,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 

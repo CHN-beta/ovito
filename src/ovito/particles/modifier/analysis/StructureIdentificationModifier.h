@@ -60,10 +60,10 @@ public:
 	public:
 
 		/// Constructor.
-		StructureIdentificationEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection = {});
+		StructureIdentificationEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection = {});
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		/// This method is called by the system whenever a parameter of the modifier changes.
 		/// The method can be overridden by subclasses to indicate to the caller whether the engine object should be 
@@ -112,7 +112,7 @@ public:
 
 		/// Gives subclasses the possibility to post-process per-particle structure types
 		/// before they are output to the data pipeline.
-		virtual PropertyPtr postProcessStructureTypes(TimePoint time, ModifierApplication* modApp, const PropertyPtr& structures) {
+		virtual PropertyPtr postProcessStructureTypes(const ModifierEvaluationRequest& request, const PropertyPtr& structures) {
 			return structures;
 		}
 
@@ -160,7 +160,7 @@ protected:
 	}
 
 	/// Create an instance of the ParticleType class to represent a structure type.
-	ElementType* createStructureType(int id, ParticleType::PredefinedStructureType predefType, ExecutionContext executionContext);
+	ElementType* createStructureType(int id, ParticleType::PredefinedStructureType predefType, ObjectInitializationHints initializationHints);
 
 private:
 

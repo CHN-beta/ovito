@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -67,13 +67,13 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 	
 	/// This method is called by the system after the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext) override;
+	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
 	/// Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const override;
+	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
 	/// Decides whether a preliminary viewport update is performed after the modifier has been
 	/// evaluated but before the entire pipeline evaluation is complete.
@@ -88,12 +88,12 @@ public:
 	void setIsolevel(FloatType value) { if(isolevelController()) isolevelController()->setCurrentFloatValue(value); }
 
 	/// Transfers voxel grid properties to the vertices of a surfaces mesh.
-	static bool transferPropertiesFromGridToMesh(Task& task, SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape, ExecutionContext executionContext);
+	static bool transferPropertiesFromGridToMesh(Task& task, SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape, ObjectInitializationHints initializationHints);
 
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
@@ -103,8 +103,8 @@ private:
 	public:
 
 		/// Constructor.
-		ComputeIsosurfaceEngine(const PipelineObject* dataSource, ExecutionContext executionContext, const TimeInterval& validityInterval, const VoxelGrid::GridDimensions& gridShape, ConstPropertyPtr property, int vectorComponent, DataOORef<SurfaceMesh> mesh, FloatType isolevel, std::vector<ConstPropertyPtr> auxiliaryProperties, DataOORef<DataTable> histogram) :
-			Engine(dataSource, executionContext, validityInterval),
+		ComputeIsosurfaceEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, const VoxelGrid::GridDimensions& gridShape, ConstPropertyPtr property, int vectorComponent, DataOORef<SurfaceMesh> mesh, FloatType isolevel, std::vector<ConstPropertyPtr> auxiliaryProperties, DataOORef<DataTable> histogram) :
+			Engine(request, validityInterval),
 			_gridShape(gridShape),
 			_property(std::move(property)),
 			_vectorComponent(std::max(vectorComponent, 0)),
@@ -117,7 +117,7 @@ private:
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		/// Returns the input voxel property.
 		const ConstPropertyPtr& property() const { return _property; }

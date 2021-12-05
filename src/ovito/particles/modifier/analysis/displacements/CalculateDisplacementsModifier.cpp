@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,10 +43,10 @@ CalculateDisplacementsModifier::CalculateDisplacementsModifier(DataSet* dataset)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void CalculateDisplacementsModifier::initializeObject(ExecutionContext executionContext)
+void CalculateDisplacementsModifier::initializeObject(ObjectInitializationHints hints)
 {
 	// Create vis element for vectors.
-	setVectorVis(OORef<VectorVis>::create(dataset(), executionContext));
+	setVectorVis(OORef<VectorVis>::create(dataset(), hints));
 	vectorVis()->setObjectTitle(tr("Displacements"));
 
 	// Don't show vectors by default, because too many vectors can make the
@@ -57,16 +57,16 @@ void CalculateDisplacementsModifier::initializeObject(ExecutionContext execution
 	// to the current particle positions.
 	vectorVis()->setReverseArrowDirection(false);
 	vectorVis()->setArrowPosition(VectorVis::Head);
-	if(executionContext == ExecutionContext::Interactive)
+	if(hints.testFlags(LoadUserDefaults))
 		vectorVis()->colorMapping()->setSourceProperty(ParticlePropertyReference(ParticlesObject::DisplacementMagnitudeProperty));
 
-	ReferenceConfigurationModifier::initializeObject(executionContext);
+	ReferenceConfigurationModifier::initializeObject(hints);
 }
 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CalculateDisplacementsModifier::createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, ExecutionContext executionContext, TimeInterval validityInterval)
+Future<AsynchronousModifier::EnginePtr> CalculateDisplacementsModifier::createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval)
 {
 	// Get the current particle positions.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -92,7 +92,7 @@ Future<AsynchronousModifier::EnginePtr> CalculateDisplacementsModifier::createEn
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<DisplacementEngine>(
-			modApp, executionContext, dataset(),
+			request,
 			validityInterval, posProperty, inputCell,
 			particles, refPosProperty, refCell,
 			identifierProperty, refIdentifierProperty,
@@ -170,14 +170,14 @@ void CalculateDisplacementsModifier::DisplacementEngine::perform()
 /******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
-void CalculateDisplacementsModifier::DisplacementEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void CalculateDisplacementsModifier::DisplacementEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	CalculateDisplacementsModifier* modifier = static_object_cast<CalculateDisplacementsModifier>(modApp->modifier());
+	CalculateDisplacementsModifier* modifier = static_object_cast<CalculateDisplacementsModifier>(request.modifier());
 
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 
 	if(_inputFingerprint.hasChanged(particles))
-		modApp->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
 	displacements()->setVisElement(modifier->vectorVis());
 	particles->createProperty(displacements());

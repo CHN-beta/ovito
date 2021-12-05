@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,19 +45,29 @@ IMPLEMENT_OVITO_CLASS(ExpressionSelectionModifierDelegate);
 ******************************************************************************/
 ExpressionSelectionModifier::ExpressionSelectionModifier(DataSet* dataset) : DelegatingModifier(dataset)
 {
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void ExpressionSelectionModifier::initializeObject(ObjectInitializationHints hints)
+{
 	// Let this modifier operate on particles by default.
-	createDefaultModifierDelegate(ExpressionSelectionModifierDelegate::OOClass(), QStringLiteral("ParticlesExpressionSelectionModifierDelegate"), ExecutionContext::Scripting);
+	createDefaultModifierDelegate(ExpressionSelectionModifierDelegate::OOClass(), QStringLiteral("ParticlesExpressionSelectionModifierDelegate"), hints);
+	
+	DelegatingModifier::initializeObject(hints);
 }
 
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
-PipelineStatus ExpressionSelectionModifierDelegate::apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus ExpressionSelectionModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	ExpressionSelectionModifier* expressionMod = static_object_cast<ExpressionSelectionModifier>(modifier);
+	ExpressionSelectionModifier* expressionMod = static_object_cast<ExpressionSelectionModifier>(request.modifier());
 
 	// The current animation frame number.
-	int currentFrame = dataset()->animationSettings()->timeToFrame(time);
+	int currentFrame = dataset()->animationSettings()->timeToFrame(request.time());
 
 	// Look up the input property container.
    	DataObjectPath objectPath = state.expectMutableObject(inputContainerRef());
@@ -83,7 +93,7 @@ PipelineStatus ExpressionSelectionModifierDelegate::apply(Modifier* modifier, Pi
 	std::atomic_size_t nselected(0);
 
 	// Generate the output selection property.
-	PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty, false, Application::instance()->executionContext());
+	PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty, false, request.initializationHints());
 
 	// Evaluate Boolean expression for every input data element.
 	evaluator->evaluate([&selProperty, &nselected](size_t elementIndex, size_t componentIndex, double value) {
@@ -99,12 +109,12 @@ PipelineStatus ExpressionSelectionModifierDelegate::apply(Modifier* modifier, Pi
 	// If the expression contains a time-dependent term, then we have to restrict the validity interval
 	// of the generated selection to the current animation time.
 	if(evaluator->isTimeDependent())
-		state.intersectStateValidity(time);
+		state.intersectStateValidity(request.time());
 
 	// Report the total number of selected elements as a pipeline attribute.
-	state.addAttribute(QStringLiteral("ExpressionSelection.count"), QVariant::fromValue(nselected.load()), modApp);
+	state.addAttribute(QStringLiteral("ExpressionSelection.count"), QVariant::fromValue(nselected.load()), request.modApp());
 	// For backward compatibility with OVITO 2.9.0.
-	state.addAttribute(QStringLiteral("SelectExpression.num_selected"), QVariant::fromValue(nselected.load()), modApp);
+	state.addAttribute(QStringLiteral("SelectExpression.num_selected"), QVariant::fromValue(nselected.load()), request.modApp());
 
 	// Update status display in the UI.
 	QString statusMessage = tr("%1 out of %2 elements selected (%3%)").arg(nselected.load()).arg(selProperty.size()).arg((FloatType)nselected.load() * 100 / std::max((size_t)1,selProperty.size()), 0, 'f', 1);

@@ -25,7 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/core/utilities/mesh/TriMesh.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
 #include <QReadWriteLock>
@@ -80,11 +80,11 @@ public:
 	}
 
 	/// Stores the particle shape geometry generated from a JSON string in the internal cache.
-	void storeParticleShapeInCache(const QByteArray& jsonString, const TriMeshPtr& mesh);
+	void storeParticleShapeInCache(const QByteArray& jsonString, const DataOORef<const TriMeshObject>& mesh);
 
 	/// Looks up a particle shape geometry in the internal cache that was previously
 	/// generated from a JSON string.
-	TriMeshPtr lookupParticleShapeInCache(const QByteArray& jsonString) const;
+	DataOORef<const TriMeshObject> lookupParticleShapeInCache(const QByteArray& jsonString) const;
 
 protected:
 
@@ -94,7 +94,7 @@ protected:
 private:
 
 	/// A lookup map that holds geometries that have been generated from JSON strings.
-	QHash<QByteArray, TriMeshPtr> _particleShapeCache;
+	QHash<QByteArray, DataOORef<const TriMeshObject>> _particleShapeCache;
 
 	/// Synchronization object for multi-threaded access to the particle shape cache.
 	mutable QReadWriteLock _cacheSynchronization;
@@ -143,7 +143,7 @@ private:
 		void parseSphereUnionShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString);
 
 		/// Assigns a mesh-based shape to a particle type.
-		void setParticleTypeShape(int typeId, TriMeshPtr shapeMesh);
+		void setParticleTypeShape(int typeId, DataOORef<const TriMeshObject> shapeMesh);
 
 	private:
 

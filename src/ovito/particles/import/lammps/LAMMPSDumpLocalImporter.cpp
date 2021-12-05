@@ -237,7 +237,7 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 				QStringList fileColumnNames = tokens.mid(2);
 
 				// Parse data columns.
-				InputColumnReader columnParser(_columnMapping, bonds(), executionContext());
+				InputColumnReader columnParser(_columnMapping, bonds(), initializationHints());
 
 				// If possible, use memory-mapped file access for best performance.
 				const char* s_start;

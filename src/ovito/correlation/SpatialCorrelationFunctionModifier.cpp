@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //  Copyright 2017 Lars Pastewka
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -108,13 +108,13 @@ bool SpatialCorrelationFunctionModifier::OOMetaClass::isApplicableTo(const DataC
 * This method is called by the system when the modifier has been inserted
 * into a pipeline.
 ******************************************************************************/
-void SpatialCorrelationFunctionModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
+void SpatialCorrelationFunctionModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
-	AsynchronousModifier::initializeModifier(time, modApp, executionContext);
+	AsynchronousModifier::initializeModifier(request);
 
 	// Use the first available particle property from the input state as data source when the modifier is newly created.
-	if((sourceProperty1().isNull() || sourceProperty2().isNull()) && executionContext == ExecutionContext::Interactive) {
-		const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
+	if((sourceProperty1().isNull() || sourceProperty2().isNull()) && request.initializationHints().testFlags(LoadUserDefaults)) {
+		const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
 		if(const ParticlesObject* container = input.getObject<ParticlesObject>()) {
 			ParticlePropertyReference bestProperty;
 			for(const PropertyObject* property : container->properties()) {
@@ -133,7 +133,7 @@ void SpatialCorrelationFunctionModifier::initializeModifier(TimePoint time, Modi
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> SpatialCorrelationFunctionModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> SpatialCorrelationFunctionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	// Get the source data.
 	if(sourceProperty1().isNull())
@@ -162,9 +162,7 @@ Future<AsynchronousModifier::EnginePtr> SpatialCorrelationFunctionModifier::crea
 		throwException(tr("Simulation cell is degenerate. Cannot compute correlation function."));
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<CorrelationAnalysisEngine>(modApp, 
-													   executionContext, 
-													   dataset(),
+	return std::make_shared<CorrelationAnalysisEngine>(request,
 													   posProperty,
 													   property1,
 													   std::max(0, sourceProperty1().vectorComponent()),
@@ -778,23 +776,23 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::perform()
 /******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
-void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	// Output real-space correlation function to the pipeline as a data table.
-	DataTable* realSpaceCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-real-space"), modApp, ExecutionContext::Scripting, DataTable::Line, tr("Real-space correlation"), realSpaceCorrelation());
+	DataTable* realSpaceCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-real-space"), request.modApp(), request.initializationHints(), DataTable::Line, tr("Real-space correlation"), realSpaceCorrelation());
 	realSpaceCorrelationObj->setAxisLabelX(tr("Distance r"));
 	realSpaceCorrelationObj->setIntervalStart(0);
 	realSpaceCorrelationObj->setIntervalEnd(_realSpaceCorrelationRange);
 
 	// Output real-space RDF to the pipeline as a data table.
-	DataTable* realSpaceRDFObj = state.createObject<DataTable>(QStringLiteral("correlation-real-space-rdf"), modApp, ExecutionContext::Scripting, DataTable::Line, tr("Real-space RDF"), realSpaceRDF());
+	DataTable* realSpaceRDFObj = state.createObject<DataTable>(QStringLiteral("correlation-real-space-rdf"), request.modApp(), request.initializationHints(), DataTable::Line, tr("Real-space RDF"), realSpaceRDF());
 	realSpaceRDFObj->setAxisLabelX(tr("Distance r"));
 	realSpaceRDFObj->setIntervalStart(0);
 	realSpaceRDFObj->setIntervalEnd(_realSpaceCorrelationRange);
 
 	// Output short-ranged part of the real-space correlation function to the pipeline as a data table.
 	if(neighCorrelation()) {
-		DataTable* neighCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-neighbor"), modApp, ExecutionContext::Scripting, DataTable::Line, tr("Neighbor correlation"), neighCorrelation());
+		DataTable* neighCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-neighbor"), request.modApp(), request.initializationHints(), DataTable::Line, tr("Neighbor correlation"), neighCorrelation());
 		neighCorrelationObj->setAxisLabelX(tr("Distance r"));
 		neighCorrelationObj->setIntervalStart(0);
 		neighCorrelationObj->setIntervalEnd(neighCutoff());
@@ -802,24 +800,24 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::applyResults
 
 	// Output short-ranged part of the RDF to the pipeline as a data table.
 	if(neighRDF()) {
-		DataTable* neighRDFObj = state.createObject<DataTable>(QStringLiteral("correlation-neighbor-rdf"), modApp, ExecutionContext::Scripting, DataTable::Line, tr("Neighbor RDF"), neighRDF());
+		DataTable* neighRDFObj = state.createObject<DataTable>(QStringLiteral("correlation-neighbor-rdf"), request.modApp(), request.initializationHints(), DataTable::Line, tr("Neighbor RDF"), neighRDF());
 		neighRDFObj->setAxisLabelX(tr("Distance r"));
 		neighRDFObj->setIntervalStart(0);
 		neighRDFObj->setIntervalEnd(neighCutoff());
 	}
 
 	// Output reciprocal-space correlation function to the pipeline as a data table.
-	DataTable* reciprocalSpaceCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-reciprocal-space"), modApp, ExecutionContext::Scripting, DataTable::Line, tr("Reciprocal-space correlation"), reciprocalSpaceCorrelation());
+	DataTable* reciprocalSpaceCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-reciprocal-space"), request.modApp(), request.initializationHints(), DataTable::Line, tr("Reciprocal-space correlation"), reciprocalSpaceCorrelation());
 	reciprocalSpaceCorrelationObj->setAxisLabelX(tr("Wavevector q"));
 	reciprocalSpaceCorrelationObj->setIntervalStart(0);
 	reciprocalSpaceCorrelationObj->setIntervalEnd(_reciprocalSpaceCorrelationRange);
 
 	// Output global attributes.
-	state.addAttribute(QStringLiteral("CorrelationFunction.mean1"), QVariant::fromValue(mean1()), modApp);
-	state.addAttribute(QStringLiteral("CorrelationFunction.mean2"), QVariant::fromValue(mean2()), modApp);
-	state.addAttribute(QStringLiteral("CorrelationFunction.variance1"), QVariant::fromValue(variance1()), modApp);
-	state.addAttribute(QStringLiteral("CorrelationFunction.variance2"), QVariant::fromValue(variance2()), modApp);
-	state.addAttribute(QStringLiteral("CorrelationFunction.covariance"), QVariant::fromValue(covariance()), modApp);
+	state.addAttribute(QStringLiteral("CorrelationFunction.mean1"), QVariant::fromValue(mean1()), request.modApp());
+	state.addAttribute(QStringLiteral("CorrelationFunction.mean2"), QVariant::fromValue(mean2()), request.modApp());
+	state.addAttribute(QStringLiteral("CorrelationFunction.variance1"), QVariant::fromValue(variance1()), request.modApp());
+	state.addAttribute(QStringLiteral("CorrelationFunction.variance2"), QVariant::fromValue(variance2()), request.modApp());
+	state.addAttribute(QStringLiteral("CorrelationFunction.covariance"), QVariant::fromValue(covariance()), request.modApp());
 }
 
 }	// End of namespace

@@ -84,7 +84,7 @@ class OVITO_PARTICLES_EXPORT BondsObject : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// \brief Create a storage object for standard bond properties.
-		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t bondsCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t bondsCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const override;
 
 		/// Indicates whether this kind of property container supports picking of individual elements in the viewports.
 		virtual bool supportsViewportPicking() const override { return true; }
@@ -103,7 +103,7 @@ class OVITO_PARTICLES_EXPORT BondsObject : public PropertyContainer
 		virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override { return this->displayName(); }
 
 		/// Returns a default color for an ElementType given its numeric type ID.
-		virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext) const override;
+		virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ObjectInitializationHints initializationHints) const override;
 
 	protected:
 
@@ -135,7 +135,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 	
 	/// Convinience method that returns the bond topology property.
 	const PropertyObject* getTopology() const { return getProperty(TopologyProperty); }
@@ -144,7 +144,7 @@ public:
 	void generatePeriodicImageProperty(const ParticlesObject* particles, const SimulationCellObject* simulationCellObject);
 
 	/// Creates new bonds making sure bonds are not created twice.
-	size_t addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const ParticlesObject* particles, ExecutionContext executionContext, const std::vector<PropertyPtr>& bondProperties = {}, DataOORef<const BondType> bondType = {});
+	size_t addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const ParticlesObject* particles, ObjectInitializationHints initializationHints, const std::vector<PropertyPtr>& bondProperties = {}, DataOORef<const BondType> bondType = {});
 };
 
 /**

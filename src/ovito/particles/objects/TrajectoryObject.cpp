@@ -51,7 +51,7 @@ void TrajectoryObject::OOMetaClass::initialize()
 /******************************************************************************
 * Creates a storage object for standard properties.
 ******************************************************************************/
-PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
+PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -89,7 +89,7 @@ PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(DataSe
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, executionContext, elementCount, dataType, componentCount, stride,
+	PropertyPtr property = PropertyPtr::create(dataset, initializationHints, elementCount, dataType, componentCount, stride,
 								propertyName, false, type, componentNames);
 
 	// Initialize memory if requested.
@@ -124,16 +124,16 @@ TrajectoryObject::TrajectoryObject(DataSet* dataset) : PropertyContainer(dataset
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void TrajectoryObject::initializeObject(ExecutionContext executionContext)
+void TrajectoryObject::initializeObject(ObjectInitializationHints hints)
 {
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());
 
 	// Create and attach a default visualization element for rendering the trajectory lines.
-	if(!visElement())
-		setVisElement(OORef<TrajectoryVis>::create(dataset(), executionContext));
+	if(!visElement() && !hints.testFlag(WithoutVisElement))
+		setVisElement(OORef<TrajectoryVis>::create(dataset(), hints));
 
-	PropertyContainer::initializeObject(executionContext);
+	PropertyContainer::initializeObject(hints);
 }
 
 }	// End of namespace

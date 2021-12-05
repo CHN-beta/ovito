@@ -27,7 +27,7 @@
 #include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/mesh/util/CapPolygonTessellator.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/core/utilities/mesh/TriMesh.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
 #include "GSDImporter.h"
 #include "GSDFile.h"
 
@@ -79,7 +79,7 @@ bool GSDImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 /******************************************************************************
 * Stores the particle shape geometry generated from a JSON string in the internal cache.
 ******************************************************************************/
-void GSDImporter::storeParticleShapeInCache(const QByteArray& jsonString, const TriMeshPtr& mesh)
+void GSDImporter::storeParticleShapeInCache(const QByteArray& jsonString, const DataOORef<const TriMeshObject>& mesh)
 {
 	QWriteLocker locker(&_cacheSynchronization);
 	_particleShapeCache.insert(jsonString, mesh);
@@ -89,7 +89,7 @@ void GSDImporter::storeParticleShapeInCache(const QByteArray& jsonString, const 
 * Looks up a particle shape geometry in the internal cache that was previously
 * generated from a JSON string.
 ******************************************************************************/
-TriMeshPtr GSDImporter::lookupParticleShapeInCache(const QByteArray& jsonString) const
+DataOORef<const TriMeshObject> GSDImporter::lookupParticleShapeInCache(const QByteArray& jsonString) const
 {
 	QReadLocker locker(&_cacheSynchronization);
 	if(auto iter = _particleShapeCache.find(jsonString); iter != _particleShapeCache.end())
@@ -179,7 +179,7 @@ void GSDImporter::FrameLoader::loadFile()
 
 	{
 		// Read particle positions.
-		PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
+		PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, initializationHints());
 		if(gsd.hasChunk("particles/position", frameNumber))
 			gsd.readFloatArray("particles/position", frameNumber, posProperty.begin(), numParticles, posProperty.componentCount());
 		else
@@ -189,7 +189,7 @@ void GSDImporter::FrameLoader::loadFile()
 
 	{
 		// Create particle types.
-		PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+		PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, initializationHints());
 		for(int i = 0; i < particleTypeNames.size(); i++)
 			addNumericType(ParticlesObject::OOClass(), typeProperty.buffer(), i, QString::fromUtf8(particleTypeNames[i]));
 
@@ -264,7 +264,7 @@ void GSDImporter::FrameLoader::loadFile()
 		if(isCanceled()) return;
 
 		// Convert to OVITO format.
-		PropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds()->createProperty(BondsObject::TopologyProperty, false, executionContext());
+		PropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds()->createProperty(BondsObject::TopologyProperty, false, initializationHints());
 		auto bondTopoPtr = bondList.cbegin();
 		for(ParticleIndexPair& bond : bondTopologyProperty) {
 			if(*bondTopoPtr >= (qlonglong)numParticles)
@@ -287,7 +287,7 @@ void GSDImporter::FrameLoader::loadFile()
 				bondTypeNames.push_back(QByteArrayLiteral("A"));
 
 			// Create bond types.
-			PropertyAccess<int> bondTypeProperty = bonds()->createProperty(BondsObject::TypeProperty, false, executionContext());
+			PropertyAccess<int> bondTypeProperty = bonds()->createProperty(BondsObject::TypeProperty, false, initializationHints());
 			for(int i = 0; i < bondTypeNames.size(); i++)
 				addNumericType(BondsObject::OOClass(), bondTypeProperty.buffer(), i, QString::fromUtf8(bondTypeNames[i]));
 
@@ -327,7 +327,7 @@ PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, con
 	PropertyObject* prop = nullptr;
 	if(gsd.hasChunk(chunkName, frameNumber)) {
 		if(propertyType != PropertyObject::GenericUserProperty) {
-			prop = container->createProperty(propertyType, false, executionContext());
+			prop = container->createProperty(propertyType, false, initializationHints());
 		}
 		else {
 			QString propertyName(chunkName);
@@ -349,7 +349,7 @@ PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, con
 		// If the GSD file contains the requested chunk in some other trajectory frame(s), just not in the current frame, then
 		// fill the property array with the default value for that chunk as specified by the HOOMD standard. 
 		if(propertyType != PropertyObject::GenericUserProperty) {
-			prop = container->createProperty(propertyType, false, executionContext());
+			prop = container->createProperty(propertyType, false, initializationHints());
 		}
 		else {
 			QString propertyName(chunkName);
@@ -374,26 +374,20 @@ PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, con
 /******************************************************************************
 * Assigns a mesh-based shape to a particle type.
 ******************************************************************************/
-void GSDImporter::FrameLoader::setParticleTypeShape(int typeId, TriMeshPtr shapeMesh)
+void GSDImporter::FrameLoader::setParticleTypeShape(int typeId, DataOORef<const TriMeshObject> shapeMesh)
 {
 	const PropertyObject* existingTypeProperty = particles()->expectProperty(ParticlesObject::TypeProperty);
 	const ParticleType* existingType = static_object_cast<ParticleType>(existingTypeProperty->elementType(typeId));
 	OVITO_ASSERT(existingType);
 
 	// Check whether the shape mesh is already assigned to the existing particle type.
-	if(!existingType || (existingType->shapeMesh() && existingType->shapeMesh()->mesh() == shapeMesh))
+	if(!existingType || existingType->shapeMesh() == shapeMesh)
 		return;
-
-	// Create the data object for the mesh.
-	DataOORef<TriMeshObject> shapeObject = DataOORef<TriMeshObject>::create(dataset(), executionContext());
-	shapeObject->setMesh(std::move(shapeMesh));
-	shapeObject->setIdentifier(QStringLiteral("generated"));	// Indicate to the ParticleType by assigning this ID that the shape mesh has been generated by the file importer (and was not assigned by the user).
-	shapeObject->setVisElement(nullptr);
 
 	// Assign the shape to the particle type.
 	PropertyObject* typeProperty = particles()->makeMutable(existingTypeProperty);
 	ParticleType* mutableType = typeProperty->makeMutable(existingType);
-	mutableType->setShapeMesh(shapeObject);
+	mutableType->setShapeMesh(std::move(shapeMesh));
 	mutableType->setShape(ParticlesVis::ParticleShape::Mesh);
 	mutableType->setRadius(1.0);
 	mutableType->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::radius), SHADOW_PROPERTY_FIELD(ParticleType::shape)});
@@ -405,7 +399,7 @@ void GSDImporter::FrameLoader::setParticleTypeShape(int typeId, TriMeshPtr shape
 void GSDImporter::FrameLoader::parseParticleShape(int typeId, const QByteArray& shapeSpecString)
 {
 	// Check if an existing geometry is already stored in the cache for the JSON string.
-	TriMeshPtr cacheShapeMesh = _importer->lookupParticleShapeInCache(shapeSpecString);
+	DataOORef<const TriMeshObject> cacheShapeMesh = _importer->lookupParticleShapeInCache(shapeSpecString);
 	if(cacheShapeMesh) {
 		// Assign shape to particle type.
 		setParticleTypeShape(typeId, std::move(cacheShapeMesh));
@@ -494,7 +488,7 @@ void GSDImporter::FrameLoader::parseEllipsoidShape(int typeId, QJsonObject defin
 		throw Exception(tr("Invalid 'c' field in 'Ellipsoid' particle shape definition in GSD file. Value must not be negative."));
 
 	// Create the 'Aspherical Shape' particle property if it doesn't exist yet.
-	PropertyAccess<Vector3> ashapeProperty = particles()->createProperty(ParticlesObject::AsphericalShapeProperty, true, executionContext());
+	PropertyAccess<Vector3> ashapeProperty = particles()->createProperty(ParticlesObject::AsphericalShapeProperty, true, initializationHints());
 
 	// Assign the [a,b,c] values to those particles which are of the given type.
 	ConstPropertyAccess<int> typeProperty = particles()->expectProperty(ParticlesObject::TypeProperty);
@@ -561,7 +555,8 @@ void GSDImporter::FrameLoader::parsePolygonShape(int typeId, QJsonObject definit
 	}
 
 	// Create triangulation of (convex or concave) polygon.
-	std::shared_ptr<TriMesh> triMesh = std::make_shared<TriMesh>();
+	DataOORef<TriMeshObject> triMesh = DataOORef<TriMeshObject>::create(dataset(), initializationHints() | ObjectInitializationHint::WithoutVisElement);
+	triMesh->setIdentifier(QStringLiteral("generated"));	// Indicate to the ParticleType by assigning this ID that the shape mesh has been generated by the file importer (and was not assigned by the user).
 	CapPolygonTessellator tessellator(*triMesh, 2, false, true);
 	tessellator.beginPolygon();
 	tessellator.beginContour();
@@ -662,7 +657,7 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
 
 	// Construct the convex hull of the vertices.
 	// This yields a half-edge surface mesh data structure.
-	SurfaceMeshAccess mesh(DataOORef<SurfaceMesh>::create(dataset(), ExecutionContext::Scripting));
+	SurfaceMeshAccess mesh(DataOORef<SurfaceMesh>::create(dataset(), ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement));
 	mesh.constructConvexHull(std::move(vertices));
 	mesh.joinCoplanarFaces();
 
@@ -670,7 +665,7 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
 	FloatType roundingRadius = definition.value("rounding_radius").toDouble();
 	std::vector<Vector3> vertexNormals;
 	if(roundingRadius > 0) {
-		SurfaceMeshAccess roundedMesh(DataOORef<SurfaceMesh>::create(dataset(), ExecutionContext::Scripting));
+		SurfaceMeshAccess roundedMesh(DataOORef<SurfaceMesh>::create(dataset(), ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement));
 
 		// Maps edges of the old mesh to edges of the new mesh.
 		std::vector<SurfaceMeshAccess::edge_index> edgeMapping(mesh.edgeCount());
@@ -775,7 +770,8 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
 	}
 
 	// Convert half-edge mesh into a conventional triangle mesh for visualization.
-	std::shared_ptr<TriMesh> triMesh = std::make_shared<TriMesh>();
+	DataOORef<TriMeshObject> triMesh = DataOORef<TriMeshObject>::create(dataset(), initializationHints() | ObjectInitializationHint::WithoutVisElement);
+	triMesh->setIdentifier(QStringLiteral("generated"));	// Indicate to the ParticleType by assigning this ID that the shape mesh has been generated by the file importer (and was not assigned by the user).
 	mesh.convertToTriMesh(*triMesh, false);
 	if(triMesh->faceCount() == 0) {
 		qWarning() << "GSD file reader: Convex hull construction did not produce a valid triangle mesh for particle type" << typeId;
@@ -806,7 +802,8 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
 void GSDImporter::FrameLoader::parseMeshShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString)
 {
 	// Parse the list of vertices.
-	std::shared_ptr<TriMesh> triMesh = std::make_shared<TriMesh>();
+	DataOORef<TriMeshObject> triMesh = DataOORef<TriMeshObject>::create(dataset(), initializationHints() | ObjectInitializationHint::WithoutVisElement);
+	triMesh->setIdentifier(QStringLiteral("generated"));	// Indicate to the ParticleType by assigning this ID that the shape mesh has been generated by the file importer (and was not assigned by the user).
 	const QJsonValue vertexArrayVal = definition.value("vertices");
 	if(!vertexArrayVal.isArray())
 		throw Exception(tr("Missing or invalid 'vertex' array in 'Mesh' particle shape definition in GSD file."));
@@ -894,12 +891,14 @@ void GSDImporter::FrameLoader::parseSphereUnionShape(int typeId, QJsonObject def
 		throw Exception(tr("Invalid 'SphereUnion' particle shape definition in GSD file: Length of diameters array must match length of centers array."));
 
 	// Build template for a triangulated (ico)sphere:
-	TriMesh sphereTemplate = TriMesh::createIcosphere(_roundingResolution - 1);
-	const int unitSphereVertexCount = sphereTemplate.vertexCount();
-	const int unitSphereFaceCount = sphereTemplate.faceCount();
+	DataOORef<TriMeshObject> sphereTemplate = DataOORef<TriMeshObject>::create(dataset(), initializationHints() | ObjectInitializationHint::WithoutVisElement);
+	sphereTemplate->createIcosphere(_roundingResolution - 1);
+	const int unitSphereVertexCount = sphereTemplate->vertexCount();
+	const int unitSphereFaceCount = sphereTemplate->faceCount();
 
 	// Generate the triangle mesh for the union of spheres by duplicating the unit sphere template.
-	std::shared_ptr<TriMesh> triMesh = std::make_shared<TriMesh>();
+	DataOORef<TriMeshObject> triMesh = DataOORef<TriMeshObject>::create(dataset(), initializationHints() | ObjectInitializationHint::WithoutVisElement);
+	triMesh->setIdentifier(QStringLiteral("generated"));	// Indicate to the ParticleType by assigning this ID that the shape mesh has been generated by the file importer (and was not assigned by the user).
 	triMesh->setVertexCount(unitSphereVertexCount * centers.size());
 	triMesh->setFaceCount(unitSphereFaceCount * centers.size());
 	triMesh->setHasNormals(true);
@@ -910,12 +909,12 @@ void GSDImporter::FrameLoader::parseSphereUnionShape(int typeId, QJsonObject def
 		const Point3 center = centers[sphereIndex];
 		const FloatType diameter = 0.5 * diameters[sphereIndex];
 		const int baseVertex = sphereIndex * unitSphereVertexCount;
-		for(const Point3& p : sphereTemplate.vertices())
+		for(const Point3& p : sphereTemplate->vertices())
 			*vertex++ = Point3(p.x() * diameter + center.x(), p.y() * diameter + center.y(), p.z() * diameter + center.z());
-		for(const TriMeshFace& inFace : sphereTemplate.faces()) {
+		for(const TriMeshFace& inFace : sphereTemplate->faces()) {
 			for(int v = 0; v < 3; v++) {
 				face->setVertex(v, inFace.vertex(v) + baseVertex);
-				const Point3& vpos = sphereTemplate.vertex(inFace.vertex(v));
+				const Point3& vpos = sphereTemplate->vertex(inFace.vertex(v));
 				*normal++ = Vector3(vpos.x(), vpos.y(), vpos.z());
 			}
 			++face;

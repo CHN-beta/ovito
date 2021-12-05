@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,7 +44,7 @@ class DislocationAnalysisEngine : public StructureIdentificationModifier::Struct
 public:
 
 	/// Constructor.
-	DislocationAnalysisEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+	DislocationAnalysisEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
 			const OORefVector<ElementType>& structureTypes, int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
 			ConstPropertyPtr particleSelection,
 			ConstPropertyPtr crystalClusters,
@@ -56,7 +56,7 @@ public:
 	virtual void perform() override;
 
 	/// Injects the computed results into the data pipeline.
-	virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	/// Returns the array of atom cluster IDs.
 	const PropertyPtr& atomClusters() const { return _atomClusters; }
@@ -89,7 +89,7 @@ public:
 	const ConstPropertyPtr& crystalClusters() const { return _crystalClusters; }
 
 	/// Computes statistical information on the identified dislocation lines and outputs it to the pipeline as data tables and global attributes.
-	static FloatType generateDislocationStatistics(const PipelineObject* dataSource, ExecutionContext executionContext, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure);
+	static FloatType generateDislocationStatistics(const PipelineObject* dataSource, ObjectInitializationHints initializationHints, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure);
 
 private:
 

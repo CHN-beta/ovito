@@ -41,6 +41,9 @@ IMPLEMENT_OVITO_CLASS(RefMaker);
 ******************************************************************************/
 RefMaker::RefMaker(DataSet* dataset) : _dataset(dataset)
 {
+#ifdef OVITO_DEBUG
+	_datasetWeakPointer = dataset;
+#endif
 }
 
 /******************************************************************************
@@ -67,6 +70,26 @@ void RefMaker::throwException(const QString& msg) const
 {
 	throw Exception(msg, dataset());
 }
+
+#ifdef OVITO_DEBUG
+/******************************************************************************
+* Returns the dataset this object belongs to.
+******************************************************************************/
+DataSet* RefMaker::dataset() const 
+{ 
+	OVITO_ASSERT(_dataset == _datasetWeakPointer.data());
+	return _dataset; 
+}
+
+/******************************************************************************
+* Changes the dataset this object belongs to.
+******************************************************************************/
+void RefMaker::setDataset(DataSet* dataset) 
+{ 
+	_dataset = dataset;
+	_datasetWeakPointer = dataset; 
+}
+#endif
 
 /******************************************************************************
 * Returns the value stored in a non-animatable property field of this RefMaker object.
@@ -651,7 +674,7 @@ void RefMaker::walkNode(QSet<RefTarget*>& nodes, const RefMaker* node)
 * This function is recursive, i.e., it also loads default parameter values for
 * referenced objects (when the PROPERTY_FIELD_MEMORIZE flag is set for this RefMaker's reference field).
 ******************************************************************************/
-void RefMaker::initializeObject(ExecutionContext executionContext)
+void RefMaker::initializeObject(ObjectInitializationHints hints)
 {
 	// Iterate over all property fields in the class hierarchy.
 	for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
@@ -660,9 +683,9 @@ void RefMaker::initializeObject(ExecutionContext executionContext)
 				// If it's a reference field, recursively call initializeObject() on the reference object(s).
 				if(!field->isVector()) {
 					if(RefTarget* target = field->_singleReferenceReadFunc(this)) {
-						target->initializeObject(executionContext);
+						target->initializeObject(hints);
 
-						if(executionContext == ExecutionContext::Interactive) {
+						if(hints.testFlag(LoadUserDefaults)) {
 #ifndef OVITO_DISABLE_QSETTINGS
 							// If it's a controller type, load default controller value.
 							if(Controller* ctrl = dynamic_object_cast<Controller>(target)) {
@@ -690,14 +713,14 @@ void RefMaker::initializeObject(ExecutionContext executionContext)
 					int count = getVectorReferenceFieldSize(field);
 					for(int i = 0; i < count; i++) {
 						if(RefTarget* target = getVectorReferenceFieldTarget(field, i)) {
-							target->initializeObject(executionContext);
+							target->initializeObject(hints);
 						}
 					}
 				}
 			}
 			else {
 				// If it's a property field, load the user-defined default value.
-				if(executionContext == ExecutionContext::Interactive) {
+				if(hints.testFlag(LoadUserDefaults)) {
 					field->loadDefaultValue(this);
 				}
 			}

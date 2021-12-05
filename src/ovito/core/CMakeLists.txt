@@ -91,6 +91,8 @@ SET(SourceFiles
 	dataset/data/TransformedDataObject.cpp
 	dataset/data/camera/AbstractCameraObject.cpp
 	dataset/data/AttributeDataObject.cpp
+	dataset/data/mesh/TriMeshObject.cpp
+	dataset/data/mesh/TriMeshVis.cpp
 	dataset/pipeline/ActiveObject.cpp
 	dataset/pipeline/PipelineFlowState.cpp
 	dataset/pipeline/PipelineCache.cpp
@@ -122,7 +124,6 @@ SET(SourceFiles
 	utilities/concurrent/ThreadSafeTask.cpp
 	utilities/concurrent/TaskManager.cpp
 	utilities/concurrent/AsynchronousTask.cpp
-	utilities/mesh/TriMesh.cpp
 	rendering/SceneRenderer.cpp
 	rendering/RenderSettings.cpp
 	rendering/FrameBuffer.cpp

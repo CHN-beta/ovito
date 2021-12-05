@@ -72,9 +72,9 @@ void PropertyContainerClass::registerStandardProperty(int typeId, QString name, 
 /******************************************************************************
 * Creates a new property object for a standard property of this container class.
 ******************************************************************************/
-PropertyPtr PropertyContainerClass::createStandardProperty(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const 
+PropertyPtr PropertyContainerClass::createStandardProperty(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const 
 {
-	PropertyPtr property = createStandardPropertyInternal(dataset, elementCount, type, initializeMemory, executionContext, containerPath);
+	PropertyPtr property = createStandardPropertyInternal(dataset, elementCount, type, initializeMemory, initializationHints, containerPath);
 	if(property && property->type() != 0)
 		property->setTitle(standardPropertyTitle(property->type()));
 	return property;
@@ -83,7 +83,7 @@ PropertyPtr PropertyContainerClass::createStandardProperty(DataSet* dataset, siz
 /******************************************************************************
 * Returns the default color for a numeric type ID.
 ******************************************************************************/
-Color PropertyContainerClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext) const
+Color PropertyContainerClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ObjectInitializationHints initializationHints) const
 {
 	// Palette of standard colors initially assigned to new element types:
 	static const Color defaultTypeColors[] = {

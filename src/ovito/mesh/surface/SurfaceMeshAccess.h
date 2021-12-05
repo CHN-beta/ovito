@@ -542,8 +542,8 @@ public:
     }
 
     /// Adds a new standard vertex property to the mesh.
-    PropertyObject* createVertexProperty(SurfaceMeshVertices::Type ptype, bool initializeMemory, ExecutionContext executionContext) {
-        return mutableVertices().createProperty(ptype, initializeMemory, executionContext);
+    PropertyObject* createVertexProperty(SurfaceMeshVertices::Type ptype, bool initializeMemory, ObjectInitializationHints initializationHints) {
+        return mutableVertices().createProperty(ptype, initializeMemory, initializationHints);
     }
 
 	/// Add a new user-defined vertex property to the mesh.
@@ -562,8 +562,8 @@ public:
     }
 
     /// Adds a new standard face property to the mesh.
-    PropertyObject* createFaceProperty(SurfaceMeshFaces::Type ptype, bool initializeMemory, ExecutionContext executionContext) {
-        return mutableFaces().createProperty(ptype, initializeMemory, executionContext);
+    PropertyObject* createFaceProperty(SurfaceMeshFaces::Type ptype, bool initializeMemory, ObjectInitializationHints initializationHints) {
+        return mutableFaces().createProperty(ptype, initializeMemory, initializationHints);
     }
 
 	/// Add a new user-defined face property to the mesh.
@@ -582,8 +582,8 @@ public:
     }
 
     /// Adds a new standard region property to the mesh.
-    PropertyObject* createRegionProperty(SurfaceMeshRegions::Type ptype, bool initializeMemory, ExecutionContext executionContext) {
-        return mutableRegions().createProperty(ptype, initializeMemory, executionContext);
+    PropertyObject* createRegionProperty(SurfaceMeshRegions::Type ptype, bool initializeMemory, ObjectInitializationHints initializationHints) {
+        return mutableRegions().createProperty(ptype, initializeMemory, initializationHints);
     }
 
 	/// Add a new user-defined region property to the mesh.
@@ -619,8 +619,8 @@ public:
     /// Deletes all vertices from the mesh which are not connected to any half-edge.
     void deleteIsolatedVertices();
 
-    /// Triangulates the polygonal faces of this mesh and outputs the results as a TriMesh object.
-    void convertToTriMesh(TriMesh& outputMesh, bool smoothShading, const boost::dynamic_bitset<>& faceSubset = boost::dynamic_bitset<>{}, std::vector<size_t>* originalFaceMap = nullptr, bool autoGenerateOppositeFaces = false) const;
+    /// Triangulates the polygonal faces of this mesh and outputs the results as a TriMeshObject.
+    void convertToTriMesh(TriMeshObject& outputMesh, bool smoothShading, const boost::dynamic_bitset<>& faceSubset = boost::dynamic_bitset<>{}, std::vector<size_t>* originalFaceMap = nullptr, bool autoGenerateOppositeFaces = false) const;
 
     /// Computes the unit normal vector of a mesh face.
     Vector3 computeFaceNormal(face_index face) const;

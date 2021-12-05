@@ -235,7 +235,7 @@ inline const T* dynamic_object_cast(const U* obj) noexcept {
 template<class T, class U>
 inline T* static_object_cast(U* obj) noexcept {
 	OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
-		qPrintable(QString("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
+		qPrintable(QStringLiteral("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
 	return static_cast<T*>(obj);
 }
 
@@ -249,7 +249,7 @@ inline T* static_object_cast(U* obj) noexcept {
 template<class T, class U>
 inline const T* static_object_cast(const U* obj) noexcept {
 	OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
-		qPrintable(QString("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
+		qPrintable(QStringLiteral("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
 	return static_cast<const T*>(obj);
 }
 
@@ -290,7 +290,7 @@ inline Pointer<T> dynamic_object_cast(Pointer<U>&& obj) noexcept {
 template<class T, class U, template<typename> class Pointer>
 inline Pointer<T> static_object_cast(const Pointer<U>& obj) noexcept {
 	OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
-		qPrintable(QString("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
+		qPrintable(QStringLiteral("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
 	return static_pointer_cast<T, U>(obj);
 }
 
@@ -303,7 +303,7 @@ inline Pointer<T> static_object_cast(const Pointer<U>& obj) noexcept {
 template<class T, class U, template<typename> class Pointer>
 inline Pointer<T> static_object_cast(Pointer<U>&& obj) noexcept {
 	OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
-		qPrintable(QString("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
+		qPrintable(QStringLiteral("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
 	return static_pointer_cast<T, U>(std::move(obj));
 }
 

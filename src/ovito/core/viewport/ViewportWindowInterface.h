@@ -24,6 +24,8 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/rendering/LinePrimitive.h>
+#include <ovito/core/rendering/TextPrimitive.h>
 
 namespace Ovito { 
 	class UserInterface;   // Note: This class is defined in another plugin module.
@@ -140,17 +142,11 @@ private:
 	int _renderDebugCounter = 0;
 #endif
 
-	/// The primitive for rendering the viewport's caption text.
-	std::shared_ptr<TextPrimitive> _captionBuffer;
-
 	/// The primitive for rendering the viewport's orientation indicator.
-	std::shared_ptr<LinePrimitive> _orientationTripodGeometry;
+	LinePrimitive _orientationTripodGeometry;
 
 	/// The primitive for rendering the viewport's orientation indicator labels.
-	std::shared_ptr<TextPrimitive> _orientationTripodLabels[3];
-
-	/// The primitive for rendering the frame around the visible viewport area.
-	std::shared_ptr<ImagePrimitive> _renderFrameOverlay;
+	TextPrimitive _orientationTripodLabels[3];
 };
 
 /// This macro registers a viewport window implementation in ViewportWindowInterface::registry() at compile time.

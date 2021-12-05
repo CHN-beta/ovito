@@ -58,24 +58,29 @@ public:
 
 public:
 
-	/// Constructor.
-	CylinderPrimitive(Shape shape, ShadingMode shadingMode, RenderingQuality renderingQuality) :
-		_shape(shape), _shadingMode(shadingMode), _renderingQuality(renderingQuality) {}
-
 	/// \brief Returns the shading mode for elements.
 	ShadingMode shadingMode() const { return _shadingMode; }
+
+	/// \brief Changes the shading mode for elements.
+	void setShadingMode(ShadingMode mode) { _shadingMode = mode; }
 
 	/// \brief Returns the rendering quality of elements.
 	RenderingQuality renderingQuality() const { return _renderingQuality; }
 
+	/// \brief Changes the rendering quality of elements.
+	void setRenderingQuality(RenderingQuality quality) { _renderingQuality = quality; }
+
 	/// \brief Returns the selected element shape.
 	Shape shape() const { return _shape; }
+
+	/// \brief Changes the element shape.
+	void setShape(Shape shape) { _shape = shape; }
 
 	/// Returns the cylinder radius assigned to all primtives.
 	FloatType uniformRadius() const { return _uniformRadius; }
 
 	/// Sets the cylinder radius of all primitives to the given value.
-	virtual void setUniformRadius(FloatType radius) {
+	void setUniformRadius(FloatType radius) {
 		_uniformRadius = radius;
 	}
 
@@ -83,7 +88,7 @@ public:
 	const Color& uniformColor() const { return _uniformColor; }
 
 	/// Sets the color of all primitives to the given value.
-	virtual void setUniformColor(const Color& color) {
+	void setUniformColor(const Color& color) {
 		_uniformColor = color;
 	}
 
@@ -100,7 +105,7 @@ public:
 	const ConstDataBufferPtr& headPositions() const { return _headPositions; }
 
 	/// Sets the coordinates of the base and the head points.
-	virtual void setPositions(ConstDataBufferPtr baseCoordinates, ConstDataBufferPtr headCoordinates) {
+	void setPositions(ConstDataBufferPtr baseCoordinates, ConstDataBufferPtr headCoordinates) {
 		OVITO_ASSERT(baseCoordinates && headCoordinates);
 		OVITO_ASSERT(baseCoordinates->dataType() == DataBuffer::Float && baseCoordinates->componentCount() == 3);
 		OVITO_ASSERT(headCoordinates->dataType() == DataBuffer::Float && headCoordinates->componentCount() == 3);
@@ -113,13 +118,13 @@ public:
 	const ConstDataBufferPtr& colors() const { return _colors; }
 
 	/// Sets the per-primitive (or per-vertex) colors.
-	virtual void setColors(ConstDataBufferPtr colors) {
+	void setColors(ConstDataBufferPtr colors) {
 		OVITO_ASSERT(!colors || (colors->dataType() == DataBuffer::Float && (colors->componentCount() == 3 || colors->componentCount() == 1)));
 		_colors = std::move(colors);
 	}
 
 	/// Sets the transparency values of the primitives.
-	virtual void setTransparencies(ConstDataBufferPtr transparencies) {
+	void setTransparencies(ConstDataBufferPtr transparencies) {
 		OVITO_ASSERT(!transparencies || (transparencies->dataType() == DataBuffer::Float && transparencies->componentCount() == 1));
 		_transparencies = std::move(transparencies);
 	}
@@ -128,7 +133,7 @@ public:
 	const ConstDataBufferPtr& transparencies() const { return _transparencies; }
 
 	/// Sets the radii of the primitives.
-	virtual void setRadii(ConstDataBufferPtr radii) {
+	void setRadii(ConstDataBufferPtr radii) {
 		OVITO_ASSERT(!radii || (radii->dataType() == DataBuffer::Float && radii->componentCount() == 1));
 		_radii = std::move(radii);
 	}
@@ -147,13 +152,13 @@ public:
 private:
 
 	/// Controls the shading.
-	ShadingMode _shadingMode;
+	ShadingMode _shadingMode = NormalShading;
 
 	/// Controls the rendering quality.
-	RenderingQuality _renderingQuality;
+	RenderingQuality _renderingQuality = MediumQuality;
 
 	/// The shape of the elements.
-	Shape _shape;
+	Shape _shape = CylinderShape;
 
 	/// The mapping from pseudo-color values to RGB colors.
 	PseudoColorMapping _pseudoColorMapping;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,9 +51,7 @@ QVector<DataObjectReference> BondsComputePropertyModifierDelegate::OOMetaClass::
 * modifier's results.
 ******************************************************************************/
 std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> BondsComputePropertyModifierDelegate::createEngine(
-				const PipelineObject* dataSource, 
-				ExecutionContext executionContext, 
-				TimePoint time,
+				const ModifierEvaluationRequest& request,
 				const PipelineFlowState& input,
 				const ConstDataObjectPath& containerPath,
 				PropertyPtr outputProperty,
@@ -62,15 +60,13 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> BondsCom
 {
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	return std::make_shared<Engine>(
-			dataSource,
-			executionContext, 
+			request, 
 			input.stateValidity(),
-			time,
 			std::move(outputProperty),
 			containerPath,
 			std::move(selectionProperty),
 			std::move(expressions),
-			dataset()->animationSettings()->timeToFrame(time),
+			dataset()->animationSettings()->timeToFrame(request.time()),
 			input);
 }
 
@@ -78,10 +74,8 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> BondsCom
 * Constructor.
 ******************************************************************************/
 BondsComputePropertyModifierDelegate::Engine::Engine(
-		const PipelineObject* dataSource, 
-		ExecutionContext executionContext, 
+		const ModifierEvaluationRequest& request, 
 		const TimeInterval& validityInterval,
-		TimePoint time,
 		PropertyPtr outputProperty,
 		const ConstDataObjectPath& containerPath,
 		ConstPropertyPtr selectionProperty,
@@ -89,10 +83,8 @@ BondsComputePropertyModifierDelegate::Engine::Engine(
 		int frameNumber,
 		const PipelineFlowState& input) :
 	ComputePropertyModifierDelegate::PropertyComputeEngine(
-			dataSource, 
-			executionContext, 
+			request, 
 			validityInterval,
-			time,
 			input,
 			containerPath,
 			std::move(outputProperty),
@@ -151,12 +143,12 @@ void BondsComputePropertyModifierDelegate::Engine::perform()
 /******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
-void BondsComputePropertyModifierDelegate::Engine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void BondsComputePropertyModifierDelegate::Engine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	if(_inputFingerprint.hasChanged(state.expectObject<ParticlesObject>()))
-		modApp->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
-	PropertyComputeEngine::applyResults(time, modApp, state);
+	PropertyComputeEngine::applyResults(request, state);
 }
 
 }	// End of namespace

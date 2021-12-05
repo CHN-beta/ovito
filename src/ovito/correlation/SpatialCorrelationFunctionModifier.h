@@ -84,12 +84,12 @@ public:
 	Q_INVOKABLE SpatialCorrelationFunctionModifier(DataSet* dataset);
 
 	/// This method is called by the system after the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext) override;
+	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
@@ -99,9 +99,7 @@ private:
 	public:
 
 		/// Constructor.
-		CorrelationAnalysisEngine(const PipelineObject* dataSource, 
-								  ExecutionContext executionContext, 
-								  DataSet* dataset,
+		CorrelationAnalysisEngine(const ModifierEvaluationRequest& request,
 								  ConstPropertyPtr positions,
 								  ConstPropertyPtr sourceProperty1,
 								  size_t vecComponent1,
@@ -114,20 +112,20 @@ private:
 								  FloatType neighCutoff,
 								  int numberOfNeighBins,
 								  AveragingDirectionType averagingDirection) :
-			Engine(dataSource, executionContext),
+			Engine(request),
 			_positions(std::move(positions)),
 			_sourceProperty1(std::move(sourceProperty1)), _vecComponent1(vecComponent1),
 			_sourceProperty2(std::move(sourceProperty2)), _vecComponent2(vecComponent2),
 			_simCell(simCell), _fftGridSpacing(fftGridSpacing),
 			_applyWindow(applyWindow), _neighCutoff(neighCutoff),
 			_averagingDirection(averagingDirection),
-			_neighCorrelation(doComputeNeighCorrelation ? DataTable::OOClass().createUserProperty(dataset, numberOfNeighBins, PropertyObject::Float, 1, 0, tr("Neighbor C(r)"), true, DataTable::YProperty) : nullptr) {}
+			_neighCorrelation(doComputeNeighCorrelation ? DataTable::OOClass().createUserProperty(request.dataset(), numberOfNeighBins, PropertyObject::Float, 1, 0, tr("Neighbor C(r)"), true, DataTable::YProperty) : nullptr) {}
 
 		/// Computes the modifier's results and stores them in this object for later retrieval.
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		/// This method is called by the system whenever a parameter of the modifier changes.
 		/// The method can be overriden by subclasses to indicate to the caller whether the engine object should be 

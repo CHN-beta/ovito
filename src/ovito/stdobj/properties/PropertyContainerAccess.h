@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -116,12 +116,12 @@ public:
 	}
 
     /// Creates a new standard property in the container.
-    PropertyObject* createProperty(int ptype, bool initializeMemory, ExecutionContext executionContext) {
+    PropertyObject* createProperty(int ptype, bool initializeMemory, ObjectInitializationHints initializationHints) {
 		// Write current element count back to container before allocating a new property array.
 		updateElementCount();
 		
 		// Create the property object in the wrapped container.
-		PropertyObject* property = mutableContainer()->createProperty(ptype, initializeMemory, executionContext);
+		PropertyObject* property = mutableContainer()->createProperty(ptype, initializeMemory, initializationHints);
 		
 		// Update our array memory pointers corresponding to this property.
 		updateMutablePropertyPointer(property);

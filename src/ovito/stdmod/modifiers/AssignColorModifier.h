@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ class OVITO_STDMOD_EXPORT AssignColorModifierDelegate : public ModifierDelegate
 public:
 
 	/// \brief Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 
 	/// Returns the type of input property container that this delegate can process.
 	PropertyContainerClassPtr inputContainerClass() const {
@@ -96,10 +96,10 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;
+	virtual void initializeObject(ObjectInitializationHints hints) override;
 
 	/// Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const override;
+	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
 	/// Returns the color that is assigned to the selected elements.
 	Color color() const { return colorController() ? colorController()->currentColorValue() : Color(0,0,0); }

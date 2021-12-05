@@ -187,7 +187,7 @@ bool SceneRenderer::renderNode(SceneNode* node, SynchronousOperation operation)
 			// Evaluate data pipeline of object node and render the results.
 			PipelineEvaluationFuture pipelineEvaluation;
 			if(waitForLongOperationsEnabled()) {
-				pipelineEvaluation = pipeline->evaluateRenderingPipeline(time());
+				pipelineEvaluation = pipeline->evaluateRenderingPipeline(PipelineEvaluationRequest(operation.initializationHints(), time()));
 				if(!operation.waitForFuture(pipelineEvaluation))
 					return false;
 
@@ -289,14 +289,13 @@ void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSc
 ******************************************************************************/
 ConstDataBufferPtr SceneRenderer::getNodeTrajectory(const SceneNode* node)
 {
-	DataBufferAccessAndRef<Point3> vertices;
 	Controller* ctrl = node->transformationController();
 	if(ctrl && ctrl->isAnimated()) {
 		AnimationSettings* animSettings = node->dataset()->animationSettings();
 		int firstFrame = animSettings->firstFrame();
 		int lastFrame = animSettings->lastFrame();
 		OVITO_ASSERT(lastFrame >= firstFrame);
-		vertices = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, lastFrame - firstFrame + 1, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(dataset(), lastFrame - firstFrame + 1, DataBuffer::Float, 3, 0, false);
 		auto v = vertices.begin();
 		for(int frame = firstFrame; frame <= lastFrame; frame++) {
 			TimeInterval iv;
@@ -304,8 +303,9 @@ ConstDataBufferPtr SceneRenderer::getNodeTrajectory(const SceneNode* node)
 			*v++ = Point3::Origin() + pos;
 		}
 		OVITO_ASSERT(v == vertices.end());
+		return vertices.take();
 	}
-	return vertices.take();
+	return {};
 }
 
 /******************************************************************************
@@ -323,7 +323,7 @@ void SceneRenderer::renderNodeTrajectory(const SceneNode* node)
 
 			// Render lines connecting the trajectory points.
 			if(trajectory->size() >= 2) {
-				DataBufferAccessAndRef<Point3> lineVertices = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, (trajectory->size() - 1) * 2, DataBuffer::Float, 3, 0, false);
+				DataBufferAccessAndRef<Point3> lineVertices = DataBufferPtr::create(dataset(), (trajectory->size() - 1) * 2, DataBuffer::Float, 3, 0, false);
 				ConstDataBufferAccess<Point3> trajectoryPoints(trajectory);
 				for(size_t index = 0; index < trajectory->size(); index++) {
 					if(index != 0)
@@ -331,16 +331,16 @@ void SceneRenderer::renderNodeTrajectory(const SceneNode* node)
 					if(index != trajectory->size() - 1)
 						lineVertices[index * 2] = trajectoryPoints[index];
 				}
-				std::shared_ptr<LinePrimitive> trajLine = createLinePrimitive();
-				trajLine->setPositions(lineVertices.take());
-				trajLine->setUniformColor(ColorA(1.0, 0.8, 0.4));
+				LinePrimitive trajLine;
+				trajLine.setPositions(lineVertices.take());
+				trajLine.setUniformColor(ColorA(1.0, 0.8, 0.4));
 				renderLines(trajLine);
 			}
 
 			// Render the trajectory points themselves using marker primitives.
-			std::shared_ptr<MarkerPrimitive> frameMarkers = createMarkerPrimitive(MarkerPrimitive::DotShape);
-			frameMarkers->setPositions(std::move(trajectory));
-			frameMarkers->setColor(ColorA(1, 1, 1));
+			MarkerPrimitive frameMarkers(MarkerPrimitive::DotShape);
+			frameMarkers.setPositions(std::move(trajectory));
+			frameMarkers.setColor(ColorA(1, 1, 1));
 			renderMarkers(frameMarkers);
 		}
 		else {
@@ -409,7 +409,7 @@ void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOver
 
 		try {
 			// Render modifier.
-			mod->renderModifierVisual(time(), pipeline, modApp, this, renderOverlay);
+			mod->renderModifierVisual(ModifierEvaluationRequest(ObjectInitializationHint::LoadUserDefaults, time(), modApp), pipeline, this, renderOverlay);
 		}
 		catch(const Exception& ex) {
 			// Swallow exceptions, because we are in interactive rendering mode.
@@ -430,10 +430,10 @@ void SceneRenderer::render2DPolyline(const Point2* points, int count, const Colo
 		return;
 	OVITO_ASSERT(count >= 2);
 
-	std::shared_ptr<LinePrimitive> primitive = createLinePrimitive();
-	primitive->setUniformColor(color);
+	LinePrimitive primitive;
+	primitive.setUniformColor(color);
 
-	DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, (closed ? count : count-1) * 2, DataBuffer::Float, 3, 0, false);
+	DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(dataset(), (closed ? count : count-1) * 2, DataBuffer::Float, 3, 0, false);
 	Point3* lineSegment = vertices.begin();
 	for(int i = 0; i < count - 1; i++, lineSegment += 2) {
 		lineSegment[0] = Point3(points[i].x(), points[i].y(), 0.0);
@@ -445,7 +445,7 @@ void SceneRenderer::render2DPolyline(const Point2* points, int count, const Colo
 		lineSegment += 2;
 	}
 	OVITO_ASSERT(lineSegment == vertices.end());
-	primitive->setPositions(vertices.take());
+	primitive.setPositions(vertices.take());
 
 	// Set up model-view-projection matrices.
 	ViewProjectionParameters originalProjParams = projParams();
@@ -564,8 +564,8 @@ void SceneRenderer::renderGrid()
 		// Allocate vertex buffer.
 		int numVertices = 2 * (numLinesX + numLinesY);
 
-		DataBufferAccessAndRef<Point3> vertexPositions = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, numVertices, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, numVertices, DataBuffer::Float, 4, 0, false);
+		DataBufferAccessAndRef<Point3> vertexPositions = DataBufferPtr::create(dataset(), numVertices, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(dataset(), numVertices, DataBuffer::Float, 4, 0, false);
 
 		// Build lines array.
 		ColorA color = Viewport::viewportColor(ViewportSettings::COLOR_GRID);
@@ -599,11 +599,10 @@ void SceneRenderer::renderGrid()
 		OVITO_ASSERT(c == vertexColors.end());
 
 		// Render grid lines.
-		if(!_constructionGridGeometry)
-			_constructionGridGeometry = createLinePrimitive();
-		_constructionGridGeometry->setPositions(vertexPositions.take());
-		_constructionGridGeometry->setColors(vertexColors.take());
-		renderLines(_constructionGridGeometry);
+		LinePrimitive primitive;
+		primitive.setPositions(vertexPositions.take());
+		primitive.setColors(vertexColors.take());
+		renderLines(primitive);
 	}
 	else {
 		addToLocalBoundingBox(Box3(Point3(xstartF, ystartF, 0), Point3(xendF, yendF, 0)));
@@ -638,15 +637,17 @@ void TextPrimitive::setPositionViewport(const SceneRenderer* renderer, const Poi
 bool MeshPrimitive::isFullyOpaque() const
 { 
 	if(_isMeshFullyOpaque.has_value() == false) {
-		if(_perInstanceColors)
+		if(!_mesh)
+			_isMeshFullyOpaque = true;
+		else if(_perInstanceColors)
 			_isMeshFullyOpaque = boost::algorithm::none_of(ConstDataBufferAccess<ColorA>(_perInstanceColors), [](const ColorA& c) { return c.a() != FloatType(1); });		
-		else if(mesh().hasVertexColors())
-			_isMeshFullyOpaque = (uniformColor().a() >= FloatType(1)) && boost::algorithm::none_of(mesh().vertexColors(), [](const ColorA& c) { return c.a() != FloatType(1); });
-		else if(mesh().hasVertexPseudoColors())
+		else if(mesh()->hasVertexColors())
+			_isMeshFullyOpaque = (uniformColor().a() >= FloatType(1)) && boost::algorithm::none_of(mesh()->vertexColors(), [](const ColorA& c) { return c.a() != FloatType(1); });
+		else if(mesh()->hasVertexPseudoColors())
 			_isMeshFullyOpaque = (uniformColor().a() >= FloatType(1));
-		else if(mesh().hasFaceColors())
-			_isMeshFullyOpaque = (uniformColor().a() >= FloatType(1)) && boost::algorithm::none_of(mesh().faceColors(), [](const ColorA& c) { return c.a() != FloatType(1); });
-		else if(mesh().hasFacePseudoColors())
+		else if(mesh()->hasFaceColors())
+			_isMeshFullyOpaque = (uniformColor().a() >= FloatType(1)) && boost::algorithm::none_of(mesh()->faceColors(), [](const ColorA& c) { return c.a() != FloatType(1); });
+		else if(mesh()->hasFacePseudoColors())
 			_isMeshFullyOpaque = (uniformColor().a() >= FloatType(1));
 		else if(!materialColors().empty())
 			_isMeshFullyOpaque = boost::algorithm::none_of(materialColors(), [](const ColorA& c) { return c.a() != FloatType(1); });

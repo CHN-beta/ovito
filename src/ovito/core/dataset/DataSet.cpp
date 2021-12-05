@@ -75,10 +75,10 @@ DataSet::~DataSet()
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void DataSet::initializeObject(ExecutionContext executionContext)
+void DataSet::initializeObject(ObjectInitializationHints hints)
 {
 	if(!viewportConfig())
-		setViewportConfig(createDefaultViewportConfiguration(executionContext));
+		setViewportConfig(createDefaultViewportConfiguration(hints));
 	if(!animationSettings())
 		setAnimationSettings(new AnimationSettings(this));
 	if(!sceneRoot())
@@ -88,7 +88,7 @@ void DataSet::initializeObject(ExecutionContext executionContext)
 	if(!renderSettings())
 		setRenderSettings(new RenderSettings(this));
 
-	RefTarget::initializeObject(executionContext);
+	RefTarget::initializeObject(hints);
 }
 
 /******************************************************************************
@@ -102,7 +102,7 @@ TaskManager& DataSet::taskManager() const
 /******************************************************************************
 * Returns a viewport configuration that is used as template for new scenes.
 ******************************************************************************/
-OORef<ViewportConfiguration> DataSet::createDefaultViewportConfiguration(ExecutionContext executionContext)
+OORef<ViewportConfiguration> DataSet::createDefaultViewportConfiguration(ObjectInitializationHints initializationHints)
 {
 	UndoSuspender noUndo(undoStack());
 
@@ -125,18 +125,18 @@ OORef<ViewportConfiguration> DataSet::createDefaultViewportConfiguration(Executi
 		perspectiveView->setCameraTransformation(ViewportSettings::getSettings().coordinateSystemOrientation() * AffineTransformation::lookAlong({90, -120, 100}, {-90, 120, -100}, {0,0,1}).inverse());
 
 		// Set up the 4-pane layout of the viewports.
-		OORef<ViewportLayoutCell> rootLayoutCell = OORef<ViewportLayoutCell>::create(this, executionContext);
+		OORef<ViewportLayoutCell> rootLayoutCell = OORef<ViewportLayoutCell>::create(this, initializationHints);
 		rootLayoutCell->setSplitDirection(ViewportLayoutCell::Horizontal);
-		rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create(this, executionContext));
-		rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create(this, executionContext));
+		rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create(this, initializationHints));
+		rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create(this, initializationHints));
 		rootLayoutCell->children()[0]->setSplitDirection(ViewportLayoutCell::Vertical);
-		rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(this, executionContext));
-		rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(this, executionContext));
+		rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(this, initializationHints));
+		rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(this, initializationHints));
 		rootLayoutCell->children()[0]->children()[0]->setViewport(topView);
 		rootLayoutCell->children()[0]->children()[1]->setViewport(leftView);
 		rootLayoutCell->children()[1]->setSplitDirection(ViewportLayoutCell::Vertical);
-		rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(this, executionContext));
-		rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(this, executionContext));
+		rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(this, initializationHints));
+		rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(this, initializationHints));
 		rootLayoutCell->children()[1]->children()[0]->setViewport(frontView);
 		rootLayoutCell->children()[1]->children()[1]->setViewport(perspectiveView);
 		viewConfig->setLayoutRootCell(std::move(rootLayoutCell));
@@ -176,7 +176,6 @@ bool DataSet::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "DataSet::referenceEvent", "Reference events may only be processed in the main thread.");
 
 	if(event.type() == ReferenceEvent::TargetChanged) {
-
 		if(source == sceneRoot()) {
 
 			// If any of the scene pipelines change, the scene-ready state needs to be reset (unless it's still unfulfilled).
@@ -353,10 +352,13 @@ void DataSet::makeSceneReady(bool forceReevaluation)
 	_pipelineEvaluationWatcher.reset();
 	_pipelineEvaluation.reset(animationSettings()->time());
 	_sceneReadyTime = animationSettings()->time();
+	PipelineEvaluationRequest request(
+		Application::instance()->executionContext() == ExecutionContext::Interactive ? ObjectInitializationHint::LoadUserDefaults : ObjectInitializationHint::LoadFactoryDefaults,
+		animationSettings()->time());
 
 	sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
 		// Request visual elements too.
-		_pipelineEvaluation = pipeline->evaluateRenderingPipeline(animationSettings()->time());
+		_pipelineEvaluation = pipeline->evaluateRenderingPipeline(request);
 		if(!_pipelineEvaluation.isFinished()) {
 			// Wait for this state to become available and return a pending future.
 			return false;
@@ -713,7 +715,7 @@ void DataSet::saveToFile(const QString& filePath) const
     	throwException(tr("Failed to open output file '%1' for writing: %2").arg(absolutePath).arg(fileStream.errorString()));
 
 	QDataStream dataStream(&fileStream);
-	ObjectSaveStream stream(dataStream, SynchronousOperation::create(taskManager()));
+	ObjectSaveStream stream(dataStream, SynchronousOperation::create(taskManager(), ObjectInitializationHint::LoadFactoryDefaults));
 	stream.saveObject(this);
 	stream.close();
 
@@ -735,7 +737,7 @@ void DataSet::loadFromFile(const QString& filePath)
     	throwException(tr("Failed to open file '%1' for reading: %2").arg(absolutePath).arg(fileStream.errorString()));
 
 	QDataStream dataStream(&fileStream);
-	ObjectLoadStream stream(dataStream, SynchronousOperation::create(taskManager()));
+	ObjectLoadStream stream(dataStream, SynchronousOperation::create(taskManager(), ObjectInitializationHint::LoadFactoryDefaults));
 	stream.setDataset(this);
 	OORef<DataSet> dataSet = stream.loadObject<DataSet>();
 	stream.close();

@@ -99,11 +99,11 @@ ColorLegendOverlay::ColorLegendOverlay(DataSet* dataset) : ViewportOverlay(datas
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void ColorLegendOverlay::initializeObject(ExecutionContext executionContext)
+void ColorLegendOverlay::initializeObject(ObjectInitializationHints hints)
 {
 	// If there is no ColorCodingModifier in the scene, initialize the overlay to use 
 	// the first available typed property as color source.
-	if(executionContext == ExecutionContext::Interactive && modifier() == nullptr && !sourceProperty()) {
+	if(hints.testFlag(LoadUserDefaults) && modifier() == nullptr && !sourceProperty()) {
 		dataset()->sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
 			const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(false);
 			for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(PropertyObject::OOClass())) {
@@ -118,7 +118,7 @@ void ColorLegendOverlay::initializeObject(ExecutionContext executionContext)
 		});
 	}
 
-	ViewportOverlay::initializeObject(executionContext);
+	ViewportOverlay::initializeObject(hints);
 }
 
 /******************************************************************************
@@ -139,7 +139,7 @@ void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter,
 
 			// Evaulate pipeline and obtain output data collection.
 			if(!isInteractive) {
-				PipelineEvaluationFuture pipelineEvaluation = pipeline->evaluatePipeline(time);
+				PipelineEvaluationFuture pipelineEvaluation = pipeline->evaluatePipeline(PipelineEvaluationRequest(operation.initializationHints(), time));
 				if(!operation.waitForFuture(pipelineEvaluation))
 					return false;
 				// Look up the typed property.
@@ -239,8 +239,9 @@ void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter,
 			endValue = std::numeric_limits<FloatType>::quiet_NaN();
 			if(ModifierApplication* modApp = modifier()->someModifierApplication()) {
 				QVariant minValue, maxValue;
+				PipelineEvaluationRequest request(operation.initializationHints(), time);
 				if(!isInteractive) {
-					SharedFuture<PipelineFlowState> stateFuture = modApp->evaluate(PipelineEvaluationRequest(time));
+					SharedFuture<PipelineFlowState> stateFuture = modApp->evaluate(request);
 					if(!operation.waitForFuture(stateFuture))
 						return;
 					const PipelineFlowState& state = stateFuture.result();
@@ -248,7 +249,7 @@ void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter,
 					maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
 				}
 				else {
-					const PipelineFlowState& state = modApp->evaluateSynchronous(time);
+					const PipelineFlowState& state = modApp->evaluateSynchronous(request);
 					minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
 					maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
 				}

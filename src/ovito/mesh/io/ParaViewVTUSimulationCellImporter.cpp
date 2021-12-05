@@ -97,7 +97,7 @@ void ParaViewVTUSimulationCellImporter::FrameLoader::loadFile()
 				break;
 
 			// Load the VTK data array into a Nx3 buffer of floats.
-			DataBufferPtr buffer = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, numberOfPoints, DataBuffer::Float, 3, 0, false);
+			DataBufferPtr buffer = DataBufferPtr::create(dataset(), numberOfPoints, DataBuffer::Float, 3, 0, false);
 			if(!ParaViewVTPMeshImporter::parseVTKDataArray(buffer, xml))
 				break;
 

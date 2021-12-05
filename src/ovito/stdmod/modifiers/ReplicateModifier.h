@@ -78,10 +78,10 @@ public:
 
 	/// Loads the user-defined default values of this object's parameter fields from the
 	/// application's settings store.
-	virtual void initializeObject(ExecutionContext executionContext) override;
+	virtual void initializeObject(ObjectInitializationHints hints) override;
 
 	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	/// Helper function that returns the range of replicated boxes.
 	Box3I replicaRange() const;

@@ -251,8 +251,8 @@ void POSCARImporter::FrameLoader::loadFile()
 		isCartesian = true;
 
 	// Create the particle properties.
-	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
-	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, initializationHints());
+	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, initializationHints());
 
 	// Read atom coordinates.
 	Point3* p = posProperty.begin();
@@ -288,7 +288,7 @@ void POSCARImporter::FrameLoader::loadFile()
 				isCartesian = true;
 
 			// Read atomic velocities.
-			PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty, false, executionContext());
+			PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty, false, initializationHints());
 			Vector3* v = velocityProperty.begin();
 			for(int atype = 1; atype <= atomCounts.size(); atype++) {
 				for(int i = 0; i < atomCounts[atype-1]; i++, ++v) {
@@ -362,7 +362,7 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
 	// Create the voxel grid data object.
 	VoxelGrid* voxelGrid = state().getMutableObject<VoxelGrid>();
 	if(!voxelGrid) {
-		voxelGrid = state().createObject<VoxelGrid>(dataSource(), executionContext(), tr("Charge density"));
+		voxelGrid = state().createObject<VoxelGrid>(dataSource(), initializationHints(), tr("Charge density"));
 		voxelGrid->visElement()->setEnabled(false);
 		voxelGrid->visElement()->setTitle(voxelGrid->title());
 		voxelGrid->visElement()->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled), SHADOW_PROPERTY_FIELD(ActiveObject::title)});

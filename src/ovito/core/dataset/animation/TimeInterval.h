@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -242,37 +242,36 @@ inline QDebug operator<<(QDebug stream, const TimeInterval& iv)
 /**
  * This data structure manages the union of multiple, non-overlapping animation time intervals.
  */
-class TimeIntervalUnion
+class TimeIntervalUnion : private QVarLengthArray<TimeInterval, 2>
 {
 private:
 
-	/// This underlying list of non-overlapping time intervals.
-	QVarLengthArray<TimeInterval, 2> _intervals;
+	using base_class = QVarLengthArray<TimeInterval, 2>;
 
 public:
 
-	using const_iterator = decltype(_intervals)::const_iterator;
-	using reverse_iterator = decltype(_intervals)::reverse_iterator;
-	using iterator = decltype(_intervals)::iterator;
-	using reference = decltype(_intervals)::reference;
-	using size_type = decltype(_intervals)::size_type;
-	using value_type = decltype(_intervals)::value_type;
+	using base_class::const_iterator;
+	using base_class::reverse_iterator;
+	using base_class::iterator;
+	using base_class::reference;
+	using base_class::size_type;
+	using base_class::value_type;
 
 	/// Constructs an empty union of intervals.
-	TimeIntervalUnion() = default;
+	TimeIntervalUnion() noexcept = default;
 
 	/// Constructs a union that includes only the given animation time instant.
-	explicit TimeIntervalUnion(TimePoint time) : _intervals{{ TimeInterval(time) }} {}
+	explicit TimeIntervalUnion(TimePoint time) noexcept : base_class{{ TimeInterval(time) }} {}
 
 	/// Add a time interval to the union.
 	void add(TimeInterval iv) {
 		if(iv.isEmpty()) return;
 
 		// Subtract existing intervals from interval to be added.
-		for(iterator iter = _intervals.begin(); iter != _intervals.end(); ) {
+		for(iterator iter = begin(); iter != end(); ) {
 			// Erase existing intervals that are completely contained in the interval to be added.
 			if(iv.start() <= iter->start() && iv.end() >= iter->end()) {
-				iter = _intervals.erase(iter);
+				iter = erase(iter);
 			}
 			else {
 				if(iv.start() >= iter->start() && iv.start() <= iter->end())
@@ -284,25 +283,25 @@ public:
 				++iter;
 			}
 		}
-		_intervals.push_back(iv);
+		push_back(iv);
 
 		// TODO: Merge adjacent time intervals.
 	}
 
 	// Inherited const methods from QVarLengthArray.
-	auto begin() const { return _intervals.begin(); }
-	auto end() const { return _intervals.end(); }
-	auto cbegin() const { return _intervals.cbegin(); }
-	auto cend() const { return _intervals.cend(); }
-	auto rbegin() const { return _intervals.rbegin(); }
-	auto rend() const { return _intervals.rend(); }
-	auto crbegin() const { return _intervals.crbegin(); }
-	auto crend() const { return _intervals.crend(); }
-	void clear() { _intervals.clear(); }
-	size_type size() { return _intervals.size(); }
-	bool empty() const { return _intervals.empty(); }
-	const value_type& front() const { return _intervals.front(); }
-	const value_type& back() const { return _intervals.back(); }
+	using base_class::begin;
+	using base_class::end;
+	using base_class::cbegin;
+	using base_class::cend;
+	using base_class::rbegin;
+	using base_class::rend;
+	using base_class::crbegin;
+	using base_class::crend;
+	using base_class::clear;
+	using base_class::size;
+	using base_class::empty;
+	using base_class::front;
+	using base_class::back;
 };
 
 }	// End of namespace

@@ -120,8 +120,8 @@ void FHIAimsLogFileImporter::FrameLoader::loadFile()
 
 	// Create the particle properties.
 	setParticleCount(totalAtomCount);
-	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
-	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, initializationHints());
+	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, initializationHints());
 
 	// Return to beginning of frame.
 	stream.seek(frame().byteOffset, frame().lineNumber);

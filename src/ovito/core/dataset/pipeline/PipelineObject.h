@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,8 +50,11 @@ public:
 	/// \brief Asks the pipeline stage to compute the results for several animation times.
 	Future<std::vector<PipelineFlowState>> evaluateMultiple(const PipelineEvaluationRequest& request, std::vector<TimePoint> times);
 
+	/// \brief Asks the pipeline stage to compute the preliminary results in a synchronous fashion at the current animation time.
+	PipelineFlowState evaluateSynchronousAtCurrentTime();
+
 	/// \brief Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
-	virtual PipelineFlowState evaluateSynchronous(TimePoint time);
+	virtual PipelineFlowState evaluateSynchronous(const PipelineEvaluationRequest& request);
 
 	/// \brief Returns a list of pipeline nodes that have this object in their pipeline.
 	/// \param onlyScenePipelines If true, pipelines which are currently not part of the scene are ignored.

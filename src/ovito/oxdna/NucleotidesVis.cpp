@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -127,7 +127,7 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const ParticlesObject* particl
 	particles->verifyIntegrity();
 
 	// Allocate output color array.
-	PropertyPtr output = ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::ColorProperty, false, ExecutionContext::Scripting);
+	PropertyPtr output = ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::ColorProperty, false, ObjectInitializationHint::LoadFactoryDefaults);
 
 	Color defaultColor = defaultParticleColor();
 	if(const PropertyObject* baseProperty = particles->getProperty(ParticlesObject::NucleobaseTypeProperty)) {
@@ -209,8 +209,7 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 	}
 
 	// The type of lookup key used for caching the rendering primitives:
-	using NucleotidesCacheKey = std::tuple<
-		CompatibleRendererGroup,	// Scene renderer
+	using NucleotidesCacheKey = RendererResourceKey<struct NucleotidesVisCache,
 		QPointer<PipelineSceneNode>,// Pipeline scene node
 		ConstDataObjectRef,			// Position property
 		ConstDataObjectRef,			// Color property
@@ -225,15 +224,14 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 	
 	// The data structure stored in the vis cache.
 	struct NucleotidesCacheValue {
-		std::shared_ptr<ParticlePrimitive> backbonePrimitive;
-		std::shared_ptr<CylinderPrimitive> connectionPrimitive;
-		std::shared_ptr<ParticlePrimitive> basePrimitive;
+		ParticlePrimitive backbonePrimitive;
+		CylinderPrimitive connectionPrimitive;
+		ParticlePrimitive basePrimitive;
 		OORef<ParticlePickInfo> pickInfo;
 	};
 
 	// Look up the rendering primitives in the vis cache.
 	auto& visCache = dataset()->visCache().get<NucleotidesCacheValue>(NucleotidesCacheKey(
-		renderer,
 		const_cast<PipelineSceneNode*>(contextNode),
 		positionProperty,
 		colorProperty,
@@ -246,49 +244,52 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 		cylinderRadius()));
 
 	// Check if we already have valid rendering primitives that are up to date.
-	if(!visCache.backbonePrimitive) {
+	if(!visCache.backbonePrimitive.positions()) {
 
 		// Create the rendering primitive for the backbone sites.
-		visCache.backbonePrimitive = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::NormalShading, ParticlePrimitive::MediumQuality);
+		visCache.backbonePrimitive.setShadingMode(ParticlePrimitive::NormalShading);
+		visCache.backbonePrimitive.setRenderingQuality(ParticlePrimitive::MediumQuality);
 
 		// Fill in the position data.
-		visCache.backbonePrimitive->setPositions(positionProperty);
+		visCache.backbonePrimitive.setPositions(positionProperty);
 
 		// Fill in the transparency data.
-		visCache.backbonePrimitive->setTransparencies(transparencyProperty);
+		visCache.backbonePrimitive.setTransparencies(transparencyProperty);
 
 		// Compute the effective color of each particle.
 		ConstPropertyPtr colors = backboneColors(particles, renderer->isInteractive());
 
 		// Fill in backbone color data.
-		visCache.backbonePrimitive->setColors(colors);
+		visCache.backbonePrimitive.setColors(colors);
 
 		// Assign a uniform radius to all particles.
-		visCache.backbonePrimitive->setUniformRadius(defaultParticleRadius());
+		visCache.backbonePrimitive.setUniformRadius(defaultParticleRadius());
 
 		if(nucleotideAxisProperty) {
 			// Create the rendering primitive for the base sites.
-			visCache.basePrimitive = renderer->createParticlePrimitive(ParticlePrimitive::EllipsoidShape, ParticlePrimitive::NormalShading, ParticlePrimitive::MediumQuality);
+			visCache.basePrimitive.setParticleShape(ParticlePrimitive::EllipsoidShape);
+			visCache.basePrimitive.setShadingMode(ParticlePrimitive::NormalShading);
+			visCache.basePrimitive.setRenderingQuality(ParticlePrimitive::MediumQuality);
 
 			// Fill in the position data for the base sites.
-			DataBufferAccessAndRef<Point3> baseSites = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, particles->elementCount(), DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Point3> baseSites = DataBufferPtr::create(dataset(), particles->elementCount(), DataBuffer::Float, 3, 0, false);
 			ConstPropertyAccess<Point3> positionsArray(positionProperty);
 			ConstPropertyAccess<Vector3> nucleotideAxisArray(nucleotideAxisProperty);
 			for(size_t i = 0; i < baseSites.size(); i++)
 				baseSites[i] = positionsArray[i] + (0.8 * nucleotideAxisArray[i]);
-			visCache.basePrimitive->setPositions(baseSites.take());
+			visCache.basePrimitive.setPositions(baseSites.take());
 
 			// Fill in base color data.
-			visCache.basePrimitive->setColors(nucleobaseColors(particles, renderer->isInteractive()));
+			visCache.basePrimitive.setColors(nucleobaseColors(particles, renderer->isInteractive()));
 
 			// Fill in aspherical shape values.
-			DataBufferPtr asphericalShapes = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, particles->elementCount(), DataBuffer::Float, 3, 0, false);
+			DataBufferPtr asphericalShapes = DataBufferPtr::create(dataset(), particles->elementCount(), DataBuffer::Float, 3, 0, false);
 			asphericalShapes->fill(cylinderRadius() * Vector3(2.0, 3.0, 1.0));
-			visCache.basePrimitive->setAsphericalShapes(std::move(asphericalShapes));
+			visCache.basePrimitive.setAsphericalShapes(std::move(asphericalShapes));
 
 			// Fill in base orientations.
 			if(ConstPropertyAccess<Vector3> nucleotideNormalArray = nucleotideNormalProperty) {
-				PropertyAccessAndRef<Quaternion> orientations = ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::OrientationProperty, false, ExecutionContext::Scripting);
+				PropertyAccessAndRef<Quaternion> orientations = ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::OrientationProperty, false, ObjectInitializationHint::LoadFactoryDefaults);
 				for(size_t i = 0; i < orientations.size(); i++) {
 					if(nucleotideNormalArray[i] != Vector3::Zero() && nucleotideAxisArray[i] != Vector3::Zero()) {
 						// Build an orthonomal basis from the two direction vectors of a nucleotide.
@@ -306,25 +307,27 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 						orientations[i] = Quaternion::Identity();
 					}
 				}
-				visCache.basePrimitive->setOrientations(orientations.take());	
+				visCache.basePrimitive.setOrientations(orientations.take());	
 			}
 
 			// Create the rendering primitive for the connections between backbone and base sites.
-			visCache.connectionPrimitive = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, CylinderPrimitive::NormalShading, CylinderPrimitive::HighQuality);
-			visCache.connectionPrimitive->setUniformRadius(cylinderRadius());
-			visCache.connectionPrimitive->setColors(colors);
-			DataBufferAccessAndRef<Point3> headPositions = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, particles->elementCount(), DataBuffer::Float, 3, 0, false);
+			visCache.connectionPrimitive.setShape(CylinderPrimitive::CylinderShape);
+			visCache.connectionPrimitive.setShadingMode(CylinderPrimitive::NormalShading);
+			visCache.connectionPrimitive.setRenderingQuality(CylinderPrimitive::HighQuality);
+			visCache.connectionPrimitive.setUniformRadius(cylinderRadius());
+			visCache.connectionPrimitive.setColors(colors);
+			DataBufferAccessAndRef<Point3> headPositions = DataBufferPtr::create(dataset(), particles->elementCount(), DataBuffer::Float, 3, 0, false);
 			for(size_t i = 0; i < positionsArray.size(); i++)
 				headPositions[i] = positionsArray[i] + 0.8 * nucleotideAxisArray[i];
-			visCache.connectionPrimitive->setPositions(positionProperty, headPositions.take());
+			visCache.connectionPrimitive.setPositions(positionProperty, headPositions.take());
 		}
 		else {
-			visCache.connectionPrimitive.reset();
-			visCache.basePrimitive.reset();
+			visCache.connectionPrimitive = CylinderPrimitive();
+			visCache.basePrimitive = ParticlePrimitive();
 		}
 
 		// Create pick info record.
-		DataBufferAccessAndRef<int> subobjectToParticleMapping = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, nucleotideAxisProperty ? (particles->elementCount() * 3) : particles->elementCount(), DataBuffer::Int, 1, 0, false);
+		DataBufferAccessAndRef<int> subobjectToParticleMapping = DataBufferPtr::create(dataset(), nucleotideAxisProperty ? (particles->elementCount() * 3) : particles->elementCount(), DataBuffer::Int, 1, 0, false);
 		std::iota(subobjectToParticleMapping.begin(), subobjectToParticleMapping.begin() + particles->elementCount(), 0);
 		if(nucleotideAxisProperty) {
 			std::iota(subobjectToParticleMapping.begin() +     particles->elementCount(), subobjectToParticleMapping.begin() + 2 * particles->elementCount(), 0);
@@ -341,9 +344,9 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 		renderer->beginPickObject(contextNode, visCache.pickInfo);
 
 	renderer->renderParticles(visCache.backbonePrimitive);
-	if(visCache.connectionPrimitive)
+	if(visCache.connectionPrimitive.basePositions())
 		renderer->renderCylinders(visCache.connectionPrimitive);
-	if(visCache.basePrimitive)
+	if(visCache.basePrimitive.positions())
 		renderer->renderParticles(visCache.basePrimitive);
 
 	if(renderer->isPicking())

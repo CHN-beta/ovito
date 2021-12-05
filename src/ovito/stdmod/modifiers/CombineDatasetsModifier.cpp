@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
-#include <ovito/mesh/tri/TriMeshObject.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
 #include <ovito/core/dataset/io/FileSource.h>
@@ -51,23 +51,23 @@ CombineDatasetsModifier::CombineDatasetsModifier(DataSet* dataset) : MultiDelega
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void CombineDatasetsModifier::initializeObject(ExecutionContext executionContext)
+void CombineDatasetsModifier::initializeObject(ObjectInitializationHints hints)
 {
 	// Generate the list of delegate objects.
-	createModifierDelegates(CombineDatasetsModifierDelegate::OOClass(), executionContext);
+	createModifierDelegates(CombineDatasetsModifierDelegate::OOClass(), hints);
 
 	// Create the file source object, which will be responsible for loading
 	// and caching the data to be merged.
 	if(!secondaryDataSource())
-		setSecondaryDataSource(OORef<FileSource>::create(dataset(), executionContext));
+		setSecondaryDataSource(OORef<FileSource>::create(dataset(), hints));
 
-	MultiDelegatingModifier::initializeObject(executionContext);
+	MultiDelegatingModifier::initializeObject(hints);
 }
 
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> CombineDatasetsModifier::evaluate(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<PipelineFlowState> CombineDatasetsModifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	// Get the secondary data source.
 	if(!secondaryDataSource())
@@ -77,7 +77,7 @@ Future<PipelineFlowState> CombineDatasetsModifier::evaluate(const PipelineEvalua
 	SharedFuture<PipelineFlowState> secondaryStateFuture = secondaryDataSource()->evaluate(request);
 
 	// Wait for the data to become available.
-	return secondaryStateFuture.then(executor(), [this, state = input, time = request.time(), modApp = OORef<ModifierApplication>(modApp)](const PipelineFlowState& secondaryState) mutable {
+	return secondaryStateFuture.then(executor(), [this, state = input, request, modApp = OORef<const ModifierApplication>(request.modApp())](const PipelineFlowState& secondaryState) mutable {
 
 		// Make sure the obtained dataset is valid and ready to use.
 		if(secondaryState.status().type() == PipelineStatus::Error) {
@@ -96,7 +96,7 @@ Future<PipelineFlowState> CombineDatasetsModifier::evaluate(const PipelineEvalua
 		state.intersectStateValidity(secondaryState.stateValidity());
 
 		// Perform the merging of two pipeline states.
-		combineDatasets(time, modApp, state, secondaryState);
+		combineDatasets(request, state, secondaryState);
 
 		return std::move(state);
 	});
@@ -105,23 +105,23 @@ Future<PipelineFlowState> CombineDatasetsModifier::evaluate(const PipelineEvalua
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void CombineDatasetsModifier::evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void CombineDatasetsModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	// Get the secondary data source.
 	if(!secondaryDataSource())
 		return;
 
 	// Acquire the state to be merged.
-	const PipelineFlowState& secondaryState = secondaryDataSource()->evaluateSynchronous(time);
+	const PipelineFlowState& secondaryState = secondaryDataSource()->evaluateSynchronous(request);
 
 	// Perform the merging of two pipeline states.
-	combineDatasets(time, modApp, state, secondaryState);
+	combineDatasets(request, state, secondaryState);
 }
 
 /******************************************************************************
 * Implementation method, which performs the merging of two pipeline states.
 ******************************************************************************/
-void CombineDatasetsModifier::combineDatasets(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state, const PipelineFlowState& secondaryState)
+void CombineDatasetsModifier::combineDatasets(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& secondaryState)
 {
 	if(!state || !secondaryState)
 		return;
@@ -150,7 +150,7 @@ void CombineDatasetsModifier::combineDatasets(TimePoint time, ModifierApplicatio
 	}
 
 	// Let the delegates do their job and merge the data objects of the two datasets.
-	applyDelegates(state, time, modApp, { std::reference_wrapper<const PipelineFlowState>(secondaryState) });
+	applyDelegates(request, state, { std::reference_wrapper<const PipelineFlowState>(secondaryState) });
 
 	// Special handling for the simulation cell. If the secondary dataset contains a simulation cell but 
 	// the primary doesn't, then copy it over to the primary dataset.

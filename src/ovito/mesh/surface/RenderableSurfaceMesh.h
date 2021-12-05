@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,7 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/core/dataset/data/TransformedDataObject.h>
-#include <ovito/core/utilities/mesh/TriMesh.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
 
 namespace Ovito::Mesh {
 
@@ -41,7 +41,7 @@ class OVITO_MESH_EXPORT RenderableSurfaceMesh : public TransformedDataObject
 public:
 
 	/// Constructor.
-	Q_INVOKABLE RenderableSurfaceMesh(DataSet* dataset, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr, TriMesh surfaceMesh = {}, TriMesh capPolygonsMesh = {}, bool backfaceCulling = false) : TransformedDataObject(dataset, creator, sourceData), 
+	Q_INVOKABLE RenderableSurfaceMesh(DataSet* dataset, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr, DataOORef<const TriMeshObject> surfaceMesh = {}, DataOORef<const TriMeshObject> capPolygonsMesh = {}, bool backfaceCulling = false) : TransformedDataObject(dataset, creator, sourceData), 
 		_surfaceMesh(std::move(surfaceMesh)),
 		_capPolygonsMesh(std::move(capPolygonsMesh)),
 		_backfaceCulling(backfaceCulling) 
@@ -54,10 +54,10 @@ public:
 private:
 
 	/// The surface part of the mesh.
-	DECLARE_RUNTIME_PROPERTY_FIELD(TriMesh, surfaceMesh, setSurfaceMesh);
+	DECLARE_RUNTIME_PROPERTY_FIELD(DataOORef<const TriMeshObject>, surfaceMesh, setSurfaceMesh);
 
 	/// The cap polygon part of the mesh.
-	DECLARE_RUNTIME_PROPERTY_FIELD(TriMesh, capPolygonsMesh, setCapPolygonsMesh);
+	DECLARE_RUNTIME_PROPERTY_FIELD(DataOORef<const TriMeshObject>, capPolygonsMesh, setCapPolygonsMesh);
 
 	/// The material colors assigned to the surface mesh (optional).
 	DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<ColorA>, materialColors, setMaterialColors);

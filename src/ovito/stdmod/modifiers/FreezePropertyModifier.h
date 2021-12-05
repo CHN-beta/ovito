@@ -52,13 +52,13 @@ public:
 	Q_INVOKABLE FreezePropertyModifier(DataSet* dataset);
 
 	/// This method is called by the system after the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext) override;
+	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
 	/// Modifies the input data.
-	virtual Future<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 protected:
 

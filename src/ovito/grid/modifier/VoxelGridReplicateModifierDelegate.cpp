@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/properties/PropertyAccess.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "VoxelGridReplicateModifierDelegate.h"
 
 namespace Ovito::Grid {
@@ -44,9 +45,9 @@ QVector<DataObjectReference> VoxelGridReplicateModifierDelegate::OOMetaClass::ge
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
-PipelineStatus VoxelGridReplicateModifierDelegate::apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus VoxelGridReplicateModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	ReplicateModifier* mod = static_object_cast<ReplicateModifier>(modifier);
+	ReplicateModifier* mod = static_object_cast<ReplicateModifier>(request.modifier());
 
 	for(const DataObject* obj : state.data()->objects()) {
 		if(const VoxelGrid* existingVoxelGrid = dynamic_object_cast<VoxelGrid>(obj)) {

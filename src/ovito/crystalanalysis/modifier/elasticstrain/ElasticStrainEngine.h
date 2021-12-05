@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,7 +37,7 @@ class ElasticStrainEngine : public StructureIdentificationModifier::StructureIde
 public:
 
 	/// Constructor.
-	ElasticStrainEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint,
+	ElasticStrainEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint,
 			ConstPropertyPtr positions, const SimulationCellObject* simCell,
 			int inputCrystalStructure, std::vector<Matrix3> preferredCrystalOrientations,
 			bool calculateDeformationGradients, bool calculateStrainTensors,
@@ -47,7 +47,7 @@ public:
 	virtual void perform() override;
 
 	/// Injects the computed results into the data pipeline.
-	virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	/// Returns the array of atom cluster IDs.
 	const PropertyPtr& atomClusters() const { return _atomClusters; }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,7 +56,7 @@ public:
 	Q_INVOKABLE VoroTopModifier(DataSet* dataset);
 
 	/// Loads a new filter definition into the modifier.
-	bool loadFilterDefinition(const QString& filepath, Promise<>&& operation, ExecutionContext executionContext);
+	bool loadFilterDefinition(const QString& filepath, SynchronousOperation operation);
 
 	/// Returns the VoroTop filter definition cached from the last analysis run.
 	const std::shared_ptr<Filter>& filter() const { return _filter; }
@@ -67,7 +67,7 @@ protected:
 	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
@@ -77,9 +77,9 @@ private:
 	public:
 
 		/// Constructor.
-		VoroTopAnalysisEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, const TimeInterval& validityInterval, ConstPropertyPtr positions, ConstPropertyPtr selection,
+		VoroTopAnalysisEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, const TimeInterval& validityInterval, ConstPropertyPtr positions, ConstPropertyPtr selection,
 							ConstPropertyPtr radii, const SimulationCellObject* simCell, const QString& filterFile, std::shared_ptr<Filter> filter, const OORefVector<ElementType>& structureTypes) :
-			StructureIdentificationEngine(dataSource, executionContext, dataset, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
+			StructureIdentificationEngine(request, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
 			_filterFile(filterFile),
 			_filter(std::move(filter)),
 			_radii(std::move(radii)) {}
@@ -88,7 +88,7 @@ private:
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		/// Processes a single Voronoi cell.
 		int processCell(voro::voronoicell_neighbor& vcell);

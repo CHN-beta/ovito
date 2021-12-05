@@ -209,8 +209,8 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 	setImproperCount(nimpropers);
 
 	// Create standard particle properties.
-	particles()->createProperty(ParticlesObject::PositionProperty, true, executionContext());
-	PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, true, executionContext());
+	particles()->createProperty(ParticlesObject::PositionProperty, true, initializationHints());
+	PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, true, initializationHints());
 
 	// Atom type mass table.
 	std::vector<FloatType> massTable(natomtypes, 0.0);
@@ -252,7 +252,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 						.arg(columnMapping.size()));
 
 				// Parse data in the Atoms section line by line:
-				InputColumnReader columnParser(columnMapping, particles(), executionContext());
+				InputColumnReader columnParser(columnMapping, particles(), initializationHints());
 				try {
 					for(size_t i = 0; i < (size_t)natoms; i++) {
 						if(!setProgressValueIntermittent(i)) return;
@@ -295,7 +295,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				throw Exception(tr("Atoms section must precede Velocities section in data file (error in line %1).").arg(stream.lineNumber()));
 
 			// Create the velocity property.
-			PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty, true, executionContext());
+			PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty, true, initializationHints());
 			
 			for(size_t i = 0; i < (size_t)natoms; i++) {
 				if(!setProgressValueIntermittent(i)) return;
@@ -376,10 +376,10 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				throw Exception(tr("Atoms section must precede Bonds section in data file (error in line %1).").arg(stream.lineNumber()));
 
 			// Create bonds storage.
-			PropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds()->createProperty(BondsObject::TopologyProperty, false, executionContext());
+			PropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds()->createProperty(BondsObject::TopologyProperty, false, initializationHints());
 
 			// Create bond type property.
-			PropertyAccess<int> typeProperty = bonds()->createProperty(BondsObject::TypeProperty, false, executionContext());
+			PropertyAccess<int> typeProperty = bonds()->createProperty(BondsObject::TypeProperty, false, initializationHints());
 
 			// Create bond types.
 			for(int i = 1; i <= nbondtypes; i++)
@@ -429,10 +429,10 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				throw Exception(tr("Atoms section must precede Angles section in data file (error in line %1).").arg(stream.lineNumber()));
 
 			// Create angles topology storage.
-			PropertyAccess<ParticleIndexTriplet> angleTopologyProperty = angles()->createProperty(AnglesObject::TopologyProperty, false, executionContext());
+			PropertyAccess<ParticleIndexTriplet> angleTopologyProperty = angles()->createProperty(AnglesObject::TopologyProperty, false, initializationHints());
 
 			// Create angle type property.
-			PropertyAccess<int> typeProperty = angles()->createProperty(AnglesObject::TypeProperty, false, executionContext());
+			PropertyAccess<int> typeProperty = angles()->createProperty(AnglesObject::TypeProperty, false, initializationHints());
 
 			// Create angle types.
 			for(int i = 1; i <= nangletypes; i++)
@@ -470,10 +470,10 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				throw Exception(tr("Atoms section must precede Dihedrals section in data file (error in line %1).").arg(stream.lineNumber()));
 
 			// Create dihedrals topology storage.
-			PropertyAccess<ParticleIndexQuadruplet> dihedralTopologyProperty = dihedrals()->createProperty(DihedralsObject::TopologyProperty, false, executionContext());
+			PropertyAccess<ParticleIndexQuadruplet> dihedralTopologyProperty = dihedrals()->createProperty(DihedralsObject::TopologyProperty, false, initializationHints());
 
 			// Create dihedral type property.
-			PropertyAccess<int> typeProperty = dihedrals()->createProperty(DihedralsObject::TypeProperty, false, executionContext());
+			PropertyAccess<int> typeProperty = dihedrals()->createProperty(DihedralsObject::TypeProperty, false, initializationHints());
 
 			// Create dihedral types.
 			for(int i = 1; i <= ndihedraltypes; i++)
@@ -511,10 +511,10 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				throw Exception(tr("Atoms section must precede Impropers section in data file (error in line %1).").arg(stream.lineNumber()));
 
 			// Create improper topology storage.
-			PropertyAccess<ParticleIndexQuadruplet> improperTopologyProperty = impropers()->createProperty(ImpropersObject::TopologyProperty, false, executionContext());
+			PropertyAccess<ParticleIndexQuadruplet> improperTopologyProperty = impropers()->createProperty(ImpropersObject::TopologyProperty, false, initializationHints());
 
 			// Create improper type property.
-			PropertyAccess<int> typeProperty = impropers()->createProperty(ImpropersObject::TypeProperty, false, executionContext());
+			PropertyAccess<int> typeProperty = impropers()->createProperty(ImpropersObject::TypeProperty, false, initializationHints());
 
 			// Create improper types.
 			for(int i = 1; i <= nimpropertypes; i++)
@@ -566,7 +566,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 	// Assign masses to particles based on their type.
 	if(hasTypeMasses && !particles()->getProperty(ParticlesObject::MassProperty)) {
-		PropertyAccess<FloatType> massProperty = particles()->createProperty(ParticlesObject::MassProperty, false, executionContext());
+		PropertyAccess<FloatType> massProperty = particles()->createProperty(ParticlesObject::MassProperty, false, initializationHints());
 		boost::transform(ConstPropertyAccess<int>(typeProperty), massProperty.begin(), [&](int atomType) {
 			return massTable[atomType - 1];
 		});

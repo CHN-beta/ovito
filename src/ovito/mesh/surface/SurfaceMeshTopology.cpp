@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/core/utilities/mesh/TriMesh.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
 #include "SurfaceMeshTopology.h"
 
 namespace Ovito::Mesh {
@@ -422,7 +422,7 @@ void SurfaceMeshTopology::flipFaces()
 * vertex coordinates. Thus, it is the respondisbility of the caller to assign
 * coordinates to the vertices of the generated TriMesh.
 ******************************************************************************/
-void SurfaceMeshTopology::convertToTriMesh(TriMesh& output) const
+void SurfaceMeshTopology::convertToTriMesh(TriMeshObject& output) const
 {
 	// Create output vertices.
 	output.setVertexCount(vertexCount());

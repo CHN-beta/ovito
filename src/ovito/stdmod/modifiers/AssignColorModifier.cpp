@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -52,30 +52,29 @@ AssignColorModifier::AssignColorModifier(DataSet* dataset) : DelegatingModifier(
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void AssignColorModifier::initializeObject(ExecutionContext executionContext)
+void AssignColorModifier::initializeObject(ObjectInitializationHints hints)
 {
 	if(!colorController())
-		setColorController(ControllerManager::createColorController(dataset(), executionContext));
+		setColorController(ControllerManager::createColorController(dataset(), hints));
 	colorController()->setColorValue(0, Color(0.3f, 0.3f, 1.0f));
 
 	// Let this modifier operate on particles by default.
-	createDefaultModifierDelegate(AssignColorModifierDelegate::OOClass(), QStringLiteral("ParticlesAssignColorModifierDelegate"), executionContext);
+	createDefaultModifierDelegate(AssignColorModifierDelegate::OOClass(), QStringLiteral("ParticlesAssignColorModifierDelegate"), hints);
 
-	if(executionContext == ExecutionContext::Interactive) {
-		// In the graphical program environment, we clear the
-		// selection by default to make the assigned colors visible.
+	if(hints.testFlags(LoadUserDefaults)) {
+		// In the graphical environment, we clear the selection by default to make the assigned colors visible.
 		setKeepSelection(false);
 	}
 
-	DelegatingModifier::initializeObject(executionContext);
+	DelegatingModifier::initializeObject(hints);
 }
 
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/
-TimeInterval AssignColorModifier::validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const
+TimeInterval AssignColorModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
-	TimeInterval iv = DelegatingModifier::validityInterval(request, modApp);
+	TimeInterval iv = DelegatingModifier::validityInterval(request);
 	if(colorController()) 
 		iv.intersect(colorController()->validityInterval(request.time()));
 	return iv;
@@ -84,9 +83,9 @@ TimeInterval AssignColorModifier::validityInterval(const PipelineEvaluationReque
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
-PipelineStatus AssignColorModifierDelegate::apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus AssignColorModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	const AssignColorModifier* mod = static_object_cast<AssignColorModifier>(modifier);
+	const AssignColorModifier* mod = static_object_cast<AssignColorModifier>(request.modifier());
 	if(!mod->colorController())
 		return PipelineStatus::Success;
 
@@ -108,10 +107,10 @@ PipelineStatus AssignColorModifierDelegate::apply(Modifier* modifier, PipelineFl
 
 	// Get modifier's color parameter value.
 	Color color;
-	mod->colorController()->getColorValue(time, color, state.mutableStateValidity());
+	mod->colorController()->getColorValue(request.time(), color, state.mutableStateValidity());
 
 	// Create the color output property.
-    PropertyObject* colorProperty = container->createProperty(outputColorPropertyId(), (bool)selProperty, Application::instance()->executionContext(), objectPath);
+    PropertyObject* colorProperty = container->createProperty(outputColorPropertyId(), (bool)selProperty, request.initializationHints(), objectPath);
 	// Assign color to selected elements (or all elements if there is no selection).
 	colorProperty->fillSelected(color, selProperty.get());
 

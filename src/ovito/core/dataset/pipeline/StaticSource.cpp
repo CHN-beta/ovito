@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,7 +50,7 @@ SharedFuture<PipelineFlowState> StaticSource::evaluate(const PipelineEvaluationR
 /******************************************************************************
 * Asks the object for the result of the data pipeline.
 ******************************************************************************/
-PipelineFlowState StaticSource::evaluateSynchronous(TimePoint time)
+PipelineFlowState StaticSource::evaluateSynchronous(const PipelineEvaluationRequest& request)
 {
     return PipelineFlowState(dataCollection(), PipelineStatus::Success);
 }

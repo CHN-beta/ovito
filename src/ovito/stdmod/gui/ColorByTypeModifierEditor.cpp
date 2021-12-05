@@ -168,7 +168,7 @@ void ColorByTypeModifierEditor::ViewModel::refresh()
 
 		// Populate types list based on the selected input property.
 		for(ModifierApplication* modApp : editor()->modifierApplications()) {
-			const PipelineFlowState& inputState = modApp->evaluateInputSynchronous(modApp->dataset()->animationSettings()->time());
+			const PipelineFlowState& inputState = modApp->evaluateInputSynchronousAtCurrentTime();
 			if(const PropertyContainer* container = inputState.getLeafObject(mod->subject())) {
 				if(const PropertyObject* inputProperty = mod->sourceProperty().findInContainer(container)) {
 					for(const ElementType* type : inputProperty->elementTypes()) {

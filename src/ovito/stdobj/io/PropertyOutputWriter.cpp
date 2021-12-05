@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -60,7 +60,7 @@ QByteArray OutputColumnMapping::toByteArray(TaskManager& taskManager) const
 {
 	QByteArray buffer;
 	QDataStream dstream(&buffer, QIODevice::WriteOnly);
-	SaveStream stream(dstream, SynchronousOperation::createSignal(taskManager));
+	SaveStream stream(dstream, SynchronousOperation::createSignal(taskManager, ObjectInitializationHint::LoadFactoryDefaults));
 	saveToStream(stream);
 	stream.close();
 	return buffer;
@@ -72,7 +72,7 @@ QByteArray OutputColumnMapping::toByteArray(TaskManager& taskManager) const
 void OutputColumnMapping::fromByteArray(const QByteArray& array, TaskManager& taskManager)
 {
 	QDataStream dstream(array);
-	LoadStream stream(dstream, SynchronousOperation::createSignal(taskManager));
+	LoadStream stream(dstream, SynchronousOperation::createSignal(taskManager, ObjectInitializationHint::LoadFactoryDefaults));
 	loadFromStream(stream);
 	stream.close();
 }

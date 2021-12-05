@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -158,7 +158,7 @@ public:
 public:
 
 	/// Constructor.
-	InterfaceMesh(DataSet* dataset, ElasticMapping& elasticMapping) : SurfaceMeshAccess(DataOORef<SurfaceMesh>::create(dataset, ExecutionContext::Scripting)),
+	InterfaceMesh(DataSet* dataset, ElasticMapping& elasticMapping) : SurfaceMeshAccess(DataOORef<SurfaceMesh>::create(dataset, ObjectInitializationHint::LoadFactoryDefaults)),
 		_elasticMapping(elasticMapping) {
 			setCell(elasticMapping.structureAnalysis().cell());
 		}

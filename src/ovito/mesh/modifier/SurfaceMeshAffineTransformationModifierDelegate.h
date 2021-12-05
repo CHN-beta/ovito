@@ -25,7 +25,7 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
-#include <ovito/mesh/tri/TriMeshObject.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
 #include <ovito/stdmod/modifiers/AffineTransformationModifier.h>
 
 namespace Ovito::Mesh {
@@ -69,7 +69,7 @@ public:
 	Q_INVOKABLE SurfaceMeshAffineTransformationModifierDelegate(DataSet* dataset) : AffineTransformationModifierDelegate(dataset) {}
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
 }	// End of namespace

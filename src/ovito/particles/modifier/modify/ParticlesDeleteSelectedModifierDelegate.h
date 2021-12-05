@@ -61,7 +61,7 @@ public:
 	Q_INVOKABLE ParticlesDeleteSelectedModifierDelegate(DataSet* dataset) : DeleteSelectedModifierDelegate(dataset) {}
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
 /**
@@ -95,7 +95,7 @@ public:
 	Q_INVOKABLE BondsDeleteSelectedModifierDelegate(DataSet* dataset) : DeleteSelectedModifierDelegate(dataset) {}
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
 }	// End of namespace

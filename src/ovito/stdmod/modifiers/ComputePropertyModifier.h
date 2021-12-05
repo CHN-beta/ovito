@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,8 +57,9 @@ protected:
 	public:
 
 		/// Constructor.
-		PropertyComputeEngine(const PipelineObject* dataSource, ExecutionContext executionContext, const TimeInterval& validityInterval,
-				TimePoint time,
+		PropertyComputeEngine(
+				const ModifierEvaluationRequest& request, 
+				const TimeInterval& validityInterval,
 				const PipelineFlowState& input,
 				const ConstDataObjectPath& containerPath,
 				PropertyPtr outputProperty,
@@ -93,7 +94,7 @@ protected:
 		}
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		/// Returns the property storage that will receive the computed values.
 		const PropertyPtr& outputProperty() const { return _outputProperty; }
@@ -146,9 +147,7 @@ public:
 
 	/// Creates a computation engine that will compute the property values.
 	virtual std::shared_ptr<PropertyComputeEngine> createEngine(
-				const PipelineObject* dataSource, 
-				ExecutionContext executionContext,
-				TimePoint time,
+				const ModifierEvaluationRequest& request,
 				const PipelineFlowState& input,
 				const ConstDataObjectPath& containerPath,
 				PropertyPtr outputProperty,
@@ -192,7 +191,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 	
 	/// \brief Returns the current delegate of this ComputePropertyModifier.
 	ComputePropertyModifierDelegate* delegate() const { return static_object_cast<ComputePropertyModifierDelegate>(AsynchronousDelegatingModifier::delegate()); }
@@ -241,7 +240,7 @@ protected:
 	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 protected:
 

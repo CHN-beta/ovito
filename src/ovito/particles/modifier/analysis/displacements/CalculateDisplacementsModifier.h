@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,12 +51,12 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 	
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, ExecutionContext executionContext, TimeInterval validityInterval) override;
+	virtual Future<EnginePtr> createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) override;
 
 private:
 
@@ -67,9 +67,7 @@ private:
 
 		/// Constructor.
 		DisplacementEngine(
-				const PipelineObject* dataSource, 
-				ExecutionContext executionContext, 
-				DataSet* dataset,
+				const ModifierEvaluationRequest& request,
 				const TimeInterval& validityInterval, 
 				ConstPropertyPtr positions, 
 				const SimulationCellObject* simCell,
@@ -80,17 +78,17 @@ private:
 				ConstPropertyPtr refIdentifiers,
 				AffineMappingType affineMapping, 
 				bool useMinimumImageConvention) :
-			RefConfigEngineBase(dataSource, executionContext, validityInterval, positions, simCell, std::move(refPositions), simCellRef,
+			RefConfigEngineBase(request, validityInterval, positions, simCell, std::move(refPositions), simCellRef,
 				std::move(identifiers), std::move(refIdentifiers), affineMapping, useMinimumImageConvention),
-			_displacements(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::DisplacementProperty, false, executionContext)),
-			_displacementMagnitudes(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::DisplacementMagnitudeProperty, false, executionContext)),
+			_displacements(ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::DisplacementProperty, false, request.initializationHints())),
+			_displacementMagnitudes(ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::DisplacementMagnitudeProperty, false, request.initializationHints())),
 			_inputFingerprint(std::move(fingerprint)) {}
 
 		/// Computes the modifier's results.
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		/// Returns the property storage that contains the computed displacement vectors.
 		const PropertyPtr& displacements() const { return _displacements; }

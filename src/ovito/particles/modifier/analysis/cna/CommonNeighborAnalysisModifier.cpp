@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,23 +54,23 @@ CommonNeighborAnalysisModifier::CommonNeighborAnalysisModifier(DataSet* dataset)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void CommonNeighborAnalysisModifier::initializeObject(ExecutionContext executionContext)
+void CommonNeighborAnalysisModifier::initializeObject(ObjectInitializationHints hints)
 {
 	// Create the structure types.
-	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
-	createStructureType(FCC, ParticleType::PredefinedStructureType::FCC, executionContext);
-	createStructureType(HCP, ParticleType::PredefinedStructureType::HCP, executionContext);
-	createStructureType(BCC, ParticleType::PredefinedStructureType::BCC, executionContext);
-	createStructureType(ICO, ParticleType::PredefinedStructureType::ICO, executionContext);
+	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, hints);
+	createStructureType(FCC, ParticleType::PredefinedStructureType::FCC, hints);
+	createStructureType(HCP, ParticleType::PredefinedStructureType::HCP, hints);
+	createStructureType(BCC, ParticleType::PredefinedStructureType::BCC, hints);
+	createStructureType(ICO, ParticleType::PredefinedStructureType::ICO, hints);
 
-	StructureIdentificationModifier::initializeObject(executionContext);
+	StructureIdentificationModifier::initializeObject(hints);
 }
 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CommonNeighborAnalysisModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> CommonNeighborAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -85,19 +85,19 @@ Future<AsynchronousModifier::EnginePtr> CommonNeighborAnalysisModifier::createEn
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	if(mode() == AdaptiveCutoffMode) {
-		return std::make_shared<AdaptiveCNAEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
+		return std::make_shared<AdaptiveCNAEngine>(request, particles, posProperty, simCell, structureTypes(), selectionProperty);
 	}
 	else if(mode() == IntervalCutoffMode) {
-		return std::make_shared<IntervalCNAEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
+		return std::make_shared<IntervalCNAEngine>(request, particles, posProperty, simCell, structureTypes(), selectionProperty);
 	}
 	else if(mode() == BondMode) {
 		particles->expectBonds()->verifyIntegrity();
 		const PropertyObject* topologyProperty = particles->expectBonds()->expectProperty(BondsObject::TopologyProperty);
 		const PropertyObject* periodicImagesProperty = particles->expectBonds()->getProperty(BondsObject::PeriodicImageProperty);
-		return std::make_shared<BondCNAEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty, topologyProperty, periodicImagesProperty);
+		return std::make_shared<BondCNAEngine>(request, particles, posProperty, simCell, structureTypes(), selectionProperty, topologyProperty, periodicImagesProperty);
 	}
 	else {
-		return std::make_shared<FixedCNAEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty, cutoff());
+		return std::make_shared<FixedCNAEngine>(request, particles, posProperty, simCell, structureTypes(), selectionProperty, cutoff());
 	}
 }
 
@@ -845,24 +845,24 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CN
 /******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
-void CommonNeighborAnalysisModifier::CNAEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void CommonNeighborAnalysisModifier::CNAEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	StructureIdentificationEngine::applyResults(time, modApp, state);
+	StructureIdentificationEngine::applyResults(request, state);
 
 	// Also output structure type counts, which have been computed by the base class.
-	state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.OTHER"), QVariant::fromValue(getTypeCount(OTHER)), modApp);
-	state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.FCC"), QVariant::fromValue(getTypeCount(FCC)), modApp);
-	state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.HCP"), QVariant::fromValue(getTypeCount(HCP)), modApp);
-	state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.BCC"), QVariant::fromValue(getTypeCount(BCC)), modApp);
-	state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.ICO"), QVariant::fromValue(getTypeCount(ICO)), modApp);
+	state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.OTHER"), QVariant::fromValue(getTypeCount(OTHER)), request.modApp());
+	state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.FCC"), QVariant::fromValue(getTypeCount(FCC)), request.modApp());
+	state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.HCP"), QVariant::fromValue(getTypeCount(HCP)), request.modApp());
+	state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.BCC"), QVariant::fromValue(getTypeCount(BCC)), request.modApp());
+	state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.ICO"), QVariant::fromValue(getTypeCount(ICO)), request.modApp());
 }
 
 /******************************************************************************
 * Lets the modifier insert the cached computation results into the modification pipeline.
 ******************************************************************************/
-void CommonNeighborAnalysisModifier::BondCNAEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void CommonNeighborAnalysisModifier::BondCNAEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	CNAEngine::applyResults(time, modApp, state);
+	CNAEngine::applyResults(request, state);
 
 	// Output the bond property containing the CNA indices.
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();

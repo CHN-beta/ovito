@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,6 +29,7 @@
 #include "PipelineFlowState.h"
 #include "PipelineStatus.h"
 #include "ModifierClass.h"
+#include "PipelineEvaluation.h"
 
 namespace Ovito {
 
@@ -45,15 +46,15 @@ class OVITO_CORE_EXPORT Modifier : public RefTarget
 protected:
 
 	/// \brief Constructor.
-	Modifier(DataSet* dataset);
+	explicit Modifier(DataSet* dataset);
 
 public:
 
 	/// \brief Modifies the input data synchronously.
-	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) {}
+	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) {}
 
 	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const;
+	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const;
 
 	/// \brief Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
 	virtual void inputCachingHints(TimeIntervalUnion& cachingIntervals, ModifierApplication* modApp) {}
@@ -64,9 +65,7 @@ public:
 	virtual void restrictInputValidityInterval(TimeInterval& iv) const {}
 
 	/// \brief Lets the modifier render itself into a viewport.
-	/// \param time The animation time at which to render the modifier.
 	/// \param contextNode The node context used to render the modifier.
-	/// \param modApp The modifier application specifies the particular application of this modifier in a geometry pipeline.
 	/// \param renderer The scene renderer to use.
 	/// \param renderOverlay Specifies the rendering pass. The method is called twice by the system: First with renderOverlay==false
 	///                      to render any 3d representation of the modifier, and a second time with renderOverlay==true to render
@@ -74,7 +73,7 @@ public:
 	///
 	/// The viewport transformation is already set up when this method is called
 	/// The default implementation does nothing.
-	virtual void renderModifierVisual(TimePoint time, PipelineSceneNode* contextNode, ModifierApplication* modApp, SceneRenderer* renderer, bool renderOverlay) {}
+	virtual void renderModifierVisual(const ModifierEvaluationRequest& request, PipelineSceneNode* contextNode, SceneRenderer* renderer, bool renderOverlay) {}
 
 	/// \brief Returns the list of applications of this modifier in pipelines.
 	/// \return The list of ModifierApplication objects that describe the particular applications of this Modifier.
@@ -104,10 +103,7 @@ public:
 	PipelineStatus globalStatus() const;
 
 	/// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
-	/// \param time The current animation time.
-	/// \param modApp The ModifierApplication object that has been created for this modifier.
-	/// \param executionContext Indicates whether the modifier has been created by the user in the GUI or by a script.
-	virtual void initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext) {}
+	virtual void initializeModifier(const ModifierInitializationRequest& request) {}
 
 	/// \brief Decides whether a preliminary viewport update is performed after the modifier has been
 	///        evaluated but before the entire pipeline evaluation is complete.
@@ -132,11 +128,7 @@ public:
 protected:
 
 	/// \brief Modifies the input data.
-	/// \param request The pipeline request the triggered the modifier evaluation.
-	/// \param modApp The application object for this modifier. It describes this particular usage of the
-	///               modifier in the data pipeline.
-	/// \param input The upstream data flowing down the pipeline.
-	virtual Future<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input);
+	virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input);
 
 private:
 

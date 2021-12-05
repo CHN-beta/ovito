@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -48,7 +48,7 @@ WignerSeitzAnalysisModifier::WignerSeitzAnalysisModifier(DataSet* dataset) : Ref
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> WignerSeitzAnalysisModifier::createEngineInternal(const PipelineEvaluationRequest& request, ModifierApplication* modApp, PipelineFlowState input, const PipelineFlowState& referenceState, ExecutionContext executionContext, TimeInterval validityInterval)
+Future<AsynchronousModifier::EnginePtr> WignerSeitzAnalysisModifier::createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval)
 {
 	// Get the current particle positions.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -98,7 +98,7 @@ Future<AsynchronousModifier::EnginePtr> WignerSeitzAnalysisModifier::createEngin
 	}
 
 	// Create compute engine instance. Pass all relevant modifier parameters and the input data to the engine.
-	auto engine = std::make_shared<WignerSeitzAnalysisEngine>(modApp, executionContext, validityInterval, posProperty, inputCell,
+	auto engine = std::make_shared<WignerSeitzAnalysisEngine>(request, validityInterval, posProperty, inputCell,
 			referenceState,
 			refPosProperty, refCell, affineMapping(), typeProperty, ptypeMinId, ptypeMaxId,
 			referenceTypeProperty, referenceIdentifierProperty);
@@ -261,11 +261,11 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
 /******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
-void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	const ParticlesObject* refParticles = referenceState().getObject<ParticlesObject>();
 	if(!refParticles)
-		modApp->throwException(tr("This modifier cannot be evaluated, because the reference configuration does not contain any particles."));
+		request.modApp()->throwException(tr("This modifier cannot be evaluated, because the reference configuration does not contain any particles."));
 
 	if(!siteTypes()) {
 		// Replace complete particles set with the reference configuration.
@@ -277,7 +277,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::applyResults(TimePo
 
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 	if(occupancyNumbers()->size() != particles->elementCount())
-		modApp->throwException(tr("Cached modifier results are obsolete, because the number of input particles has changed."));
+		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number of input particles has changed."));
 	const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
 
 	particles->createProperty(occupancyNumbers());
@@ -293,8 +293,8 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::applyResults(TimePo
 	if(siteIdentifiers())
 		particles->createProperty(siteIdentifiers());
 
-	state.addAttribute(QStringLiteral("WignerSeitz.vacancy_count"), QVariant::fromValue(vacancyCount()), modApp);
-	state.addAttribute(QStringLiteral("WignerSeitz.interstitial_count"), QVariant::fromValue(interstitialCount()), modApp);
+	state.addAttribute(QStringLiteral("WignerSeitz.vacancy_count"), QVariant::fromValue(vacancyCount()), request.modApp());
+	state.addAttribute(QStringLiteral("WignerSeitz.interstitial_count"), QVariant::fromValue(interstitialCount()), request.modApp());
 
 	state.setStatus(PipelineStatus(PipelineStatus::Success, tr("Found %1 vacancies and %2 interstitials").arg(vacancyCount()).arg(interstitialCount())));
 }

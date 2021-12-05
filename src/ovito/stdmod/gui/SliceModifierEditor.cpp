@@ -32,7 +32,7 @@
 #include <ovito/core/rendering/MarkerPrimitive.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
-#include <ovito/core/utilities/mesh/TriMesh.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
@@ -460,7 +460,7 @@ void PickPlanePointsInputMode::alignPlane(SliceModifier* mod)
 
 		// Convert to reduced cell coordinates if requested.
 		if(mod->reducedCoordinates()) {
-			const PipelineFlowState& input = modApp->evaluateInputSynchronous(mod->dataset()->animationSettings()->time());
+			const PipelineFlowState& input = modApp->evaluateInputSynchronousAtCurrentTime();
 			if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
 				localPlane = cell->inverseMatrix() * localPlane;
 			}
@@ -498,33 +498,33 @@ void PickPlanePointsInputMode::renderOverlay3D(Viewport* vp, SceneRenderer* rend
 
 	renderer->setWorldTransform(AffineTransformation::Identity());
 	if(!renderer->isBoundingBoxPass()) {
-		std::shared_ptr<MarkerPrimitive> markers = renderer->createMarkerPrimitive(MarkerPrimitive::BoxShape);
-		markers->setPositions(vp->dataset(), _pickedPoints, _pickedPoints + npoints);
-		markers->setColor(ColorA(1, 1, 1));
+		MarkerPrimitive markers(MarkerPrimitive::BoxShape);
+		markers.setPositions(vp->dataset(), _pickedPoints, _pickedPoints + npoints);
+		markers.setColor(ColorA(1, 1, 1));
 		renderer->renderMarkers(markers);
 
 		if(npoints == 2) {
-			std::shared_ptr<LinePrimitive> lines = renderer->createLinePrimitive();
-			lines->setPositions(vp->dataset(), _pickedPoints, _pickedPoints + 2);
-			lines->setUniformColor(ColorA(1, 1, 1));
+			LinePrimitive lines;
+			lines.setPositions(vp->dataset(), _pickedPoints, _pickedPoints + 2);
+			lines.setUniformColor(ColorA(1, 1, 1));
 			renderer->renderLines(lines);
 		}
 		else if(npoints == 3) {
-			std::shared_ptr<MeshPrimitive> meshPrimitive = renderer->createMeshPrimitive();
-			TriMesh tri;
-			tri.setVertexCount(3);
-			tri.setVertex(0, _pickedPoints[0]);
-			tri.setVertex(1, _pickedPoints[1]);
-			tri.setVertex(2, _pickedPoints[2]);
-			tri.addFace().setVertices(0, 1, 2);
-			meshPrimitive->setMesh(tri, MeshPrimitive::ConvexShapeMode);
-			meshPrimitive->setUniformColor(ColorA(0.7, 0.7, 1.0, 0.5));
-			renderer->renderMesh(std::move(meshPrimitive));
+			DataOORef<TriMeshObject> tri = DataOORef<TriMeshObject>::create(renderer->dataset(), ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement);
+			tri->setVertexCount(3);
+			tri->setVertex(0, _pickedPoints[0]);
+			tri->setVertex(1, _pickedPoints[1]);
+			tri->setVertex(2, _pickedPoints[2]);
+			tri->addFace().setVertices(0, 1, 2);
+			MeshPrimitive meshPrimitive;
+			meshPrimitive.setMesh(std::move(tri), MeshPrimitive::ConvexShapeMode);
+			meshPrimitive.setUniformColor(ColorA(0.7, 0.7, 1.0, 0.5));
+			renderer->renderMesh(meshPrimitive);
 
-			std::shared_ptr<LinePrimitive> lines = renderer->createLinePrimitive();
+			LinePrimitive lines;
 			const Point3 vertices[6] = { _pickedPoints[0], _pickedPoints[1], _pickedPoints[1], _pickedPoints[2], _pickedPoints[2], _pickedPoints[0] };
-			lines->setPositions(vp->dataset(), vertices);
-			lines->setUniformColor(ColorA(1, 1, 1));
+			lines.setPositions(vp->dataset(), vertices);
+			lines.setUniformColor(ColorA(1, 1, 1));
 			renderer->renderLines(lines);
 		}
 	}

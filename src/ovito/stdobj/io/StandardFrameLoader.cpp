@@ -39,7 +39,7 @@ SimulationCellObject* StandardFrameLoader::simulationCell()
 	if(!_simulationCell) {
 		_simulationCell = state().getMutableObject<SimulationCellObject>();
 		if(!_simulationCell) {
-			_simulationCell = state().createObject<SimulationCellObject>(dataSource(), executionContext(), AffineTransformation::Zero(), true, true, true, false);
+			_simulationCell = state().createObject<SimulationCellObject>(dataSource(), initializationHints(), AffineTransformation::Zero(), true, true, true, false);
 			_isSimulationCellNewlyCreated = true;
 		}
 	}
@@ -63,11 +63,12 @@ const ElementType* StandardFrameLoader::addNumericType(const PropertyContainerCl
 	}
 	OVITO_ASSERT(elementTypeClass->isDerivedFrom(ElementType::OOClass()));
 
-	DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance(dataset(), executionContext()));
+	// First initialization phase.
+	DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance(dataset(), initializationHints()));
+	// Second initialization phase for element types, which takes into account the assigned ID and name and the property type.
 	elementType->setNumericId(id);
 	elementType->setName(name);
-	elementType->initializeObject(executionContext());
-	elementType->initializeType(PropertyReference(&containerClass, typedProperty), executionContext());
+	elementType->initializeType(PropertyReference(&containerClass, typedProperty), initializationHints());
 
 	// Log in type name assigned by the file reader as default value for the element type.
 	// This is needed for the Python code generator to detect manual changes subsequently made by the user.

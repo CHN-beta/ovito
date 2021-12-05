@@ -74,7 +74,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;
+	virtual void initializeObject(ObjectInitializationHints hints) override;
 
 	/// \brief Returns the path where this dataset is stored on disk.
 	/// \return The location where the dataset is stored or will be stored on disk.
@@ -225,7 +225,7 @@ private:
 			FrameBuffer* frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder, SynchronousOperation operation);
 
 	/// Returns a viewport configuration that is used as template for new scenes.
-	OORef<ViewportConfiguration> createDefaultViewportConfiguration(ExecutionContext executionContext);
+	OORef<ViewportConfiguration> createDefaultViewportConfiguration(ObjectInitializationHints initializationHints);
 
 	/// Requests the (re-)evaluation of all data pipelines in the current scene.
 	Q_INVOKABLE void makeSceneReady(bool forceReevaluation);

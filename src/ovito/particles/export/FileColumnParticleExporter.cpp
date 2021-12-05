@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,12 +32,12 @@ IMPLEMENT_OVITO_CLASS(FileColumnParticleExporter);
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 *****************************************************************************/
-void FileColumnParticleExporter::initializeObject(ExecutionContext executionContext)
+void FileColumnParticleExporter::initializeObject(ObjectInitializationHints hints)
 {
-	ParticleExporter::initializeObject(executionContext);
+	ParticleExporter::initializeObject(hints);
 
 #ifndef OVITO_DISABLE_QSETTINGS
-	if(executionContext == ExecutionContext::Interactive) {
+	if(hints.testFlag(ObjectInitializationHint::LoadUserDefaults)) {
 		// Restore last output column mapping.
 		QSettings settings;
 		settings.beginGroup("exporter/particles/");

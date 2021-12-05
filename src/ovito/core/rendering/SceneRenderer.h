@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,6 +40,7 @@
 #include "CylinderPrimitive.h"
 #include "MeshPrimitive.h"
 #include "MarkerPrimitive.h"
+#include "RendererResourceCache.h"
 
 namespace Ovito {
 
@@ -145,74 +146,26 @@ public:
 	/// Returns the current model-to-view transformation matrix.
 	const AffineTransformation& modelViewTM() const { return _modelViewTM; }
 
-	/// Requests a new line geometry buffer from the renderer.
-	virtual std::shared_ptr<LinePrimitive> createLinePrimitive() {
-		OVITO_ASSERT(!isBoundingBoxPass());
-		return std::make_shared<LinePrimitive>();
-	}
-
 	/// Renders the line geometry stored in the given buffer.
-	virtual void renderLines(const std::shared_ptr<LinePrimitive>& primitive) {}
-
-	/// Requests a new particle geometry buffer from the renderer.
-	virtual std::shared_ptr<ParticlePrimitive> createParticlePrimitive(
-			ParticlePrimitive::ParticleShape shape = ParticlePrimitive::SphericalShape,
-			ParticlePrimitive::ShadingMode shadingMode = ParticlePrimitive::NormalShading,
-			ParticlePrimitive::RenderingQuality renderingQuality = ParticlePrimitive::MediumQuality) {
-		OVITO_ASSERT(!isBoundingBoxPass());
-		return std::make_shared<ParticlePrimitive>(shape, shadingMode, renderingQuality);
-	}
+	virtual void renderLines(const LinePrimitive& primitive) {}
 
 	/// Renders the particles stored in the given primitive buffer.
-	virtual void renderParticles(const std::shared_ptr<ParticlePrimitive>& primitive) {}
-
-	/// Requests a new marker geometry buffer from the renderer.
-	virtual std::shared_ptr<MarkerPrimitive> createMarkerPrimitive(MarkerPrimitive::MarkerShape shape) {
-		OVITO_ASSERT(!isBoundingBoxPass());
-		return std::make_shared<MarkerPrimitive>(shape);
-	}
+	virtual void renderParticles(const ParticlePrimitive& primitive) {}
 
 	/// Renders the marker geometry stored in the given buffer.
-	virtual void renderMarkers(const std::shared_ptr<MarkerPrimitive>& primitive) {}
-
-	/// Requests a new text geometry buffer from the renderer.
-	virtual std::shared_ptr<TextPrimitive> createTextPrimitive() {
-		OVITO_ASSERT(!isBoundingBoxPass());
-		return std::make_shared<TextPrimitive>();
-	}
+	virtual void renderMarkers(const MarkerPrimitive& primitive) {}
 
 	/// Renders the text stored in the given primitive buffer.
-	virtual void renderText(const std::shared_ptr<TextPrimitive>& primitive) {}
-
-	/// Requests a new image geometry buffer from the renderer.
-	virtual std::shared_ptr<ImagePrimitive> createImagePrimitive() {
-		OVITO_ASSERT(!isBoundingBoxPass());
-		return std::make_shared<ImagePrimitive>();
-	}
+	virtual void renderText(const TextPrimitive& primitive) {}
 
 	/// Renders the image stored in the given primitive buffer.
-	virtual void renderImage(const std::shared_ptr<ImagePrimitive>& primitive) {}
-
-	/// Requests a new cylinder geometry buffer from the renderer.
-	virtual std::shared_ptr<CylinderPrimitive> createCylinderPrimitive(
-			CylinderPrimitive::Shape shape = CylinderPrimitive::CylinderShape,
-			CylinderPrimitive::ShadingMode shadingMode = CylinderPrimitive::NormalShading,
-			CylinderPrimitive::RenderingQuality renderingQuality = CylinderPrimitive::MediumQuality) {
-		OVITO_ASSERT(!isBoundingBoxPass());
-		return std::make_shared<CylinderPrimitive>(shape, shadingMode, renderingQuality);
-	}
+	virtual void renderImage(const ImagePrimitive& primitive) {}
 
 	/// Renders the cylinder or arrow elements stored in the given buffer.
-	virtual void renderCylinders(const std::shared_ptr<CylinderPrimitive>& primitive) {}
-
-	/// Requests a new triangle mesh geometry buffer from the renderer.
-	virtual std::shared_ptr<MeshPrimitive> createMeshPrimitive() {
-		OVITO_ASSERT(!isBoundingBoxPass());
-		return std::make_shared<MeshPrimitive>();
-	}
+	virtual void renderCylinders(const CylinderPrimitive& primitive) {}
 
 	/// Renders the triangle mesh stored in the given buffer.
-	virtual void renderMesh(const std::shared_ptr<MeshPrimitive>& primitive) {}
+	virtual void renderMesh(const MeshPrimitive& primitive) {}
 
 	/// Renders a 2d polyline or polygon into an interactive viewport.
 	void render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed);
@@ -261,9 +214,6 @@ public:
 	/// Activates the special highlight rendering mode.
 	/// This method is mainly used with the interactive viewport renderer.
 	virtual void setHighlightMode(int pass) {}
-
-	/// Determines if this renderer can share geometry data and other resources with the given other renderer.
-	virtual bool sharesResourcesWith(SceneRenderer* otherRenderer) const { return true; }
 
 	/// Computes the world size of an object that should appear one pixel wide in the rendered image.
 	FloatType projectedPixelSize(const Point3& worldPosition) const;
@@ -352,33 +302,6 @@ private:
 
 	/// Working variable used for computing the bounding box of the entire scene.
 	Box3 _sceneBoundingBox;
-
-	/// The geometry buffer for rendering the construction grid in an interactive viewport.
-	std::shared_ptr<LinePrimitive> _constructionGridGeometry;
-};
-
-/**
- * Helper class that is used by vis elements to determine if two scene renderers
- * are compatible and can share resources.
- */
-class CompatibleRendererGroup
-{
-public:
-
-	/// Constructor.
-	CompatibleRendererGroup(SceneRenderer* renderer) : _renderer(renderer) {}
-
-	/// Comparison operator.
-	bool operator==(const CompatibleRendererGroup& other) const {
-		return !_renderer.isNull() && !other._renderer.isNull() && _renderer->sharesResourcesWith(other._renderer.data());
-	}
-
-	/// Comparison operator.
-	bool operator!=(const CompatibleRendererGroup& other) const { return !(*this == other); }
-
-private:
-
-	QPointer<SceneRenderer> _renderer;
 };
 
 /*

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ DihedralsObject::DihedralsObject(DataSet* dataset) : PropertyContainer(dataset)
 /******************************************************************************
 * Creates a storage object for standard properties.
 ******************************************************************************/
-PropertyPtr DihedralsObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
+PropertyPtr DihedralsObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -66,7 +66,7 @@ PropertyPtr DihedralsObject::OOMetaClass::createStandardPropertyInternal(DataSet
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, executionContext, elementCount, dataType, componentCount, stride,
+	PropertyPtr property = PropertyPtr::create(dataset, initializationHints, elementCount, dataType, componentCount, stride,
 								propertyName, false, type, componentNames);
 
 	if(initializeMemory) {

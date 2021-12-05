@@ -213,11 +213,11 @@ PropertyObject* ParaViewVTPBondsImporter::FrameLoader::createBondPropertyForData
 
 	if(name.compare(QLatin1String("id1"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
 		vectorComponent = 0;
-		return bonds()->createProperty(BondsObject::ParticleIdentifiersProperty, preserveExistingData, executionContext());
+		return bonds()->createProperty(BondsObject::ParticleIdentifiersProperty, preserveExistingData, initializationHints());
 	}
 	else if(name.compare(QLatin1String("id2"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
 		vectorComponent = 1;
-		return bonds()->createProperty(BondsObject::ParticleIdentifiersProperty, preserveExistingData, executionContext());
+		return bonds()->createProperty(BondsObject::ParticleIdentifiersProperty, preserveExistingData, initializationHints());
 	}
 	else {
 		return bonds()->createProperty(name.toString(), PropertyObject::Float, numComponents, 0, preserveExistingData);
@@ -252,7 +252,7 @@ void BondsParaViewVTMFileFilter::postprocessDatasets(FileSourceImporter::LoadOpe
 		}
 
 		// Perform lookup of particle IDs.
-		PropertyAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty, false, request.executionContext);
+		PropertyAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty, false, request.initializationHints);
 		auto t = bondTopologyArray.begin();
 		for(const ParticleIndexPair& bond : ConstPropertyAccess<ParticleIndexPair>(bondParticleIdentifiers)) {
 			auto iter1 = idToIndexMap.find(bond[0]);

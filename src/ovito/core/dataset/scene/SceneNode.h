@@ -173,7 +173,7 @@ public:
 	///
 	/// The target node will automatically be deleted if this SceneNode is deleted and vice versa.
 	/// \undoable
-	LookAtController* setLookatTargetNode(SceneNode* targetNode);
+	LookAtController* setLookatTargetNode(SceneNode* targetNode, ObjectInitializationHints initializationHints);
 
 	/// \brief Returns the bounding box of the scene node in local coordinates.
 	/// \param time The time at which the bounding box should be computed.
@@ -223,7 +223,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;
+	virtual void initializeObject(ObjectInitializationHints hints) override;
 
 	/// Shows/hides this node in the given viewport, i.e. turns rendering on or off.
 	void setPerViewportVisibility(Viewport* vp, bool visible);

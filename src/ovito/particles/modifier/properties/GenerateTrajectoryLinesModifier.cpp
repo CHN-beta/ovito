@@ -71,12 +71,12 @@ GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(DataSet* datase
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void GenerateTrajectoryLinesModifier::initializeObject(ExecutionContext executionContext)
+void GenerateTrajectoryLinesModifier::initializeObject(ObjectInitializationHints hints)
 {
 	// Create the vis element for rendering the trajectories created by the modifier.
-	setTrajectoryVis(OORef<TrajectoryVis>::create(dataset(), executionContext));
+	setTrajectoryVis(OORef<TrajectoryVis>::create(dataset(), hints));
 
-	Modifier::initializeObject(executionContext);
+	Modifier::initializeObject(hints);
 }
 
 /******************************************************************************
@@ -90,10 +90,10 @@ bool GenerateTrajectoryLinesModifier::OOMetaClass::isApplicableTo(const DataColl
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void GenerateTrajectoryLinesModifier::evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void GenerateTrajectoryLinesModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	// Inject the precomputed trajectory lines, which are stored in the modifier application, into the pipeline.
-	if(GenerateTrajectoryLinesModifierApplication* myModApp = dynamic_object_cast<GenerateTrajectoryLinesModifierApplication>(modApp)) {
+	if(GenerateTrajectoryLinesModifierApplication* myModApp = dynamic_object_cast<GenerateTrajectoryLinesModifierApplication>(request.modApp())) {
 		if(myModApp->trajectoryData()) {
 			state.addObject(myModApp->trajectoryData());
 		}
@@ -103,17 +103,16 @@ void GenerateTrajectoryLinesModifier::evaluateSynchronous(TimePoint time, Modifi
 /******************************************************************************
 * Updates the stored trajectories from the source particle object.
 ******************************************************************************/
-bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation)
+bool GenerateTrajectoryLinesModifier::generateTrajectories(SynchronousOperation operation)
 {
 	TimePoint currentTime = dataset()->animationSettings()->time();
-	ExecutionContext executionContext = Application::instance()->executionContext();
-
+	
 	for(ModifierApplication* modApp : modifierApplications()) {
 		GenerateTrajectoryLinesModifierApplication* myModApp = dynamic_object_cast<GenerateTrajectoryLinesModifierApplication>(modApp);
 		if(!myModApp) continue;
 
 		// Get input particles.
-		SharedFuture<PipelineFlowState> stateFuture = myModApp->evaluateInput(PipelineEvaluationRequest(currentTime));
+		SharedFuture<PipelineFlowState> stateFuture = myModApp->evaluateInput(PipelineEvaluationRequest(operation.initializationHints(), currentTime));
 		if(!operation.waitForFuture(stateFuture))
 			return false;
 
@@ -173,7 +172,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 		for(TimePoint time : sampleTimes) {
 			operation.setProgressText(tr("Generating trajectory lines (frame %1 of %2)").arg(operation.progressValue()+1).arg(operation.progressMaximum()));
 
-			SharedFuture<PipelineFlowState> stateFuture = myModApp->evaluateInput(PipelineEvaluationRequest(time));
+			SharedFuture<PipelineFlowState> stateFuture = myModApp->evaluateInput(PipelineEvaluationRequest(operation.initializationHints(), time));
 			if(!operation.waitForFuture(stateFuture))
 				return false;
 
@@ -285,25 +284,25 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 		UndoSuspender noUndo(dataset());
 
 		// Create the trajectory lines data object.
-		DataOORef<TrajectoryObject> trajObj = DataOORef<TrajectoryObject>::create(dataset(), executionContext);
+		DataOORef<TrajectoryObject> trajObj = DataOORef<TrajectoryObject>::create(dataset(), operation.initializationHints());
 
 		// Copy re-ordered trajectory points.
 		trajObj->setElementCount(pointData.size());
-		PropertyAccess<Point3> trajPosProperty = trajObj->createProperty(TrajectoryObject::PositionProperty, false, executionContext);
+		PropertyAccess<Point3> trajPosProperty = trajObj->createProperty(TrajectoryObject::PositionProperty, false, operation.initializationHints());
 		auto piter = permutation.cbegin();
 		for(Point3& p : trajPosProperty) {
 			p = pointData[*piter++];
 		}
 
 		// Copy re-ordered trajectory time stamps.
-		PropertyAccess<int> trajTimeProperty = trajObj->createProperty(TrajectoryObject::SampleTimeProperty, false, executionContext);
+		PropertyAccess<int> trajTimeProperty = trajObj->createProperty(TrajectoryObject::SampleTimeProperty, false, operation.initializationHints());
 		piter = permutation.cbegin();
 		for(int& t : trajTimeProperty) {
 			t = sampleFrames[timeData[*piter++]];
 		}
 
 		// Copy re-ordered trajectory ids.
-		PropertyAccess<qlonglong> trajIdProperty = trajObj->createProperty(TrajectoryObject::ParticleIdentifierProperty, false, executionContext);
+		PropertyAccess<qlonglong> trajIdProperty = trajObj->createProperty(TrajectoryObject::ParticleIdentifierProperty, false, operation.initializationHints());
 		piter = permutation.cbegin();
 		for(qlonglong& id : trajIdProperty) {
 			id = idData[*piter++];
@@ -320,7 +319,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(Promise<>&& operation
 				PropertyAccess<void,true> samplingProperty;
 				if(TrajectoryObject::OOClass().isValidStandardPropertyId(inputProperty->type())) {
 					// Input particle property is also a standard property for trajectory lines.
-					samplingProperty = trajObj->createProperty(inputProperty->type(), false, executionContext);
+					samplingProperty = trajObj->createProperty(inputProperty->type(), false, operation.initializationHints());
 					OVITO_ASSERT(samplingProperty.dataType() == inputProperty->dataType());
 					OVITO_ASSERT(samplingProperty.stride() == inputProperty->stride());
 				}

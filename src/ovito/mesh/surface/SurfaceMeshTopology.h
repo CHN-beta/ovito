@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -181,7 +181,7 @@ public:
     /// Note that the HalfEdgeMesh structure holds only the mesh topology and no
     /// vertex coordinates. Thus, it is the responsibility of the caller to set the
     /// vertex coordinates for the generated TriMesh.
-    void convertToTriMesh(TriMesh& output) const;
+    void convertToTriMesh(TriMeshObject& output) const;
 
     /// Deletes a face from the mesh.
     /// A hole in the mesh will be left behind at the location of the deleted face.

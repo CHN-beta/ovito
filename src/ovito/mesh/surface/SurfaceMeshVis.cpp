@@ -26,7 +26,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
-#include <ovito/core/utilities/mesh/TriMesh.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/DataSetContainer.h>
@@ -76,16 +76,16 @@ SurfaceMeshVis::SurfaceMeshVis(DataSet* dataset) : TransformingDataVis(dataset),
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void SurfaceMeshVis::initializeObject(ExecutionContext executionContext)
+void SurfaceMeshVis::initializeObject(ObjectInitializationHints hints)
 {
 	// Create animation controllers for the transparency parameters.
-	setSurfaceTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
-	setCapTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
+	setSurfaceTransparencyController(ControllerManager::createFloatController(dataset(), hints));
+	setCapTransparencyController(ControllerManager::createFloatController(dataset(), hints));
 
 	// Create a color mapping object for pseudo-color visualization of a surface property.
-	setSurfaceColorMapping(OORef<PropertyColorMapping>::create(dataset(), executionContext));
+	setSurfaceColorMapping(OORef<PropertyColorMapping>::create(dataset(), hints));
 
-	TransformingDataVis::initializeObject(executionContext);
+	TransformingDataVis::initializeObject(hints);
 }
 
 /******************************************************************************
@@ -155,9 +155,11 @@ Future<PipelineFlowState> SurfaceMeshVis::transformDataImpl(const PipelineEvalua
 
 	// Submit engine for execution and post-process results.
 	return dataset()->taskManager().runTaskAsync(std::move(engine))
-		.then(executor(), [this, flowState = std::move(flowState), dataObject = OORef<DataObject>(dataObject)](TriMesh&& surfaceMesh, TriMesh&& capPolygonsMesh, std::vector<ColorA>&& materialColors, std::vector<size_t>&& originalFaceMap, bool renderFacesTwoSided, PipelineStatus&& status) mutable {
+		.then(executor(), [this, flowState = std::move(flowState), dataObject = OORef<DataObject>(dataObject)](DataOORef<const TriMeshObject>&& surfaceMesh, DataOORef<const TriMeshObject>&& capPolygonsMesh, std::vector<ColorA>&& materialColors, std::vector<size_t>&& originalFaceMap, bool renderFacesTwoSided, PipelineStatus&& status) mutable {
 			// Output the computed mesh as a RenderableSurfaceMesh.
-			DataOORef<RenderableSurfaceMesh> renderableMesh = DataOORef<RenderableSurfaceMesh>::create(dataset(), Application::instance()->executionContext(), this, dataObject, std::move(surfaceMesh), std::move(capPolygonsMesh), !renderFacesTwoSided);
+			DataOORef<RenderableSurfaceMesh> renderableMesh = DataOORef<RenderableSurfaceMesh>::create(dataset(), 
+				ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement, 
+				this, dataObject, std::move(surfaceMesh), std::move(capPolygonsMesh), !renderFacesTwoSided);
             renderableMesh->setVisElement(this);
 			renderableMesh->setMaterialColors(std::move(materialColors));
             renderableMesh->setOriginalFaceMap(std::move(originalFaceMap));
@@ -178,8 +180,8 @@ Box3 SurfaceMeshVis::boundingBox(TimePoint time, const ConstDataObjectPath& path
 	// Compute mesh bounding box.
 	// Requires that the periodic SurfaceMesh has already been transformed into a non-periodic RenderableSurfaceMesh.
 	if(const RenderableSurfaceMesh* meshObj = dynamic_object_cast<RenderableSurfaceMesh>(path.back())) {
-		bb.addBox(meshObj->surfaceMesh().boundingBox());
-		bb.addBox(meshObj->capPolygonsMesh().boundingBox());
+		if(meshObj->surfaceMesh()) bb.addBox(meshObj->surfaceMesh()->boundingBox());
+		if(meshObj->capPolygonsMesh()) bb.addBox(meshObj->capPolygonsMesh()->boundingBox());
 	}
 	return bb;
 }
@@ -212,8 +214,7 @@ PipelineStatus SurfaceMeshVis::render(TimePoint time, const ConstDataObjectPath&
 	ColorA color_cap(capColor(), cap_alpha);
 
 	// The key type used for caching the surface primitive:
-	using SurfaceCacheKey = std::tuple<
-		CompatibleRendererGroup,	// The scene renderer
+	using SurfaceCacheKey = RendererResourceKey<struct SurfaceMeshCache,
 		ConstDataObjectRef,			// Mesh object
 		ColorA,						// Surface color
 		ColorA,						// Cap color
@@ -222,8 +223,8 @@ PipelineStatus SurfaceMeshVis::render(TimePoint time, const ConstDataObjectPath&
 
     // The values stored in the vis cache.
     struct CacheValue {
-        std::shared_ptr<MeshPrimitive> surfacePrimitive;
-        std::shared_ptr<MeshPrimitive> capPrimitive;
+        MeshPrimitive surfacePrimitive;
+        MeshPrimitive capPrimitive;
         OORef<ObjectPickInfo> pickInfo;
     };
 
@@ -232,20 +233,19 @@ PipelineStatus SurfaceMeshVis::render(TimePoint time, const ConstDataObjectPath&
     if(!renderableMesh) return {};
 
 	// Lookup the rendering primitive in the vis cache.
-    auto& visCache = dataset()->visCache().get<CacheValue>(SurfaceCacheKey(renderer, path.back(), color_surface, color_cap, highlightEdges()));
+    auto& visCache = dataset()->visCache().get<CacheValue>(SurfaceCacheKey(path.back(), color_surface, color_cap, highlightEdges()));
 
 	// Check if we already have a valid rendering primitive that is up to date.
-	if(!visCache.surfacePrimitive) {
-		visCache.surfacePrimitive = renderer->createMeshPrimitive();
+	if(!visCache.surfacePrimitive.mesh()) {
 		auto materialColors = renderableMesh->materialColors();
 		for(ColorA& c : materialColors) {
 			c.a() = surface_alpha;
 		}
-		visCache.surfacePrimitive->setMaterialColors(std::move(materialColors));
-		visCache.surfacePrimitive->setUniformColor(color_surface);
-		visCache.surfacePrimitive->setEmphasizeEdges(highlightEdges());
-		visCache.surfacePrimitive->setCullFaces(renderableMesh->backfaceCulling());
-		visCache.surfacePrimitive->setMesh(renderableMesh->surfaceMesh());
+		visCache.surfacePrimitive.setMaterialColors(std::move(materialColors));
+		visCache.surfacePrimitive.setUniformColor(color_surface);
+		visCache.surfacePrimitive.setEmphasizeEdges(highlightEdges());
+		visCache.surfacePrimitive.setCullFaces(renderableMesh->backfaceCulling());
+		visCache.surfacePrimitive.setMesh(renderableMesh->surfaceMesh());
 
         // Get the original surface mesh.
         if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(renderableMesh->sourceDataObject().get())) {
@@ -255,29 +255,26 @@ PipelineStatus SurfaceMeshVis::render(TimePoint time, const ConstDataObjectPath&
 	}
 
 	// Check if we already have a valid rendering primitive that is up to date.
-	if(!visCache.capPrimitive) {
-		if(showCap()) {
-			visCache.capPrimitive = renderer->createMeshPrimitive();
-			visCache.capPrimitive->setUniformColor(color_cap);
-			visCache.capPrimitive->setMesh(renderableMesh->capPolygonsMesh(), MeshPrimitive::ConvexShapeMode);
-		}
+	if(!visCache.capPrimitive.mesh() && showCap()) {
+		visCache.capPrimitive.setUniformColor(color_cap);
+		visCache.capPrimitive.setMesh(renderableMesh->capPolygonsMesh(), MeshPrimitive::ConvexShapeMode);
+	}
+	else if(visCache.capPrimitive.mesh() && !showCap()) {
+		visCache.capPrimitive.setMesh(nullptr);
 	}
 
 	// Handle picking of triangles.
 	renderer->beginPickObject(contextNode, visCache.pickInfo);
-	if(visCache.surfacePrimitive) {
+	if(visCache.surfacePrimitive.mesh()) {
 
 		// Update the color mapping.
-		visCache.surfacePrimitive->setPseudoColorMapping(surfaceColorMapping()->pseudoColorMapping());
+		visCache.surfacePrimitive.setPseudoColorMapping(surfaceColorMapping()->pseudoColorMapping());
 
 		renderer->renderMesh(visCache.surfacePrimitive);
 	}
-	if(showCap()) {
+	if(showCap() && visCache.capPrimitive.mesh()) {
 		if(!renderer->isPicking() || cap_alpha >= 1)
 			renderer->renderMesh(visCache.capPrimitive);
-	}
-	else {
-		visCache.capPrimitive.reset();
 	}
 	renderer->endPickObject();
 
@@ -483,8 +480,8 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 	if(ConstPropertyAccess<Color> colorProperty = _inputMesh->faces()->getProperty(SurfaceMeshFaces::ColorProperty)) {
 		// The "Color" property of mesh faces has the highest priority.
 		// If it is present, use its information to color the triangle faces.
-		_surfaceMesh.setHasFaceColors(true);
-		auto meshFaceColor = _surfaceMesh.faceColors().begin();
+		_surfaceMesh->setHasFaceColors(true);
+		auto meshFaceColor = _surfaceMesh->faceColors().begin();
 		for(size_t originalFace : _originalFaceMap) {
 			*meshFaceColor++ = colorProperty[originalFace];
 		}
@@ -493,9 +490,9 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 		// If the "Color" property of mesh regions is present, use it information to color the 
 		// mesh faces according to the region they belong to.
 		if(ConstPropertyAccess<int> regionProperty = _inputMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
-			_surfaceMesh.setHasFaceColors(true);
+			_surfaceMesh->setHasFaceColors(true);
 			size_t regionCount = colorProperty.size();
-			auto meshFaceColor = _surfaceMesh.faceColors().begin();
+			auto meshFaceColor = _surfaceMesh->faceColors().begin();
 			for(size_t originalFace : _originalFaceMap) {
 				SurfaceMeshAccess::region_index regionIndex = regionProperty[originalFace];
 				if(regionIndex >= 0 && regionIndex < regionCount)
@@ -508,10 +505,10 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 	else if(_colorMappingMode == FacePseudoColoring && _pseudoColorPropertyRef && _inputMesh->faces()) {
 		if(const PropertyObject* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(_inputMesh->faces())) {
 			if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
-				_surfaceMesh.setHasFacePseudoColors(true);
+				_surfaceMesh->setHasFacePseudoColors(true);
 				ConstPropertyAccess<void,true> pseudoColorArray(pseudoColorProperty);
 				size_t vecComponent = std::max(0, _pseudoColorPropertyRef.vectorComponent());
-				auto meshFacePseudoColor = _surfaceMesh.facePseudoColors().begin();
+				auto meshFacePseudoColor = _surfaceMesh->facePseudoColors().begin();
 				for(size_t originalFace : _originalFaceMap) {
 					*meshFacePseudoColor++ = pseudoColorArray.get<FloatType>(originalFace, vecComponent);
 				}
@@ -528,11 +525,11 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 		if(const PropertyObject* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(_inputMesh->regions())) {
 			if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
 				if(ConstPropertyAccess<int> regionProperty = _inputMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
-					_surfaceMesh.setHasFacePseudoColors(true);
+					_surfaceMesh->setHasFacePseudoColors(true);
 					ConstPropertyAccess<void,true> pseudoColorArray(pseudoColorProperty);
 					size_t vecComponent = std::max(0, _pseudoColorPropertyRef.vectorComponent());
 					size_t regionCount = pseudoColorProperty->size();
-					auto meshFacePseudoColor = _surfaceMesh.facePseudoColors().begin();
+					auto meshFacePseudoColor = _surfaceMesh->facePseudoColors().begin();
 					for(size_t originalFace : _originalFaceMap) {
 						SurfaceMeshAccess::region_index regionIndex = regionProperty[originalFace];
 						if(regionIndex >= 0 && regionIndex < regionCount)
@@ -552,7 +549,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 	}
 
 	if(ConstPropertyAccess<int> selectionProperty = _inputMesh->faces()->getProperty(SurfaceMeshFaces::SelectionProperty)) {
-		auto meshFace = _surfaceMesh.faces().begin();
+		auto meshFace = _surfaceMesh->faces().begin();
 		for(size_t originalFace : _originalFaceMap) {
 			if(selectionProperty[originalFace])
 				meshFace->setSelected();
@@ -564,7 +561,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 		// mesh faces that belong to selected regions.
 		if(ConstPropertyAccess<int> regionProperty = _inputMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
 			size_t regionCount = selectionProperty.size();
-			auto meshFace = _surfaceMesh.faces().begin();
+			auto meshFace = _surfaceMesh->faces().begin();
 			for(size_t originalFace : _originalFaceMap) {
 				SurfaceMeshAccess::region_index regionIndex = regionProperty[originalFace];
 				if(regionIndex >= 0 && regionIndex < regionCount && selectionProperty[regionIndex])
@@ -581,18 +578,18 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 void SurfaceMeshVis::PrepareSurfaceEngine::determineVertexColors()
 {
 	if(ConstPropertyAccess<Color> colorProperty = _inputMesh->vertices()->getProperty(SurfaceMeshVertices::ColorProperty)) {
-		OVITO_ASSERT(colorProperty.size() == _surfaceMesh.vertexCount());
-		if(colorProperty.size() == _surfaceMesh.vertexCount()) {
-			_surfaceMesh.setHasVertexColors(true);
-			boost::copy(colorProperty, _surfaceMesh.vertexColors().begin());
+		OVITO_ASSERT(colorProperty.size() == _surfaceMesh->vertexCount());
+		if(colorProperty.size() == _surfaceMesh->vertexCount()) {
+			_surfaceMesh->setHasVertexColors(true);
+			boost::copy(colorProperty, _surfaceMesh->vertexColors().begin());
 		}
 	}
 	else if(_colorMappingMode == VertexPseudoColoring && _pseudoColorPropertyRef) {
 		if(const PropertyObject* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(_inputMesh->vertices())) {
-			OVITO_ASSERT(pseudoColorProperty->size() == _surfaceMesh.vertexCount());
+			OVITO_ASSERT(pseudoColorProperty->size() == _surfaceMesh->vertexCount());
 			if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
-				_surfaceMesh.setHasVertexPseudoColors(true);
-				pseudoColorProperty->copyTo(_surfaceMesh.vertexPseudoColors().begin(), std::max(0, _pseudoColorPropertyRef.vectorComponent()));
+				_surfaceMesh->setHasVertexPseudoColors(true);
+				pseudoColorProperty->copyTo(_surfaceMesh->vertexPseudoColors().begin(), std::max(0, _pseudoColorPropertyRef.vectorComponent()));
 			}
 			else {
 				_status = PipelineStatus(PipelineStatus::Error, tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(_pseudoColorPropertyRef.name()).arg(pseudoColorProperty->componentCount()));
@@ -618,7 +615,8 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 	const SurfaceMeshAccess inputMeshData(inputMesh());
 
 	// Transfer vertices and faces from half-edge mesh structure to triangle mesh structure.
-	inputMeshData.convertToTriMesh(_surfaceMesh, _smoothShading, _faceSubset, &_originalFaceMap, !_renderFacesTwoSided);
+	_surfaceMesh = DataOORef<TriMeshObject>::create(_inputMesh->dataset(), ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement);
+	inputMeshData.convertToTriMesh(*_surfaceMesh, _smoothShading, _faceSubset, &_originalFaceMap, !_renderFacesTwoSided);
 
 	// Check for early abortion.
 	if(isCanceled())
@@ -630,7 +628,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 
 	// Flip orientation of mesh faces if requested.
 	if(_reverseOrientation)
-		_surfaceMesh.flipFaces();
+		_surfaceMesh->flipFaces();
 
 	// Check for early abortion.
 	if(isCanceled())
@@ -638,10 +636,10 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 	nextProgressSubStep();
 
 	// Convert vertex positions to reduced coordinates and transfer them to the output mesh.
-	OVITO_ASSERT(_surfaceMesh.vertices().size() == inputMeshData.vertexCount());
+	OVITO_ASSERT(_surfaceMesh->vertices().size() == inputMeshData.vertexCount());
 	if(cell()) {
 		SurfaceMeshAccess::vertex_index vidx = 0;
-		for(Point3& p : _surfaceMesh.vertices()) {
+		for(Point3& p : _surfaceMesh->vertices()) {
 			p = cell()->absoluteToReduced(inputMeshData.vertexPosition(vidx++));
 			OVITO_ASSERT(std::isfinite(p.x()) && std::isfinite(p.y()) && std::isfinite(p.z()));
 		}
@@ -743,15 +741,15 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 			return false;
 
 		// Make sure all vertices are located inside the periodic box.
-		for(Point3& p : _surfaceMesh.vertices()) {
+		for(Point3& p : _surfaceMesh->vertices()) {
 			OVITO_ASSERT(std::isfinite(p[dim]));
 			p[dim] -= std::floor(p[dim]);
 			OVITO_ASSERT(p[dim] >= FloatType(0) && p[dim] <= FloatType(1));
 		}
 
 		// Split triangle faces at periodic boundaries.
-		int oldFaceCount = _surfaceMesh.faceCount();
-		int oldVertexCount = _surfaceMesh.vertexCount();
+		int oldFaceCount = _surfaceMesh->faceCount();
+		int oldVertexCount = _surfaceMesh->vertexCount();
 		std::vector<Point3> newVertices;
 		std::vector<ColorA> newVertexColors;
 		std::vector<FloatType> newVertexPseudoColors;
@@ -763,15 +761,15 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 		}
 
 		// Insert newly created vertices into mesh.
-		_surfaceMesh.setVertexCount(oldVertexCount + newVertices.size());
-		std::copy(newVertices.cbegin(), newVertices.cend(), _surfaceMesh.vertices().begin() + oldVertexCount);
-		if(_surfaceMesh.hasVertexColors()) {
+		_surfaceMesh->setVertexCount(oldVertexCount + newVertices.size());
+		std::copy(newVertices.cbegin(), newVertices.cend(), _surfaceMesh->vertices().begin() + oldVertexCount);
+		if(_surfaceMesh->hasVertexColors()) {
 			OVITO_ASSERT(newVertexColors.size() == newVertices.size());
-			std::copy(newVertexColors.cbegin(), newVertexColors.cend(), _surfaceMesh.vertexColors().begin() + oldVertexCount);
+			std::copy(newVertexColors.cbegin(), newVertexColors.cend(), _surfaceMesh->vertexColors().begin() + oldVertexCount);
 		}
-		if(_surfaceMesh.hasVertexPseudoColors()) {
+		if(_surfaceMesh->hasVertexPseudoColors()) {
 			OVITO_ASSERT(newVertexPseudoColors.size() == newVertices.size());
-			std::copy(newVertexPseudoColors.cbegin(), newVertexPseudoColors.cend(), _surfaceMesh.vertexPseudoColors().begin() + oldVertexCount);
+			std::copy(newVertexPseudoColors.cbegin(), newVertexPseudoColors.cend(), _surfaceMesh->vertexPseudoColors().begin() + oldVertexCount);
 		}
 	}
 	if(isCanceled())
@@ -782,7 +780,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 	// Convert vertex positions back from reduced coordinates to absolute coordinates.
 	if(cell()) {
 		const AffineTransformation cellMatrix = cell()->matrix();
-		for(Point3& p : _surfaceMesh.vertices())
+		for(Point3& p : _surfaceMesh->vertices())
 			p = cellMatrix * p;
 	}
 
@@ -791,24 +789,24 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 	// Clip mesh at cutting planes.
 	if(!_cuttingPlanes.empty()) {
 		auto of = _originalFaceMap.begin();
-		for(TriMeshFace& face : _surfaceMesh.faces())
+		for(TriMeshFace& face : _surfaceMesh->faces())
 			face.setMaterialIndex(*of++);
 
 		for(const Plane3& plane : _cuttingPlanes) {
 			if(isCanceled())
 				return false;
 
-			_surfaceMesh.clipAtPlane(plane);
+			_surfaceMesh->clipAtPlane(plane);
 		}
 
-		_originalFaceMap.resize(_surfaceMesh.faces().size());
+		_originalFaceMap.resize(_surfaceMesh->faces().size());
 		of = _originalFaceMap.begin();
-		for(TriMeshFace& face : _surfaceMesh.faces())
+		for(TriMeshFace& face : _surfaceMesh->faces())
 			*of++ = face.materialIndex();
 	}
 
-	_surfaceMesh.invalidateVertices();
-	OVITO_ASSERT(_originalFaceMap.size() == _surfaceMesh.faces().size());
+	_surfaceMesh->invalidateVertices();
+	OVITO_ASSERT(_originalFaceMap.size() == _surfaceMesh->faces().size());
 
 	endProgressSubSteps();
 	return true;
@@ -820,14 +818,14 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVertexCount, std::vector<Point3>& newVertices, std::vector<ColorA>& newVertexColors,
 		std::vector<FloatType>& newVertexPseudoColors, std::map<std::pair<int,int>,std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim)
 {
-    TriMeshFace& face = _surfaceMesh.face(faceIndex);
+    TriMeshFace& face = _surfaceMesh->face(faceIndex);
 	OVITO_ASSERT(face.vertex(0) != face.vertex(1));
 	OVITO_ASSERT(face.vertex(1) != face.vertex(2));
 	OVITO_ASSERT(face.vertex(2) != face.vertex(0));
 
 	FloatType z[3];
 	for(int v = 0; v < 3; v++)
-		z[v] = _surfaceMesh.vertex(face.vertex(v))[dim];
+		z[v] = _surfaceMesh->vertex(face.vertex(v))[dim];
 	FloatType zd[3] = { z[1] - z[0], z[2] - z[1], z[0] - z[2] };
 
 	OVITO_ASSERT(z[1] - z[0] == -(z[0] - z[1]));
@@ -864,7 +862,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVerte
 			newVertexIndices[i][oi2] = std::get<1>(entry->second);
 		}
 		else {
-			Vector3 delta = _surfaceMesh.vertex(vi2) - _surfaceMesh.vertex(vi1);
+			Vector3 delta = _surfaceMesh->vertex(vi2) - _surfaceMesh->vertex(vi1);
 			delta[dim] -= FloatType(1);
 			if(cell()) {
 				for(size_t d = dim + 1; d < 3; d++) {
@@ -874,11 +872,11 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVerte
 			}
 			FloatType t;
 			if(delta[dim] != 0)
-				t = _surfaceMesh.vertex(vi1)[dim] / (-delta[dim]);
+				t = _surfaceMesh->vertex(vi1)[dim] / (-delta[dim]);
 			else
 				t = FloatType(0.5);
 			OVITO_ASSERT(std::isfinite(t));
-			Point3 p = delta * t + _surfaceMesh.vertex(vi1);
+			Point3 p = delta * t + _surfaceMesh->vertex(vi1);
 			newVertexIndices[i][oi1] = oldVertexCount + (int)newVertices.size();
 			newVertexIndices[i][oi2] = oldVertexCount + (int)newVertices.size() + 1;
 			entry = newVertexLookupMap.emplace(std::make_pair(vi1, vi2), std::make_tuple(newVertexIndices[i][oi1], newVertexIndices[i][oi2], t)).first;
@@ -886,9 +884,9 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVerte
 			p[dim] += FloatType(1);
 			newVertices.push_back(p);
 			// Compute the color at the intersection point by interpolating the colors of the two existing vertices.
-			if(_surfaceMesh.hasVertexColors()) {
-				const ColorA& color1 = _surfaceMesh.vertexColor(vi1);
-				const ColorA& color2 = _surfaceMesh.vertexColor(vi2);
+			if(_surfaceMesh->hasVertexColors()) {
+				const ColorA& color1 = _surfaceMesh->vertexColor(vi1);
+				const ColorA& color2 = _surfaceMesh->vertexColor(vi2);
 				ColorA interp_color(color1.r() + (color2.r() - color1.r()) * t,
 									color1.g() + (color2.g() - color1.g()) * t,
 									color1.b() + (color2.b() - color1.b()) * t,
@@ -896,9 +894,9 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVerte
 				newVertexColors.push_back(interp_color);
 				newVertexColors.push_back(interp_color);
 			}
-			if(_surfaceMesh.hasVertexPseudoColors()) {
-				FloatType pseudocolor1 = _surfaceMesh.vertexPseudoColor(vi1);
-				FloatType pseudocolor2 = _surfaceMesh.vertexPseudoColor(vi2);
+			if(_surfaceMesh->hasVertexPseudoColors()) {
+				FloatType pseudocolor1 = _surfaceMesh->vertexPseudoColor(vi1);
+				FloatType pseudocolor2 = _surfaceMesh->vertexPseudoColor(vi2);
 				FloatType interp_pseudocolor = pseudocolor1 + (pseudocolor2 - pseudocolor1) * t;
 				newVertexPseudoColors.push_back(interp_pseudocolor);
 				newVertexPseudoColors.push_back(interp_pseudocolor);
@@ -906,8 +904,8 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVerte
 		}
 		// Compute interpolated normal vector at intersection point.
 		if(_smoothShading) {
-			const Vector3& n1 = _surfaceMesh.faceVertexNormal(faceIndex, (i+oi1)%3);
-			const Vector3& n2 = _surfaceMesh.faceVertexNormal(faceIndex, (i+oi2)%3);
+			const Vector3& n1 = _surfaceMesh->faceVertexNormal(faceIndex, (i+oi1)%3);
+			const Vector3& n2 = _surfaceMesh->faceVertexNormal(faceIndex, (i+oi2)%3);
 			FloatType t = std::get<2>(entry->second);
 			interpolatedNormals[i] = n1*t + n2*(FloatType(1)-t);
 			interpolatedNormals[i].normalizeSafely();
@@ -924,11 +922,11 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVerte
 	face.setEdgeVisibility(originalEdgeVisibility[properEdge], false, originalEdgeVisibility[pe2]);
 
     int materialIndex = face.materialIndex();
-	OVITO_ASSERT(_originalFaceMap.size() == _surfaceMesh.faceCount());
-	_surfaceMesh.setFaceCount(_surfaceMesh.faceCount() + 2);
+	OVITO_ASSERT(_originalFaceMap.size() == _surfaceMesh->faceCount());
+	_surfaceMesh->setFaceCount(_surfaceMesh->faceCount() + 2);
     _originalFaceMap.resize(_originalFaceMap.size() + 2, _originalFaceMap[faceIndex]);
-	TriMeshFace& newFace1 = _surfaceMesh.face(_surfaceMesh.faceCount() - 2);
-	TriMeshFace& newFace2 = _surfaceMesh.face(_surfaceMesh.faceCount() - 1);
+	TriMeshFace& newFace1 = _surfaceMesh->face(_surfaceMesh->faceCount() - 2);
+	TriMeshFace& newFace2 = _surfaceMesh->face(_surfaceMesh->faceCount() - 1);
 	newFace1.setVertices(originalVertices[pe1], newVertexIndices[pe1][0], newVertexIndices[pe2][1]);
 	newFace2.setVertices(newVertexIndices[pe1][1], originalVertices[pe2], newVertexIndices[pe2][0]);
     newFace1.setMaterialIndex(materialIndex);
@@ -936,16 +934,16 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVerte
 	newFace1.setEdgeVisibility(originalEdgeVisibility[pe1], false, false);
 	newFace2.setEdgeVisibility(originalEdgeVisibility[pe1], originalEdgeVisibility[pe2], false);
 	if(_smoothShading) {
-		auto n = _surfaceMesh.normals().end() - 6;
-		*n++ = _surfaceMesh.faceVertexNormal(faceIndex, pe1);
+		auto n = _surfaceMesh->normals().end() - 6;
+		*n++ = _surfaceMesh->faceVertexNormal(faceIndex, pe1);
 		*n++ = interpolatedNormals[pe1];
 		*n++ = interpolatedNormals[pe2];
 		*n++ = interpolatedNormals[pe1];
-		*n++ = _surfaceMesh.faceVertexNormal(faceIndex, pe2);
+		*n++ = _surfaceMesh->faceVertexNormal(faceIndex, pe2);
 		*n   = interpolatedNormals[pe2];
-		n = _surfaceMesh.normals().begin() + faceIndex*3;
+		n = _surfaceMesh->normals().begin() + faceIndex*3;
 		std::rotate(n, n + properEdge, n + 3);
-		_surfaceMesh.setFaceVertexNormal(faceIndex, 2, interpolatedNormals[pe2]);
+		_surfaceMesh->setFaceVertexNormal(faceIndex, 2, interpolatedNormals[pe2]);
 	}
 
 	return true;
@@ -958,6 +956,9 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVerte
 void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 {
 	OVITO_ASSERT(cell());
+
+	// Create the output mesh object.
+	_capPolygonsMesh = DataOORef<TriMeshObject>::create(_inputMesh->dataset(), ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement);
 
 	// Create accessor for the input mesh data.
 	const SurfaceMeshAccess inputMeshData(inputMesh());
@@ -1054,7 +1055,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 		}
 
 		// Feed contours into tessellator to create triangles.
-		CapPolygonTessellator tessellator(_capPolygonsMesh, dim);
+		CapPolygonTessellator tessellator(*_capPolygonsMesh, dim);
 		tessellator.beginPolygon();
 		for(const auto& contour : closedContours) {
 			if(isCanceled())
@@ -1171,14 +1172,14 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 
 	// Convert vertex positions back from reduced coordinates to absolute coordinates.
 	const AffineTransformation cellMatrix = invCellMatrix.inverse();
-	for(Point3& p : _capPolygonsMesh.vertices())
+	for(Point3& p : _capPolygonsMesh->vertices())
 		p = cellMatrix * p;
 
 	// Clip mesh at cutting planes.
 	for(const Plane3& plane : _cuttingPlanes) {
 		if(isCanceled())
 			return;
-		_capPolygonsMesh.clipAtPlane(plane);
+		_capPolygonsMesh->clipAtPlane(plane);
 	}
 }
 

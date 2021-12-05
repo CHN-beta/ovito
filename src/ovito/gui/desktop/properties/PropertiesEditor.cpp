@@ -213,7 +213,7 @@ PipelineFlowState PropertiesEditor::getPipelineInput() const
 {
 	// When editing a modifier, request pipeline input state from the modifier application being edit in the parent editor.
 	if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(editObject())) {
-		return modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+		return modApp->evaluateInputSynchronousAtCurrentTime();
 	}
 
 	// When editing a DataVis element, request pipeline input state from the current scene node.
@@ -246,7 +246,7 @@ std::vector<PipelineFlowState> PropertiesEditor::getPipelineInputs() const
 	// When editing a modifier, get the pipeline state from the modifier applications.
 	if(Modifier* modifier = dynamic_object_cast<Modifier>(editObject())) {
 		for(ModifierApplication* modApp : modifier->modifierApplications()) {
-			inputStates.push_back(modApp->evaluateInputSynchronous(dataset()->animationSettings()->time()));
+			inputStates.push_back(modApp->evaluateInputSynchronousAtCurrentTime());
 		}
 	}
 
@@ -272,7 +272,7 @@ PipelineFlowState PropertiesEditor::getPipelineOutput() const
 	}
 	else if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(editObject())) {
 		// Request pipeline output state from the modifier application.
-		return modApp->evaluateSynchronous(dataset()->animationSettings()->time());
+		return modApp->evaluateSynchronousAtCurrentTime();
 	}
 	return {};
 }

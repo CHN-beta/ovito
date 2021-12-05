@@ -46,7 +46,7 @@ QOpenGLTexture* OpenGLResourceManager::uploadImage(const QImage& image, Resource
 	OVITO_ASSERT(!image.isNull());
 
     // Check if this image has already been uploaded to the GPU.
-	RendererResourceKey<OpenGLResourceManager, quint64, QOpenGLContextGroup*> cacheKey{ image.cacheKey(), QOpenGLContextGroup::currentContextGroup() };
+	RendererResourceKey<struct ImageCache, quint64, QOpenGLContextGroup*> cacheKey{ image.cacheKey(), QOpenGLContextGroup::currentContextGroup() };
     std::unique_ptr<QOpenGLTexture>& texture = lookup<std::unique_ptr<QOpenGLTexture>>(cacheKey, resourceFrame);
 
 	// Create the texture object.
@@ -66,7 +66,7 @@ QOpenGLTexture* OpenGLResourceManager::uploadImage(const QImage& image, Resource
 QOpenGLTexture* OpenGLResourceManager::uploadColorMap(ColorCodingGradient* gradient, ResourceFrameHandle resourceFrame)
 {
     // Check if this color map has already been uploaded to the GPU.
-	RendererResourceKey<OpenGLResourceManager, OORef<ColorCodingGradient>, QOpenGLContextGroup*> cacheKey{ gradient, QOpenGLContextGroup::currentContextGroup() };
+	RendererResourceKey<struct ColorMapCache, OORef<ColorCodingGradient>, QOpenGLContextGroup*> cacheKey{ gradient, QOpenGLContextGroup::currentContextGroup() };
     std::unique_ptr<QOpenGLTexture>& texture = lookup<std::unique_ptr<QOpenGLTexture>>(cacheKey, resourceFrame);
 
     if(!texture) {

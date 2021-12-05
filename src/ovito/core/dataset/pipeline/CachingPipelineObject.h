@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,7 +50,7 @@ public:
 	virtual SharedFuture<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request) override;
 
 	/// Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
-	virtual PipelineFlowState evaluateSynchronous(TimePoint time) override;
+	virtual PipelineFlowState evaluateSynchronous(const PipelineEvaluationRequest& request) override;
 
 	/// Rescales the times of all animation keys from the old animation interval to the new interval.
 	virtual void rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval) override;
@@ -73,7 +73,7 @@ protected:
 	virtual Future<PipelineFlowState> evaluateInternal(const PipelineEvaluationRequest& request) = 0;
 
 	/// Lets the pipeline stage compute a preliminary result in a synchronous fashion.
-	virtual PipelineFlowState evaluateInternalSynchronous(TimePoint time) { 
+	virtual PipelineFlowState evaluateInternalSynchronous(const PipelineEvaluationRequest& request) { 
 		return PipelineFlowState(getSourceDataCollection(), status()); 
 	}
 

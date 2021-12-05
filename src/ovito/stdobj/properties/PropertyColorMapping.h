@@ -50,7 +50,7 @@ public:
 	Q_INVOKABLE PropertyColorMapping(DataSet* dataset);
 
 	/// Loads the user-defined default values of this object's parameter fields from the application's settings store.
-	virtual void initializeObject(ExecutionContext executionContext) override;
+	virtual void initializeObject(ObjectInitializationHints hints) override;
 
 #ifdef OVITO_QML_GUI
 	/// Returns the class name of the selected color gradient.

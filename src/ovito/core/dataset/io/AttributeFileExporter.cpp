@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -70,9 +70,9 @@ void AttributeFileExporter::closeOutputFile(bool exportCompleted)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 *****************************************************************************/
-void AttributeFileExporter::initializeObject(ExecutionContext executionContext)
+void AttributeFileExporter::initializeObject(ObjectInitializationHints hints)
 {
-	if(executionContext == ExecutionContext::Interactive) {
+	if(hints.testFlag(LoadUserDefaults)) {
 		// This exporter is typically used to export attributes as functions of time.
 		if(dataset()->animationSettings()->animationInterval().duration() != 0)
 			setExportAnimation(true);
@@ -86,7 +86,7 @@ void AttributeFileExporter::initializeObject(ExecutionContext executionContext)
 #endif
 	}
 
-	FileExporter::initializeObject(executionContext);
+	FileExporter::initializeObject(hints);
 }
 
 /******************************************************************************

@@ -47,9 +47,9 @@ QVector<DataObjectReference> ParticlesReplicateModifierDelegate::OOMetaClass::ge
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
-PipelineStatus ParticlesReplicateModifierDelegate::apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	ReplicateModifier* mod = static_object_cast<ReplicateModifier>(modifier);
+	ReplicateModifier* mod = static_object_cast<ReplicateModifier>(request.modifier());
 	const ParticlesObject* inputParticles = state.getObject<ParticlesObject>();
 
 	std::array<int,3> nPBC;

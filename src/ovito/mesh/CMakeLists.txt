@@ -24,8 +24,6 @@
 FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
 
 SET(SourceFiles
-	tri/TriMeshObject.cpp
-	tri/TriMeshVis.cpp
 	surface/SurfaceMesh.cpp
 	surface/SurfaceMeshAccess.cpp
 	surface/RenderableSurfaceMesh.cpp

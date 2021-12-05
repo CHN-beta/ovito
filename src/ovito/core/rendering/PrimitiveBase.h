@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,14 +28,10 @@
 namespace Ovito {
 
 /**
- * \brief Abstract base class for drawing primitives.
+ * \brief Abstract base class for rendering primitives.
  */
 class OVITO_CORE_EXPORT PrimitiveBase
 {
-public:
-
-	/// \brief Virtual base destructor.
-	virtual ~PrimitiveBase() {}
 };
 
 }	// End of namespace

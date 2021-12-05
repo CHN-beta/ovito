@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,9 +68,7 @@ public:
 
 	/// Creates a computation engine that will compute the property values.
 	virtual std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> createEngine(
-				const PipelineObject* dataSource, 
-				ExecutionContext executionContext, 
-				TimePoint time,
+				const ModifierEvaluationRequest& request, 
 				const PipelineFlowState& input,
 				const ConstDataObjectPath& containerPath,
 				PropertyPtr outputProperty,
@@ -86,10 +84,8 @@ private:
 
 		/// Constructor.
 		Engine(
-				const PipelineObject* dataSource, 
-				ExecutionContext executionContext, 
+				const ModifierEvaluationRequest& request, 
 				const TimeInterval& validityInterval,
-				TimePoint time,
 				PropertyPtr outputProperty,
 				const ConstDataObjectPath& containerPath,
 				ConstPropertyPtr selectionProperty,
@@ -101,7 +97,7 @@ private:
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	private:
 

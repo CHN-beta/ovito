@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,6 +23,7 @@
 #include <ovito/grid/Grid.h>
 #include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "VoxelGridAffineTransformationModifierDelegate.h"
 
 namespace Ovito::Grid {
@@ -43,7 +44,7 @@ QVector<DataObjectReference> VoxelGridAffineTransformationModifierDelegate::OOMe
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
-PipelineStatus VoxelGridAffineTransformationModifierDelegate::apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus VoxelGridAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	// Transform the spatial domains of VoxelGrid objects.
 
@@ -52,7 +53,7 @@ PipelineStatus VoxelGridAffineTransformationModifierDelegate::apply(Modifier* mo
 			if(existingObject->domain()) {
 
 				// Determine transformation matrix.
-				AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(modifier);
+				AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
 				const AffineTransformation tm = mod->effectiveAffineTransformation(state);
 
 				VoxelGrid* newObject = state.makeMutable(existingObject);

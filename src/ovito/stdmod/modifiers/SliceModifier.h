@@ -24,7 +24,7 @@
 
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/mesh/tri/TriMeshVis.h>
+#include <ovito/core/dataset/data/mesh/TriMeshVis.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
 
@@ -75,16 +75,16 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 	
 	/// Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const override;
+	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
 	/// Lets the modifier render itself into the viewport.
-	virtual void renderModifierVisual(TimePoint time, PipelineSceneNode* contextNode, ModifierApplication* modApp, SceneRenderer* renderer, bool renderOverlay) override;
+	virtual void renderModifierVisual(const ModifierEvaluationRequest& request, PipelineSceneNode* contextNode, SceneRenderer* renderer, bool renderOverlay) override;
 
 	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	// Property access functions:
 
@@ -115,7 +115,7 @@ public:
 protected:
 
 	/// This method is called by the system when the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext) override;
+	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
 	/// Renders the modifier's visual representation and computes its bounding box.
 	void renderVisual(TimePoint time, PipelineSceneNode* contextNode, SceneRenderer* renderer, const PipelineFlowState& state);

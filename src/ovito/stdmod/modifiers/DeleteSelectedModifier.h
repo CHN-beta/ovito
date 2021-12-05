@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,9 +68,14 @@ class OVITO_STDMOD_EXPORT DeleteSelectedModifier : public MultiDelegatingModifie
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE DeleteSelectedModifier(DataSet* dataset) : MultiDelegatingModifier(dataset) {
+	Q_INVOKABLE DeleteSelectedModifier(DataSet* dataset) : MultiDelegatingModifier(dataset) {}
+
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ObjectInitializationHints hints) override {
 		// Generate the list of delegate objects.
-		createModifierDelegates(DeleteSelectedModifierDelegate::OOClass(), ExecutionContext::Scripting);
+		createModifierDelegates(DeleteSelectedModifierDelegate::OOClass(), hints);
+		MultiDelegatingModifier::initializeObject(hints);
 	}
 };
 

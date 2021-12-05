@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,7 @@
 
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/core/utilities/mesh/TriMesh.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
 #include "polytess/glu.h"
 
 namespace Ovito::Mesh {
@@ -37,7 +37,7 @@ class OVITO_MESH_EXPORT CapPolygonTessellator
 public:
 
 	/// Constructor.
-	CapPolygonTessellator(TriMesh& output, size_t dim, bool createOppositePolygon = true, bool windingRuleNonzero = false) : mesh(output), dimz(dim), _createOppositePolygon(createOppositePolygon) {
+	CapPolygonTessellator(TriMeshObject& output, size_t dim, bool createOppositePolygon = true, bool windingRuleNonzero = false) : mesh(output), dimz(dim), _createOppositePolygon(createOppositePolygon) {
 		dimx = (dimz + 1) % 3;
 		dimy = (dimz + 2) % 3;
 		tess = gluNewTess();
@@ -167,7 +167,7 @@ private:
 
 	size_t dimx, dimy, dimz;
 	GLUtesselator* tess;
-	TriMesh& mesh;
+	TriMeshObject& mesh;
 	int primitiveType;
 	std::vector<int> vertices;
 	bool _createOppositePolygon;

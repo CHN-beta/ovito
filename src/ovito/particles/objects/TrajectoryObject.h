@@ -42,7 +42,7 @@ class OVITO_PARTICLES_EXPORT TrajectoryObject : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// Creates a storage object for standard properties.
-		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const override;
 
 	protected:
 
@@ -69,7 +69,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;		
+	virtual void initializeObject(ObjectInitializationHints hints) override;		
 };
 
 }	// End of namespace

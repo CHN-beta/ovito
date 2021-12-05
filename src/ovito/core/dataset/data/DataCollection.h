@@ -312,9 +312,9 @@ public:
 	/// Instantiates a new data object, passes the given parameters to its class constructor,
 	/// assigns the given data source object, and finally inserts the data object into this pipeline flow state.
 	template<class DataObjectType, class PipelineObjectClass, typename... Args>
-	DataObjectType* createObject(const PipelineObjectClass* dataSource, ExecutionContext executionContext, Args&&... args) {
+	DataObjectType* createObject(const PipelineObjectClass* dataSource, ObjectInitializationHints initializationHints, Args&&... args) {
 		OVITO_ASSERT(dataSource != nullptr);
-		OORef<DataObjectType> obj = OORef<DataObjectType>::create(dataSource->dataset(), executionContext, std::forward<Args>(args)...);
+		OORef<DataObjectType> obj = OORef<DataObjectType>::create(dataSource->dataset(), initializationHints, std::forward<Args>(args)...);
 		obj->setDataSource(const_cast<PipelineObjectClass*>(dataSource));
 		addObject(obj);
 		return obj;
@@ -324,8 +324,8 @@ public:
 	/// assign a unique identifier to the object, assigns the given data source object, and
 	/// finally inserts the data object into this pipeline flow state.
 	template<class DataObjectType, class PipelineObjectClass, typename... Args>
-	DataObjectType* createObject(const QString& baseName, const PipelineObjectClass* dataSource, ExecutionContext executionContext, Args&&... args) {
-		DataObjectType* obj = createObject<DataObjectType, PipelineObjectClass, Args...>(dataSource, executionContext, std::forward<Args>(args)...);
+	DataObjectType* createObject(const QString& baseName, const PipelineObjectClass* dataSource, ObjectInitializationHints initializationHints, Args&&... args) {
+		DataObjectType* obj = createObject<DataObjectType, PipelineObjectClass, Args...>(dataSource, initializationHints, std::forward<Args>(args)...);
 		OVITO_ASSERT(!baseName.isEmpty());
 		obj->setIdentifier(generateUniqueIdentifier<DataObjectType>(baseName));
 		return obj;

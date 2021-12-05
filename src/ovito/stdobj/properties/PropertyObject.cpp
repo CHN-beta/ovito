@@ -356,7 +356,7 @@ void PropertyObject::updateEditableProxies(PipelineFlowState& state, ConstDataOb
 	else if(!self->elementTypes().empty()) {
 		// Create and initialize a new proxy property object. 
 		// Note: We avoid copying the property data here by constructing the proxy PropertyObject from scratch instead of cloning the original data object.
-		OORef<PropertyObject> newProxy = OORef<PropertyObject>::create(self->dataset(), ExecutionContext::Scripting, 0, self->dataType(), self->componentCount(), self->stride(), self->name(), false, self->type(), self->componentNames());
+		OORef<PropertyObject> newProxy = OORef<PropertyObject>::create(self->dataset(), ObjectInitializationHints(LoadFactoryDefaults | WithoutVisElement), 0, self->dataType(), self->componentCount(), self->stride(), self->name(), false, self->type(), self->componentNames());
 		newProxy->setTitle(self->title());
 
 		// Adopt the proxy objects corresponding to the element types, which have already been created by

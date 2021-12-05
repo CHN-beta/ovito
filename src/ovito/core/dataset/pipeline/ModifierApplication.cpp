@@ -89,7 +89,7 @@ TimeInterval ModifierApplication::validityInterval(const PipelineEvaluationReque
 
 	// Let the modifier determine the local validity interval.
 	if(modifierAndGroupEnabled()) 
-		iv.intersect(modifier()->validityInterval(request, this));
+		iv.intersect(modifier()->validityInterval(ModifierEvaluationRequest(request, this)));
 
 	return iv;
 }
@@ -254,7 +254,7 @@ void ModifierApplication::notifyDependentsImpl(const ReferenceEvent& event)
 /******************************************************************************
 * Asks the object for the result of the upstream data pipeline.
 ******************************************************************************/
-SharedFuture<PipelineFlowState> ModifierApplication::evaluateInput(const PipelineEvaluationRequest& request)
+SharedFuture<PipelineFlowState> ModifierApplication::evaluateInput(const PipelineEvaluationRequest& request) const
 {
 	// Without a data source, this ModifierApplication doesn't produce any data.
 	if(!input())
@@ -267,7 +267,7 @@ SharedFuture<PipelineFlowState> ModifierApplication::evaluateInput(const Pipelin
 /******************************************************************************
 *  Asks the object for the result of the upstream data pipeline at several animation times.
 ******************************************************************************/
-Future<std::vector<PipelineFlowState>> ModifierApplication::evaluateInputMultiple(const PipelineEvaluationRequest& request, std::vector<TimePoint> times)
+Future<std::vector<PipelineFlowState>> ModifierApplication::evaluateInputMultiple(const PipelineEvaluationRequest& request, std::vector<TimePoint> times) const
 {
 	// Without a data source, this ModifierApplication doesn't produce any data.
 	if(!input())
@@ -280,13 +280,24 @@ Future<std::vector<PipelineFlowState>> ModifierApplication::evaluateInputMultipl
 /******************************************************************************
 * Returns the results of an immediate and preliminary evaluation of the data pipeline.
 ******************************************************************************/
-PipelineFlowState ModifierApplication::evaluateSynchronous(TimePoint time)
+PipelineFlowState ModifierApplication::evaluateSynchronous(const PipelineEvaluationRequest& request)
 {
 	// If modifier or the modifier group are disabled, bypass cache and forward results of upstream pipeline.
 	if(input() && !modifierAndGroupEnabled())
-		return input()->evaluateSynchronous(time);
+		return input()->evaluateSynchronous(request);
 
-	return CachingPipelineObject::evaluateSynchronous(time);
+	return CachingPipelineObject::evaluateSynchronous(request);
+}
+
+/******************************************************************************
+* Compute the preliminary results of the upstream pipeline in a synchronous 
+* fashion at the current animation time.
+******************************************************************************/
+PipelineFlowState ModifierApplication::evaluateInputSynchronousAtCurrentTime() const
+{
+	return evaluateInputSynchronous(PipelineEvaluationRequest(
+		Application::instance()->executionContext() == ExecutionContext::Interactive ? LoadUserDefaults : LoadFactoryDefaults,
+		dataset()->animationSettings()->time()));
 }
 
 /******************************************************************************
@@ -308,21 +319,21 @@ SharedFuture<PipelineFlowState> ModifierApplication::evaluate(const PipelineEval
 Future<PipelineFlowState> ModifierApplication::evaluateInternal(const PipelineEvaluationRequest& request)
 {
 	// Set up the evaluation request for the upstream pipeline.
-	PipelineEvaluationRequest upstreamRequest = request;
+	ModifierEvaluationRequest modifierRequest(request, this);
 
 	// Ask the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
 	if(modifierAndGroupEnabled())
-		modifier()->inputCachingHints(upstreamRequest.modifiableCachingIntervals(), this);
+		modifier()->inputCachingHints(modifierRequest.modifiableCachingIntervals(), this);
 
 	// Obtain input data and pass it on to the modifier.
-	return evaluateInput(upstreamRequest)
-		.then(executor(), [this, upstreamRequest](PipelineFlowState inputData) -> Future<PipelineFlowState> {
+	return evaluateInput(modifierRequest)
+		.then(executor(), [this, modifierRequest](PipelineFlowState inputData) -> Future<PipelineFlowState> {
 
 			// Clear the status of the input unless it is an error.
 			if(inputData.status().type() != PipelineStatus::Error) {
 				inputData.setStatus(PipelineStatus());
 			}
-			else if(upstreamRequest.breakOnError()) {
+			else if(modifierRequest.breakOnError()) {
 				// Skip all following modifiers once an error has occured along the pipeline.
 				return inputData;
 			}
@@ -335,7 +346,7 @@ Future<PipelineFlowState> ModifierApplication::evaluateInternal(const PipelineEv
 			Future<PipelineFlowState> future;
 			try {
 				// Let the modifier do its job.
-				future = modifier()->evaluate(upstreamRequest, this, inputData);
+				future = modifier()->evaluate(modifierRequest, inputData);
 				// Register the task with this pipeline stage.
 				registerActiveFuture(future);
 			}
@@ -346,9 +357,8 @@ Future<PipelineFlowState> ModifierApplication::evaluateInternal(const PipelineEv
 			// Post-process the modifier results before returning them to the caller.
 			// Turn any exception that was thrown during modifier evaluation into a
 			// valid pipeline state with an error code.
-			return future.then_future(executor(), [this, time = upstreamRequest.time(), inputData = std::move(inputData)](Future<PipelineFlowState> future) mutable {
-				OVITO_ASSERT(future.isFinished());
-				OVITO_ASSERT(!future.isCanceled());
+			return future.then_future(executor(), [this, inputData = std::move(inputData)](Future<PipelineFlowState> future) mutable {
+				OVITO_ASSERT(future.isFinished() && !future.isCanceled());
 				try {
 					try {
 						PipelineFlowState state = future.result();
@@ -390,21 +400,21 @@ Future<PipelineFlowState> ModifierApplication::evaluateInternal(const PipelineEv
 /******************************************************************************
 * Lets the pipeline stage compute a preliminary result in a synchronous fashion.
 ******************************************************************************/
-PipelineFlowState ModifierApplication::evaluateInternalSynchronous(TimePoint time)
+PipelineFlowState ModifierApplication::evaluateInternalSynchronous(const PipelineEvaluationRequest& request)
 {
 	PipelineFlowState state;
 	
 	if(input()) {
 		UndoSuspender noUndo(this);
 		// First get the preliminary results from the upstream pipeline.
-		state = input()->evaluateSynchronous(time);
+		state = input()->evaluateSynchronous(request);
 		try {
 			if(!state)
 				throwException(tr("Modifier input is empty."));
 
 			// Apply modifier:
 			if(modifierAndGroupEnabled())
-				modifier()->evaluateSynchronous(time, this, state);
+				modifier()->evaluateSynchronous(ModifierEvaluationRequest(request, this), state);
 		}
 		catch(const Exception& ex) {
 			// Turn exceptions thrown during modifier evaluation into an error pipeline state.

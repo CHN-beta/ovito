@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ class OVITO_STDMOD_EXPORT ExpressionSelectionModifierDelegate : public ModifierD
 public:
 
 	/// \brief Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 
 	/// Returns the type of input property container that this delegate can process.
 	PropertyContainerClassPtr inputContainerClass() const {
@@ -95,6 +95,10 @@ public:
 
 	/// Constructor.
 	Q_INVOKABLE ExpressionSelectionModifier(DataSet* dataset);
+
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ObjectInitializationHints hints) override;
 
 	/// \brief Returns the list of available input variables.
 	const QStringList& inputVariableNames() const { return _variableNames; }

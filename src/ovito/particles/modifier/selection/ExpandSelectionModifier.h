@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -77,7 +77,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
@@ -87,8 +87,8 @@ private:
 	public:
 
 		/// Constructor.
-		ExpandSelectionEngine(const PipelineObject* dataSource, ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations) :
-			Engine(dataSource, executionContext),
+		ExpandSelectionEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations) :
+			Engine(request),
 			_numIterations(numIterations),
 			_positions(std::move(positions)),
 			_simCell(simCell),
@@ -103,7 +103,7 @@ private:
 		virtual void expandSelection() = 0;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		const PropertyPtr& outputSelection() { return _outputSelection; }
 		
@@ -141,8 +141,8 @@ private:
 	public:
 
 		/// Constructor.
-		ExpandSelectionNearestEngine(const PipelineObject* dataSource, ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, int numNearestNeighbors) :
-			ExpandSelectionEngine(dataSource, executionContext, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
+		ExpandSelectionNearestEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, int numNearestNeighbors) :
+			ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
 			_numNearestNeighbors(numNearestNeighbors) {}
 
 		/// Expands the selection by one step.
@@ -159,8 +159,8 @@ private:
 	public:
 
 		/// Constructor.
-		ExpandSelectionCutoffEngine(const PipelineObject* dataSource, ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, FloatType cutoff) :
-			ExpandSelectionEngine(dataSource, executionContext, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
+		ExpandSelectionCutoffEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, FloatType cutoff) :
+			ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
 			_cutoffRange(cutoff) {}
 
 		/// Expands the selection by one step.
@@ -177,8 +177,8 @@ private:
 	public:
 
 		/// Constructor.
-		ExpandSelectionBondedEngine(const PipelineObject* dataSource, ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, ConstPropertyPtr bondTopology) :
-			ExpandSelectionEngine(dataSource, executionContext, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
+		ExpandSelectionBondedEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, ConstPropertyPtr bondTopology) :
+			ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
 			_bondTopology(std::move(bondTopology)) {}
 
 		/// Expands the selection by one step.

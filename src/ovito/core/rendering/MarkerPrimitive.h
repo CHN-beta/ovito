@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,10 +46,10 @@ public:
 public:
 
 	/// Constructor.
-	MarkerPrimitive(MarkerShape shape) : _shape(shape) {}
+	explicit MarkerPrimitive(MarkerShape shape = DotShape) : _shape(shape) {}
 
 	/// \brief Sets the coordinates of the markers.
-	virtual void setPositions(ConstDataBufferPtr coordinates) { 
+	void setPositions(ConstDataBufferPtr coordinates) { 
 		OVITO_ASSERT(coordinates);
 		OVITO_ASSERT(coordinates->dataType() == DataBuffer::Float && coordinates->componentCount() == 3);
 		_positions = std::move(coordinates); 
@@ -59,7 +59,7 @@ public:
 	template<typename InputIterator>
 	void setPositions(DataSet* dataset, InputIterator begin, InputIterator end) {
 		size_t count = std::distance(begin, end);
-		DataBufferAccessAndRef<Point3> buffer = DataBufferPtr::create(dataset, ExecutionContext::Scripting, count, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Point3> buffer = DataBufferPtr::create(dataset, count, DataBuffer::Float, 3, 0, false);
 		std::copy(std::move(begin), std::move(end), buffer.begin());
 		setPositions(buffer.take());
 	}
@@ -74,7 +74,7 @@ public:
 	const ConstDataBufferPtr& positions() const { return _positions; }
 
 	/// \brief Sets the color of all markers to the given value.
-	virtual void setColor(const ColorA& color) { _color = color; }
+	void setColor(const ColorA& color) { _color = color; }
 
 	/// \brief Returns the color of the markers.
 	const ColorA& color() const { return _color; }
@@ -85,7 +85,7 @@ public:
 private:
 
 	/// Controls the shape of markers.
-	MarkerShape _shape;
+	MarkerShape _shape = DotShape;
 
 	/// The color of the markers to be rendered.
 	ColorA _color{1,1,1,1};

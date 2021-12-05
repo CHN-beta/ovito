@@ -39,6 +39,11 @@ class OVITO_STDOBJ_EXPORT StandardCameraSource : public PipelineObject
 	OVITO_CLASS(StandardCameraSource)
 	Q_CLASSINFO("DisplayName", "Camera");
 
+	Q_PROPERTY(bool isTargetCamera READ isTargetCamera WRITE setIsTargetCamera)
+	Q_PROPERTY(bool isPerspective READ isPerspective WRITE setIsPerspective)
+	Q_PROPERTY(FloatType zoom READ zoom WRITE setZoom)
+	Q_PROPERTY(FloatType fov READ fov WRITE setFov)
+
 public:
 
 	/// Constructor.
@@ -46,24 +51,24 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;
+	virtual void initializeObject(ObjectInitializationHints hints) override;
 	
 	/// Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;
 
 	/// Asks the pipeline stage to compute the results.
 	virtual SharedFuture<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request) override {
-		return evaluateSynchronous(request.time());
+		return evaluateSynchronous(request);
 	}
 
 	/// Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
-	virtual PipelineFlowState evaluateSynchronous(TimePoint time) override;
+	virtual PipelineFlowState evaluateSynchronous(const PipelineEvaluationRequest& request) override;
 	
 	/// Returns whether this camera is a target camera directed at a target object.
 	bool isTargetCamera() const;
 
 	/// Changes the type of the camera to a target camera or a free camera.
-	void setIsTargetCamera(bool enable);
+	void setIsTargetCamera(bool enable, ObjectInitializationHints initializationHints = LoadUserDefaults);
 
 	/// For a target camera, queries the distance between the camera and its target.
 	FloatType targetDistance() const;
@@ -79,13 +84,6 @@ public:
 
 	/// Sets the field of view angle of a perspective projection camera.
 	void setFov(FloatType newFOV);
-
-public:
-
-	Q_PROPERTY(bool isTargetCamera READ isTargetCamera WRITE setIsTargetCamera)
-	Q_PROPERTY(bool isPerspective READ isPerspective WRITE setIsPerspective)
-	Q_PROPERTY(FloatType zoom READ zoom WRITE setZoom)
-	Q_PROPERTY(FloatType fov READ fov WRITE setFov)
 
 private:
 

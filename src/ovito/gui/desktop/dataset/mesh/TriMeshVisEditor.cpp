@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,10 +24,10 @@
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
-#include <ovito/mesh/tri/TriMeshVis.h>
+#include <ovito/core/dataset/data/mesh/TriMeshVis.h>
 #include "TriMeshVisEditor.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(TriMeshVisEditor);
 SET_OVITO_OBJECT_EDITOR(TriMeshVis, TriMeshVisEditor);

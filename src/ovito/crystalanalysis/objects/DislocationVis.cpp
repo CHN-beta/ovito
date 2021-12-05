@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -156,7 +156,7 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 	}
 
 	// Create output RenderableDislocationLines object.
-	DataOORef<RenderableDislocationLines> renderableLines = DataOORef<RenderableDislocationLines>::create(dataset(), Application::instance()->executionContext(), this, dataObject);
+	DataOORef<RenderableDislocationLines> renderableLines = DataOORef<RenderableDislocationLines>::create(dataset(), ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement, this, dataObject);
 	renderableLines->setVisElement(this);
 	renderableLines->setLineSegments(std::move(outputSegments));
 	renderableLines->setClusterGraph(std::move(clusterGraph));
@@ -236,8 +236,7 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 	}
 
 	// The key type used for caching the rendering primitives:
-	using CacheKey = std::tuple<
-		CompatibleRendererGroup,// Scene renderer
+	using CacheKey = RendererResourceKey<struct DislocationVisCache,
 		ConstDataObjectRef,		// Source object
 		ConstDataObjectRef,		// Renderable object
 		ConstDataObjectRef,		// Simulation cell geometry
@@ -253,9 +252,9 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 
 	// The values stored in the vis cache.
 	struct CacheValue {
-		std::shared_ptr<CylinderPrimitive> segments;
-		std::shared_ptr<ParticlePrimitive> corners;
-		std::shared_ptr<CylinderPrimitive> burgersArrows;
+		CylinderPrimitive segments;
+		ParticlePrimitive corners;
+		CylinderPrimitive burgersArrows;
 		OORef<DislocationPickInfo> pickInfo;
 	};
 
@@ -281,7 +280,6 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 
 	// Lookup the rendering primitives in the vis cache.
 	auto& primitives = dataset()->visCache().get<CacheValue>(CacheKey(
-		renderer,
 		domainObj,
 		renderableLines,
 		cellObject,
@@ -295,7 +293,7 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 		shadingMode()));
 
 	// Check if we already have valid rendering primitives that are up to date.
-	if(!primitives.segments) {
+	if(!primitives.segments.basePositions()) {
 
 		ConstPropertyAccess<int> phaseArray(phaseProperty);
 		ConstPropertyAccess<Matrix3> correspondenceArray(correspondenceProperty);
@@ -311,11 +309,11 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 		// Allocate rendering data buffers.
 		std::vector<int> subobjToSegmentMap(lineSegmentCount + cornerCount);
 		FloatType lineRadius = std::max(lineWidth() / 2, FloatType(0));
-		DataBufferAccessAndRef<Point3> cornerPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, cornerCount, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<Color> cornerColors = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, cornerCount, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, lineSegmentCount, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, lineSegmentCount, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<Color> segmentColors = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, lineSegmentCount, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Point3> cornerPoints = DataBufferPtr::create(dataset(), cornerCount, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Color> cornerColors = DataBufferPtr::create(dataset(), cornerCount, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), lineSegmentCount, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), lineSegmentCount, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Color> segmentColors = DataBufferPtr::create(dataset(), lineSegmentCount, DataBuffer::Float, 3, 0, false);
 
 		// Build list of line segments.
 		auto cornerPointsIter = cornerPoints.begin();
@@ -406,21 +404,25 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 		OVITO_ASSERT(cornerPointsIter == cornerPoints.end());
 
 		// Create rendering primitive for the line segments.
-		primitives.segments = renderer->createCylinderPrimitive(showLineDirections() ? CylinderPrimitive::ArrowShape : CylinderPrimitive::CylinderShape, shadingMode(), CylinderPrimitive::HighQuality);
-		primitives.segments->setUniformRadius(lineRadius);
-		primitives.segments->setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
-		primitives.segments->setColors(segmentColors.take());
+		primitives.segments.setShape(showLineDirections() ? CylinderPrimitive::ArrowShape : CylinderPrimitive::CylinderShape);
+		primitives.segments.setShadingMode(shadingMode());
+		primitives.segments.setRenderingQuality(CylinderPrimitive::HighQuality);
+		primitives.segments.setUniformRadius(lineRadius);
+		primitives.segments.setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
+		primitives.segments.setColors(segmentColors.take());
 
 		// Create rendering primitive for the line corner points.
-		primitives.corners = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, (shadingMode() == CylinderPrimitive::NormalShading) ? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
-		primitives.corners->setPositions(cornerPoints.take());
-		primitives.corners->setColors(cornerColors.take());
-		primitives.corners->setUniformRadius(lineRadius);
+		primitives.corners.setParticleShape(ParticlePrimitive::SphericalShape);
+		primitives.corners.setShadingMode((shadingMode() == CylinderPrimitive::NormalShading) ? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading);
+		primitives.corners.setRenderingQuality(ParticlePrimitive::HighQuality);
+		primitives.corners.setPositions(cornerPoints.take());
+		primitives.corners.setColors(cornerColors.take());
+		primitives.corners.setUniformRadius(lineRadius);
 
 		if(dislocationsObj) {
 			if(showBurgersVectors()) {
-				DataBufferAccessAndRef<Point3> baseArrowPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, dislocationsObj->segments().size(), DataBuffer::Float, 3, 0, false);
-				DataBufferAccessAndRef<Point3> headArrowPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, dislocationsObj->segments().size(), DataBuffer::Float, 3, 0, false);
+				DataBufferAccessAndRef<Point3> baseArrowPoints = DataBufferPtr::create(dataset(), dislocationsObj->segments().size(), DataBuffer::Float, 3, 0, false);
+				DataBufferAccessAndRef<Point3> headArrowPoints = DataBufferPtr::create(dataset(), dislocationsObj->segments().size(), DataBuffer::Float, 3, 0, false);
 				subobjToSegmentMap.reserve(subobjToSegmentMap.size() + dislocationsObj->segments().size());
 				int arrowIndex = 0;
 				for(const DislocationSegment* segment : dislocationsObj->segments()) {
@@ -438,10 +440,12 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 					headArrowPoints[arrowIndex++] = center + dir;
 				}
 				// Create rendering primitive for the Burgers vector arrows.
-				primitives.burgersArrows = renderer->createCylinderPrimitive(CylinderPrimitive::ArrowShape, shadingMode(), CylinderPrimitive::HighQuality);
-				primitives.burgersArrows->setUniformRadius(std::max(burgersVectorWidth() / 2, FloatType(0)));
-				primitives.burgersArrows->setUniformColor(burgersVectorColor());
-				primitives.burgersArrows->setPositions(baseArrowPoints.take(), headArrowPoints.take());
+				primitives.burgersArrows.setShape(CylinderPrimitive::ArrowShape);
+				primitives.burgersArrows.setShadingMode(shadingMode());
+				primitives.burgersArrows.setRenderingQuality(CylinderPrimitive::HighQuality);
+				primitives.burgersArrows.setUniformRadius(std::max(burgersVectorWidth() / 2, FloatType(0)));
+				primitives.burgersArrows.setUniformColor(burgersVectorColor());
+				primitives.burgersArrows.setPositions(baseArrowPoints.take(), headArrowPoints.take());
 			}
 			primitives.pickInfo = new DislocationPickInfo(this, dislocationsObj, std::move(subobjToSegmentMap));
 		}
@@ -459,7 +463,7 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 	renderer->renderParticles(primitives.corners);
 
 	// Render Burgers vectors.
-	if(showBurgersVectors() && primitives.burgersArrows)
+	if(showBurgersVectors() && primitives.burgersArrows.basePositions())
 		renderer->renderCylinders(primitives.burgersArrows);
 
 	renderer->endPickObject();
@@ -491,9 +495,9 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	const DislocationSegment* segment = dislocationsObj->segments()[segmentIndex];
 
 	// Generate the polyline segments to render.
-	DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
-	DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
-	DataBufferAccessAndRef<Point3> cornerVertices = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 0, DataBuffer::Float, 3, 0, false);
+	DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3, 0, false);
+	DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3, 0, false);
+	DataBufferAccessAndRef<Point3> cornerVertices = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3, 0, false);
 	clipDislocationLine(segment->line, *cellObject, dislocationsObj->cuttingPlanes(), [&](const Point3& v1, const Point3& v2, bool isInitialSegment) {
 		baseSegmentPoints.push_back(v1);
 		headSegmentPoints.push_back(v2);
@@ -520,25 +524,33 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	// Draw the marker on top of everything.
 	renderer->setDepthTestEnabled(false);
 
-	std::shared_ptr<CylinderPrimitive> segmentBuffer = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, CylinderPrimitive::FlatShading, CylinderPrimitive::HighQuality);
-	segmentBuffer->setUniformRadius(lineRadius);
-	segmentBuffer->setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
-	segmentBuffer->setUniformColor(Color(1,1,1));
+	CylinderPrimitive segmentBuffer;
+	segmentBuffer.setShape(CylinderPrimitive::CylinderShape);
+	segmentBuffer.setShadingMode(CylinderPrimitive::FlatShading);
+	segmentBuffer.setRenderingQuality(CylinderPrimitive::HighQuality);
+	segmentBuffer.setUniformRadius(lineRadius);
+	segmentBuffer.setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
+	segmentBuffer.setUniformColor(Color(1,1,1));
 	renderer->renderCylinders(segmentBuffer);
 
-	std::shared_ptr<ParticlePrimitive> cornerBuffer = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
-	cornerBuffer->setPositions(cornerVertices.take());
-	cornerBuffer->setUniformColor(Color(1,1,1));
-	cornerBuffer->setUniformRadius(lineRadius);
+	ParticlePrimitive cornerBuffer;
+	cornerBuffer.setParticleShape(ParticlePrimitive::SphericalShape);
+	cornerBuffer.setShadingMode(ParticlePrimitive::FlatShading);
+	cornerBuffer.setRenderingQuality(ParticlePrimitive::HighQuality);
+	cornerBuffer.setPositions(cornerVertices.take());
+	cornerBuffer.setUniformColor(Color(1,1,1));
+	cornerBuffer.setUniformRadius(lineRadius);
 	renderer->renderParticles(cornerBuffer);
 
 	if(!segment->line.empty()) {
-		DataBufferAccessAndRef<Point3> wrappedHeadPos = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, 1, DataBuffer::Float, 3, 0, false); 
+		DataBufferAccessAndRef<Point3> wrappedHeadPos = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 3, 0, false); 
 		wrappedHeadPos[0] = cellObject->wrapPoint(segment->line.front());
-		std::shared_ptr<ParticlePrimitive> headBuffer = renderer->createParticlePrimitive(ParticlePrimitive::SphericalShape, ParticlePrimitive::FlatShading, ParticlePrimitive::HighQuality);
-		headBuffer->setPositions(wrappedHeadPos.take());
-		headBuffer->setUniformColor(Color(1,1,1));
-		headBuffer->setUniformRadius(headRadius);
+		ParticlePrimitive headBuffer;
+		headBuffer.setShadingMode(ParticlePrimitive::FlatShading);
+		headBuffer.setRenderingQuality(ParticlePrimitive::HighQuality);
+		headBuffer.setPositions(wrappedHeadPos.take());
+		headBuffer.setUniformColor(Color(1,1,1));
+		headBuffer.setUniformRadius(headRadius);
 		renderer->renderParticles(headBuffer);
 	}
 

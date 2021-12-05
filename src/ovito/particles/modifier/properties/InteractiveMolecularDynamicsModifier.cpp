@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,6 +25,7 @@
 #include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/app/Application.h>
@@ -246,7 +247,7 @@ void InteractiveMolecularDynamicsModifier::dataReceived()
 				_messageBytesToReceive = 0;
 
 				// Convert data array into particle coordinates property.
-				_coordinates = ParticlesObject::OOClass().createStandardProperty(dataset(), numCoords, ParticlesObject::PositionProperty, false, Application::instance()->executionContext());
+				_coordinates = ParticlesObject::OOClass().createStandardProperty(dataset(), numCoords, ParticlesObject::PositionProperty, false, ObjectInitializationHint::LoadFactoryDefaults);
 				std::transform(coords.cbegin(), coords.cend(), PropertyAccess<Point3>(_coordinates).begin(), [](const Point_3<float>& p) { return p.toDataType<FloatType>(); });
 
 				// Notify pipeline system that this modifier has new results. 
@@ -295,7 +296,7 @@ void InteractiveMolecularDynamicsModifier::deleteReferenceObject()
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void InteractiveMolecularDynamicsModifier::evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void InteractiveMolecularDynamicsModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	state.setStatus(_modifierStatus);
 	if(!state || !_coordinates) return;
@@ -317,7 +318,7 @@ void InteractiveMolecularDynamicsModifier::evaluateSynchronous(TimePoint time, M
 			if(cell->hasPbcCorrected()) {
 				if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
 					ConstPropertyAccess<Point3> positions(_coordinates);
-					PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, true, Application::instance()->executionContext());
+					PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, true, request.initializationHints());
 					// Recompute PBC vectors of bonds as particle may have moved over arbitrary distances.
 					parallelForChunks(topologyProperty.size(), [&](size_t startIndex, size_t count) {
 						for(size_t bondIndex = startIndex, endIndex = startIndex+count; bondIndex < endIndex; bondIndex++) {

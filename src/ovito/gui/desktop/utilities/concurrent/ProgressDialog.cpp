@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -117,7 +117,7 @@ ProgressDialog::~ProgressDialog()
 ******************************************************************************/
 SynchronousOperation ProgressDialog::createOperation()
 {
-	SynchronousOperation operation = SynchronousOperation::create(taskManager());
+	SynchronousOperation operation = SynchronousOperation::create(taskManager(), ObjectInitializationHint::LoadUserDefaults);
 	// Create the task watcher to monitor the running task.
 	TaskWatcher* watcher = new TaskWatcher(this);
 	watcher->watch(operation.task());

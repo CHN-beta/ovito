@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -52,25 +52,25 @@ SurfaceMesh::SurfaceMesh(DataSet* dataset, const QString& title) : PeriodicDomai
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void SurfaceMesh::initializeObject(ExecutionContext executionContext)
+void SurfaceMesh::initializeObject(ObjectInitializationHints hints)
 {
 	// Attach a visualization element for rendering the surface mesh.
-	if(!visElement())
-		setVisElement(OORef<SurfaceMeshVis>::create(dataset(), executionContext));
+	if(!visElement() && !hints.testFlag(WithoutVisElement))
+		setVisElement(OORef<SurfaceMeshVis>::create(dataset(), hints));
 
 	// Create the sub-object for storing the mesh topology.
-	setTopology(DataOORef<SurfaceMeshTopology>::create(dataset(), executionContext));
+	setTopology(DataOORef<SurfaceMeshTopology>::create(dataset(), hints));
 
 	// Create the sub-object for storing the vertex properties.
-	setVertices(DataOORef<SurfaceMeshVertices>::create(dataset(), executionContext));
+	setVertices(DataOORef<SurfaceMeshVertices>::create(dataset(), hints));
 
 	// Create the sub-object for storing the face properties.
-	setFaces(DataOORef<SurfaceMeshFaces>::create(dataset(), executionContext));
+	setFaces(DataOORef<SurfaceMeshFaces>::create(dataset(), hints));
 
 	// Create the sub-object for storing the region properties.
-	setRegions(DataOORef<SurfaceMeshRegions>::create(dataset(), executionContext));
+	setRegions(DataOORef<SurfaceMeshRegions>::create(dataset(), hints));
 
-	PeriodicDomainDataObject::initializeObject(executionContext);
+	PeriodicDomainDataObject::initializeObject(hints);
 }
 
 /******************************************************************************

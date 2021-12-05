@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //  Copyright 2020 Peter Mahler Larsen
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -46,9 +46,7 @@ namespace Ovito::CrystalAnalysis {
 * Constructor.
 ******************************************************************************/
 GrainSegmentationEngine1::GrainSegmentationEngine1(
-			const PipelineObject* dataSource, 
-			ExecutionContext executionContext, 
-			DataSet* dataset, 
+			const ModifierEvaluationRequest& request, 
 			ParticleOrderingFingerprint fingerprint, 
 			ConstPropertyPtr positions,
 			ConstPropertyPtr structureProperty,
@@ -58,8 +56,7 @@ GrainSegmentationEngine1::GrainSegmentationEngine1(
 			GrainSegmentationModifier::MergeAlgorithm algorithmType, 
 			bool handleCoherentInterfaces,
 			bool outputBonds) :
-	Engine(dataSource, executionContext),
-	_dataset(dataset),
+	Engine(request),
 	_inputFingerprint(std::move(fingerprint)),
 	_positions(std::move(positions)),
 	_simCell(simCell),
@@ -501,14 +498,12 @@ fclose(fout);
 /******************************************************************************
 * Creates another engine that performs the next stage of the computation. 
 ******************************************************************************/
-std::shared_ptr<AsynchronousModifier::Engine> GrainSegmentationEngine1::createContinuationEngine(ModifierApplication* modApp, const PipelineFlowState& input)
+std::shared_ptr<AsynchronousModifier::Engine> GrainSegmentationEngine1::createContinuationEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
-	GrainSegmentationModifier* modifier = static_object_cast<GrainSegmentationModifier>(modApp->modifier());
+	GrainSegmentationModifier* modifier = static_object_cast<GrainSegmentationModifier>(request.modifier());
 
 	return std::make_shared<GrainSegmentationEngine2>(
-		modApp,
-		executionContext(),
-		dataset(),
+		request,
 		static_pointer_cast<GrainSegmentationEngine1>(shared_from_this()),
 		modifier->mergingThreshold(),
 		modifier->orphanAdoption(),

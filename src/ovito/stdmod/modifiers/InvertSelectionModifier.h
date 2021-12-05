@@ -45,7 +45,7 @@ public:
 	Q_INVOKABLE InvertSelectionModifier(DataSet* dataset);
 
 	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 };
 
 }	// End of namespace

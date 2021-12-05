@@ -57,7 +57,7 @@ int ModifierTemplates::createTemplate(const QString& templateName, const QVector
 
 	QByteArray buffer;
 	QDataStream dstream(&buffer, QIODevice::WriteOnly);
-	ObjectSaveStream stream(dstream, SynchronousOperation::create(modifiers.front()->dataset()->taskManager()));
+	ObjectSaveStream stream(dstream, SynchronousOperation::create(modifiers.front()->dataset()->taskManager(), ObjectInitializationHint::LoadFactoryDefaults));
 
 	// Serialize modifiers.
 	for(Modifier* modifier : modifiers) {
@@ -174,7 +174,7 @@ QVector<OORef<Modifier>> ModifierTemplates::instantiateTemplate(const QString& t
 		if(buffer.isEmpty())
 			throw Exception(tr("Modifier template with the name '%1' does not exist.").arg(templateName));
 		QDataStream dstream(buffer);
-		ObjectLoadStream stream(dstream, SynchronousOperation::create(dataset->taskManager()));
+		ObjectLoadStream stream(dstream, SynchronousOperation::create(dataset->taskManager(), ObjectInitializationHint::LoadFactoryDefaults));
 		stream.setDataset(dataset);
 		for(int chunkId = stream.expectChunkRange(0,1); chunkId == 1; chunkId = stream.expectChunkRange(0,1)) {
 			modifierSet.push_back(stream.loadObject<Modifier>());

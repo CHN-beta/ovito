@@ -32,7 +32,7 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshRegions);
 /******************************************************************************
 * Creates a storage object for standard region properties.
 ******************************************************************************/
-PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t regionCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
+PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t regionCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
@@ -76,7 +76,7 @@ PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardPropertyInternal(Data
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, executionContext, regionCount, dataType, componentCount, stride,
+	PropertyPtr property = PropertyPtr::create(dataset, initializationHints, regionCount, dataType, componentCount, stride,
 								propertyName, false, type, componentNames);
 
 	// Initialize memory if requested.

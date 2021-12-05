@@ -66,7 +66,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
@@ -76,8 +76,8 @@ private:
 	public:
 
 		/// Constructor.
-		SimplifyMicrostructureEngine(const PipelineObject* dataSource, ExecutionContext executionContext, const Microstructure* microstructureObj, int smoothingLevel, FloatType kPB, FloatType lambda) :
-			Engine(dataSource, executionContext),
+		SimplifyMicrostructureEngine(const ModifierEvaluationRequest& request, const Microstructure* microstructureObj, int smoothingLevel, FloatType kPB, FloatType lambda) :
+			Engine(request),
 			_microstructure(microstructureObj),
             _smoothingLevel(smoothingLevel),
             _kPB(kPB),
@@ -87,7 +87,7 @@ private:
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	private:
 

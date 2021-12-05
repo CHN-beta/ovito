@@ -138,7 +138,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("Microstructure"); }

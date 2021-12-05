@@ -182,8 +182,7 @@ public:
 		// Are we using a geometry shader? If yes, render point primitives only.
 		if(usingGeometryShader()) {
 			// Look up the index drawing buffer from the cache and call implementation.
-			struct IndexBufferKeyTag {};
-			RendererResourceKey<IndexBufferKeyTag, std::decay_t<KeyType>> indexBufferKey{ std::forward<KeyType>(cacheKey) };
+			RendererResourceKey<struct IndexBufferKey, std::decay_t<KeyType>> indexBufferKey{ std::forward<KeyType>(cacheKey) };
 			drawArraysOrderedGeometryShader(OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::move(indexBufferKey), _renderer->currentResourceFrame()), std::move(computeOrderingFunc));
 		}
 #ifdef QT_OPENGL_4

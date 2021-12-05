@@ -66,7 +66,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
@@ -76,9 +76,9 @@ private:
 	public:
 
 		/// Constructor.
-		CoordinationAnalysisEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCellObject* simCell,
+		CoordinationAnalysisEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCellObject* simCell,
 				FloatType cutoff, int rdfSampleCount, ConstPropertyPtr particleTypes, boost::container::flat_map<int,QString> uniqueTypeIds) :
-			Engine(dataSource, executionContext),
+			Engine(request),
 			_positions(std::move(positions)),
 			_selection(std::move(selection)),
 			_simCell(simCell),
@@ -86,7 +86,7 @@ private:
 			_computePartialRdfs(particleTypes),
 			_particleTypes(std::move(particleTypes)),
 			_uniqueTypeIds(std::move(uniqueTypeIds)),
-			_coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::CoordinationProperty, true, executionContext)),
+			_coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::CoordinationProperty, true, request.initializationHints())),
 			_inputFingerprint(std::move(fingerprint))
 		{
 			size_t componentCount = _computePartialRdfs ? (this->uniqueTypeIds().size() * (this->uniqueTypeIds().size()+1) / 2) : 1;
@@ -99,14 +99,14 @@ private:
 					}
 				}
 			}
-			_rdfY = DataTable::OOClass().createUserProperty(dataset, rdfSampleCount, PropertyObject::Float, componentCount, 0, tr("g(r)"), true, DataTable::YProperty, std::move(componentNames));
+			_rdfY = DataTable::OOClass().createUserProperty(request.dataset(), rdfSampleCount, PropertyObject::Float, componentCount, 0, tr("g(r)"), true, DataTable::YProperty, std::move(componentNames));
 		}
 
 		/// Computes the modifier's results.
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		/// Returns the property storage that contains the computed coordination numbers.
 		const PropertyPtr& coordinationNumbers() const { return _coordinationNumbers; }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -67,9 +67,9 @@ bool ReferenceConfigurationModifier::OOMetaClass::isApplicableTo(const DataColle
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/
-TimeInterval ReferenceConfigurationModifier::validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const
+TimeInterval ReferenceConfigurationModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
-	TimeInterval iv = AsynchronousModifier::validityInterval(request, modApp);
+	TimeInterval iv = AsynchronousModifier::validityInterval(request);
 
 	if(useReferenceFrameOffset()) {
 		// Results will only be valid for the duration of the current frame when using a relative offset.
@@ -139,7 +139,7 @@ bool ReferenceConfigurationModifier::referenceEvent(RefTarget* source, const Ref
 * Creates and initializes a computation engine that will compute the 
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	// What is the reference frame number to use?
 	TimeInterval validityInterval = input.stateValidity();
@@ -149,7 +149,7 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 		// If the source frame attribute is not present, fall back to inferring it from the current animation time.
 		int currentFrame = input.data() ? input.data()->sourceFrame() : -1;
 		if(currentFrame < 0)
-			currentFrame = modApp->animationTimeToSourceFrame(request.time());
+			currentFrame = request.modApp()->animationTimeToSourceFrame(request.time());
 
 		// Use frame offset relative to current configuration.
 		referenceFrame = currentFrame + referenceFrameOffset();
@@ -166,15 +166,15 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 	SharedFuture<PipelineFlowState> refState;
 	if(!referenceConfiguration()) {
 		// Convert frame to animation time.
-		TimePoint referenceTime = modApp->sourceFrameToAnimationTime(referenceFrame);
+		TimePoint referenceTime = request.modApp()->sourceFrameToAnimationTime(referenceFrame);
 		
 		// Set up the pipeline request for obtaining the reference configuration.
 		PipelineEvaluationRequest referenceRequest = request;
 		referenceRequest.setTime(referenceTime);
-		inputCachingHints(referenceRequest.modifiableCachingIntervals(), modApp);
+		inputCachingHints(referenceRequest.modifiableCachingIntervals(), request.modApp());
 
 		// Send the request to the upstream pipeline.
-		refState = modApp->evaluateInput(referenceRequest);
+		refState = request.modApp()->evaluateInput(referenceRequest);
 	}
 	else {
 		if(referenceConfiguration()->numberOfSourceFrames() > 0) {
@@ -190,7 +190,7 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 			TimePoint referenceTime = referenceConfiguration()->sourceFrameToAnimationTime(referenceFrame);
 
 			// Set up the pipeline request for obtaining the reference configuration.
-			PipelineEvaluationRequest referenceRequest(referenceTime, request.breakOnError());
+			PipelineEvaluationRequest referenceRequest(request.initializationHints(), referenceTime, request.breakOnError());
 
 			// Send the request to the pipeline branch.
 			refState = referenceConfiguration()->evaluate(referenceRequest);
@@ -202,7 +202,7 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 	}
 
 	// Wait for the reference configuration to become available.
-	return refState.then(executor(), [this, request, modApp, input = input, referenceFrame, executionContext, validityInterval](const PipelineFlowState& referenceInput) {
+	return refState.then(executor(), [this, request, input = input, referenceFrame, validityInterval](const PipelineFlowState& referenceInput) {
 
 		// Make sure the obtained reference configuration is valid and ready to use.
 		if(referenceInput.status().type() == PipelineStatus::Error)
@@ -219,7 +219,7 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 		}
 
 		// Let subclass create the compute engine.
-		return createEngineInternal(request, modApp, std::move(input), referenceInput, executionContext, validityInterval);
+		return createEngineInternal(request, std::move(input), referenceInput, validityInterval);
 	});
 }
 
@@ -227,14 +227,13 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 * Constructor.
 ******************************************************************************/
 ReferenceConfigurationModifier::RefConfigEngineBase::RefConfigEngineBase(
-	const PipelineObject* dataSource, 
-	ExecutionContext executionContext, 
+	const ModifierEvaluationRequest& request, 
 	const TimeInterval& validityInterval,
 	ConstPropertyPtr positions, const SimulationCellObject* simCell,
 	ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,
 	ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
 	AffineMappingType affineMapping, bool useMinimumImageConvention) :
-	Engine(dataSource, executionContext, validityInterval),
+	Engine(request, validityInterval),
 	_positions(std::move(positions)),
 	_refPositions(std::move(refPositions)),
 	_identifiers(std::move(identifiers)),

@@ -34,9 +34,9 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshAffineTransformationModifierDelegate);
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
-PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-	AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(modifier);
+	AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
 
 	for(const DataObject* obj : state.data()->objects()) {
 		// Process SurfaceMesh objects.
@@ -80,15 +80,14 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(Modifier* 
 
 			// Create a copy of the TriMeshObject.
 			TriMeshObject* newMeshObj = state.makeMutable(existingMeshObj);
-			const TriMeshPtr& mesh = newMeshObj->modifiableMesh();
 
 			// Apply transformation to the vertices coordinates.
-			for(Point3& p : mesh->vertices())
+			for(Point3& p : newMeshObj->vertices())
 				p = tm * p;
-			mesh->invalidateVertices();
+			newMeshObj->invalidateVertices();
 			// Apply transformation to the normal vectors.
-			if(mesh->hasNormals()) {
-				for(Vector3& n : mesh->normals())
+			if(newMeshObj->hasNormals()) {
+				for(Vector3& n : newMeshObj->normals())
 					n = tm * n;
 			}
 		}

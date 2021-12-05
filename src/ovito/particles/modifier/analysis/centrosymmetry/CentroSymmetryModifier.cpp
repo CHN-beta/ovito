@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -61,7 +61,7 @@ bool CentroSymmetryModifier::OOMetaClass::isApplicableTo(const DataCollection& i
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CentroSymmetryModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> CentroSymmetryModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -79,13 +79,13 @@ Future<AsynchronousModifier::EnginePtr> CentroSymmetryModifier::createEngine(con
 		throwException(tr("The number of neighbors to take into account in the centrosymmetry calculation must be a positive and even integer."));
 
 	// Create an empty data table for the CSP value histogram to be computed.
-	DataOORef<DataTable> histogram = DataOORef<DataTable>::create(dataset(), executionContext, DataTable::Line, tr("CSP distribution"));
+	DataOORef<DataTable> histogram = DataOORef<DataTable>::create(dataset(), request.initializationHints(), DataTable::Line, tr("CSP distribution"));
 	histogram->setIdentifier(input.generateUniqueIdentifier<DataTable>(QStringLiteral("csp-centrosymmetry")));
-	histogram->setDataSource(modApp);
+	histogram->setDataSource(request.modApp());
 	histogram->setAxisLabelX(tr("CSP"));
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<CentroSymmetryEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, numNeighbors(), mode(), std::move(histogram));
+	return std::make_shared<CentroSymmetryEngine>(request, particles, posProperty, simCell, numNeighbors(), mode(), std::move(histogram));
 }
 
 /******************************************************************************
@@ -182,11 +182,11 @@ FloatType CentroSymmetryModifier::computeCSP(NearestNeighborFinder& neighFinder,
 /******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
-void CentroSymmetryModifier::CentroSymmetryEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void CentroSymmetryModifier::CentroSymmetryEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 	if(_inputFingerprint.hasChanged(particles))
-		modApp->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
 	// Output per-particle CSP values.
 	particles->createProperty(csp());

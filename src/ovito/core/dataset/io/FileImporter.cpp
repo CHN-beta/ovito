@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,21 +37,21 @@ IMPLEMENT_OVITO_CLASS(FileImporter);
 /******************************************************************************
 * Tries to detect the format of the given file.
 ******************************************************************************/
-Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset, ExecutionContext executionContext, const QUrl& url, OORef<FileImporter> existingImporterHint)
+Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset, ObjectInitializationHints initializationHints, const QUrl& url, OORef<FileImporter> existingImporterHint)
 {
 	if(!url.isValid())
 		dataset->throwException(tr("Invalid path or URL."));
 
 	// Resolve filename if it contains a wildcard.
-	return FileSourceImporter::findWildcardMatches(url, dataset).then(dataset->executor(), [dataset, executionContext, existingImporterHint = std::move(existingImporterHint)](std::vector<QUrl>&& urls) {
+	return FileSourceImporter::findWildcardMatches(url, dataset).then(dataset->executor(), [dataset, initializationHints, existingImporterHint = std::move(existingImporterHint)](std::vector<QUrl>&& urls) {
 		if(urls.empty())
 			dataset->throwException(tr("There are no files in the directory matching the filename pattern."));
 
 		// Download file so we can determine its format.
 		return Application::instance()->fileManager()->fetchUrl(dataset->taskManager(), urls.front())
-			.then(dataset->executor(), [dataset, executionContext, url = urls.front(), existingImporterHint = std::move(existingImporterHint)](const FileHandle& file) {
+			.then(dataset->executor(), [dataset, initializationHints, url = urls.front(), existingImporterHint = std::move(existingImporterHint)](const FileHandle& file) {
 				// Detect file format.
-				return autodetectFileFormat(dataset, executionContext, file, std::move(existingImporterHint));
+				return autodetectFileFormat(dataset, initializationHints, file, std::move(existingImporterHint));
 			});
 	});
 }
@@ -59,7 +59,7 @@ Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset,
 /******************************************************************************
 * Tries to detect the format of the given file.
 ******************************************************************************/
-OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, ExecutionContext executionContext, const FileHandle& file, FileImporter* existingImporterHint)
+OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, ObjectInitializationHints initializationHints, const FileHandle& file, FileImporter* existingImporterHint)
 {
 	OVITO_ASSERT(dataset->undoStack().isRecordingThread() == false);
 
@@ -75,7 +75,7 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, Executi
 	if(auto entry = formatDetectionCache.find(fileIdentifier); entry != formatDetectionCache.end()) {
 		if(existingImporterHint && &existingImporterHint->getOOClass() == entry->second)
 			return existingImporterHint;
-		return static_object_cast<FileImporter>(entry->second->createInstance(dataset, executionContext));
+		return static_object_cast<FileImporter>(entry->second->createInstance(dataset, initializationHints));
 	}
 	locker.unlock();
 
@@ -103,7 +103,7 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, Executi
 				formatDetectionCache.emplace(fileIdentifier, importerClass);
 
 				// Instantiate the file importer for this file format.
-				return static_object_cast<FileImporter>(importerClass->createInstance(dataset, executionContext));
+				return static_object_cast<FileImporter>(importerClass->createInstance(dataset, initializationHints));
 			}
 		}
 		catch(const Exception&) {

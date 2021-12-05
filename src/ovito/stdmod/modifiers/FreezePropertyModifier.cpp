@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,13 +59,13 @@ FreezePropertyModifier::FreezePropertyModifier(DataSet* dataset) : GenericProper
 * This method is called by the system when the modifier is being inserted
 * into a pipeline.
 ******************************************************************************/
-void FreezePropertyModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
+void FreezePropertyModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
-	GenericPropertyModifier::initializeModifier(time, modApp, executionContext);
+	GenericPropertyModifier::initializeModifier(request);
 
 	// Use the first available particle property from the input state as data source when the modifier is newly created.
-	if(sourceProperty().isNull() && subject() && executionContext == ExecutionContext::Interactive) {
-		const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
+	if(sourceProperty().isNull() && subject() && request.initializationHints().testFlag(LoadUserDefaults)) {
+		const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			for(const PropertyObject* property : container->properties()) {
 				setSourceProperty(PropertyReference(subject().dataClass(), property));
@@ -92,14 +92,14 @@ void FreezePropertyModifier::propertyChanged(const PropertyFieldDescriptor* fiel
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> FreezePropertyModifier::evaluate(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<PipelineFlowState> FreezePropertyModifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	// Check if we already have the frozen property available.
-	if(FreezePropertyModifierApplication* myModApp = dynamic_object_cast<FreezePropertyModifierApplication>(modApp)) {
+	if(FreezePropertyModifierApplication* myModApp = dynamic_object_cast<FreezePropertyModifierApplication>(request.modApp())) {
 		if(myModApp->hasFrozenState(freezeTime())) {
 			// Perform replacement of the property in the input pipeline state.
 			PipelineFlowState output = input;
-			evaluateSynchronous(request.time(), modApp, output);
+			evaluateSynchronous(request, output);
 			return std::move(output);
 		}
 	}
@@ -109,11 +109,11 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluate(const PipelineEvaluat
 	upstreamRequest.setTime(freezeTime());
 
 	// Request the frozen state from the upstream pipeline.
-	return modApp->evaluateInput(upstreamRequest)
-		.then(executor(), [this, time = request.time(), modApp = QPointer<ModifierApplication>(modApp), state = input](const PipelineFlowState& frozenState) mutable {
+	return request.modApp()->evaluateInput(upstreamRequest)
+		.then(executor(), [this, request, modApp = OORef<ModifierApplication>(request.modApp()), state = input](const PipelineFlowState& frozenState) mutable {
 
 			// Extract the input property.
-			if(FreezePropertyModifierApplication* myModApp = dynamic_object_cast<FreezePropertyModifierApplication>(modApp.data())) {
+			if(FreezePropertyModifierApplication* myModApp = dynamic_object_cast<FreezePropertyModifierApplication>(request.modApp())) {
 				if(myModApp->modifier() == this && !sourceProperty().isNull() && subject()) {
 
 					const PropertyContainer* container = frozenState.expectLeafObject(subject());
@@ -127,7 +127,7 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluate(const PipelineEvaluat
 							frozenState.stateValidity());
 
 						// Perform the actual replacement of the property in the input pipeline state.
-						evaluateSynchronous(time, modApp, state);
+						evaluateSynchronous(request, state);
 						return std::move(state);
 					}
 					else {
@@ -144,7 +144,7 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluate(const PipelineEvaluat
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void FreezePropertyModifier::evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	if(!subject())
 		throwException(tr("No property type selected."));
@@ -157,7 +157,7 @@ void FreezePropertyModifier::evaluateSynchronous(TimePoint time, ModifierApplica
 		throwException(tr("No output property selected."));
 
 	// Retrieve the property values stored in the ModifierApplication.
-	FreezePropertyModifierApplication* myModApp = dynamic_object_cast<FreezePropertyModifierApplication>(modApp);
+	FreezePropertyModifierApplication* myModApp = dynamic_object_cast<FreezePropertyModifierApplication>(request.modApp());
 	if(!myModApp || !myModApp->property())
 		throwException(tr("No stored property values available."));
 
@@ -168,7 +168,7 @@ void FreezePropertyModifier::evaluateSynchronous(TimePoint time, ModifierApplica
 	// Get the property that will be overwritten by the stored one.
 	PropertyObject* outputProperty;
 	if(destinationProperty().type() != PropertyObject::GenericUserProperty) {
-		outputProperty = container->createProperty(destinationProperty().type(), true, Application::instance()->executionContext());
+		outputProperty = container->createProperty(destinationProperty().type(), true, request.initializationHints());
 		if(outputProperty->dataType() != myModApp->property()->dataType()
 			|| outputProperty->componentCount() != myModApp->property()->componentCount()
 			|| outputProperty->stride() != myModApp->property()->stride())

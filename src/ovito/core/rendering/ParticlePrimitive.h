@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -60,11 +60,6 @@ public:
 	Q_ENUMS(ParticleShape);
 
 public:
-
-	/// Constructor.
-	ParticlePrimitive(ParticleShape shape, ShadingMode shadingMode, RenderingQuality renderingQuality)
-		: _particleShape(shape), _shadingMode(shadingMode), _renderingQuality(renderingQuality) {
-	}
 
 	/// \brief Sets the array of particle indices to render.
 	virtual void setIndices(ConstDataBufferPtr indices) {
@@ -139,11 +134,20 @@ public:
 	/// \brief Returns the shading mode for particles.
 	ShadingMode shadingMode() const { return _shadingMode; }
 
+	/// \brief Changes the shading mode for particles.
+	void setShadingMode(ShadingMode mode) { _shadingMode = mode; }
+
 	/// \brief Returns the rendering quality of particles.
 	RenderingQuality renderingQuality() const { return _renderingQuality; }
 
+	/// \brief Changes the rendering quality of particles.
+	void setRenderingQuality(RenderingQuality quality) { _renderingQuality = quality; }
+
 	/// \brief Returns the display shape of particles.
 	ParticleShape particleShape() const { return _particleShape; }
+
+	/// \brief Changes the display shape of particles.
+	void setParticleShape(ParticleShape shape) { _particleShape = shape; }
 
 	/// Returns the buffer storing the array of particle indices to render.
 	const ConstDataBufferPtr& indices() const { return _indices; }
@@ -184,13 +188,13 @@ public:
 private:
 
 	/// Controls the shading of particles.
-	ShadingMode _shadingMode;
+	ShadingMode _shadingMode = NormalShading;
 
 	/// Controls the rendering quality.
-	RenderingQuality _renderingQuality;
+	RenderingQuality _renderingQuality = MediumQuality;
 
 	/// Selects the type of visual shape of the rendered particles.
-	ParticleShape _particleShape;
+	ParticleShape _particleShape = SphericalShape;
 
 	/// The internal buffer storing the array of particle indices to render.
 	ConstDataBufferPtr _indices; // Array of int

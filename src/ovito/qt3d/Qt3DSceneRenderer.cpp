@@ -48,15 +48,6 @@ Qt3DSceneRenderer::~Qt3DSceneRenderer()
 }
 
 /******************************************************************************
-* Determines if this renderer can share geometry data and other resources with
-* the given other renderer.
-******************************************************************************/
-bool Qt3DSceneRenderer::sharesResourcesWith(SceneRenderer* otherRenderer) const
-{
-	return false;
-}
-
-/******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
 void Qt3DSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect)

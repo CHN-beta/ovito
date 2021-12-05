@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,7 +38,7 @@ class OVITO_CORE_EXPORT LinePrimitive : public PrimitiveBase
 public:
 
 	/// \brief Sets the coordinates of the line vertices.
-	virtual void setPositions(ConstDataBufferPtr coordinates) {
+	void setPositions(ConstDataBufferPtr coordinates) {
 		OVITO_ASSERT(coordinates);
 		OVITO_ASSERT(coordinates->dataType() == DataBuffer::Float && coordinates->componentCount() == 3);
 		_positions = std::move(coordinates);
@@ -48,7 +48,7 @@ public:
 	template<typename InputIterator>
 	void setPositions(DataSet* dataset, InputIterator begin, InputIterator end) {
 		size_t count = std::distance(begin, end);
-		DataBufferAccessAndRef<Point3> buffer = DataBufferPtr::create(dataset, ExecutionContext::Scripting, count, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Point3> buffer = DataBufferPtr::create(dataset, count, DataBuffer::Float, 3, 0, false);
 		std::copy(std::move(begin), std::move(end), buffer.begin());
 		setPositions(buffer.take());
 	}
@@ -63,7 +63,7 @@ public:
 	const ConstDataBufferPtr& positions() const { return _positions; }
 
 	/// \brief Sets the colors of the vertices.
-	virtual void setColors(ConstDataBufferPtr colors) {
+	void setColors(ConstDataBufferPtr colors) {
 		OVITO_ASSERT(!colors || colors->dataType() == DataBuffer::Float && colors->componentCount() == 4);
 		_colors = std::move(colors);
 	}
@@ -72,7 +72,7 @@ public:
 	template<typename InputIterator>
 	void setColors(DataSet* dataset, InputIterator begin, InputIterator end) {
 		size_t count = std::distance(begin, end);
-		DataBufferAccessAndRef<ColorA> buffer = DataBufferPtr::create(dataset, ExecutionContext::Scripting, count, DataBuffer::Float, 4, 0, false);
+		DataBufferAccessAndRef<ColorA> buffer = DataBufferPtr::create(dataset, count, DataBuffer::Float, 4, 0, false);
 		std::copy(std::move(begin), std::move(end), buffer.begin());
 		setColors(buffer.take());
 	}
@@ -87,7 +87,7 @@ public:
 	const ConstDataBufferPtr& colors() const { return _colors; }
 
 	/// \brief Sets the color of all vertices to the given value.
-	virtual void setUniformColor(const ColorA& color) { _uniformColor = color; }
+	void setUniformColor(const ColorA& color) { _uniformColor = color; }
 
 	/// \brief Returns the uniform color of all vertices.
 	const ColorA& uniformColor() const { return _uniformColor; }
@@ -96,7 +96,7 @@ public:
 	FloatType lineWidth() const { return _lineWidth; }
 
 	/// \brief Sets the line width in pixels.
-	virtual void setLineWidth(FloatType width) { _lineWidth = width; }
+	void setLineWidth(FloatType width) { _lineWidth = width; }
 
 private:
 

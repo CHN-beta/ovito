@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -58,7 +58,7 @@ public:
 
 	/// \brief Loads the user-defined default values of this object's parameter fields from the
 	///        application's settings store.
-	virtual void initializeObject(ExecutionContext executionContext) override;
+	virtual void initializeObject(ObjectInitializationHints hints) override;
 
 	/// \brief Indicates whether this file exporter can write more than one animation frame into a single output file.
 	virtual bool supportsMultiFrameFiles() const override { return true; }

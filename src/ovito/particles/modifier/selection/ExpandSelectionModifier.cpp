@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -66,7 +66,7 @@ bool ExpandSelectionModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ExpandSelectionModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> ExpandSelectionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	// Get the input particles.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -83,14 +83,14 @@ Future<AsynchronousModifier::EnginePtr> ExpandSelectionModifier::createEngine(co
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
 	if(mode() == CutoffRange) {
-		return std::make_shared<ExpandSelectionCutoffEngine>(modApp, executionContext, particles, posProperty, inputCell, inputSelection, numberOfIterations(), cutoffRange());
+		return std::make_shared<ExpandSelectionCutoffEngine>(request, particles, posProperty, inputCell, inputSelection, numberOfIterations(), cutoffRange());
 	}
 	else if(mode() == NearestNeighbors) {
-		return std::make_shared<ExpandSelectionNearestEngine>(modApp, executionContext, particles, posProperty, inputCell, inputSelection, numberOfIterations(), numNearestNeighbors());
+		return std::make_shared<ExpandSelectionNearestEngine>(request, particles, posProperty, inputCell, inputSelection, numberOfIterations(), numNearestNeighbors());
 	}
 	else if(mode() == BondedNeighbors) {
 		particles->expectBonds()->verifyIntegrity();
-		return std::make_shared<ExpandSelectionBondedEngine>(modApp, executionContext, particles, posProperty, inputCell, inputSelection, numberOfIterations(), particles->expectBondsTopology());
+		return std::make_shared<ExpandSelectionBondedEngine>(request, particles, posProperty, inputCell, inputSelection, numberOfIterations(), particles->expectBondsTopology());
 	}
 	else {
 		throwException(tr("Invalid selection expansion mode."));
@@ -201,12 +201,12 @@ void ExpandSelectionModifier::ExpandSelectionCutoffEngine::expandSelection()
 /******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
-void ExpandSelectionModifier::ExpandSelectionEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void ExpandSelectionModifier::ExpandSelectionEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	// Get the output particles.
 	ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
 	if(_inputFingerprint.hasChanged(particles))
-		modApp->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+		request.modApp()->throwException(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
 	// Output the selection property.
 	particles->createProperty(outputSelection());

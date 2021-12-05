@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,12 +51,12 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 	
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 	/// Is called when the value of a property of this object has changed.
 	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
@@ -69,7 +69,7 @@ private:
 	public:
 
 		/// Constructor.
-		PTMEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCellObject* simCell,
+		PTMEngine(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCellObject* simCell,
 				const OORefVector<ElementType>& structureTypes, const OORefVector<ElementType>& orderingTypes, ConstPropertyPtr selection,
 				bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient);
 
@@ -77,7 +77,7 @@ private:
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		/// This method is called by the system whenever a parameter of the modifier changes.
 		/// The method can be overriden by subclasses to indicate to the caller whether the engine object should be 
@@ -105,7 +105,7 @@ private:
 	protected:
 
 		/// Post-processes the per-particle structure types before they are output to the data pipeline.
-		virtual PropertyPtr postProcessStructureTypes(TimePoint time, ModifierApplication* modApp, const PropertyPtr& structures) override;
+		virtual PropertyPtr postProcessStructureTypes(const ModifierEvaluationRequest& request, const PropertyPtr& structures) override;
 
 	private:
 

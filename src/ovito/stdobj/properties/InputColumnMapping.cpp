@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -141,7 +141,7 @@ QByteArray InputColumnMapping::toByteArray(TaskManager& taskManager) const
 {
 	QByteArray buffer;
 	QDataStream dstream(&buffer, QIODevice::WriteOnly);
-	SaveStream stream(dstream, SynchronousOperation::createSignal(taskManager));
+	SaveStream stream(dstream, SynchronousOperation::createSignal(taskManager, ObjectInitializationHint::LoadFactoryDefaults));
 	stream << *this;
 	stream.close();
 	return buffer;
@@ -153,7 +153,7 @@ QByteArray InputColumnMapping::toByteArray(TaskManager& taskManager) const
 void InputColumnMapping::fromByteArray(const QByteArray& array, TaskManager& taskManager)
 {
 	QDataStream dstream(array);
-	LoadStream stream(dstream, SynchronousOperation::createSignal(taskManager));
+	LoadStream stream(dstream, SynchronousOperation::createSignal(taskManager, ObjectInitializationHint::LoadFactoryDefaults));
 	stream >> *this;
 	stream.close();
 }
@@ -190,8 +190,8 @@ void InputColumnMapping::validate() const
 /******************************************************************************
  * Initializes the object.
  *****************************************************************************/
-InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, PropertyContainer* container, ExecutionContext executionContext, bool removeExistingProperties)
-	: _mapping(mapping), _container(container), _executionContext(executionContext)
+InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, PropertyContainer* container, ObjectInitializationHints initializationHints, bool removeExistingProperties)
+	: _mapping(mapping), _container(container), _initializationHints(initializationHints)
 {
 	mapping.validate();
 
@@ -213,7 +213,7 @@ InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, Property
 			PropertyObject* property;
 			if(pref.type() != PropertyObject::GenericUserProperty) {
 				// Create standard property.
-				property = container->createProperty(pref.type(), true, executionContext);
+				property = container->createProperty(pref.type(), true, initializationHints);
 				// File reader may be overriden the property name.
 				property->setName(pref.name());
 				rec.elementTypeClass = container->getOOMetaClass().typedPropertyElementClass(pref.type());
@@ -399,9 +399,9 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 			if(ok) {
 				// Instantiate a new element type with a numeric ID and add it to the property's type list.
 				if(!prec.property->elementType(d)) {
-					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset(), _executionContext));
+					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset(), _initializationHints));
 					elementType->setNumericId(d);
-					elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec.property), _executionContext);
+					elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec.property), _initializationHints);
 					prec.property->addElementType(std::move(elementType));
 				}
 			}
@@ -412,10 +412,10 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 					d = t->numericId();
 				}
 				else {
-					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset(), _executionContext));
+					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset(), _initializationHints));
 					elementType->setName(typeName);
 					elementType->setNumericId(prec.property->generateUniqueElementTypeId());
-					elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec.property), _executionContext);
+					elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec.property), _initializationHints);
 					d = elementType->numericId();
 					prec.property->addElementType(std::move(elementType));
 				}
@@ -459,9 +459,9 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
 				if(prec->elementTypeClass) {
 					// Instantiate a new element type with a numeric ID and add it to the property's type list.
 					if(!prec->property->elementType(ival)) {
-						DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec->elementTypeClass->createInstance(_container->dataset(), _executionContext));
+						DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec->elementTypeClass->createInstance(_container->dataset(), _initializationHints));
 						elementType->setNumericId(ival);
-						elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec->property), _executionContext);
+						elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec->property), _initializationHints);
 						prec->property->addElementType(std::move(elementType));
 					}
 				}

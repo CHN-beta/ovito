@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -82,15 +82,15 @@ public:
 protected:
 
 	/// \brief Constructor.
-	ModifierDelegate(DataSet* dataset, const DataObjectReference& inputDataObj = DataObjectReference()) : RefTarget(dataset), _isEnabled(true), _inputDataObject(inputDataObj) {}
+	explicit ModifierDelegate(DataSet* dataset, const DataObjectReference& inputDataObj = DataObjectReference()) : RefTarget(dataset), _isEnabled(true), _inputDataObject(inputDataObj) {}
 
 public:
 
 	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const { return TimeInterval::infinite(); }
+	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const { return TimeInterval::infinite(); }
 
 	/// \brief Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) { return PipelineStatus::Success; }
+	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) { return PipelineStatus::Success; }
 
 	/// \brief Returns the modifier owning this delegate.
 	Modifier* modifier() const;
@@ -152,19 +152,18 @@ public:
 	DelegatingModifier(DataSet* dataset);
 
 	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const override;
+	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
 	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 protected:
 
 	/// Creates a default delegate for this modifier.
-	/// This should be called from the modifier's constructor.
-	void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ExecutionContext executionContext);
+	void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectInitializationHints initializationHints);
 
 	/// Lets the modifier's delegate operate on a pipeline flow state.
-	void applyDelegate(PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
+	void applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
 
 protected:
 
@@ -211,19 +210,18 @@ public:
 	MultiDelegatingModifier(DataSet* dataset);
 
 	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const override;
+	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
 	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 protected:
 
 	/// Creates the list of delegate objects for this modifier.
-	/// This should be called from the modifier's constructor.
-	void createModifierDelegates(const OvitoClass& delegateType, ExecutionContext executionContext);
+	void createModifierDelegates(const OvitoClass& delegateType, ObjectInitializationHints initializationHints);
 
 	/// Lets the registered modifier delegates operate on a pipeline flow state.
-	void applyDelegates(PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
+	void applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
 
 protected:
 

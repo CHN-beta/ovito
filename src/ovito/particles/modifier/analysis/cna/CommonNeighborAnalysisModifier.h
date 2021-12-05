@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -118,7 +118,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 	
 	/// Find all atoms that are nearest neighbors of the given pair of atoms.
 	static int findCommonNeighbors(const NeighborBondArray& neighborArray, int neighborIndex, unsigned int& commonNeighbors, int numNeighbors);
@@ -133,7 +133,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
@@ -146,7 +146,7 @@ private:
 		using StructureIdentificationEngine::StructureIdentificationEngine;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	protected:
 
@@ -172,8 +172,8 @@ private:
 	public:
 
 		/// Constructor.
-		FixedCNAEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
-			CNAEngine(dataSource, executionContext, dataset, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
+		FixedCNAEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
+			CNAEngine(request, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
 			_cutoff(cutoff) {}
 
 		/// Computes the modifier's results.
@@ -215,17 +215,17 @@ private:
 	public:
 
 		/// Constructor.
-		BondCNAEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages) :
-			CNAEngine(dataSource, executionContext, dataset, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
+		BondCNAEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages) :
+			CNAEngine(request, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
 			_bondTopology(std::move(bondTopology)),
 			_bondPeriodicImages(std::move(bondPeriodicImages)),
-			_cnaIndices(BondsObject::OOClass().createUserProperty(dataset, _bondTopology->size(), PropertyObject::Int, 3, 0, tr("CNA Indices"), false)) {}
+			_cnaIndices(BondsObject::OOClass().createUserProperty(request.dataset(), _bondTopology->size(), PropertyObject::Int, 3, 0, tr("CNA Indices"), false)) {}
 
 		/// Computes the modifier's results.
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		/// Returns the output bonds property that stores the computed CNA indices.
 		const PropertyPtr& cnaIndices() const { return _cnaIndices; }

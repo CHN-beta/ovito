@@ -559,7 +559,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 			adjustProjectionForRenderFrame(_projParams);
 
 		// This is the async operation object used when calling rendering functions in the following.
-		SynchronousOperation renderOperation = SynchronousOperation::createSignal(dataset()->taskManager());
+		SynchronousOperation renderOperation = SynchronousOperation::createSignal(dataset()->taskManager(), ObjectInitializationHint::LoadUserDefaults);
 
 		// Determine scene bounding box.
 		Box3 boundingBox = renderer->computeSceneBoundingBox(time, _projParams, this, renderOperation.subOperation());
@@ -688,20 +688,15 @@ void Viewport::renderLayers(SceneRenderer* renderer, TimePoint time, RenderSetti
 	renderer->setDepthTestEnabled(false);
 
 	// Look up cached image primitive from a previous rendering pass of this viewport.
-	using CacheKey = std::tuple<CompatibleRendererGroup, Viewport*, OORefVector<ViewportOverlay>>;
-	std::shared_ptr<ImagePrimitive>& primitive = dataset()->visCache().get<std::shared_ptr<ImagePrimitive>>(CacheKey(renderer, this, layers));
+	using CacheKey = RendererResourceKey<struct ViewportLayerCache, Viewport*, OORefVector<ViewportOverlay>>;
+	ImagePrimitive& primitive = dataset()->visCache().get<ImagePrimitive>(CacheKey(this, layers));
 
-	if(!primitive) {
-		primitive = renderer->createImagePrimitive();
-		primitive->setImage(paintBuffer);
-	}
-	else {
-		if(primitive->image() != paintBuffer) {
-			primitive->setImage(paintBuffer);
-		}
-	}
+	// Only assign the QImage when the pixel data is actually different, because the renderer will
+	// cache the texture derived from the QImage.
+	if(primitive.image() != paintBuffer)
+		primitive.setImage(paintBuffer);
 
-	primitive->setRectViewport(renderer, Box2({-1,-1}, {1,1}));
+	primitive.setRectViewport(renderer, Box2({-1,-1}, {1,1}));
 	renderer->renderImage(primitive);
 	renderer->setDepthTestEnabled(true);
 }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,12 +40,12 @@ AsynchronousDelegatingModifier::AsynchronousDelegatingModifier(DataSet* dataset)
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/
-TimeInterval AsynchronousDelegatingModifier::validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const
+TimeInterval AsynchronousDelegatingModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
-	TimeInterval iv = AsynchronousModifier::validityInterval(request, modApp);
+	TimeInterval iv = AsynchronousModifier::validityInterval(request);
 
 	if(delegate() && delegate()->isEnabled())
-		iv.intersect(delegate()->validityInterval(request, modApp));
+		iv.intersect(delegate()->validityInterval(request));
 
 	return iv;
 }
@@ -53,14 +53,14 @@ TimeInterval AsynchronousDelegatingModifier::validityInterval(const PipelineEval
 /******************************************************************************
 * Creates a default delegate for this modifier.
 ******************************************************************************/
-void AsynchronousDelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ExecutionContext executionContext)
+void AsynchronousDelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectInitializationHints initializationHints)
 {
 	OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
 
 	// Find the delegate type that corresponds to the given name string.
 	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
 		if(clazz->name() == defaultDelegateTypeName) {
-			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance(dataset(), executionContext));
+			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance(dataset(), initializationHints));
 			setDelegate(std::move(delegate));
 			break;
 		}

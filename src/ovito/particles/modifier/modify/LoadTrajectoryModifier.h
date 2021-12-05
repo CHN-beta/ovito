@@ -64,16 +64,16 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 	
 	/// Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const override;
+	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
 	/// Modifies the input data.
-	virtual Future<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	/// Returns the number of animation frames this modifier can provide.
 	virtual int numberOfSourceFrames(int inputFrames) const override {
@@ -112,7 +112,7 @@ protected:
 private:
 
 	/// Transfer the particle positions from the trajectory frame to the current pipeline input state.
-	void applyTrajectoryState(PipelineFlowState& state, const PipelineFlowState& trajState);
+	void applyTrajectoryState(PipelineFlowState& state, const PipelineFlowState& trajState, ObjectInitializationHints initializationHints);
 
 	/// The source for trajectory data.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineObject>, trajectorySource, setTrajectorySource, PROPERTY_FIELD_NO_SUB_ANIM);

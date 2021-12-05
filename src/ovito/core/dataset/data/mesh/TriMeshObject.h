@@ -24,8 +24,10 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/dataset/data/DataObject.h>
 
 namespace Ovito {
+
 
 /// \brief The maximum number of smoothing groups in a mesh.
 ///
@@ -35,7 +37,7 @@ namespace Ovito {
 #define OVITO_MAX_NUM_SMOOTHING_GROUPS 		32
 
 /**
- * \brief Represents a triangle in a TriMesh structure.
+ * \brief Represents a triangle in a TriMeshObject.
  */
 class OVITO_CORE_EXPORT TriMeshFace
 {
@@ -154,26 +156,36 @@ private:
 	// Make sure the constant OVITO_MAX_NUM_SMOOTHING_GROUPS has correct value.
 	static_assert(std::numeric_limits<decltype(TriMeshFace::_smoothingGroups)>::digits == OVITO_MAX_NUM_SMOOTHING_GROUPS, "Compile-time constant OVITO_MAX_NUM_SMOOTHING_GROUPS has incorrect value.");
 
-	friend class TriMesh;
+	friend class TriMeshObject;
 };
 
-Q_DECLARE_OPERATORS_FOR_FLAGS(TriMeshFace::MeshFaceFlags);
+Q_DECLARE_OPERATORS_FOR_FLAGS(TriMeshFace::MeshFaceFlags);	
 
 /**
- * \brief Stores a triangular mesh.
+ * \brief A data object represeting a mesh made of vertices and triangles.
  */
-class OVITO_CORE_EXPORT TriMesh
+class OVITO_CORE_EXPORT TriMeshObject : public DataObject
 {
+	OVITO_CLASS(TriMeshObject)
+	Q_OBJECT
+
 public:
 
-	/// \brief Constructs an empty mesh.
-	TriMesh();
+	/// Constructor that creates an object with an empty triangle mesh.
+	Q_INVOKABLE TriMeshObject(DataSet* dataset);
+
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ObjectInitializationHints hints) override;
+	
+	/// \brief Returns the title of this object.
+	virtual QString objectTitle() const override { return tr("Triangle mesh"); }
 
 	/// \brief Resets the mesh to the empty state.
 	void clear();
 
 	/// Swaps the contents of this mesh with another mesh.
-	void swap(TriMesh& other) noexcept {
+	void swap(TriMeshObject& other) noexcept {
 		_vertices.swap(other._vertices);
 		_faces.swap(other._faces);
 		std::swap(_boundingBox, other._boundingBox);
@@ -595,7 +607,15 @@ public:
 	/// Creates a triangulated unit sphere model by subdividing a icosahedron. 
 	/// The resolution parameter controls the number of subdivision iterations and determines the
 	/// resulting vertices/faces of the mesh. 
-	static TriMesh createIcosphere(int resolution);
+	void createIcosphere(int resolution);
+
+protected:
+
+	/// Saves the class' contents to the given stream.
+	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
+
+	/// Loads the class' contents from the given stream.
+	virtual void loadFromStream(ObjectLoadStream& stream) override;
 
 private:
 
@@ -639,17 +659,6 @@ private:
 	QVector<Vector3> _normals;
 };
 
-/// Swap function for the TriMesh class, which can be found by argument dependent lookup (ADL).
-inline void swap(TriMesh& mesh_a, TriMesh& mesh_b) noexcept { mesh_a.swap(mesh_b); }
-
-/// A shared pointer to a TriMesh data structure.
-using TriMeshPtr = std::shared_ptr<TriMesh>;
-
-/// A shared pointer to an immutable TriMesh data structure.
-using ConstTriMeshPtr = std::shared_ptr<const TriMesh>;
-
 }	// End of namespace
 
 Q_DECLARE_TYPEINFO(Ovito::TriMeshFace, Q_MOVABLE_TYPE);
-Q_DECLARE_METATYPE(Ovito::TriMeshPtr);
-Q_DECLARE_TYPEINFO(Ovito::TriMeshPtr, Q_MOVABLE_TYPE);

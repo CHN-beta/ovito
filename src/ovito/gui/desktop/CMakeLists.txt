@@ -63,6 +63,7 @@ OVITO_STANDARD_PLUGIN(Gui
 		dataset/io/FileImporterEditor.cpp
 		dataset/io/AttributeFileExporterEditor.cpp
 		dataset/animation/controller/TCBInterpolationControllerEditor.cpp
+		dataset/mesh/TriMeshVisEditor.cpp
 		widgets/general/RolloutContainer.cpp
 		widgets/general/RolloutContainerLayout.cpp
 		widgets/general/SpinnerWidget.cpp

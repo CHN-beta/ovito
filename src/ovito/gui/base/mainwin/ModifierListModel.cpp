@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -422,7 +422,7 @@ void ModifierListModel::insertModifier()
 
 		if(action->modifierClass()) {
 			// Create an instance of the modifier.
-			OORef<Modifier> modifier = static_object_cast<Modifier>(action->modifierClass()->createInstance(dataset, ExecutionContext::Interactive));
+			OORef<Modifier> modifier = static_object_cast<Modifier>(action->modifierClass()->createInstance(dataset, ObjectInitializationHint::LoadUserDefaults));
 			// Insert modifier into the data pipeline.
 			_pipelineListModel->applyModifiers({modifier});
 		}
@@ -432,7 +432,7 @@ void ModifierListModel::insertModifier()
 			// Put the modifiers into a group if the template consists of two or more modifiers.
 			OORef<ModifierGroup> modifierGroup;
 			if(modifierSet.size() >= 2) {
-				modifierGroup = OORef<ModifierGroup>::create(dataset, ExecutionContext::Interactive);
+				modifierGroup = OORef<ModifierGroup>::create(dataset, ObjectInitializationHint::LoadUserDefaults);
 				modifierGroup->setCollapsed(true);
 				modifierGroup->setTitle(action->templateName());
 			}
@@ -454,7 +454,7 @@ void ModifierListModel::insertModifier()
 
 					// Instantiate the PythonScriptModifier class.
 					UndoSuspender noUndo(dataset->undoStack());
-					OORef<Modifier> modifier = static_object_cast<Modifier>(modifierClass->createInstance(dataset, ExecutionContext::Interactive));
+					OORef<Modifier> modifier = static_object_cast<Modifier>(modifierClass->createInstance(dataset, ObjectInitializationHint::LoadUserDefaults));
 					OVITO_CHECK_OBJECT_POINTER(modifier);
 					modifier->setTitle(action->text());
 
@@ -563,10 +563,10 @@ void ModifierListModel::updateActionState()
 	if(currentItem) {
 		if(DataSet* dataset = _pipelineListModel->datasetContainer().currentSet()) {
 			if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(currentItem->object())) {
-				inputState = modApp->evaluateSynchronous(dataset->animationSettings()->time());
+				inputState = modApp->evaluateSynchronousAtCurrentTime();
 			}
 			else if(PipelineObject* pipelineObject = dynamic_object_cast<PipelineObject>(currentItem->object())) {
-				inputState = pipelineObject->evaluateSynchronous(dataset->animationSettings()->time());
+				inputState = pipelineObject->evaluateSynchronousAtCurrentTime();
 			}
 			else if(PipelineSceneNode* pipeline = _pipelineListModel->selectedPipeline()) {
 				inputState = pipeline->evaluatePipelineSynchronous(false);

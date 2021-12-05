@@ -57,12 +57,12 @@ ReplicateModifier::ReplicateModifier(DataSet* dataset) : MultiDelegatingModifier
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void ReplicateModifier::initializeObject(ExecutionContext executionContext)
+void ReplicateModifier::initializeObject(ObjectInitializationHints hints)
 {
 	// Generate the list of delegate objects.
-	createModifierDelegates(ReplicateModifierDelegate::OOClass(), executionContext);
+	createModifierDelegates(ReplicateModifierDelegate::OOClass(), hints);
 
-	MultiDelegatingModifier::initializeObject(executionContext);
+	MultiDelegatingModifier::initializeObject(hints);
 }
 
 /******************************************************************************
@@ -96,10 +96,10 @@ Box3I ReplicateModifier::replicaRange() const
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void ReplicateModifier::evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void ReplicateModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	// Apply all enabled modifier delegates to the input data.
-	MultiDelegatingModifier::evaluateSynchronous(time, modApp, state);
+	MultiDelegatingModifier::evaluateSynchronous(request, state);
 
 	// Resize the simulation cell if enabled.
 	if(adjustBoxSize()) {

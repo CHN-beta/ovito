@@ -31,15 +31,15 @@ IMPLEMENT_OVITO_CLASS(Microstructure);
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void Microstructure::initializeObject(ExecutionContext executionContext)
+void Microstructure::initializeObject(ObjectInitializationHints hints)
 {
-	SurfaceMesh::initializeObject(executionContext);
+	SurfaceMesh::initializeObject(hints);
 
-    makeFacesMutable()->createProperty(SurfaceMeshFaces::RegionProperty, false, executionContext);
-    makeFacesMutable()->createProperty(SurfaceMeshFaces::BurgersVectorProperty, false, executionContext);
-    makeFacesMutable()->createProperty(SurfaceMeshFaces::FaceTypeProperty, false, executionContext);
-    makeFacesMutable()->createProperty(SurfaceMeshFaces::CrystallographicNormalProperty, false, executionContext);
-    makeRegionsMutable()->createProperty(SurfaceMeshRegions::PhaseProperty, false, executionContext);
+    makeFacesMutable()->createProperty(SurfaceMeshFaces::RegionProperty, false, hints);
+    makeFacesMutable()->createProperty(SurfaceMeshFaces::BurgersVectorProperty, false, hints);
+    makeFacesMutable()->createProperty(SurfaceMeshFaces::FaceTypeProperty, false, hints);
+    makeFacesMutable()->createProperty(SurfaceMeshFaces::CrystallographicNormalProperty, false, hints);
+    makeRegionsMutable()->createProperty(SurfaceMeshRegions::PhaseProperty, false, hints);
 }
 
 /******************************************************************************

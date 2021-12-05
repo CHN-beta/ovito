@@ -21,59 +21,64 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include "OpenGLTextPrimitive.h"
 #include "OpenGLSceneRenderer.h"
+#include "OpenGLResourceManager.h"
 
 namespace Ovito {
 
 /******************************************************************************
-* Renders the text string.
+* Renders a text string.
 ******************************************************************************/
-void OpenGLTextPrimitive::render(OpenGLSceneRenderer* renderer)
+void OpenGLSceneRenderer::renderTextImplementation(const TextPrimitive& primitive)
 {
-	if(text().isEmpty() || renderer->isPicking())
+	if(primitive.text().isEmpty() || isPicking())
 		return;
 	
-	if(!_imageBuffer)
-		_imageBuffer = renderer->createImagePrimitive();
+    // The look-up key for the image primtive cache.
+	ImagePrimitive& cachedImagePrimitive = OpenGLResourceManager::instance()->lookup<ImagePrimitive>(
+		RendererResourceKey<struct TextImageCache, QString, ColorA, ColorA, QString>{ 
+			primitive.text(), 
+			primitive.color(), 
+			primitive.backgroundColor(), 
+			primitive.font().key() }, 
+		currentResourceFrame());
 
-	if(_imageUpdateNeeded) {
-		_imageUpdateNeeded = false;
+	if(cachedImagePrimitive.image().isNull()) {
 
 		// Measure text size.
 		QRect rect;
-		qreal devicePixelRatio = renderer->devicePixelRatio();
+		qreal devicePixelRatio = this->devicePixelRatio();
 		{
 			QImage textureImage(1, 1, QImage::Format_RGB32);
 			textureImage.setDevicePixelRatio(devicePixelRatio);
 			QPainter painter(&textureImage);
-			painter.setFont(font());
-			rect = painter.boundingRect(QRect(), Qt::AlignLeft | Qt::AlignTop, text());
+			painter.setFont(primitive.font());
+			rect = painter.boundingRect(QRect(), Qt::AlignLeft | Qt::AlignTop, primitive.text());
 		}
 
 		// Generate texture image.
-		QImage textureImage((rect.width() * devicePixelRatio)+1, (rect.height() * devicePixelRatio)+1, renderer->glcontext()->isOpenGLES() ? QImage::Format_ARGB32 : QImage::Format_ARGB32_Premultiplied);
+		QImage textureImage((rect.width() * devicePixelRatio)+1, (rect.height() * devicePixelRatio)+1, glcontext()->isOpenGLES() ? QImage::Format_ARGB32 : QImage::Format_ARGB32_Premultiplied);
 		textureImage.setDevicePixelRatio(devicePixelRatio);
-		textureImage.fill((QColor)backgroundColor());
+		textureImage.fill((QColor)primitive.backgroundColor());
 		{
 			QPainter painter(&textureImage);
-			painter.setFont(font());
-			painter.setPen((QColor)color());
-			painter.drawText(rect, Qt::AlignLeft | Qt::AlignTop, text());
+			painter.setFont(primitive.font());
+			painter.setPen((QColor)primitive.color());
+			painter.drawText(rect, Qt::AlignLeft | Qt::AlignTop, primitive.text());
 		}
-		_textOffset = rect.topLeft();
+//		_textOffset = rect.topLeft();
 
-		_imageBuffer->setImage(textureImage);
+		cachedImagePrimitive.setImage(std::move(textureImage));
 	}
 
-	Point2 alignedPos = position();
-	Vector2 size = Vector2(_imageBuffer->image().width(), _imageBuffer->image().height()) * (FloatType)renderer->antialiasingLevel();
-	if(alignment() & Qt::AlignRight) alignedPos.x() += -size.x();
-	else if(alignment() & Qt::AlignHCenter) alignedPos.x() += -size.x() / 2;
-	if(alignment() & Qt::AlignBottom) alignedPos.y() += -size.y();
-	else if(alignment() & Qt::AlignVCenter) alignedPos.y() += -size.y() / 2;
-	_imageBuffer->setRectWindow(Box2(alignedPos, alignedPos + size));
-	renderer->renderImage(_imageBuffer);
+	Point2 alignedPos = primitive.position();
+	Vector2 size = Vector2(cachedImagePrimitive.image().width(), cachedImagePrimitive.image().height()) * (FloatType)antialiasingLevel();
+	if(primitive.alignment() & Qt::AlignRight) alignedPos.x() += -size.x();
+	else if(primitive.alignment() & Qt::AlignHCenter) alignedPos.x() += -size.x() / 2;
+	if(primitive.alignment() & Qt::AlignBottom) alignedPos.y() += -size.y();
+	else if(primitive.alignment() & Qt::AlignVCenter) alignedPos.y() += -size.y() / 2;
+	cachedImagePrimitive.setRectWindow(Box2(alignedPos, alignedPos + size));
+	renderImage(cachedImagePrimitive);
 }
 
 }	// End of namespace

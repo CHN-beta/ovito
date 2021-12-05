@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,25 +44,25 @@ IdentifyDiamondModifier::IdentifyDiamondModifier(DataSet* dataset) : StructureId
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void IdentifyDiamondModifier::initializeObject(ExecutionContext executionContext)
+void IdentifyDiamondModifier::initializeObject(ObjectInitializationHints hints)
 {
 	// Create the structure types.
-	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
-	createStructureType(CUBIC_DIAMOND, ParticleType::PredefinedStructureType::CUBIC_DIAMOND, executionContext);
-	createStructureType(CUBIC_DIAMOND_FIRST_NEIGH, ParticleType::PredefinedStructureType::CUBIC_DIAMOND_FIRST_NEIGH, executionContext);
-	createStructureType(CUBIC_DIAMOND_SECOND_NEIGH, ParticleType::PredefinedStructureType::CUBIC_DIAMOND_SECOND_NEIGH, executionContext);
-	createStructureType(HEX_DIAMOND, ParticleType::PredefinedStructureType::HEX_DIAMOND, executionContext);
-	createStructureType(HEX_DIAMOND_FIRST_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_FIRST_NEIGH, executionContext);
-	createStructureType(HEX_DIAMOND_SECOND_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_SECOND_NEIGH, executionContext);
+	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, hints);
+	createStructureType(CUBIC_DIAMOND, ParticleType::PredefinedStructureType::CUBIC_DIAMOND, hints);
+	createStructureType(CUBIC_DIAMOND_FIRST_NEIGH, ParticleType::PredefinedStructureType::CUBIC_DIAMOND_FIRST_NEIGH, hints);
+	createStructureType(CUBIC_DIAMOND_SECOND_NEIGH, ParticleType::PredefinedStructureType::CUBIC_DIAMOND_SECOND_NEIGH, hints);
+	createStructureType(HEX_DIAMOND, ParticleType::PredefinedStructureType::HEX_DIAMOND, hints);
+	createStructureType(HEX_DIAMOND_FIRST_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_FIRST_NEIGH, hints);
+	createStructureType(HEX_DIAMOND_SECOND_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_SECOND_NEIGH, hints);
 
-	StructureIdentificationModifier::initializeObject(executionContext);
+	StructureIdentificationModifier::initializeObject(hints);
 }
 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> IdentifyDiamondModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> IdentifyDiamondModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -76,7 +76,7 @@ Future<AsynchronousModifier::EnginePtr> IdentifyDiamondModifier::createEngine(co
 	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<DiamondIdentificationEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
+	return std::make_shared<DiamondIdentificationEngine>(request, particles, posProperty, simCell, structureTypes(), selectionProperty);
 }
 
 /******************************************************************************
@@ -241,17 +241,17 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
 /******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
-void IdentifyDiamondModifier::DiamondIdentificationEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void IdentifyDiamondModifier::DiamondIdentificationEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	StructureIdentificationEngine::applyResults(time, modApp, state);
+	StructureIdentificationEngine::applyResults(request, state);
 
 	// Also output structure type counts, which have been computed by the base class.
-	state.addAttribute(QStringLiteral("IdentifyDiamond.counts.CUBIC_DIAMOND"), QVariant::fromValue(getTypeCount(CUBIC_DIAMOND)), modApp);
-	state.addAttribute(QStringLiteral("IdentifyDiamond.counts.CUBIC_DIAMOND_FIRST_NEIGHBOR"), QVariant::fromValue(getTypeCount(CUBIC_DIAMOND_FIRST_NEIGH)), modApp);
-	state.addAttribute(QStringLiteral("IdentifyDiamond.counts.CUBIC_DIAMOND_SECOND_NEIGHBOR"), QVariant::fromValue(getTypeCount(CUBIC_DIAMOND_SECOND_NEIGH)), modApp);
-	state.addAttribute(QStringLiteral("IdentifyDiamond.counts.HEX_DIAMOND"), QVariant::fromValue(getTypeCount(HEX_DIAMOND)), modApp);
-	state.addAttribute(QStringLiteral("IdentifyDiamond.counts.HEX_DIAMOND_FIRST_NEIGHBOR"), QVariant::fromValue(getTypeCount(HEX_DIAMOND_FIRST_NEIGH)), modApp);
-	state.addAttribute(QStringLiteral("IdentifyDiamond.counts.HEX_DIAMOND_SECOND_NEIGHBOR"), QVariant::fromValue(getTypeCount(HEX_DIAMOND_SECOND_NEIGH)), modApp);
+	state.addAttribute(QStringLiteral("IdentifyDiamond.counts.CUBIC_DIAMOND"), QVariant::fromValue(getTypeCount(CUBIC_DIAMOND)), request.modApp());
+	state.addAttribute(QStringLiteral("IdentifyDiamond.counts.CUBIC_DIAMOND_FIRST_NEIGHBOR"), QVariant::fromValue(getTypeCount(CUBIC_DIAMOND_FIRST_NEIGH)), request.modApp());
+	state.addAttribute(QStringLiteral("IdentifyDiamond.counts.CUBIC_DIAMOND_SECOND_NEIGHBOR"), QVariant::fromValue(getTypeCount(CUBIC_DIAMOND_SECOND_NEIGH)), request.modApp());
+	state.addAttribute(QStringLiteral("IdentifyDiamond.counts.HEX_DIAMOND"), QVariant::fromValue(getTypeCount(HEX_DIAMOND)), request.modApp());
+	state.addAttribute(QStringLiteral("IdentifyDiamond.counts.HEX_DIAMOND_FIRST_NEIGHBOR"), QVariant::fromValue(getTypeCount(HEX_DIAMOND_FIRST_NEIGH)), request.modApp());
+	state.addAttribute(QStringLiteral("IdentifyDiamond.counts.HEX_DIAMOND_SECOND_NEIGHBOR"), QVariant::fromValue(getTypeCount(HEX_DIAMOND_SECOND_NEIGH)), request.modApp());
 }
 
 }	// End of namespace

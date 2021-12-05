@@ -112,7 +112,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 				else {
 					PropertyObject* newProperty = nullptr;
 					if(col.property.type() != ParticlesObject::UserProperty)
-						newProperty = particles->createProperty(col.property.type(), true, ExecutionContext::Scripting);
+						newProperty = particles->createProperty(col.property.type(), true, operation.initializationHints());
 					else
 						newProperty = particles->createProperty(col.property.name(), PropertyObject::Float, 1, 0, true);
 					OVITO_ASSERT(col.property.findInContainer(particles) == newProperty);

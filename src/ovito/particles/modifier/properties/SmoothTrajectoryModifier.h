@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -65,7 +65,7 @@ public:
 	Q_INVOKABLE SmoothTrajectoryModifier(DataSet* dataset);
 
 	/// Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const override;
+	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
 	/// Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
 	virtual void inputCachingHints(TimeIntervalUnion& cachingIntervals, ModifierApplication* modApp) override;
@@ -75,18 +75,18 @@ public:
 	virtual void restrictInputValidityInterval(TimeInterval& iv) const override;
 
 	/// Modifies the input data.
-	virtual Future<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 private:
 
 	/// Computes the interpolated state between two input states.
-	void interpolateState(PipelineFlowState& state1, const PipelineFlowState& state2, ModifierApplication* modApp, TimePoint time, TimePoint time1, TimePoint time2);
+	void interpolateState(PipelineFlowState& state1, const PipelineFlowState& state2, const ModifierEvaluationRequest& request, TimePoint time1, TimePoint time2);
 
 	/// Computes the averaged state from several input states.
-	void averageState(PipelineFlowState& state1, const std::vector<PipelineFlowState>& otherStates, ModifierApplication* modApp, TimePoint time);
+	void averageState(PipelineFlowState& state1, const std::vector<PipelineFlowState>& otherStates, const ModifierEvaluationRequest& request);
 
 	/// Controls whether the minimum image convention is used during displacement calculation.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useMinimumImageConvention, setUseMinimumImageConvention);

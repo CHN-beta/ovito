@@ -280,7 +280,7 @@ void ManualSelectionModifierEditor::resetSelection()
 
 	undoableTransaction(tr("Reset selection"), [this,mod]() {
 		for(ModifierApplication* modApp : modifierApplications()) {
-			mod->resetSelection(modApp, modApp->evaluateInputSynchronous(dataset()->animationSettings()->time()));
+			mod->resetSelection(modApp, modApp->evaluateInputSynchronousAtCurrentTime());
 		}
 	});
 }
@@ -295,7 +295,7 @@ void ManualSelectionModifierEditor::selectAll()
 
 	undoableTransaction(tr("Select all"), [this,mod]() {
 		for(ModifierApplication* modApp : modifierApplications()) {
-			mod->selectAll(modApp, modApp->evaluateInputSynchronous(dataset()->animationSettings()->time()));
+			mod->selectAll(modApp, modApp->evaluateInputSynchronousAtCurrentTime());
 		}
 	});
 }
@@ -310,7 +310,7 @@ void ManualSelectionModifierEditor::clearSelection()
 
 	undoableTransaction(tr("Clear selection"), [this,mod]() {
 		for(ModifierApplication* modApp : modifierApplications()) {
-			mod->clearSelection(modApp, modApp->evaluateInputSynchronous(dataset()->animationSettings()->time()));
+			mod->clearSelection(modApp, modApp->evaluateInputSynchronousAtCurrentTime());
 		}
 	});
 }
@@ -325,7 +325,7 @@ void ManualSelectionModifierEditor::invertSelection()
 
 	undoableTransaction(tr("Invert selection"), [this,mod]() {
 		for(ModifierApplication* modApp : modifierApplications()) {
-			mod->invertSelection(modApp, modApp->evaluateInputSynchronous(dataset()->animationSettings()->time()));
+			mod->invertSelection(modApp, modApp->evaluateInputSynchronousAtCurrentTime());
 		}
 	});
 }
@@ -346,7 +346,7 @@ void ManualSelectionModifierEditor::onElementPicked(const ViewportPickResult& pi
 				continue;
 
 			// Get the modifier's input data.
-			const PipelineFlowState& modInput = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+			const PipelineFlowState& modInput = modApp->evaluateInputSynchronousAtCurrentTime();
 			const ConstDataObjectPath& inputObjectPath = modInput.expectObject(mod->subject());
 
 			// Look up the right element in the modifier's input.
@@ -377,7 +377,7 @@ void ManualSelectionModifierEditor::onFence(const QVector<Point2>& fence, Viewpo
 		for(ModifierApplication* modApp : modifierApplications()) {
 
 			// Get the modifier's input data.
-			const PipelineFlowState& modInput = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+			const PipelineFlowState& modInput = modApp->evaluateInputSynchronousAtCurrentTime();
 			const ConstDataObjectPath& inputObjectPath = modInput.expectObject(mod->subject());
 
 			// Iterate of the nodes that use this pipeline.

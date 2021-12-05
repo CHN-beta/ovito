@@ -207,7 +207,7 @@ void CFGImporter::FrameLoader::loadFile()
 	setParticleCount(header.numParticles);
 
 	// Prepare the mapping between input file columns and particle properties.
-	InputColumnReader columnParser(cfgMapping, particles(), executionContext(), false);
+	InputColumnReader columnParser(cfgMapping, particles(), initializationHints(), false);
 
 	// Create particle mass and type properties.
 	int currentAtomType = 0;
@@ -215,8 +215,8 @@ void CFGImporter::FrameLoader::loadFile()
 	PropertyAccess<int> typeProperty;
 	PropertyAccess<FloatType> massProperty;
 	if(header.isExtendedFormat) {
-		typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
-		massProperty = particles()->createProperty(ParticlesObject::MassProperty, false, executionContext());
+		typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, initializationHints());
+		massProperty = particles()->createProperty(ParticlesObject::MassProperty, false, initializationHints());
 	}
 
 	// Read per-particle data.

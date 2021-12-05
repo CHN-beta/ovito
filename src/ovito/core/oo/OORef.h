@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/ExecutionContext.h>
+#include <ovito/core/oo/InitializationHints.h>
 
 namespace Ovito {
 
@@ -149,13 +150,26 @@ public:
     	std::swap(px,rhs.px);
     }
 
-    /// Factory method instantiating a new object and returning a smart-pointer to it.
+    /// Factory method that instantiates and initializes a new object.
     template<typename... Args>
-	static this_type create(DataSet* dataset, ExecutionContext executionContext, Args&&... args) {
+	static this_type create(DataSet* dataset, ObjectInitializationHints hints, Args&&... args) {
         using OType = std::remove_const_t<T>;
 		OORef<OType> obj(new OType(dataset, std::forward<Args>(args)...));
-        obj->initializeObject(executionContext);
+        obj->initializeObject(hints);
         return obj;
+	}
+
+    /// Factory method that instantiates and initializes a new object.
+    template<typename... Args>
+	static this_type create(DataSet* dataset, ObjectInitializationHint hint, Args&&... args) {
+        return create(dataset, ObjectInitializationHints(hint), std::forward<Args>(args)...);
+	}
+
+    /// Factory method that instantiates a new object.
+    template<typename... Args>
+	static this_type create(DataSet* dataset, Args&&... args) {
+        using OType = std::remove_const_t<T>;
+		return new OType(dataset, std::forward<Args>(args)...);
 	}
 };
 

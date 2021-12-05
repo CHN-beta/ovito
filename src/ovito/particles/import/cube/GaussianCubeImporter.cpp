@@ -122,8 +122,8 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 
 	// Create the particle properties.
 	setParticleCount(numAtoms);
-	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, executionContext());
-	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, executionContext());
+	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, initializationHints());
+	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, initializationHints());
 
 	// Read atomic coordinates.
 	Point3* p = posProperty.begin();
@@ -187,7 +187,7 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 	// Create the voxel grid data object.
 	VoxelGrid* voxelGrid = state().getMutableObject<VoxelGrid>();
 	if(!voxelGrid) {
-		voxelGrid = state().createObject<VoxelGrid>(dataSource(), executionContext());
+		voxelGrid = state().createObject<VoxelGrid>(dataSource(), initializationHints());
 		voxelGrid->visElement()->setEnabled(false);
 		voxelGrid->visElement()->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled)});
 	}

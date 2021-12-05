@@ -20,15 +20,15 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/mesh/Mesh.h>
-#include <ovito/mesh/tri/TriMeshObject.h>
+#include <ovito/core/Core.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "TriMeshVis.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(TriMeshVis);
 DEFINE_REFERENCE_FIELD(TriMeshVis, transparencyController);
@@ -50,11 +50,11 @@ TriMeshVis::TriMeshVis(DataSet* dataset) : DataVis(dataset),
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void TriMeshVis::initializeObject(ExecutionContext executionContext)
+void TriMeshVis::initializeObject(ObjectInitializationHints hints)
 {
-	setTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
+	setTransparencyController(ControllerManager::createFloatController(dataset(), hints));
 
-	DataVis::initializeObject(executionContext);
+	DataVis::initializeObject(hints);
 }
 
 /******************************************************************************
@@ -64,8 +64,7 @@ Box3 TriMeshVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, co
 {
 	// Compute bounding box.
 	if(const TriMeshObject* triMeshObj = dynamic_object_cast<TriMeshObject>(path.back())) {
-		if(triMeshObj->mesh())
-			return triMeshObj->mesh()->boundingBox();
+		return triMeshObj->boundingBox();
 	}
 	return Box3();
 }
@@ -77,34 +76,20 @@ PipelineStatus TriMeshVis::render(TimePoint time, const ConstDataObjectPath& pat
 {
 	if(!renderer->isBoundingBoxPass()) {
 
-		// The key type used for caching the rendering primitive:
-		using CacheKey = std::tuple<
-			CompatibleRendererGroup,	// The scene renderer
-			ConstDataObjectRef,			// Mesh object
-			ColorA,						// Display color
-			bool						// Edge highlighting
-		>;
-
+		// Obtains transparency parameter value and display color value.
 		FloatType transp = 0;
 		TimeInterval iv;
 		if(transparencyController()) transp = transparencyController()->getFloatValue(time, iv);
-		ColorA color_mesh(color(), FloatType(1) - transp);
 
-		// Lookup the rendering primitive in the vis cache.
-		auto& meshPrimitive = dataset()->visCache().get<std::shared_ptr<MeshPrimitive>>(CacheKey(renderer, path.back(), color_mesh, highlightEdges()));
+		// Prepare the mesh rendering primitive.
+		MeshPrimitive primitive;
+		primitive.setEmphasizeEdges(highlightEdges());
+		primitive.setUniformColor(ColorA(color(), FloatType(1) - transp));
+		primitive.setMesh(dynamic_object_cast<TriMeshObject>(path.back()));
 
-		// Check if we already have a valid rendering primitive that is up to date.
-		if(!meshPrimitive) {
-			meshPrimitive = renderer->createMeshPrimitive();
-			meshPrimitive->setEmphasizeEdges(highlightEdges());
-			meshPrimitive->setUniformColor(color_mesh);
-			if(const TriMeshObject* triMeshObj = dynamic_object_cast<TriMeshObject>(path.back()))
-				if(triMeshObj->mesh())
-					meshPrimitive->setMesh(*triMeshObj->mesh());
-		}
-
+		// Submit primitive to the renderer.
 		renderer->beginPickObject(contextNode);
-		renderer->renderMesh(meshPrimitive);
+		renderer->renderMesh(primitive);
 		renderer->endPickObject();
 	}
 	else {

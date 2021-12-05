@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,7 +46,7 @@ Modifier::Modifier(DataSet* dataset) : RefTarget(dataset),
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/
-TimeInterval Modifier::validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const
+TimeInterval Modifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
 	return TimeInterval::infinite();
 }
@@ -69,7 +69,7 @@ OORef<ModifierApplication> Modifier::createModifierApplication()
 				}
 			}
 #endif
-			return static_object_cast<ModifierApplication>(modAppClass->createInstance(dataset(), ExecutionContext::Scripting));
+			return static_object_cast<ModifierApplication>(modAppClass->createInstance(dataset(), ObjectInitializationHint::LoadFactoryDefaults));
 		}
 	}
 	return new ModifierApplication(dataset());
@@ -78,11 +78,11 @@ OORef<ModifierApplication> Modifier::createModifierApplication()
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> Modifier::evaluate(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<PipelineFlowState> Modifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	PipelineFlowState output = input;
 	if(output)
-		evaluateSynchronous(request.time(), modApp, output);
+		evaluateSynchronous(request, output);
 	return Future<PipelineFlowState>::createImmediate(std::move(output));
 }
 

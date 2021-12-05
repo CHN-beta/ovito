@@ -21,65 +21,68 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include "OpenGLLinePrimitive.h"
 #include "OpenGLSceneRenderer.h"
 #include "OpenGLShaderHelper.h"
 
 namespace Ovito {
 
 /******************************************************************************
-* Renders the geometry.
+* Renders a set of lines.
 ******************************************************************************/
-void OpenGLLinePrimitive::render(OpenGLSceneRenderer* renderer)
+void OpenGLSceneRenderer::renderLinesImplementation(const LinePrimitive& primitive)
 {
+	OVITO_REPORT_OPENGL_ERRORS(this);
+
 	// Step out early if there is nothing to render.
-	if(!positions() || positions()->size() == 0)
+	if(!primitive.positions() || primitive.positions()->size() == 0)
 		return;
 
-	if(lineWidth() == 1 || (lineWidth() <= 0 && renderer->devicePixelRatio() <= 1))
-		renderThinLines(renderer);
+	rebindVAO();
+
+	if(primitive.lineWidth() == 1 || (primitive.lineWidth() <= 0 && devicePixelRatio() <= 1))
+		renderThinLinesImplementation(primitive);
 	else
-		renderThickLines(renderer);
+		renderThickLinesImplementation(primitive);
+
+	OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
 /******************************************************************************
-* Renders the lines using GL_LINES mode.
+* Renders a set of lines using GL_LINES mode.
 ******************************************************************************/
-void OpenGLLinePrimitive::renderThinLines(OpenGLSceneRenderer* renderer)
+void OpenGLSceneRenderer::renderThinLinesImplementation(const LinePrimitive& primitive)
 {
-	OVITO_REPORT_OPENGL_ERRORS(renderer);
-
 	// Activate the right OpenGL shader program.
-	OpenGLShaderHelper shader(renderer);
-	if(renderer->isPicking())
+	OpenGLShaderHelper shader(this);
+	if(isPicking())
 		shader.load("line_thin_picking", "lines/line_picking.vert", "lines/line.frag");
-	else if(colors())
+	else if(primitive.colors())
 		shader.load("line_thin", "lines/line.vert", "lines/line.frag");
 	else
 		shader.load("line_thin_uniform_color", "lines/line_uniform_color.vert", "lines/line_uniform_color.frag");
 
-	shader.setVerticesPerInstance(positions()->size());
+	shader.setVerticesPerInstance(primitive.positions()->size());
 	shader.setInstanceCount(1);
 
 	// Upload vertex positions.
-	QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(positions(), OpenGLShaderHelper::PerVertex);
+	QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(primitive.positions(), OpenGLShaderHelper::PerVertex);
 	shader.bindBuffer(positionsBuffer, "position", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerVertex);
 
-	if(!renderer->isPicking()) {
-		if(colors()) {
-			OVITO_ASSERT(colors()->size() == positions()->size());
+	if(!isPicking()) {
+		if(primitive.colors()) {
+			OVITO_ASSERT(primitive.colors()->size() == primitive.positions()->size());
 			// Upload vertex colors.
-			QOpenGLBuffer colorsBuffer = shader.uploadDataBuffer(colors(), OpenGLShaderHelper::PerVertex);
+			QOpenGLBuffer colorsBuffer = shader.uploadDataBuffer(primitive.colors(), OpenGLShaderHelper::PerVertex);
 			shader.bindBuffer(colorsBuffer, "color", GL_FLOAT, 4, sizeof(ColorAT<float>), 0, OpenGLShaderHelper::PerVertex);
 		}
 		else {
             // Pass uniform line color to fragment shader as a uniform value.
-            shader.setUniformValue("color", uniformColor());
+            shader.setUniformValue("color", primitive.uniformColor());
 		}
 	}
 	else {
 		// Pass picking base ID to shader.
-		shader.setPickingBaseId(renderer->registerSubObjectIDs(positions()->size() / 2));
+		shader.setPickingBaseId(registerSubObjectIDs(primitive.positions()->size() / 2));
 	}
 
 	// Issue line drawing command.
@@ -87,50 +90,50 @@ void OpenGLLinePrimitive::renderThinLines(OpenGLSceneRenderer* renderer)
 }
 
 /******************************************************************************
-* Renders the lines using triangle strips.
+* Renders a set of lines using triangle strips.
 ******************************************************************************/
-void OpenGLLinePrimitive::renderThickLines(OpenGLSceneRenderer* renderer)
+void OpenGLSceneRenderer::renderThickLinesImplementation(const LinePrimitive& primitive)
 {
 	// Effective line width.
-	FloatType effectiveLineWidth = (lineWidth() <= 0) ? renderer->devicePixelRatio() : lineWidth();
+	FloatType effectiveLineWidth = (primitive.lineWidth() <= 0) ? devicePixelRatio() : primitive.lineWidth();
 
 	// Activate the right OpenGL shader program.
-	OpenGLShaderHelper shader(renderer);
-	if(renderer->isPicking())
+	OpenGLShaderHelper shader(this);
+	if(isPicking())
 		shader.load("line_thick_picking", "lines/thick_line_picking.vert", "lines/line.frag");
-	else if(colors())
+	else if(primitive.colors())
 		shader.load("line_thick", "lines/thick_line.vert", "lines/line.frag");
 	else
 		shader.load("line_thick_uniform_color", "lines/thick_line_uniform_color.vert", "lines/line_uniform_color.frag");
 
 	shader.setVerticesPerInstance(4);
-	shader.setInstanceCount(positions()->size() / 2);
+	shader.setInstanceCount(primitive.positions()->size() / 2);
 
     // Put start/end vertex positions into one combined Vulkan buffer.
-	QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(positions(), OpenGLShaderHelper::PerInstance);
+	QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(primitive.positions(), OpenGLShaderHelper::PerInstance);
 	shader.bindBuffer(positionsBuffer, "position_from", GL_FLOAT, 3, 2 * sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
 	shader.bindBuffer(positionsBuffer, "position_to", GL_FLOAT, 3, 2 * sizeof(Point_3<float>), sizeof(Point_3<float>), OpenGLShaderHelper::PerInstance);
 
-	if(!renderer->isPicking()) {
-		if(colors()) {
-			OVITO_ASSERT(colors()->size() == positions()->size());
+	if(!isPicking()) {
+		if(primitive.colors()) {
+			OVITO_ASSERT(primitive.colors()->size() == primitive.positions()->size());
 			// Upload vertex colors.
-			QOpenGLBuffer colorsBuffer = shader.uploadDataBuffer(colors(), OpenGLShaderHelper::PerInstance);
+			QOpenGLBuffer colorsBuffer = shader.uploadDataBuffer(primitive.colors(), OpenGLShaderHelper::PerInstance);
 			shader.bindBuffer(colorsBuffer, "color_from", GL_FLOAT, 4, 2 * sizeof(ColorAT<float>), 0, OpenGLShaderHelper::PerInstance);
 			shader.bindBuffer(colorsBuffer, "color_to", GL_FLOAT, 4, 2 * sizeof(ColorAT<float>), sizeof(ColorAT<float>), OpenGLShaderHelper::PerInstance);
 		}
 		else {
             // Pass uniform line color to fragment shader as a uniform value.
-            shader.setUniformValue("color", uniformColor());
+            shader.setUniformValue("color", primitive.uniformColor());
 		}
 	}
 	else {
 		// Pass picking base ID to shader.
-		shader.setPickingBaseId(renderer->registerSubObjectIDs(positions()->size() / 2));
+		shader.setPickingBaseId(registerSubObjectIDs(primitive.positions()->size() / 2));
 	}
 	
 	// Compute line width in viewport space.
-	shader.setUniformValue("line_thickness", effectiveLineWidth / renderer->viewportRect().height());
+	shader.setUniformValue("line_thickness", effectiveLineWidth / viewportRect().height());
 
 	// Issue instanced drawing command.
 	shader.drawArrays(GL_TRIANGLE_STRIP);

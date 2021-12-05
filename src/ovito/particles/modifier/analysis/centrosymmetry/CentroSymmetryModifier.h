@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -75,7 +75,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 	/// Computes the centrosymmetry parameter of a single particle.
 	static FloatType computeCSP(NearestNeighborFinder& neighList, size_t particleIndex, CSPMode mode);
@@ -88,13 +88,13 @@ private:
 	public:
 
 		/// Constructor.
-		CentroSymmetryEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, int nneighbors, CSPMode mode, DataOORef<DataTable> histogram) :
-			Engine(dataSource, executionContext),
+		CentroSymmetryEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, int nneighbors, CSPMode mode, DataOORef<DataTable> histogram) :
+			Engine(request),
 			_nneighbors(nneighbors),
 			_mode(mode),
 			_positions(std::move(positions)),
 			_simCell(simCell),
-			_csp(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::CentroSymmetryProperty, false, executionContext)),
+			_csp(ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::CentroSymmetryProperty, false, request.initializationHints())),
 			_inputFingerprint(std::move(fingerprint)),
 			_histogram(std::move(histogram)) {}
 
@@ -102,7 +102,7 @@ private:
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		/// Returns the property storage that contains the computed per-particle CSP values.
 		const PropertyPtr& csp() const { return _csp; }

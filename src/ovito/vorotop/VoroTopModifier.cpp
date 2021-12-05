@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //  Copyright 2017 Emanuel A. Lazar
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -51,7 +51,7 @@ VoroTopModifier::VoroTopModifier(DataSet* dataset) : StructureIdentificationModi
 /******************************************************************************
  * Loads a new filter definition into the modifier.
  ******************************************************************************/
-bool VoroTopModifier::loadFilterDefinition(const QString& filepath, Promise<>&& operation, ExecutionContext executionContext)
+bool VoroTopModifier::loadFilterDefinition(const QString& filepath, SynchronousOperation operation)
 {
     operation.setProgressText(tr("Loading VoroTop filter %1").arg(filepath));
 
@@ -67,10 +67,10 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath, Promise<>&& 
     // Rebuild structure types list.
     setStructureTypes({});
     for(int i = 0; i < filter->structureTypeCount(); i++) {
-        OORef<ParticleType> stype = OORef<ParticleType>::create(dataset(), executionContext);
+        OORef<ParticleType> stype = OORef<ParticleType>::create(dataset(), operation.initializationHints());
         stype->setNumericId(i);
         stype->setName(filter->structureTypeLabel(i));
-        stype->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), executionContext);
+        stype->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), operation.initializationHints());
         addStructureType(std::move(stype));
     }
 
@@ -84,7 +84,7 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath, Promise<>&& 
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get the current positions.
     const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -107,9 +107,7 @@ Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const Pipe
         radii = particles->inputParticleRadii();
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<VoroTopAnalysisEngine>(modApp, 
-                                                   executionContext, 
-                                                   dataset(),
+    return std::make_shared<VoroTopAnalysisEngine>(request,
                                                    particles,
                                                    input.stateValidity(),
                                                    posProperty,
@@ -124,12 +122,12 @@ Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const Pipe
 /******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
-void VoroTopModifier::VoroTopAnalysisEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void VoroTopModifier::VoroTopAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	StructureIdentificationEngine::applyResults(time, modApp, state);
+	StructureIdentificationEngine::applyResults(request, state);
 
     // Cache loaded filter definition for future use.
-    static_object_cast<VoroTopModifier>(modApp->modifier())->_filter = this->filter();
+    static_object_cast<VoroTopModifier>(request.modifier())->_filter = this->filter();
 
     state.setStatus(PipelineStatus(PipelineStatus::Success, tr("%1 Weinberg vectors loaded").arg(filter() ? filter()->size() : 0)));
 }

@@ -356,7 +356,7 @@ void RenderSettingsEditor::onSwitchRenderer()
 	int newIndex = rendererListWidget->row(selItems.front());
 	if(!settings->renderer() || &settings->renderer()->getOOClass() != rendererClasses[newIndex]) {
 		undoableTransaction(tr("Switch renderer"), [settings, newIndex, &rendererClasses]() {
-			OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClasses[newIndex]->createInstance(settings->dataset(), ExecutionContext::Interactive));
+			OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClasses[newIndex]->createInstance(settings->dataset(), ObjectInitializationHint::LoadUserDefaults));
 			settings->setRenderer(std::move(renderer));
 		});
 	}

@@ -27,7 +27,7 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticlesVis.h>
 #include <ovito/stdobj/properties/ElementType.h>
-#include <ovito/mesh/tri/TriMeshObject.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
 
 namespace Ovito::Particles {
 
@@ -97,7 +97,7 @@ public:
 	Q_INVOKABLE ParticleType(DataSet* dataset);
 
 	/// \brief Initializes the element type's attributes to standard values.
-	virtual void initializeType(const PropertyReference& property, ExecutionContext executionContext) override;
+	virtual void initializeType(const PropertyReference& property, ObjectInitializationHints initializationHints) override;
 
 	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
 	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
@@ -123,7 +123,7 @@ public:
 	}
 
 	/// Loads a user-defined display shape from a geometry file and assigns it to this particle type.
-	bool loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, ExecutionContext executionContext, const FileImporterClass* importerType = nullptr);
+	bool loadShapeMesh(const QUrl& sourceUrl, SynchronousOperation operation, const FileImporterClass* importerType = nullptr);
 
 	//////////////////////////////////// Default parameters ////////////////////////////////
 
@@ -161,13 +161,13 @@ public:
 	}
 
 	/// Returns the default radius for a named particle type.
-	static FloatType getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ExecutionContext executionContext, RadiusVariant radiusVariant = DisplayRadius);
+	static FloatType getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ObjectInitializationHints initializationHints, RadiusVariant radiusVariant = DisplayRadius);
 
 	/// Changes the default radius for a named particle type.
 	static void setDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, FloatType radius, RadiusVariant radiusVariant = DisplayRadius);
 
 	/// Returns the default mass for a named particle type.
-	static FloatType getDefaultParticleMass(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ExecutionContext executionContext);
+	static FloatType getDefaultParticleMass(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ObjectInitializationHints initializationHints);
 
 protected:
 

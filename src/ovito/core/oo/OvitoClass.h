@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -124,12 +124,11 @@ public:
 	/// \throw Exception if a required plugin failed to load, or if the instantiation failed for some other reason.
 	OORef<OvitoObject> createInstance() const;
 
-	/// \brief Creates an instance of a RefMaker-derived class.
+	/// \brief Creates an instance of a RefTarget-derived class.
 	/// \param dataset The dataset the newly created object will belong to.
-	///                This may only be NULL when creating an instance of a class that is not derived from RefTarget.
 	/// \return The new instance of the class. The pointer can be safely cast to the corresponding C++ class type.
 	/// \throw Exception if a required plugin failed to load, or if the instantiation failed for some other reason.
-	OORef<RefTarget> createInstance(DataSet* dataset, ExecutionContext executionContext) const;
+	OORef<RefTarget> createInstance(DataSet* dataset, ObjectInitializationHints hints) const;
 
 	/// Compares two types.
 	bool operator==(const OvitoClass& other) const { return (this == &other); }

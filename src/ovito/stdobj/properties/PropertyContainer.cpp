@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -156,7 +156,7 @@ size_t PropertyContainer::deleteElements(const boost::dynamic_bitset<>& mask)
 * Creates a property and adds it to the container.
 * In case the property already exists, it is made sure that it's safe to modify it.
 ******************************************************************************/
-PropertyObject* PropertyContainer::createProperty(int typeId, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath)
+PropertyObject* PropertyContainer::createProperty(int typeId, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath)
 {
 	OVITO_ASSERT(isSafeToModify());
 
@@ -179,14 +179,14 @@ PropertyObject* PropertyContainer::createProperty(int typeId, bool initializeMem
 
 		// If no memory initialization is requested, create a new PropertyObject from scratch and just adopt 
 		// the existing ElementType list to save time.	
-		PropertyPtr newProperty = getOOMetaClass().createStandardProperty(dataset(), elementCount(), typeId, false, executionContext, containerPath);
+		PropertyPtr newProperty = getOOMetaClass().createStandardProperty(dataset(), elementCount(), typeId, false, initializationHints, containerPath);
 		newProperty->setElementTypes(existingProperty->elementTypes());
 		replaceReferencesTo(existingProperty, newProperty);
 		return newProperty;
 	}
 	else {
 		// Create a new property object.
-		PropertyPtr newProperty = getOOMetaClass().createStandardProperty(dataset(), elementCount(), typeId, initializeMemory, executionContext, containerPath);
+		PropertyPtr newProperty = getOOMetaClass().createStandardProperty(dataset(), elementCount(), typeId, initializeMemory, initializationHints, containerPath);
 		addProperty(newProperty);
 		return newProperty;
 	}

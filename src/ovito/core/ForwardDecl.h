@@ -50,7 +50,8 @@ namespace Ovito {
 	template<typename... R> class Promise;
 	template<class BaseState, class tuple_type> class TaskWithResultStorage;
 	using TaskPtr = std::shared_ptr<Task>;
-	class TriMesh;
+	class TriMeshObject;
+	class TriMeshVis;
 	class Controller;
 	class AnimationSettings;
 	class LookAtController;
@@ -109,6 +110,8 @@ namespace Ovito {
 	class DataVis;
 	class TransformingDataVis;
 	class StaticSource;
+	class ModifierEvaluationRequest;
+	using ModifierInitializationRequest = ModifierEvaluationRequest;
 	class ModifierDelegate;
 	class DelegatingModifier;
 	class MultiDelegatingModifier;

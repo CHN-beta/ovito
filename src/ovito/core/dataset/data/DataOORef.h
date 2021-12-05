@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -166,10 +166,10 @@ public:
 
     /// Factory method instantiating a new data object and returning a smart-pointer to it.
     template<typename... Args>
-	static DataOORef create(DataSet* dataset, ExecutionContext executionContext, Args&&... args) {
-		return DataOORef(OORef<T>::create(dataset, executionContext, std::forward<Args>(args)...));
+	static DataOORef create(DataSet* dataset, Args&&... args) {
+		return DataOORef(OORef<T>::create(dataset, std::forward<Args>(args)...));
 	}
-    
+
     /// Returns a copy of the data object, which can be safely modified.
     DataOORef<std::remove_const_t<T>> makeCopy() const {
         return CloneHelper().cloneObject(_ref, false);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,7 +22,7 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
-#include <ovito/mesh/tri/TriMeshObject.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
 #include "WavefrontOBJImporter.h"
 
 namespace Ovito::Mesh {
@@ -91,8 +91,12 @@ void WavefrontOBJImporter::FrameLoader::loadFile()
 	if(frame().byteOffset != 0)
 		stream.seek(frame().byteOffset, frame().lineNumber);
 
-	// Create mesh data structure.
-	TriMeshPtr mesh = std::make_shared<TriMesh>();
+	// Add mesh to the data collection.
+	TriMeshObject* mesh = state().getMutableObject<TriMeshObject>();
+	if(!mesh)
+		mesh = state().createObject<TriMeshObject>(dataSource(), initializationHints());
+	else
+		mesh->clear();
 
 	// List of parsed vertex normals.
 	std::vector<Vector3> vertexNormals;
@@ -220,12 +224,6 @@ void WavefrontOBJImporter::FrameLoader::loadFile()
 
 	// Show some stats to the user.
 	state().setStatus(tr("%1 vertices, %2 triangles").arg(mesh->vertexCount()).arg(mesh->faceCount()));
-
-	// Add mesh to the data collection.
-	TriMeshObject* meshObj = state().getMutableObject<TriMeshObject>();
-	if(!meshObj)
-		meshObj = state().createObject<TriMeshObject>(dataSource(), executionContext());
-	meshObj->setMesh(std::move(mesh));	
 }
 
 }	// End of namespace

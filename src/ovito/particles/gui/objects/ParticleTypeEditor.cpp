@@ -24,7 +24,6 @@
 #include <ovito/particles/gui/util/ParticleSettingsPage.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
-#include <ovito/mesh/tri/TriMeshObject.h>
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
@@ -121,22 +120,22 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	// Color presets menu.
 	QToolButton* colorPresetsMenuButton = createPresetsMenuButton(tr("color"),
 		// Loads the default parameter value.
-		[](ParticleType* ptype) { ptype->setColor(ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive)); },
+		[](ParticleType* ptype) { ptype->setColor(ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), ObjectInitializationHint::LoadUserDefaults)); },
 		// Saves the current parameter value as new default preset.
 		[](const ParticleType* ptype) { ElementType::setDefaultColor(ParticlePropertyReference(ParticlesObject::TypeProperty), ptype->nameOrNumericId(), ptype->color()); },
 		// Determines if the current parameter value differs from the saved default value or not.
-		[](const ParticleType* ptype) { return (ptype->color() == ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive)); }
+		[](const ParticleType* ptype) { return (ptype->color() == ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), ObjectInitializationHint::LoadUserDefaults)); }
 	);
 	gridLayout->addWidget(colorPresetsMenuButton, 0, 2);
 
 	// Display radius presets menu.
 	QToolButton* displayRadiusPresetsMenuButton = createPresetsMenuButton(tr("display radius"),
 		// Loads the default parameter value.
-		[](ParticleType* ptype) { ptype->setRadius(ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive, ParticleType::DisplayRadius)); },
+		[](ParticleType* ptype) { ptype->setRadius(ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ObjectInitializationHint::LoadUserDefaults, ParticleType::DisplayRadius)); },
 		// Saves the current parameter value as new default preset.
 		[](const ParticleType* ptype) { ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->radius(), ParticleType::DisplayRadius); },
 		// Determines if the current parameter value differs from the saved default value or not.
-		[](const ParticleType* ptype) { return (ptype->radius() == ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive, ParticleType::DisplayRadius)); }
+		[](const ParticleType* ptype) { return (ptype->radius() == ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ObjectInitializationHint::LoadUserDefaults, ParticleType::DisplayRadius)); }
 	);
 	gridLayout->addWidget(displayRadiusPresetsMenuButton, 1, 2);
 
@@ -170,8 +169,8 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	// Update the shape buttons whenever the particle type is being modified.
 	connect(this, &PropertiesEditor::contentsChanged, this, [=](RefTarget* editObject) {
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject)) {
-			if(ptype->shapeMesh() && ptype->shapeMesh()->mesh()) {
-				loadShapeBtn->setText(tr("%1 faces / %2 vertices").arg(ptype->shapeMesh()->mesh()->faceCount()).arg(ptype->shapeMesh()->mesh()->vertexCount()));
+			if(ptype->shapeMesh()) {
+				loadShapeBtn->setText(tr("%1 faces / %2 vertices").arg(ptype->shapeMesh()->faceCount()).arg(ptype->shapeMesh()->vertexCount()));
 				if(loadShapeBtn->icon().isNull())
 					loadShapeBtn->setIcon(QIcon(":/particles/icons/particle_shape_mesh.png"));
 			}
@@ -208,7 +207,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 				}
 				// Load the geometry from the selected file.
 				ProgressDialog progressDialog(container(), ptype->dataset()->taskManager(), tr("Loading geometry file"));
-				ptype->loadShapeMesh(selectedFile, progressDialog.createOperation(), ExecutionContext::Interactive, fileImporterType);
+				ptype->loadShapeMesh(selectedFile, progressDialog.createOperation(), fileImporterType);
 			});
 		}
 	});
@@ -237,11 +236,11 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	// VDW radius presets menu.
 	QToolButton* vdwRadiusPresetsMenuButton = createPresetsMenuButton(tr("VdW radius"),
 		// Loads the default parameter value.
-		[](ParticleType* ptype) { ptype->setVdwRadius(ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive, ParticleType::VanDerWaalsRadius)); },
+		[](ParticleType* ptype) { ptype->setVdwRadius(ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ObjectInitializationHint::LoadUserDefaults, ParticleType::VanDerWaalsRadius)); },
 		// Saves the current parameter value as new default preset.
 		[](const ParticleType* ptype) { ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->vdwRadius(), ParticleType::VanDerWaalsRadius); },
 		// Determines if the current parameter value differs from the saved default value or not.
-		[](const ParticleType* ptype) { return (ptype->vdwRadius() == ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ExecutionContext::Interactive, ParticleType::VanDerWaalsRadius)); }
+		[](const ParticleType* ptype) { return (ptype->vdwRadius() == ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ObjectInitializationHint::LoadUserDefaults, ParticleType::VanDerWaalsRadius)); }
 	);
 	gridLayout->addWidget(vdwRadiusPresetsMenuButton, 1, 2);
 }

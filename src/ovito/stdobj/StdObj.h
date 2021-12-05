@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,25 +29,24 @@
 
 #include <ovito/core/Core.h>
 
-namespace Ovito {
-	namespace StdObj {
-        class PropertyObject;
-        class PropertyContainer;
-        class PropertyContainerClass;
-        using PropertyContainerClassPtr = const PropertyContainerClass*;
-        using PropertyPtr = DataOORef<PropertyObject>;
-        using ConstPropertyPtr = DataOORef<const PropertyObject>;
-        class PropertyReference;
-        template<class PropertyContainerType> class TypedPropertyReference;
-        class ElementType;
-        class InputColumnMapping;
-        template<class PropertyContainerType> class TypedInputColumnMapping;
-        class InputColumnReader;
-        class SimulationCellObject;
-        class SimulationCellVis;
-        class DataTable;
-        class PropertyColorMapping;
-    }
+namespace Ovito::StdObj 
+{
+    class PropertyObject;
+    class PropertyContainer;
+    class PropertyContainerClass;
+    using PropertyContainerClassPtr = const PropertyContainerClass*;
+    using PropertyPtr = DataOORef<PropertyObject>;
+    using ConstPropertyPtr = DataOORef<const PropertyObject>;
+    class PropertyReference;
+    template<class PropertyContainerType> class TypedPropertyReference;
+    class ElementType;
+    class InputColumnMapping;
+    template<class PropertyContainerType> class TypedInputColumnMapping;
+    class InputColumnReader;
+    class SimulationCellObject;
+    class SimulationCellVis;
+    class DataTable;
+    class PropertyColorMapping;
 }
 
 #endif

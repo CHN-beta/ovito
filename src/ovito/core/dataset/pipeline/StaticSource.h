@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,7 +47,7 @@ public:
 	virtual SharedFuture<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request) override;
 
 	/// \brief Returns the results of an immediate and preliminary evaluation of the data pipeline.
-	virtual PipelineFlowState evaluateSynchronous(TimePoint time) override;
+	virtual PipelineFlowState evaluateSynchronous(const PipelineEvaluationRequest& request) override;
 
 	/// Returns the list of data objects that are managed by this data source.
 	/// The returned data objects will be displayed as sub-objects of the data source in the pipeline editor.

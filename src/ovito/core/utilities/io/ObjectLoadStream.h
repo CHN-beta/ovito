@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,7 +68,7 @@ public:
 	}
 
 	/// Returns the dataset to which objects loaded from the stream will be added to.
-	DataSet* dataset() { return _dataset; }
+	DataSet* dataset() const { return _dataset; }
 
 	/// Sets the dataset to which objects loaded from the stream should be added to.
 	void setDataset(DataSet* dataset) { _dataset = dataset; }
@@ -112,9 +112,6 @@ private:
 
 	/// The current dataset being loaded.
 	DataSet* _dataset = nullptr;
-
-	/// The context in which the file is being loaded.
-	ExecutionContext _executionContext;
 };
 
 }	// End of namespace

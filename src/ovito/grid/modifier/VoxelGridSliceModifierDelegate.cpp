@@ -49,35 +49,35 @@ VoxelGridSliceModifierDelegate::VoxelGridSliceModifierDelegate(DataSet* dataset)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void VoxelGridSliceModifierDelegate::initializeObject(ExecutionContext executionContext)
+void VoxelGridSliceModifierDelegate::initializeObject(ObjectInitializationHints hints)
 {
 	// Create the vis element for rendering the mesh.
-	setSurfaceMeshVis(OORef<SurfaceMeshVis>::create(dataset(), executionContext));
+	setSurfaceMeshVis(OORef<SurfaceMeshVis>::create(dataset(), hints));
 	surfaceMeshVis()->setShowCap(false);
 	surfaceMeshVis()->setHighlightEdges(false);
 	surfaceMeshVis()->setSmoothShading(false);
 	surfaceMeshVis()->setSurfaceIsClosed(false);
-	if(executionContext == ExecutionContext::Interactive)
+	if(hints.testFlag(ObjectInitializationHint::LoadUserDefaults))
 		surfaceMeshVis()->setColorMappingMode(SurfaceMeshVis::VertexPseudoColoring);
 	surfaceMeshVis()->setObjectTitle(tr("Volume slice"));
 
-	SliceModifierDelegate::initializeObject(executionContext);
+	SliceModifierDelegate::initializeObject(hints);
 }
 
 /******************************************************************************
 * Calculates a cross-section of a voxel grid.
 ******************************************************************************/
-PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	OVITO_ASSERT(!dataset()->undoStack().isRecording());
 
-	SliceModifier* mod = static_object_cast<SliceModifier>(modifier);
+	SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
 	QString statusMessage;
 
 	// Obtain modifier parameter values.
 	Plane3 plane;
 	FloatType sliceWidth;
-	std::tie(plane, sliceWidth) = mod->slicingPlane(time, state.mutableStateValidity(), state);
+	std::tie(plane, sliceWidth) = mod->slicingPlane(request.time(), state.mutableStateValidity(), state);
 	sliceWidth /= 2;
 	bool invert = mod->inverse();
 	int numPlanes = 0;
@@ -115,7 +115,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 			}
 
 			// Create an empty surface mesh object.
-			SurfaceMesh* meshObj = state.createObject<SurfaceMesh>(QStringLiteral("volume-slice"), modApp, Application::instance()->executionContext(), tr("Volume slice"));
+			SurfaceMesh* meshObj = state.createObject<SurfaceMesh>(QStringLiteral("volume-slice"), request.modApp(), request.initializationHints() | ObjectInitializationHint::WithoutVisElement, tr("Volume slice"));
 			meshObj->setDomain(cell);
 			meshObj->setVisElement(surfaceMeshVis());
 
@@ -139,7 +139,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 				};
 
 				MarchingCubes mc(mesh, gridShape[0]*resolution, gridShape[1]*resolution, gridShape[2]*resolution, false, std::move(getFieldValue), true);
-				mc.generateIsosurface(0.0, *SynchronousOperation::createSignal(dataset()->taskManager()).task());
+				mc.generateIsosurface(0.0, *SynchronousOperation::createSignal(dataset()->taskManager(), request.initializationHints()).task());
 			}
 
 			// Create a manifold by connecting adjacent faces.
@@ -166,8 +166,8 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 				fieldProperties.push_back(property);
 
 			// Copy field values from voxel grid to surface mesh vertices.
-			SynchronousOperation operation = SynchronousOperation::createSignal(dataset()->taskManager());
-			CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(*operation.task(), mesh, fieldProperties, gridShape, Application::instance()->executionContext());
+			SynchronousOperation operation = SynchronousOperation::createSignal(dataset()->taskManager(), request.initializationHints());
+			CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(*operation.task(), mesh, fieldProperties, gridShape, request.initializationHints());
 
 			// Transform mesh vertices from orthogonal grid space to world space.
 			const AffineTransformation tm = cell->matrix() * Matrix3(

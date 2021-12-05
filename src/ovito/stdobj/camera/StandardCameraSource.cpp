@@ -54,16 +54,16 @@ StandardCameraSource::StandardCameraSource(DataSet* dataset) : PipelineObject(da
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void StandardCameraSource::initializeObject(ExecutionContext executionContext)
+void StandardCameraSource::initializeObject(ObjectInitializationHints hints)
 {
-	setFovController(ControllerManager::createFloatController(dataset(), executionContext));
+	setFovController(ControllerManager::createFloatController(dataset(), hints));
 	fovController()->setFloatValue(0, FLOATTYPE_PI/4);
 
-	setZoomController(ControllerManager::createFloatController(dataset(), executionContext));
+	setZoomController(ControllerManager::createFloatController(dataset(), hints));
 	zoomController()->setFloatValue(0, 200);
 
 	// Adopt the view parameters from the currently active Viewport.
-	if(executionContext == ExecutionContext::Interactive) {
+	if(hints.testFlag(LoadUserDefaults)) {
 		if(Viewport* vp = dataset()->viewportConfig()->activeViewport()) {
 			setIsPerspective(vp->isPerspectiveProjection());
 			if(vp->isPerspectiveProjection())
@@ -73,7 +73,7 @@ void StandardCameraSource::initializeObject(ExecutionContext executionContext)
 		}
 	}
 
-	PipelineObject::initializeObject(executionContext);
+	PipelineObject::initializeObject(hints);
 }
 
 /******************************************************************************
@@ -92,18 +92,18 @@ TimeInterval StandardCameraSource::validityInterval(const PipelineEvaluationRequ
 /******************************************************************************
 * Asks the pipeline stage to compute the results.
 ******************************************************************************/
-PipelineFlowState StandardCameraSource::evaluateSynchronous(TimePoint time)
+PipelineFlowState StandardCameraSource::evaluateSynchronous(const PipelineEvaluationRequest& request)
 {
 	// Create a new DataCollection.
-	DataOORef<DataCollection> data = DataOORef<DataCollection>::create(dataset(), Application::instance()->executionContext());
+	DataOORef<DataCollection> data = DataOORef<DataCollection>::create(dataset(), request.initializationHints());
 
 	// Set up the camera data object.
-	DataOORef<StandardCameraObject> camera = DataOORef<StandardCameraObject>::create(dataset(), Application::instance()->executionContext());
+	DataOORef<StandardCameraObject> camera = DataOORef<StandardCameraObject>::create(dataset(), request.initializationHints());
 	camera->setDataSource(this);
 	TimeInterval stateValidity = TimeInterval::infinite();
 	camera->setIsPerspective(isPerspective());
-	if(fovController()) camera->setFov(fovController()->getFloatValue(time, stateValidity));
-	if(zoomController()) camera->setZoom(zoomController()->getFloatValue(time, stateValidity));
+	if(fovController()) camera->setFov(fovController()->getFloatValue(request.time(), stateValidity));
+	if(zoomController()) camera->setZoom(zoomController()->getFloatValue(request.time(), stateValidity));
 	data->addObject(std::move(camera));
 
 	// Wrap the DataCollection in a PipelineFlowState.
@@ -177,7 +177,7 @@ FloatType StandardCameraSource::targetDistance() const
 /******************************************************************************
 * Changes the type of the camera to a target camera or a free camera.
 ******************************************************************************/
-void StandardCameraSource::setIsTargetCamera(bool enable)
+void StandardCameraSource::setIsTargetCamera(bool enable, ObjectInitializationHints initializationHints)
 {
 	dataset()->undoStack().pushIfRecording<TargetChangedUndoOperation>(this);
 
@@ -185,10 +185,10 @@ void StandardCameraSource::setIsTargetCamera(bool enable)
 		if(node->lookatTargetNode() == nullptr && enable) {
 			if(SceneNode* parentNode = node->parentNode()) {
 				AnimationSuspender noAnim(this);
-				DataOORef<DataCollection> dataCollection = DataOORef<DataCollection>::create(dataset(), Application::instance()->executionContext());
-				dataCollection->addObject(DataOORef<TargetObject>::create(dataset(), Application::instance()->executionContext()));
-				OORef<StaticSource> targetSource = OORef<StaticSource>::create(dataset(), Application::instance()->executionContext(), dataCollection);
-				OORef<PipelineSceneNode> targetNode = OORef<PipelineSceneNode>::create(dataset(), Application::instance()->executionContext());
+				DataOORef<DataCollection> dataCollection = DataOORef<DataCollection>::create(dataset(), initializationHints);
+				dataCollection->addObject(DataOORef<TargetObject>::create(dataset(), initializationHints));
+				OORef<StaticSource> targetSource = OORef<StaticSource>::create(dataset(), initializationHints, dataCollection);
+				OORef<PipelineSceneNode> targetNode = OORef<PipelineSceneNode>::create(dataset(), initializationHints);
 				targetNode->setDataProvider(targetSource);
 				targetNode->setNodeName(tr("%1.target").arg(node->nodeName()));
 				parentNode->addChildNode(targetNode);
@@ -199,7 +199,7 @@ void StandardCameraSource::setIsTargetCamera(bool enable)
 				Vector3 cameraDir = cameraTM.column(2).normalized();
 				Vector3 targetPos = cameraPos - targetDistance() * cameraDir;
 				targetNode->transformationController()->translate(0, targetPos, AffineTransformation::Identity());
-				node->setLookatTargetNode(targetNode);
+				node->setLookatTargetNode(targetNode, initializationHints);
 			}
 		}
 		else if(node->lookatTargetNode() != nullptr && !enable) {

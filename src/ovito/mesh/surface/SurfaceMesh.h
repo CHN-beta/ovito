@@ -58,7 +58,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 	
 	/// Makes sure that the data structures of the surface mesh are valid and all vertex and face properties
 	/// are consistent with the topology of the mesh. If this is not the case, the method throws an exception.

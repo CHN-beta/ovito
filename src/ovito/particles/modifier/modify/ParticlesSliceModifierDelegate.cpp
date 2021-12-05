@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,13 +47,13 @@ QVector<DataObjectReference> ParticlesSliceModifierDelegate::OOMetaClass::getApp
 /******************************************************************************
 * Performs the actual rejection of particles.
 ******************************************************************************/
-PipelineStatus ParticlesSliceModifierDelegate::apply(Modifier* modifier, PipelineFlowState& state, TimePoint time, ModifierApplication* modApp, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	const ParticlesObject* inputParticles = state.expectObject<ParticlesObject>();
 	inputParticles->verifyIntegrity();
 	QString statusMessage = tr("%n input particles", 0, inputParticles->elementCount());
 
-	SliceModifier* mod = static_object_cast<SliceModifier>(modifier);
+	SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
 	boost::dynamic_bitset<> mask(inputParticles->elementCount());
 
 	// Get the required input properties.
@@ -65,7 +65,7 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 	// Obtain modifier parameter values.
 	Plane3 plane;
 	FloatType sliceWidth;
-	std::tie(plane, sliceWidth) = mod->slicingPlane(time, state.mutableStateValidity(), state);
+	std::tie(plane, sliceWidth) = mod->slicingPlane(request.time(), state.mutableStateValidity(), state);
 	sliceWidth /= 2;
 
 	if(sliceWidth <= 0) {
@@ -121,7 +121,7 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(Modifier* modifier, Pipelin
 	}
 	else {
 		size_t numSelected = 0;
-		PropertyAccess<int> newSelProperty = outputParticles->createProperty(ParticlesObject::SelectionProperty, false, Application::instance()->executionContext());
+		PropertyAccess<int> newSelProperty = outputParticles->createProperty(ParticlesObject::SelectionProperty, false, request.initializationHints());
 		OVITO_ASSERT(mask.size() == newSelProperty.size());
 		boost::dynamic_bitset<>::size_type i = 0;
 		for(int& s : newSelProperty) {

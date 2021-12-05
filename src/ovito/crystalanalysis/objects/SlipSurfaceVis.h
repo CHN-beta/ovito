@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -121,10 +121,10 @@ public:
 private:
 
 	/// The data object containing the slip surfaces.
-	OORef<SurfaceMesh> _surfaceMesh;
+	DataOORef<const SurfaceMesh> _surfaceMesh;
 
 	/// The renderable surface mesh for the slip surfaces.
-	OORef<RenderableSurfaceMesh> _renderableMesh;
+	DataOORef<const RenderableSurfaceMesh> _renderableMesh;
 
 	/// The vis element that rendered the slip surfaces.
 	OORef<SlipSurfaceVis> _visElement;

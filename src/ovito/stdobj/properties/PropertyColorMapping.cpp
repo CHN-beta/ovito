@@ -49,9 +49,9 @@ PropertyColorMapping::PropertyColorMapping(DataSet* dataset) : RefTarget(dataset
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void PropertyColorMapping::initializeObject(ExecutionContext executionContext)
+void PropertyColorMapping::initializeObject(ObjectInitializationHints hints)
 {
-	if(executionContext == ExecutionContext::Interactive) {
+	if(hints.testFlag(LoadUserDefaults)) {
 #ifndef OVITO_DISABLE_QSETTINGS
 		// Load the default gradient type set by the user.
 		QSettings settings;
@@ -62,7 +62,7 @@ void PropertyColorMapping::initializeObject(ExecutionContext executionContext)
 			try {
 				OvitoClassPtr gradientType = OvitoClass::decodeFromString(typeString);
 				if(!colorGradient() || colorGradient()->getOOClass() != *gradientType) {
-					OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(dataset(), executionContext));
+					OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(dataset(), hints));
 					if(gradient) setColorGradient(std::move(gradient));
 				}
 			}
@@ -73,9 +73,9 @@ void PropertyColorMapping::initializeObject(ExecutionContext executionContext)
 
 	// Select the rainbow color gradient by default.
 	if(!colorGradient())
-		setColorGradient(OORef<ColorCodingHSVGradient>::create(dataset(), executionContext));
+		setColorGradient(OORef<ColorCodingHSVGradient>::create(dataset(), hints));
 
-	RefTarget::initializeObject(executionContext);
+	RefTarget::initializeObject(hints);
 }
 
 /******************************************************************************

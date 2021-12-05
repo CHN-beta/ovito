@@ -179,7 +179,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
 		if(!importerType) {
 
 			// Detect file format.
-			Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(currentSet(), ExecutionContext::Interactive, url);
+			Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(currentSet(), ObjectInitializationHint::LoadUserDefaults, url);
 			if(!taskManager().waitForFuture(importerFuture))
 				return false;
 
@@ -188,7 +188,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
 				currentSet()->throwException(tr("Could not auto-detect the format of the file %1. The file format might not be supported.").arg(url.fileName()));
 		}
 		else {
-			importer = static_object_cast<FileImporter>(importerType->createInstance(currentSet(), ExecutionContext::Interactive));
+			importer = static_object_cast<FileImporter>(importerType->createInstance(currentSet(), ObjectInitializationHint::LoadUserDefaults));
 			if(!importer)
 				currentSet()->throwException(tr("Failed to import file. Could not initialize import service."));
 		}
@@ -281,7 +281,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
 		}
 	}
 
-	return importer->importFileSet(std::move(urlImporters), importMode, true);
+	return importer->importFileSet(std::move(urlImporters), importMode, true, ObjectInitializationHint::LoadUserDefaults);
 }
 
 }	// End of namespace

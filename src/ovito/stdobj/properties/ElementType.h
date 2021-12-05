@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,7 +51,7 @@ public:
 	Q_INVOKABLE ElementType(DataSet* dataset);
 
 	/// Initializes the element type to default parameter values.
-	virtual void initializeType(const PropertyReference& property, ExecutionContext executionContext);
+	virtual void initializeType(const PropertyReference& property, ObjectInitializationHints initializationHints);
 
 	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
 	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
@@ -74,7 +74,7 @@ public:
 	virtual QString objectTitle() const override { return nameOrNumericId(); }
 
 	/// Returns the default color for a named element type.
-	static Color getDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext);
+	static Color getDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ObjectInitializationHints initializationHints);
 
 	/// Changes the default color for a named element type.
 	static void setDefaultColor(const PropertyReference& property, const QString& typeName, const Color& color);

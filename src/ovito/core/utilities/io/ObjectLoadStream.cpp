@@ -33,8 +33,7 @@ namespace Ovito {
 /******************************************************************************
 * Opens the stream for reading.
 ******************************************************************************/
-ObjectLoadStream::ObjectLoadStream(QDataStream& source, SynchronousOperation operation) : LoadStream(source, std::move(operation)),
-	_executionContext(Application::instance()->executionContext())
+ObjectLoadStream::ObjectLoadStream(QDataStream& source, SynchronousOperation operation) : LoadStream(source, std::move(operation))
 {
 	qint64 oldPos = filePosition();
 
@@ -114,7 +113,7 @@ OORef<OvitoObject> ObjectLoadStream::loadObjectInternal()
 
 			// Create an instance of the object class.
 			if(record.classInfo->clazz->isDerivedFrom(RefTarget::OOClass()))
-				record.object = record.classInfo->clazz->createInstance(_dataset, _executionContext);
+				record.object = record.classInfo->clazz->createInstance(_dataset, operation().initializationHints() | ObjectInitializationHint::WithoutVisElement);
 			else
 				record.object = record.classInfo->clazz->createInstance();
 

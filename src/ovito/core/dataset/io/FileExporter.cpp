@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,11 +56,23 @@ FileExporter::FileExporter(DataSet* dataset) : RefTarget(dataset),
 	_endFrame(-1),
 	_everyNthFrame(1),
 	_floatOutputPrecision(10),
-	_ignorePipelineErrors(Application::instance()->executionContext() == ExecutionContext::Interactive)
+	_ignorePipelineErrors(false)
 {
 	// Use the entire animation interval as default export interval.
 	int lastFrame = dataset->animationSettings()->timeToFrame(dataset->animationSettings()->animationInterval().end());
 	setEndFrame(lastFrame);
+}
+
+/******************************************************************************
+* Initializes the object's parameter fields with default values and loads 
+* user-defined default values from the application's settings store (GUI only).
+******************************************************************************/
+void FileExporter::initializeObject(ObjectInitializationHints hints)
+{
+	if(hints.testFlag(ObjectInitializationHint::LoadUserDefaults))
+		setIgnorePipelineErrors(true);
+
+	RefTarget::initializeObject(hints);
 }
 
 /******************************************************************************
@@ -159,7 +171,7 @@ PipelineFlowState FileExporter::getPipelineDataToBeExported(TimePoint time, Sync
 		throwException(tr("The scene object to be exported is not a data pipeline."));
 
 	// Evaluate pipeline.
-	PipelineEvaluationRequest request(time, !ignorePipelineErrors());
+	PipelineEvaluationRequest request(operation.initializationHints(), time, !ignorePipelineErrors());
 	PipelineEvaluationFuture future = requestRenderState ? pipeline->evaluateRenderingPipeline(request) : pipeline->evaluatePipeline(request);
 	if(!operation.waitForFuture(future))
 		return {};

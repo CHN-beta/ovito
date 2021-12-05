@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -72,13 +72,13 @@ HistogramModifier::HistogramModifier(DataSet* dataset) : GenericPropertyModifier
 * This method is called by the system when the modifier has been inserted
 * into a pipeline.
 ******************************************************************************/
-void HistogramModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
+void HistogramModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
-	GenericPropertyModifier::initializeModifier(time, modApp, executionContext);
+	GenericPropertyModifier::initializeModifier(request);
 
 	// Use the first available property from the input state as data source when the modifier is newly created.
-	if(sourceProperty().isNull() && subject() && executionContext == ExecutionContext::Interactive) {
-		const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
+	if(sourceProperty().isNull() && subject() && request.initializationHints().testFlag(LoadUserDefaults)) {
+		const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			PropertyReference bestProperty;
 			for(const PropertyObject* property : container->properties()) {
@@ -106,7 +106,7 @@ void HistogramModifier::propertyChanged(const PropertyFieldDescriptor* field)
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void HistogramModifier::evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	if(!subject())
 		throwException(tr("No data element type set."));
@@ -144,7 +144,7 @@ void HistogramModifier::evaluateSynchronous(TimePoint time, ModifierApplication*
 		// First make sure we can safely modify the property container.
 		PropertyContainer* mutableContainer = state.expectMutableLeafObject(subject());
 		// Add the selection property to the output container.
-		outputSelection = mutableContainer->createProperty(PropertyObject::GenericSelectionProperty, false, Application::instance()->executionContext());
+		outputSelection = mutableContainer->createProperty(PropertyObject::GenericSelectionProperty, false, request.initializationHints());
 	}
 
 	// Create selection property for output.
@@ -302,7 +302,7 @@ void HistogramModifier::evaluateSynchronous(TimePoint time, ModifierApplication*
 	// Output a data table with the histogram data.
 	DataTable* table = state.createObject<DataTable>(
 		QStringLiteral("histogram[%1]").arg(sourceProperty().nameWithComponent()), 
-		modApp, ExecutionContext::Scripting, DataTable::Histogram, sourceProperty().nameWithComponent(), 
+		request.modApp(), request.initializationHints(), DataTable::Histogram, sourceProperty().nameWithComponent(), 
 		histogram.take());
 	table->setAxisLabelX(sourceProperty().nameWithComponent());
 	table->setIntervalStart(intervalStart);

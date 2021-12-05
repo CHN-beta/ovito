@@ -46,22 +46,22 @@ DislocationNetworkObject::DislocationNetworkObject(DataSet* dataset) : PeriodicD
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void DislocationNetworkObject::initializeObject(ExecutionContext executionContext)
+void DislocationNetworkObject::initializeObject(ObjectInitializationHints hints)
 {
 	// Attach a visualization element for rendering the dislocation lines.
-	if(!visElement())
-		setVisElement(OORef<DislocationVis>::create(dataset(), executionContext));
+	if(!visElement() && !hints.testFlag(WithoutVisElement))
+		setVisElement(OORef<DislocationVis>::create(dataset(), hints));
 
 	// Create the "unidentified" structure.
 	if(crystalStructures().empty()) {
-		DataOORef<MicrostructurePhase> defaultStructure = DataOORef<MicrostructurePhase>::create(dataset(), executionContext);
+		DataOORef<MicrostructurePhase> defaultStructure = DataOORef<MicrostructurePhase>::create(dataset(), hints);
 		defaultStructure->setName(tr("Unidentified structure"));
 		defaultStructure->setColor(Color(1,1,1));
-		defaultStructure->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext));
+		defaultStructure->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), hints));
 		addCrystalStructure(std::move(defaultStructure));
 	}
 
-	PeriodicDomainDataObject::initializeObject(executionContext);
+	PeriodicDomainDataObject::initializeObject(hints);
 }
 
 /******************************************************************************
@@ -111,7 +111,7 @@ void DislocationNetworkObject::updateEditableProxies(PipelineFlowState& state, C
 	else {
 		// Create and initialize a new proxy object. 
 		// Note: We avoid copying the actual dislocation data here by constructing the proxy DislocationNetworkObject from scratch instead of cloning the original data object.
-		OORef<DislocationNetworkObject> newProxy = OORef<DislocationNetworkObject>::create(self->dataset(), ExecutionContext::Scripting);
+		OORef<DislocationNetworkObject> newProxy = OORef<DislocationNetworkObject>::create(self->dataset(), ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement);
 		newProxy->setTitle(self->title());
 		while(!newProxy->crystalStructures().empty())
 			newProxy->removeCrystalStructure(0);

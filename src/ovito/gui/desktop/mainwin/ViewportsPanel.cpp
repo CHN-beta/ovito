@@ -537,7 +537,11 @@ bool ViewportsPanel::event(QEvent* event)
 	else if(event->type() == QEvent::HoverMove) {
 		if(_draggedSplitter == -1 && _hoveredSplitter != -1) {
 			if(boost::algorithm::none_of(_splitterRegions, [&](const auto& region) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+				return region.area.contains(static_cast<QHoverEvent*>(event)->position().toPoint());
+#else
 				return region.area.contains(static_cast<QHoverEvent*>(event)->pos());
+#endif
 			})) {
 				const auto& region = _splitterRegions[_hoveredSplitter];
 				_hoveredSplitter = -1;
@@ -585,7 +589,7 @@ void ViewportsPanel::showSplitterContextMenu(const SplitterRectangle& splitter, 
 			if(!adjacentCell->children().empty())
 				adjacentCell = adjacentCell->children().back();
 		}
-		OORef<ViewportLayoutCell> newCell = OORef<ViewportLayoutCell>::create(splitter.cell->dataset(), ExecutionContext::Interactive);
+		OORef<ViewportLayoutCell> newCell = OORef<ViewportLayoutCell>::create(splitter.cell->dataset(), ObjectInitializationHint::LoadUserDefaults);
 		newCell->setViewport(CloneHelper().cloneObject(adjacentViewport, true));
 		UndoableTransaction::handleExceptions(_viewportConfig->dataset()->undoStack(), tr("Insert viewport"), [&]() {
 			_viewportConfig->setActiveViewport(newCell->viewport());

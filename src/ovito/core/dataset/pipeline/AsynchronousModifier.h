@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "Modifier.h"
+#include "ModifierApplication.h"
 
 namespace Ovito {
 
@@ -47,8 +48,8 @@ public:
 	public:
 
 		/// Constructor.
-		explicit Engine(const PipelineObject* dataSource, ExecutionContext executionContext, const TimeInterval& validityInterval = TimeInterval::infinite()) :
-			_dataSource(dataSource), _executionContext(executionContext), _validityInterval(validityInterval) {}
+		explicit Engine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval = TimeInterval::infinite()) :
+			_request(request), _validityInterval(validityInterval) {}
 
 #ifdef Q_OS_LINUX
 		/// Destructor.
@@ -56,7 +57,7 @@ public:
 #endif
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) = 0;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) = 0;
 
 		/// This method is called by the system whenever a parameter of the modifier changes.
 		/// The method can be overriden by subclasses to indicate to the caller whether the engine object should be 
@@ -70,7 +71,7 @@ public:
 		virtual bool pipelineInputChanged() { return true; }
 
 		/// Creates another engine that performs the next stage of the computation. 
-		virtual std::shared_ptr<Engine> createContinuationEngine(ModifierApplication* modApp, const PipelineFlowState& input) { return {}; }
+		virtual std::shared_ptr<Engine> createContinuationEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) { return {}; }
 
 		/// Decides whether the computation is sufficiently short to perform
 		/// it synchronously within the GUI thread. The default implementation returns false,
@@ -83,19 +84,19 @@ public:
 		/// Changes the validity interval of the computation results.
 		void setValidityInterval(const TimeInterval& iv) { _validityInterval = iv; }
 
-		/// Returns the type of context the engine is running in (interactive or scripting).
-		ExecutionContext executionContext() const { return _executionContext; }
+		/// Returns the way new objects created by the engine should be initialized (depends on whether we are running in the GUI or a script context).
+		ObjectInitializationHints initializationHints() const { return _request.initializationHints(); }
 
 		/// Returns the object to be set as data source of data objects newly created by the engine.
-		const PipelineObject* dataSource() const { OVITO_CHECK_OBJECT_POINTER(_dataSource); return _dataSource; }
+		const PipelineObject* dataSource() const { return _request.modApp(); }
+
+		/// Returns the context dataset this engine is running in.
+		DataSet* dataset() const { return _request.dataset(); }
 
 	private:
 
-		/// The object to be set as data source of data objects newly created by the engine.
-		const PipelineObject* _dataSource;
-
-		/// The type of context the engine is running in (interactive or scripting).
-		ExecutionContext _executionContext;
+		/// The modifier evaludation request this engine was launched for.
+		const ModifierEvaluationRequest _request;
 
 		/// The validity time interval of the stored computation results.
 		TimeInterval _validityInterval;
@@ -110,7 +111,7 @@ public:
 	AsynchronousModifier(DataSet* dataset);
 
 	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	/// Suppress preliminary viewport updates when a parameter of the asynchronous modifier changes.
 	virtual bool performPreliminaryUpdateAfterChange() override { return false; }
@@ -124,14 +125,14 @@ protected:
 	virtual void loadFromStream(ObjectLoadStream& stream) override;
 
 	/// Asks the object for the result of the data pipeline.
-	virtual Future<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input) override;
+	virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) = 0;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) = 0;
 
 	/// This function is called from AsynchronousModifier::evaluateSynchronous() to apply the results from the last 
 	/// asycnhronous compute engine during a synchronous pipeline evaluation.
-	virtual bool applyCachedResultsSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state);
+	virtual bool applyCachedResultsSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state);
 };
 
 #ifndef Core_EXPORTS

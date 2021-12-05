@@ -73,17 +73,17 @@ VectorVis::VectorVis(DataSet* dataset) : DataVis(dataset),
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void VectorVis::initializeObject(ExecutionContext executionContext)
+void VectorVis::initializeObject(ObjectInitializationHints hints)
 {
 	// Create animation controller for the transparency parameter.
 	if(!transparencyController())
-		setTransparencyController(ControllerManager::createFloatController(dataset(), executionContext));
+		setTransparencyController(ControllerManager::createFloatController(dataset(), hints));
 
 	// Create a color mapping object for pseudo-color visualization of a particle property.
 	if(!colorMapping())
-		setColorMapping(OORef<PropertyColorMapping>::create(dataset(), executionContext));
+		setColorMapping(OORef<PropertyColorMapping>::create(dataset(), hints));
 
-	DataVis::initializeObject(executionContext);
+	DataVis::initializeObject(hints);
 }
 
 /******************************************************************************
@@ -211,8 +211,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 	}
 
 	// The key type used for caching the rendering primitive:
-	using CacheKey = std::tuple<
-		CompatibleRendererGroup,// Scene renderer
+	using CacheKey = RendererResourceKey<struct VectorVisCache,
 		ConstDataObjectRef,		// Vector property
 		ConstDataObjectRef,		// Particle position property
 		ShadingMode,			// Arrow shading mode
@@ -236,8 +235,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 		transparency = transparencyController()->getFloatValue(time, iv);
 
 	// Lookup the rendering primitive in the vis cache.
-	auto& arrows = dataset()->visCache().get<std::shared_ptr<CylinderPrimitive>>(CacheKey(
-			renderer,
+	auto& arrows = dataset()->visCache().get<CylinderPrimitive>(CacheKey(
 			vectorProperty,
 			positionProperty,
 			shadingMode(),
@@ -254,7 +252,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 			pseudoColorMapping));
 
 	// Check if we already have a valid rendering primitive that is up to date.
-	if(!arrows) {
+	if(!arrows.basePositions()) {
 
 		// Determine number of non-zero vectors.
 		int vectorCount = 0;
@@ -267,9 +265,9 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 		}
 
 		// Allocate data buffers.
-		DataBufferAccessAndRef<Point3> arrowBasePositions = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, vectorCount, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<Point3> arrowHeadPositions = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, vectorCount, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<Color> arrowColors = (vectorColorProperty || pseudoColorProperty) ? DataBufferPtr::create(dataset(), ExecutionContext::Scripting, vectorCount, DataBuffer::Float, 3, 0, false) : nullptr;
+		DataBufferAccessAndRef<Point3> arrowBasePositions = DataBufferPtr::create(dataset(), vectorCount, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Point3> arrowHeadPositions = DataBufferPtr::create(dataset(), vectorCount, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Color> arrowColors = (vectorColorProperty || pseudoColorProperty) ? DataBufferPtr::create(dataset(), vectorCount, DataBuffer::Float, 3, 0, false) : nullptr;
 
 		// Fill data buffers.
 		if(vectorCount) {
@@ -303,15 +301,17 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 		}
 
 		// Create arrow rendering primitive.
-		arrows = renderer->createCylinderPrimitive(CylinderPrimitive::ArrowShape, static_cast<CylinderPrimitive::ShadingMode>(shadingMode()), renderingQuality());
-		arrows->setUniformRadius(arrowWidth());
-		arrows->setUniformColor(arrowColor());
-		arrows->setPositions(arrowBasePositions.take(), arrowHeadPositions.take());
-		arrows->setColors(arrowColors.take());
+		arrows.setShape(CylinderPrimitive::ArrowShape);
+		arrows.setShadingMode(static_cast<CylinderPrimitive::ShadingMode>(shadingMode()));
+		arrows.setRenderingQuality(renderingQuality());
+		arrows.setUniformRadius(arrowWidth());
+		arrows.setUniformColor(arrowColor());
+		arrows.setPositions(arrowBasePositions.take(), arrowHeadPositions.take());
+		arrows.setColors(arrowColors.take());
 		if(transparency > 0.0) {
-			DataBufferPtr transparencyBuffer = DataBufferPtr::create(dataset(), ExecutionContext::Scripting, vectorCount, DataBuffer::Float, 1, 0, false);
+			DataBufferPtr transparencyBuffer = DataBufferPtr::create(dataset(), vectorCount, DataBuffer::Float, 1, 0, false);
 			transparencyBuffer->fill(transparency);
-			arrows->setTransparencies(std::move(transparencyBuffer));
+			arrows.setTransparencies(std::move(transparencyBuffer));
 		}
 	}
 

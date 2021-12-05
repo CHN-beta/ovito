@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -89,58 +89,58 @@ void Controller::setCurrentVector3Value(const Vector3& newValue)
 /******************************************************************************
 * Creates a new float controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createFloatController(DataSet* dataset, ExecutionContext executionContext)
+OORef<Controller> ControllerManager::createFloatController(DataSet* dataset, ObjectInitializationHints hints)
 {
-	return OORef<LinearFloatController>::create(dataset, executionContext);
+	return OORef<LinearFloatController>::create(dataset, hints);
 }
 
 /******************************************************************************
 * Creates a new integer controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createIntController(DataSet* dataset, ExecutionContext executionContext)
+OORef<Controller> ControllerManager::createIntController(DataSet* dataset, ObjectInitializationHints hints)
 {
-	return OORef<LinearIntegerController>::create(dataset, executionContext);
+	return OORef<LinearIntegerController>::create(dataset, hints);
 }
 
 /******************************************************************************
 * Creates a new Vector3 controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createVector3Controller(DataSet* dataset, ExecutionContext executionContext)
+OORef<Controller> ControllerManager::createVector3Controller(DataSet* dataset, ObjectInitializationHints hints)
 {
-	return OORef<LinearVectorController>::create(dataset, executionContext);
+	return OORef<LinearVectorController>::create(dataset, hints);
 }
 
 /******************************************************************************
 * Creates a new position controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createPositionController(DataSet* dataset, ExecutionContext executionContext)
+OORef<Controller> ControllerManager::createPositionController(DataSet* dataset, ObjectInitializationHints hints)
 {
 	//return new TCBPositionController(dataset);
-	return OORef<SplinePositionController>::create(dataset, executionContext);
+	return OORef<SplinePositionController>::create(dataset, hints);
 }
 
 /******************************************************************************
 * Creates a new rotation controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createRotationController(DataSet* dataset, ExecutionContext executionContext)
+OORef<Controller> ControllerManager::createRotationController(DataSet* dataset, ObjectInitializationHints hints)
 {
-	return OORef<LinearRotationController>::create(dataset, executionContext);
+	return OORef<LinearRotationController>::create(dataset, hints);
 }
 
 /******************************************************************************
 * Creates a new scaling controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createScalingController(DataSet* dataset, ExecutionContext executionContext)
+OORef<Controller> ControllerManager::createScalingController(DataSet* dataset, ObjectInitializationHints hints)
 {
-	return OORef<LinearScalingController>::create(dataset, executionContext);
+	return OORef<LinearScalingController>::create(dataset, hints);
 }
 
 /******************************************************************************
 * Creates a new transformation controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createTransformationController(DataSet* dataset, ExecutionContext executionContext)
+OORef<Controller> ControllerManager::createTransformationController(DataSet* dataset, ObjectInitializationHints hints)
 {
-	return OORef<PRSTransformationController>::create(dataset, executionContext);
+	return OORef<PRSTransformationController>::create(dataset, hints);
 }
 
 }	// End of namespace

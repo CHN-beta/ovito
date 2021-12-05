@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -66,12 +66,12 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 	
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
@@ -81,10 +81,10 @@ private:
 	public:
 
 		/// Constructor.
-		VoronoiAnalysisEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, ConstPropertyPtr radii,
+		VoronoiAnalysisEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, ConstPropertyPtr radii,
 							const SimulationCellObject* simCell, DataOORef<SurfaceMesh> polyhedraMesh,
 							bool computeIndices, bool computeBonds, FloatType edgeThreshold, FloatType faceThreshold, FloatType relativeFaceThreshold) :
-			Engine(dataSource, executionContext, validityInterval),
+			Engine(request, validityInterval),
 			_positions(positions),
 			_selection(std::move(selection)),
 			_particleIdentifiers(std::move(particleIdentifiers)),
@@ -94,9 +94,9 @@ private:
 			_faceThreshold(faceThreshold),
 			_relativeFaceThreshold(relativeFaceThreshold),
 			_computeBonds(computeBonds),
-			_coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(dataset, fingerprint.particleCount(), ParticlesObject::CoordinationProperty, true, executionContext)),
-			_atomicVolumes(ParticlesObject::OOClass().createUserProperty(dataset, fingerprint.particleCount(), PropertyObject::Float, 1, 0, QStringLiteral("Atomic Volume"), true)),
-			_maxFaceOrders(computeIndices ? ParticlesObject::OOClass().createUserProperty(dataset, fingerprint.particleCount(), PropertyObject::Int, 1, 0, QStringLiteral("Max Face Order"), true) : nullptr),
+			_coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::CoordinationProperty, true, request.initializationHints())),
+			_atomicVolumes(ParticlesObject::OOClass().createUserProperty(request.dataset(), fingerprint.particleCount(), PropertyObject::Float, 1, 0, QStringLiteral("Atomic Volume"), true)),
+			_maxFaceOrders(computeIndices ? ParticlesObject::OOClass().createUserProperty(request.dataset(), fingerprint.particleCount(), PropertyObject::Int, 1, 0, QStringLiteral("Max Face Order"), true) : nullptr),
 			_inputFingerprint(std::move(fingerprint)),
 			_polyhedraMesh(std::move(polyhedraMesh)) {}
 
@@ -104,7 +104,7 @@ private:
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		/// Returns the property storage that contains the computed coordination numbers.
 		const PropertyPtr& coordinationNumbers() const { return _coordinationNumbers; }

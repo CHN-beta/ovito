@@ -84,17 +84,17 @@ RenderSettings::RenderSettings(DataSet* dataset) : RefTarget(dataset),
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void RenderSettings::initializeObject(ExecutionContext executionContext)
+void RenderSettings::initializeObject(ObjectInitializationHints hints)
 {
 	// Setup default background color.
-	setBackgroundColorController(ControllerManager::createColorController(dataset(), executionContext));
+	setBackgroundColorController(ControllerManager::createColorController(dataset(), hints));
 	setBackgroundColor(Color(1,1,1));
 
 	// Create an instance of the default renderer class.
 	if(!renderer())
-		setRenderer(OORef<StandardSceneRenderer>::create(dataset(), executionContext));
+		setRenderer(OORef<StandardSceneRenderer>::create(dataset(), hints));
 
-	RefTarget::initializeObject(executionContext);
+	RefTarget::initializeObject(hints);
 }
 
 /******************************************************************************

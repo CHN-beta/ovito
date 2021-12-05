@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,17 +23,17 @@
 #pragma once
 
 
-#include <ovito/mesh/Mesh.h>
+#include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 /**
  * \brief A visualization element for rendering TriMeshObject data objects.
  */
-class OVITO_MESH_EXPORT TriMeshVis : public DataVis
+class OVITO_CORE_EXPORT TriMeshVis : public DataVis
 {
 	Q_OBJECT
 	OVITO_CLASS(TriMeshVis)
@@ -46,7 +46,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;
+	virtual void initializeObject(ObjectInitializationHints hints) override;
 	
 	/// \brief Lets the vis element render a data object.
 	virtual PipelineStatus render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;

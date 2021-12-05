@@ -24,7 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/core/utilities/mesh/TriMesh.h>
+#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
 #include "VRSceneRenderer.h"
 #include "VRSettingsObject.h"
 

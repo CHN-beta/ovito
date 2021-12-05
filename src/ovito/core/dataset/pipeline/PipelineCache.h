@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -48,10 +48,10 @@ public:
 	SharedFuture<PipelineFlowState> evaluatePipeline(const PipelineEvaluationRequest& request);
 
 	/// Performs a synchronous pipeline evaluation.
-	const PipelineFlowState& evaluatePipelineSynchronous(TimePoint time);
+	const PipelineFlowState& evaluatePipelineSynchronous(const PipelineEvaluationRequest& request);
 
 	/// Performs a synchronous evaluation of a pipeline stage.
-	const PipelineFlowState& evaluatePipelineStageSynchronous(TimePoint time);
+	const PipelineFlowState& evaluatePipelineStageSynchronous(const PipelineEvaluationRequest& request);
 
 	/// Looks up the pipeline state for the given animation time.
 	const PipelineFlowState& getAt(TimePoint time) const;
@@ -93,10 +93,10 @@ private:
 	void cleanupEvaluation(std::forward_list<EvaluationInProgress>::iterator evaluation);
 
 	/// Starts the process of caching the pipeline results for all animation frames.
-	void startFramePrecomputation();
+	void startFramePrecomputation(const PipelineEvaluationRequest& request);
 
 	/// Requests the next frame from the pipeline that needs to be precomputed.
-	void precomputeNextAnimationFrame();
+	void precomputeNextAnimationFrame(ObjectInitializationHints initializationHints);
 
 	/// The contents of the cache.
 	std::vector<PipelineFlowState> _cachedStates;

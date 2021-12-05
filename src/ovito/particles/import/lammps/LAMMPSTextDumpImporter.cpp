@@ -243,7 +243,7 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
 					columnMapping = generateAutomaticColumnMapping(fileColumnNames);
 
 				// Parse data columns.
-				InputColumnReader columnParser(columnMapping, particles(), executionContext());
+				InputColumnReader columnParser(columnMapping, particles(), initializationHints());
 
 				// Check if there is an 'element' file column containing the atom type names.
 				int elementColumn = fileColumnNames.indexOf(QStringLiteral("element"));

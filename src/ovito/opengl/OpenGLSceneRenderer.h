@@ -36,6 +36,8 @@
 
 namespace Ovito {
 
+class OpenGLShaderHelper; // defined in OpenGLShaderHelper.h
+
 /**
  * \brief An OpenGL-based scene renderer. This serves as base class for both the interactive renderer used
  *        by the viewports and the standard output renderer.
@@ -78,55 +80,26 @@ public:
 	/// This method is called after renderFrame() has been called.
 	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect) override;
 
-	/// Requests a new line geometry buffer from the renderer.
-	virtual std::shared_ptr<LinePrimitive> createLinePrimitive() override;
-
 	/// Renders the line geometry stored in the given buffer.
-	virtual void renderLines(const std::shared_ptr<LinePrimitive>& primitive) override;
-
-	/// Requests a new particle geometry buffer from the renderer.
-	virtual std::shared_ptr<ParticlePrimitive> createParticlePrimitive(
-			ParticlePrimitive::ParticleShape shape,
-			ParticlePrimitive::ShadingMode shadingMode,
-			ParticlePrimitive::RenderingQuality renderingQuality) override;
+	virtual void renderLines(const LinePrimitive& primitive) override;
 
 	/// Renders the particles stored in the given primitive buffer.
-	virtual void renderParticles(const std::shared_ptr<ParticlePrimitive>& primitive) override;
-
-	/// Requests a new marker geometry buffer from the renderer.
-	virtual std::shared_ptr<MarkerPrimitive> createMarkerPrimitive(MarkerPrimitive::MarkerShape shape) override;
+	virtual void renderParticles(const ParticlePrimitive& primitive) override;
 
 	/// Renders the marker geometry stored in the given buffer.
-	virtual void renderMarkers(const std::shared_ptr<MarkerPrimitive>& primitive) override;
-
-	/// Requests a new text geometry buffer from the renderer.
-	virtual std::shared_ptr<TextPrimitive> createTextPrimitive() override;
+	virtual void renderMarkers(const MarkerPrimitive& primitive) override;
 
 	/// Renders the text stored in the given primitive buffer.
-	virtual void renderText(const std::shared_ptr<TextPrimitive>& primitive) override;
-
-	/// Requests a new image geometry buffer from the renderer.
-	virtual std::shared_ptr<ImagePrimitive> createImagePrimitive() override;
+	virtual void renderText(const TextPrimitive& primitive) override;
 
 	/// Renders the image stored in the given primitive buffer.
-	virtual void renderImage(const std::shared_ptr<ImagePrimitive>& primitive) override;
-
-	/// Requests a new cylinder geometry buffer from the renderer.
-	virtual std::shared_ptr<CylinderPrimitive> createCylinderPrimitive(CylinderPrimitive::Shape shape,
-			CylinderPrimitive::ShadingMode shadingMode,
-			CylinderPrimitive::RenderingQuality renderingQuality) override;
+	virtual void renderImage(const ImagePrimitive& primitive) override;
 
 	/// Renders the cylinder or arrow elements stored in the given buffer.
-	virtual void renderCylinders(const std::shared_ptr<CylinderPrimitive>& primitive) override;
-
-	/// Requests a new triangle mesh buffer from the renderer.
-	virtual std::shared_ptr<MeshPrimitive> createMeshPrimitive() override;
+	virtual void renderCylinders(const CylinderPrimitive& primitive) override;
 
 	/// Renders the triangle mesh stored in the given buffer.
-	virtual void renderMesh(const std::shared_ptr<MeshPrimitive>& primitive) override;
-
-	/// Determines if this renderer can share geometry data and other resources with the given other renderer.
-	virtual bool sharesResourcesWith(SceneRenderer* otherRenderer) const override;
+	virtual void renderMesh(const MeshPrimitive& primitive) override;
 
 	/// Returns the OpenGL context this renderer uses.
 	QOpenGLContext* glcontext() const { return _glcontext; }
@@ -226,6 +199,45 @@ protected:
 
 private:
 
+	/// Renders a set of particles.
+	void renderParticlesImplementation(const ParticlePrimitive& primitive);
+
+	/// Renders a triangle mesh.
+	void renderMeshImplementation(const MeshPrimitive& primitive);
+
+	/// Renders just the edges of a triangle mesh as a wireframe model.
+	void renderMeshWireframeImplementation(const MeshPrimitive& primitive);
+
+	/// Generates the wireframe line elements for the visible edges of a mesh.
+	const ConstDataBufferPtr& generateMeshWireframeLines(const MeshPrimitive& primitive);
+
+	/// Prepares the OpenGL buffer with the per-instance transformation matrices for 
+	/// rendering a set of meshes.
+	QOpenGLBuffer getMeshInstanceTMBuffer(const MeshPrimitive& primitive, OpenGLShaderHelper& shader);
+
+	/// Renders a set of markers.
+	void renderMarkersImplementation(const MarkerPrimitive& primitive);
+
+	/// Renders a set of lines.
+	void renderLinesImplementation(const LinePrimitive& primitive);
+
+	/// Renders a set of lines using GL_LINES mode.
+	void renderThinLinesImplementation(const LinePrimitive& primitive);
+
+	/// Renders a set of lines using triangle strips.
+	void renderThickLinesImplementation(const LinePrimitive& primitive);
+
+	/// Renders a set of cylinders or arrow glyphs.
+	void renderCylindersImplementation(const CylinderPrimitive& primitive);
+
+	/// Renders a 2d pixel image into the output framebuffer.
+	void renderImageImplementation(const ImagePrimitive& primitive);
+
+	/// Renders a text string into the output framebuffer.
+	void renderTextImplementation(const TextPrimitive& primitive);
+
+private:
+
 	/// The OpenGL context this renderer uses.
 	QOpenGLContext* _glcontext = nullptr;
 
@@ -257,13 +269,13 @@ private:
 	OpenGLResourceManager::ResourceFrameHandle _currentResourceFrame = 0;
 
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
-	std::vector<std::tuple<AffineTransformation, std::shared_ptr<ParticlePrimitive>>> _translucentParticles;
+	std::vector<std::tuple<AffineTransformation, ParticlePrimitive>> _translucentParticles;
 
 	/// List of semi-transparent czlinder primitives collected during the first rendering pass, which need to be rendered during the second pass.
-	std::vector<std::tuple<AffineTransformation, std::shared_ptr<CylinderPrimitive>>> _translucentCylinders;
+	std::vector<std::tuple<AffineTransformation, CylinderPrimitive>> _translucentCylinders;
 
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
-	std::vector<std::tuple<AffineTransformation, std::shared_ptr<MeshPrimitive>>> _translucentMeshes;
+	std::vector<std::tuple<AffineTransformation, MeshPrimitive>> _translucentMeshes;
 
 	/// The vendor of the OpenGL implementation in use.
 	static QByteArray _openGLVendor;
@@ -286,13 +298,6 @@ private:
 	/// Indicates whether the OpenGL implementation supports geometry shaders.
 	static bool _openGLSupportsGeometryShaders;
 
-	friend class OpenGLMeshPrimitive;
-	friend class OpenGLCylinderPrimitive;
-	friend class OpenGLImagePrimitive;
-	friend class OpenGLLinePrimitive;
-	friend class OpenGLTextPrimitive;
-	friend class OpenGLParticlePrimitive;
-	friend class OpenGLMarkerPrimitive;
 	friend class OpenGLShaderHelper;
 };
 

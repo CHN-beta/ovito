@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -305,28 +305,28 @@ class OVITO_CORE_EXPORT ControllerManager
 public:
 
 	/// \brief Creates a new float controller.
-	static OORef<Controller> createFloatController(DataSet* dataset, ExecutionContext executionContext);
+	static OORef<Controller> createFloatController(DataSet* dataset, ObjectInitializationHints hints);
 
 	/// \brief Creates a new integer controller.
-	static OORef<Controller> createIntController(DataSet* dataset, ExecutionContext executionContext);
+	static OORef<Controller> createIntController(DataSet* dataset, ObjectInitializationHints hints);
 
 	/// \brief Creates a new Vector3 controller.
-	static OORef<Controller> createVector3Controller(DataSet* dataset, ExecutionContext executionContext);
+	static OORef<Controller> createVector3Controller(DataSet* dataset, ObjectInitializationHints hints);
 
 	/// \brief Creates a new Color controller.
-	static OORef<Controller> createColorController(DataSet* dataset, ExecutionContext executionContext) { return createVector3Controller(dataset, executionContext); }
+	static OORef<Controller> createColorController(DataSet* dataset, ObjectInitializationHints hints) { return createVector3Controller(dataset, hints); }
 
 	/// \brief Creates a new position controller.
-	static OORef<Controller> createPositionController(DataSet* dataset, ExecutionContext executionContext);
+	static OORef<Controller> createPositionController(DataSet* dataset, ObjectInitializationHints hints);
 
 	/// \brief Creates a new rotation controller.
-	static OORef<Controller> createRotationController(DataSet* dataset, ExecutionContext executionContext);
+	static OORef<Controller> createRotationController(DataSet* dataset, ObjectInitializationHints hints);
 
 	/// \brief Creates a new scaling controller.
-	static OORef<Controller> createScalingController(DataSet* dataset, ExecutionContext executionContext);
+	static OORef<Controller> createScalingController(DataSet* dataset, ObjectInitializationHints hints);
 
 	/// \brief Creates a new transformation controller.
-	static OORef<Controller> createTransformationController(DataSet* dataset, ExecutionContext executionContext);
+	static OORef<Controller> createTransformationController(DataSet* dataset, ObjectInitializationHints hints);
 };
 
 }	// End of namespace

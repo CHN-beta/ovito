@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -65,6 +65,10 @@ class OVITO_CORE_EXPORT FileExporter : public RefTarget
 	OVITO_CLASS_META(FileExporter, FileExporterClass)
 
 public:
+
+	/// Initializes the object's parameter fields with default values and loads 
+	/// user-defined default values from the application's settings store (GUI only).
+	virtual void initializeObject(ObjectInitializationHints hints) override;
 
 	/// \brief Selects the default scene node to be exported by this exporter.
 	virtual void selectDefaultExportableData();

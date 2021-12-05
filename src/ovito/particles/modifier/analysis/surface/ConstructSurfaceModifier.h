@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -73,7 +73,7 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 	
 	/// Decides whether a preliminary viewport update is performed after the modifier has been
 	/// evaluated but before the entire pipeline evaluation is complete.
@@ -84,7 +84,7 @@ public:
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
@@ -94,13 +94,13 @@ private:
 	public:
 
 		/// Constructor.
-		ConstructSurfaceEngineBase(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh, bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties) :
-			Engine(dataSource, executionContext),
+		ConstructSurfaceEngineBase(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh, bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties) :
+			Engine(request),
 			_positions(positions),
 			_selection(std::move(selection)),
 			_mesh(std::move(mesh)),
 			_particleProperties(std::move(particleProperties)),
-			_surfaceDistances(computeSurfaceDistance ? ParticlesObject::OOClass().createUserProperty(dataset, _positions->size(), PropertyObject::Float, 1, 0, tr("Surface Distance"), false) : nullptr) {}
+			_surfaceDistances(computeSurfaceDistance ? ParticlesObject::OOClass().createUserProperty(request.dataset(), _positions->size(), PropertyObject::Float, 1, 0, tr("Surface Distance"), false) : nullptr) {}
 
 		/// Returns the computed total surface area.
 		FloatType surfaceArea() const { return (FloatType)_totalSurfaceArea; }
@@ -162,20 +162,20 @@ private:
 	public:
 
 		/// Constructor.
-		AlphaShapeEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleGrains, DataOORef<SurfaceMesh> mesh, FloatType probeSphereRadius, int smoothingLevel, bool selectSurfaceParticles, bool identifyRegions, bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties) :
-			ConstructSurfaceEngineBase(dataSource, executionContext, dataset, std::move(positions), std::move(selection), std::move(mesh), computeSurfaceDistance, std::move(particleProperties)),
+		AlphaShapeEngine(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleGrains, DataOORef<SurfaceMesh> mesh, FloatType probeSphereRadius, int smoothingLevel, bool selectSurfaceParticles, bool identifyRegions, bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties) :
+			ConstructSurfaceEngineBase(request, std::move(positions), std::move(selection), std::move(mesh), computeSurfaceDistance, std::move(particleProperties)),
 			_particleGrains(std::move(particleGrains)),
 			_probeSphereRadius(probeSphereRadius),
 			_smoothingLevel(smoothingLevel),
 			_identifyRegions(identifyRegions),
 			_totalCellVolume(this->mesh()->domain() ? this->mesh()->domain()->volume3D() : 0.0),
-			_surfaceParticleSelection(selectSurfaceParticles ? ParticlesObject::OOClass().createStandardProperty(dataset, this->positions()->size(), ParticlesObject::SelectionProperty, true, executionContext) : nullptr) {}
+			_surfaceParticleSelection(selectSurfaceParticles ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), this->positions()->size(), ParticlesObject::SelectionProperty, true, request.initializationHints()) : nullptr) {}
 
 		/// Computes the modifier's results and stores them in this object for later retrieval.
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		/// Returns the input particle grain IDs.
 		const ConstPropertyPtr& particleGrains() const { return _particleGrains; }
@@ -225,9 +225,9 @@ private:
 	public:
 
 		/// Constructor.
-		GaussianDensityEngine(const PipelineObject* dataSource, ExecutionContext executionContext, DataSet* dataset, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh,
+		GaussianDensityEngine(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh,
 				FloatType radiusFactor, FloatType isoLevel, int gridResolution, bool computeSurfaceDistance, ConstPropertyPtr radii, std::vector<ConstPropertyPtr> particleProperties) :
-			ConstructSurfaceEngineBase(dataSource, executionContext, dataset, std::move(positions), std::move(selection), std::move(mesh), computeSurfaceDistance, std::move(particleProperties)),
+			ConstructSurfaceEngineBase(request, std::move(positions), std::move(selection), std::move(mesh), computeSurfaceDistance, std::move(particleProperties)),
 			_radiusFactor(radiusFactor),
 			_isoLevel(isoLevel),
 			_gridResolution(gridResolution),
@@ -237,7 +237,7 @@ private:
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	private:
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -80,30 +80,39 @@ bool VTKTriangleMeshExporter::exportFrame(int frameNumber, TimePoint time, const
 
 	operation.setProgressText(tr("Writing file %1").arg(filePath));
 
-	const TriMesh& surfaceMesh = meshObj->surfaceMesh();
-	const TriMesh& capPolygonsMesh = meshObj->capPolygonsMesh();
+	const TriMeshObject* surfaceMesh = meshObj->surfaceMesh();
+	const TriMeshObject* capPolygonsMesh = meshObj->capPolygonsMesh();
+	auto totalVertexCount = (surfaceMesh ? surfaceMesh->vertexCount() : 0) + (capPolygonsMesh ? capPolygonsMesh->vertexCount() : 0);
+	auto totalFaceCount = (surfaceMesh ? surfaceMesh->faceCount() : 0) + (capPolygonsMesh ? capPolygonsMesh->faceCount() : 0);
 	textStream() << "# vtk DataFile Version 3.0\n";
 	textStream() << "# Triangle surface mesh written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
 	textStream() << "ASCII\n";
 	textStream() << "DATASET UNSTRUCTURED_GRID\n";
-	textStream() << "POINTS " << (surfaceMesh.vertexCount() + capPolygonsMesh.vertexCount()) << " double\n";
-	for(const Point3& p : surfaceMesh.vertices())
-		textStream() << p.x() << " " << p.y() << " " << p.z() << "\n";
-	for(const Point3& p : capPolygonsMesh.vertices())
-		textStream() << p.x() << " " << p.y() << " " << p.z() << "\n";
-	auto totalFaceCount = surfaceMesh.faceCount() + capPolygonsMesh.faceCount();
-	textStream() << "\nCELLS " << totalFaceCount << " " << (totalFaceCount * 4) << "\n";
-	for(const TriMeshFace& f : surfaceMesh.faces()) {
-		textStream() << "3";
-		for(size_t i = 0; i < 3; i++)
-			textStream() << " " << f.vertex(i);
-		textStream() << "\n";
+	textStream() << "POINTS " << totalVertexCount << " double\n";
+	if(surfaceMesh) {
+		for(const Point3& p : surfaceMesh->vertices())
+			textStream() << p.x() << " " << p.y() << " " << p.z() << "\n";
 	}
-	for(const TriMeshFace& f : capPolygonsMesh.faces()) {
-		textStream() << "3";
-		for(size_t i = 0; i < 3; i++)
-			textStream() << " " << (f.vertex(i) + surfaceMesh.vertexCount());
-		textStream() << "\n";
+	if(capPolygonsMesh) {
+		for(const Point3& p : capPolygonsMesh->vertices())
+			textStream() << p.x() << " " << p.y() << " " << p.z() << "\n";
+	}
+	textStream() << "\nCELLS " << totalFaceCount << " " << (totalFaceCount * 4) << "\n";
+	if(surfaceMesh) {
+		for(const TriMeshFace& f : surfaceMesh->faces()) {
+			textStream() << "3";
+			for(size_t i = 0; i < 3; i++)
+				textStream() << " " << f.vertex(i);
+			textStream() << "\n";
+		}
+	}
+	if(capPolygonsMesh) {
+		for(const TriMeshFace& f : capPolygonsMesh->faces()) {
+			textStream() << "3";
+			for(size_t i = 0; i < 3; i++)
+				textStream() << " " << (f.vertex(i) + (surfaceMesh ? surfaceMesh->vertexCount() : 0));
+			textStream() << "\n";
+		}
 	}
 	textStream() << "\nCELL_TYPES " << totalFaceCount << "\n";
 	for(size_t i = 0; i < totalFaceCount; i++)
@@ -112,41 +121,57 @@ bool VTKTriangleMeshExporter::exportFrame(int frameNumber, TimePoint time, const
 	textStream() << "\nCELL_DATA " << totalFaceCount << "\n";
 	textStream() << "SCALARS cap unsigned_char\n";
 	textStream() << "LOOKUP_TABLE default\n";
-	for(size_t i = 0; i < surfaceMesh.faceCount(); i++)
-		textStream() << "0\n";
-	for(size_t i = 0; i < capPolygonsMesh.faceCount(); i++)
-		textStream() << "1\n";
+	if(surfaceMesh) {
+		for(size_t i = 0; i < surfaceMesh->faceCount(); i++)
+			textStream() << "0\n";
+	}
+	if(capPolygonsMesh) {
+		for(size_t i = 0; i < capPolygonsMesh->faceCount(); i++)
+			textStream() << "1\n";
+	}
 
 	if(!meshObj->materialColors().empty()) {
 		textStream() << "\nSCALARS material_index int\n";
 		textStream() << "LOOKUP_TABLE default\n";
-		for(size_t i = 0; i < surfaceMesh.faceCount(); i++)
-			textStream() << surfaceMesh.face(i).materialIndex() << "\n";
-		for(size_t i = 0; i < capPolygonsMesh.faceCount(); i++)
-			textStream() << "0\n";
+		if(surfaceMesh) {
+			for(size_t i = 0; i < surfaceMesh->faceCount(); i++)
+				textStream() << surfaceMesh->face(i).materialIndex() << "\n";
+		}
+		if(capPolygonsMesh) {
+			for(size_t i = 0; i < capPolygonsMesh->faceCount(); i++)
+				textStream() << "0\n";
+		}
 
 		textStream() << "\nCOLOR_SCALARS color 3\n";
-		for(size_t i = 0; i < surfaceMesh.faceCount(); i++) {
-			const ColorA& c = meshObj->materialColors()[surfaceMesh.face(i).materialIndex() % meshObj->materialColors().size()];
-			textStream() << c.r() << " " << c.g() << " " << c.b() << "\n";
+		if(surfaceMesh) {
+			for(size_t i = 0; i < surfaceMesh->faceCount(); i++) {
+				const ColorA& c = meshObj->materialColors()[surfaceMesh->face(i).materialIndex() % meshObj->materialColors().size()];
+				textStream() << c.r() << " " << c.g() << " " << c.b() << "\n";
+			}
 		}
-		for(size_t i = 0; i < capPolygonsMesh.faceCount(); i++)
-			textStream() << "1 1 1\n";
+		if(capPolygonsMesh) {
+			for(size_t i = 0; i < capPolygonsMesh->faceCount(); i++)
+				textStream() << "1 1 1\n";
+		}
 	}
 
-	textStream() << "\nPOINT_DATA " << (surfaceMesh.vertexCount() + capPolygonsMesh.vertexCount()) << "\n";
-	textStream() << "SCALARS cap unsigned_char\n";
-	textStream() << "LOOKUP_TABLE default\n";
-	for(size_t i = 0; i < surfaceMesh.vertexCount(); i++)
-		textStream() << "0\n";
-	for(size_t i = 0; i < capPolygonsMesh.vertexCount(); i++)
-		textStream() << "1\n";
-	if(surfaceMesh.hasVertexColors()) {
+	if(surfaceMesh && capPolygonsMesh) {
+		textStream() << "\nPOINT_DATA " << totalVertexCount << "\n";
+		textStream() << "SCALARS cap unsigned_char\n";
+		textStream() << "LOOKUP_TABLE default\n";
+		for(size_t i = 0; i < surfaceMesh->vertexCount(); i++)
+			textStream() << "0\n";
+		for(size_t i = 0; i < capPolygonsMesh->vertexCount(); i++)
+			textStream() << "1\n";
+	}
+	if(surfaceMesh && surfaceMesh->hasVertexColors()) {
 		textStream() << "COLOR_SCALARS color 4\n";
-		for(const ColorA& c : surfaceMesh.vertexColors())
+		for(const ColorA& c : surfaceMesh->vertexColors())
 			textStream() << c.r() << " " << c.g() << " " << c.b() << " " << c.a() << "\n";
-		for(size_t i = 0; i < capPolygonsMesh.vertexCount(); i++)
-			textStream() << "1 1 1\n";
+		if(capPolygonsMesh) {
+			for(size_t i = 0; i < capPolygonsMesh->vertexCount(); i++)
+				textStream() << "1 1 1\n";
+		}
 	}
 
 	return !operation.isCanceled();

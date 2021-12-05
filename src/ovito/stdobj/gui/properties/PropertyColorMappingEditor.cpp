@@ -249,7 +249,7 @@ void PropertyColorMappingEditor::onColorGradientSelected(int index)
 	OvitoClassPtr descriptor = _colorGradientList->itemData(index).value<OvitoClassPtr>();
 	if(descriptor) {
 		undoableTransaction(tr("Change color gradient"), [&]() {
-			OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(mapping->dataset(), ExecutionContext::Interactive));
+			OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(mapping->dataset(), ObjectInitializationHint::LoadUserDefaults));
 			if(gradient) {
 				mapping->setColorGradient(std::move(gradient));
 
@@ -265,7 +265,7 @@ void PropertyColorMappingEditor::onColorGradientSelected(int index)
 		undoableTransaction(tr("Change color gradient"), [&]() {
 			LoadImageFileDialog fileDialog(container(), tr("Pick color map image"));
 			if(fileDialog.exec()) {
-				OORef<ColorCodingImageGradient> gradient = OORef<ColorCodingImageGradient>::create(mapping->dataset(), ExecutionContext::Interactive);
+				OORef<ColorCodingImageGradient> gradient = OORef<ColorCodingImageGradient>::create(mapping->dataset(), ObjectInitializationHint::LoadUserDefaults);
 				gradient->loadImage(fileDialog.imageInfo().filename());
 				mapping->setColorGradient(std::move(gradient));
 			}
@@ -345,7 +345,7 @@ QIcon PropertyColorMappingEditor::iconFromColorMapClass(OvitoClassPtr clazz)
 	if(dataset) {
 		try {
 			// Create a temporary instance of the color map class.
-			OORef<ColorCodingGradient> map = static_object_cast<ColorCodingGradient>(clazz->createInstance(dataset, ExecutionContext::Interactive));
+			OORef<ColorCodingGradient> map = static_object_cast<ColorCodingGradient>(clazz->createInstance(dataset, ObjectInitializationHint::LoadUserDefaults));
 			if(map) {
 				QIcon icon = iconFromColorMap(map);
 				iconCache.insert(std::make_pair(clazz, icon));

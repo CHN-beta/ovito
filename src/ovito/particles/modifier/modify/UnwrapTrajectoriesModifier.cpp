@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,23 +47,23 @@ bool UnwrapTrajectoriesModifier::OOMetaClass::isApplicableTo(const DataCollectio
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluate(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	if(input) {
-		if(UnwrapTrajectoriesModifierApplication* unwrapModApp = dynamic_object_cast<UnwrapTrajectoriesModifierApplication>(modApp)) {
+		if(UnwrapTrajectoriesModifierApplication* unwrapModApp = dynamic_object_cast<UnwrapTrajectoriesModifierApplication>(request.modApp())) {
 
 			// If the periodic image flags particle property is present, use it to unwrap particle positions.
 			const ParticlesObject* inputParticles = input.expectObject<ParticlesObject>();
 			if(inputParticles->getProperty(ParticlesObject::PeriodicImageProperty)) {
 				PipelineFlowState output = input;
-				unwrapModApp->unwrapParticleCoordinates(request.time(), output);
+				unwrapModApp->unwrapParticleCoordinates(request, output);
 				return output;
 			}
 
 			// Without the periodic image flags information, we need to scan the entire particle trajectories
 			// to make them continuous.
-			return unwrapModApp->detectPeriodicCrossings(request.time()).then(unwrapModApp->executor(), [unwrapModApp, state = input, time = request.time()]() mutable {
-				unwrapModApp->unwrapParticleCoordinates(time, state);
+			return unwrapModApp->detectPeriodicCrossings(request.time(), request.initializationHints()).then(unwrapModApp->executor(), [state = input, request]() mutable {
+				static_object_cast<UnwrapTrajectoriesModifierApplication>(request.modApp())->unwrapParticleCoordinates(request, state);
 				return std::move(state);
 			});
 		}
@@ -74,7 +74,7 @@ Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluate(const PipelineEva
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void UnwrapTrajectoriesModifier::evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void UnwrapTrajectoriesModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	if(!state) return;
 
@@ -82,12 +82,13 @@ void UnwrapTrajectoriesModifier::evaluateSynchronous(TimePoint time, ModifierApp
 	// animation time. This would lead to artifacts, because particles might get unwrapped even though they haven't crossed
 	// a periodic cell boundary yet. To avoid this from happening, we try to determine the true animation time of the
 	// current input data collection and use it for looking up the unwrap information.
+	TimePoint time = request.time();
 	int sourceFrame = state.data()->sourceFrame();
 	if(sourceFrame != -1)
-		time = modApp->sourceFrameToAnimationTime(sourceFrame);
+		time = request.modApp()->sourceFrameToAnimationTime(sourceFrame);
 
-	if(UnwrapTrajectoriesModifierApplication* unwrapModApp = dynamic_object_cast<UnwrapTrajectoriesModifierApplication>(modApp)) {
-		unwrapModApp->unwrapParticleCoordinates(time, state);
+	if(UnwrapTrajectoriesModifierApplication* unwrapModApp = dynamic_object_cast<UnwrapTrajectoriesModifierApplication>(request.modApp())) {
+		unwrapModApp->unwrapParticleCoordinates(request, state);
 	}
 }
 
@@ -95,9 +96,10 @@ void UnwrapTrajectoriesModifier::evaluateSynchronous(TimePoint time, ModifierApp
 * Processes all frames of the input trajectory to detect periodic crossings 
 * of the particles.
 ******************************************************************************/
-SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(TimePoint time)
+SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(TimePoint time, ObjectInitializationHints initializationHints)
 {
 	if(_unwrapOperation.isValid() == false) {
+		_initializationHints = initializationHints;
 		_unwrapOperation = Promise<>::createAsynchronousOperation(dataset()->taskManager());
 		_unwrapOperation.setProgressText(tr("Unwrapping particle trajectories"));
 		registerActivePromise(_unwrapOperation);
@@ -179,7 +181,7 @@ void UnwrapTrajectoriesModifierApplication::rescaleTime(const TimeInterval& oldA
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(TimePoint time, PipelineFlowState& state)
+void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	const ParticlesObject* inputParticles = state.expectObject<ParticlesObject>();
 	inputParticles->verifyIntegrity();
@@ -202,7 +204,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(TimePoint 
 		// Unwrap bonds by adjusting their PBC shift vectors.
 		if(outputParticles->bonds()) {
 			if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-				PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, true, Application::instance()->executionContext());
+				PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, true, ObjectInitializationHint::LoadFactoryDefaults);
 				for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
 					size_t particleIndex1 = topologyProperty[bondIndex][0];
 					size_t particleIndex2 = topologyProperty[bondIndex][1];
@@ -225,8 +227,8 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(TimePoint 
 	}
 
 	// Check if periodic cell boundary crossing have been precomputed or not.
-	if(time > unwrappedUpToTime()) {
-		if(Application::instance()->executionContext() == ExecutionContext::Interactive)
+	if(request.time() > unwrappedUpToTime()) {
+		if(request.initializationHints().testFlag(ObjectInitializationHint::LoadUserDefaults))
 			state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Particle crossings of periodic cell boundaries have not been determined yet.")));
 		else
 			throwException(tr("Particle crossings of periodic cell boundaries have not been determined yet. Cannot unwrap trajectories. Did you forget to call UnwrapTrajectoriesModifier.update()?"));
@@ -234,9 +236,9 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(TimePoint 
 	}
 
 	// Reverse any cell shear flips made by LAMMPS.
-	if(!unflipRecords().empty() && time >= unflipRecords().front().first) {
+	if(!unflipRecords().empty() && request.time() >= unflipRecords().front().first) {
 		auto iter = unflipRecords().rbegin();
-		while(iter->first > time) {
+		while(iter->first > request.time()) {
 			++iter;
 			OVITO_ASSERT(iter != unflipRecords().rend());
 		}
@@ -272,7 +274,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(TimePoint 
 		bool shifted = false;
 		Vector3 pbcShift = Vector3::Zero();
 		for(auto iter = range.first; iter != range.second; ++iter) {
-			if(std::get<0>(iter->second) <= time) {
+			if(std::get<0>(iter->second) <= request.time()) {
 				pbcShift[std::get<1>(iter->second)] += std::get<2>(iter->second);
 				shifted = true;
 			}
@@ -286,7 +288,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(TimePoint 
 	// Unwrap bonds by adjusting their PBC shift vectors.
 	if(outputParticles->bonds()) {
 		if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-			PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, true, Application::instance()->executionContext());
+			PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, true, request.initializationHints());
 			for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
 				size_t particleIndex1 = topologyProperty[bondIndex][0];
 				size_t particleIndex2 = topologyProperty[bondIndex][1];
@@ -297,12 +299,12 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(TimePoint 
 				auto range1 = unwrapRecords().equal_range(identifierProperty ? identifierProperty[particleIndex1] : particleIndex1);
 				auto range2 = unwrapRecords().equal_range(identifierProperty ? identifierProperty[particleIndex2] : particleIndex2);
 				for(auto iter = range1.first; iter != range1.second; ++iter) {
-					if(std::get<0>(iter->second) <= time) {
+					if(std::get<0>(iter->second) <= request.time()) {
 						pbcShift[std::get<1>(iter->second)] += std::get<2>(iter->second);
 					}
 				}
 				for(auto iter = range2.first; iter != range2.second; ++iter) {
-					if(std::get<0>(iter->second) <= time) {
+					if(std::get<0>(iter->second) <= request.time()) {
 						pbcShift[std::get<1>(iter->second)] -= std::get<2>(iter->second);
 					}
 				}
@@ -339,7 +341,7 @@ void UnwrapTrajectoriesModifierApplication::fetchNextFrame()
 
 	// Request the next frame from the input trajectory.
 	TimePoint nextFrameTime = sourceFrameToAnimationTime(nextFrame);
-	_fetchFrameFuture = evaluateInput(PipelineEvaluationRequest(nextFrameTime));
+	_fetchFrameFuture = evaluateInput(PipelineEvaluationRequest(_initializationHints, nextFrameTime));
 
 	// Wait until input frame is ready.
 	_fetchFrameFuture.finally(executor(), true, [this, nextFrame, nextFrameTime](const TaskPtr& task) {

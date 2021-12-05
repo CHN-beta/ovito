@@ -50,20 +50,20 @@ SelectTypeModifier::SelectTypeModifier(DataSet* dataset) : GenericPropertyModifi
 * This method is called by the system when the modifier has been inserted
 * into a pipeline.
 ******************************************************************************/
-void SelectTypeModifier::initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext)
+void SelectTypeModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
-	GenericPropertyModifier::initializeModifier(time, modApp, executionContext);
+	GenericPropertyModifier::initializeModifier(request);
 
 	if(sourceProperty().isNull() && subject()) {
 
 		// When the modifier is first inserted, automatically select the most recently added
 		// typed property (in GUI mode) or the canonical type property (in script mode).
-		const PipelineFlowState& input = modApp->evaluateInputSynchronous(time);
+		const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			PropertyReference bestProperty;
 			for(const PropertyObject* property : container->properties()) {
 				if(property->isTypedProperty()) {
-					if(executionContext == ExecutionContext::Interactive || property->type() == PropertyObject::GenericTypeProperty) {
+					if(request.initializationHints().testFlag(LoadUserDefaults) || property->type() == PropertyObject::GenericTypeProperty) {
 						bestProperty = PropertyReference(subject().dataClass(), property);
 					}
 				}
@@ -89,7 +89,7 @@ void SelectTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void SelectTypeModifier::evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	if(!subject())
 		throwException(tr("No input element type selected."));
@@ -115,7 +115,7 @@ void SelectTypeModifier::evaluateSynchronous(TimePoint time, ModifierApplication
 	ConstPropertyAccess<int> typeProperty = typePropertyObject;
 
 	// Create the selection property.
-	PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty, false, Application::instance()->executionContext());
+	PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty, false, request.initializationHints());
 
 	// Counts the number of selected elements.
 	size_t nSelected = 0;
@@ -148,7 +148,7 @@ void SelectTypeModifier::evaluateSynchronous(TimePoint time, ModifierApplication
 		return 0;
 	});
 
-	state.addAttribute(QStringLiteral("SelectType.num_selected"), QVariant::fromValue(nSelected), modApp);
+	state.addAttribute(QStringLiteral("SelectType.num_selected"), QVariant::fromValue(nSelected), request.modApp());
 
 	QString statusMessage = tr("%1 out of %2 %3 selected (%4%)")
 		.arg(nSelected)

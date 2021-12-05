@@ -57,27 +57,27 @@ ParticleType::ParticleType(DataSet* dataset) : ElementType(dataset),
 /******************************************************************************
 * Initializes the particle type's attributes to standard values.
 ******************************************************************************/
-void ParticleType::initializeType(const PropertyReference& property, ExecutionContext executionContext)
+void ParticleType::initializeType(const PropertyReference& property, ObjectInitializationHints initializationHints)
 {
-	ElementType::initializeType(property, executionContext);
+	ElementType::initializeType(property, initializationHints);
 
 	// Load standard display radius.
-	setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), ExecutionContext::Scripting, DisplayRadius));
+	setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadFactoryDefaults, DisplayRadius));
 	freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::radius)});
-	if(executionContext != ExecutionContext::Scripting)
-		setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), executionContext, DisplayRadius));
+	if(initializationHints.testFlags(LoadUserDefaults))
+		setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadUserDefaults, DisplayRadius));
 	
 	// Load standard van der Waals radius.
-	setVdwRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), ExecutionContext::Scripting, VanDerWaalsRadius));
+	setVdwRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadFactoryDefaults, VanDerWaalsRadius));
 	freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::vdwRadius)});
-	if(executionContext != ExecutionContext::Scripting)
-		setVdwRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), executionContext, VanDerWaalsRadius));
+	if(initializationHints.testFlags(LoadUserDefaults))
+		setVdwRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadUserDefaults, VanDerWaalsRadius));
 	
 	// Load standard mass.
-	setMass(getDefaultParticleMass(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), ExecutionContext::Scripting));
+	setMass(getDefaultParticleMass(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadFactoryDefaults));
 	freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::mass)});
-	if(executionContext != ExecutionContext::Scripting)
-		setMass(getDefaultParticleMass(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), executionContext));
+	if(initializationHints.testFlags(LoadUserDefaults))
+		setMass(getDefaultParticleMass(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadUserDefaults));
 }
 
 /******************************************************************************
@@ -118,7 +118,7 @@ void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObje
 /******************************************************************************
  * Loads a user-defined display shape from a geometry file and assigns it to this particle type.
  ******************************************************************************/
-bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, ExecutionContext executionContext, const FileImporterClass* importerType)
+bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, SynchronousOperation operation, const FileImporterClass* importerType)
 {
     operation.setProgressText(tr("Loading mesh geometry file %1").arg(sourceUrl.fileName()));
 
@@ -129,22 +129,22 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, E
 	if(!importerType) {
 
 		// Inspect input file to detect its format.
-		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(dataset(), executionContext, sourceUrl);
+		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(dataset(), operation.initializationHints(), sourceUrl);
 		if(!operation.waitForFuture(importerFuture))
 			return false;
 
 		importer = dynamic_object_cast<FileSourceImporter>(importerFuture.result());
 	}
 	else {
-		importer = dynamic_object_cast<FileSourceImporter>(importerType->createInstance(dataset(), executionContext));
+		importer = dynamic_object_cast<FileSourceImporter>(importerType->createInstance(dataset(), operation.initializationHints()));
 	}
 	if(!importer)
 		throwException(tr("Could not detect the format of the geometry file. The format might not be supported."));
 
 	// Create a temporary FileSource for loading the geometry data from the file.
-	OORef<FileSource> fileSource = OORef<FileSource>::create(dataset(), executionContext);
+	OORef<FileSource> fileSource = OORef<FileSource>::create(dataset(), operation.initializationHints());
 	fileSource->setSource({sourceUrl}, importer, false);
-	SharedFuture<PipelineFlowState> stateFuture = fileSource->evaluate(PipelineEvaluationRequest(0));
+	SharedFuture<PipelineFlowState> stateFuture = fileSource->evaluate(PipelineEvaluationRequest(operation.initializationHints() | ObjectInitializationHint::WithoutVisElement, 0));
 	if(!operation.waitForFuture(stateFuture))
 		return false;
 
@@ -157,11 +157,12 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, Promise<>&& operation, E
 	if(!state)
 		throwException(tr("The loaded geometry file does not provide any valid mesh data."));
 	TriMeshObject* meshObj = state.expectMutableObject<TriMeshObject>();
-	if(!meshObj->mesh())
-		throwException(tr("The loaded geometry file does not contain a valid mesh."));
 
 	// Show sharp edges of the mesh.
-	meshObj->modifiableMesh()->determineEdgeVisibility();
+	meshObj->determineEdgeVisibility();
+
+	// We requested creating the TriMeshObject without a visual element.
+	OVITO_ASSERT(meshObj->visElements().empty());
 
 	// Turn on undo recording again. The final shape assignment should be recorded on the undo stack.
 	noUndo.reset();
@@ -321,11 +322,11 @@ const std::array<ParticleType::PredefinedStructuralType, ParticleType::NUMBER_OF
 /******************************************************************************
 * Returns the default radius for a particle type.
 ******************************************************************************/
-FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int numericTypeId, ExecutionContext executionContext, RadiusVariant radiusVariant)
+FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int numericTypeId, ObjectInitializationHints initializationHints, RadiusVariant radiusVariant)
 {
 	// Interactive execution context means that we are supposed to load the user-defined
 	// settings from the settings store.
-	if(executionContext == ExecutionContext::Interactive && typeClass != ParticlesObject::UserProperty) {
+	if(initializationHints.testFlag(ObjectInitializationHint::LoadUserDefaults) && typeClass != ParticlesObject::UserProperty) {
 
 #ifndef OVITO_DISABLE_QSETTINGS
 		// Use the type's name, property type and container class to look up the 
@@ -358,7 +359,7 @@ FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass
 
 		// Sometimes atom type names have additional letters/numbers appended.
 		if(particleTypeName.length() > 1 && particleTypeName.length() <= 5) {
-			return getDefaultParticleRadius(typeClass, particleTypeName.left(particleTypeName.length() - 1), numericTypeId, executionContext, radiusVariant);
+			return getDefaultParticleRadius(typeClass, particleTypeName.left(particleTypeName.length() - 1), numericTypeId, initializationHints, radiusVariant);
 		}
 	}
 
@@ -378,7 +379,7 @@ void ParticleType::setDefaultParticleRadius(ParticlesObject::Type typeClass, con
 	const QString& settingsKey = ElementType::getElementSettingsKey(ParticlePropertyReference(typeClass), 
 		(radiusVariant == DisplayRadius) ? QStringLiteral("radius") : QStringLiteral("vdw_radius"), particleTypeName);
 	
-	if(std::abs(getDefaultParticleRadius(typeClass, particleTypeName, 0, ExecutionContext::Scripting, radiusVariant) - radius) > 1e-6)
+	if(std::abs(getDefaultParticleRadius(typeClass, particleTypeName, 0, ObjectInitializationHint::LoadFactoryDefaults, radiusVariant) - radius) > 1e-6)
 		settings.setValue(settingsKey, QVariant::fromValue(radius));
 	else
 		settings.remove(settingsKey);
@@ -388,7 +389,7 @@ void ParticleType::setDefaultParticleRadius(ParticlesObject::Type typeClass, con
 /******************************************************************************
 * Returns the default mass for a particle type.
 ******************************************************************************/
-FloatType ParticleType::getDefaultParticleMass(ParticlesObject::Type typeClass, const QString& particleTypeName, int numericTypeId, ExecutionContext executionContext)
+FloatType ParticleType::getDefaultParticleMass(ParticlesObject::Type typeClass, const QString& particleTypeName, int numericTypeId, ObjectInitializationHints initializationHints)
 {
 	if(typeClass == ParticlesObject::TypeProperty) {
 		for(const PredefinedChemicalType& predefType : _predefinedParticleTypes) {
@@ -399,7 +400,7 @@ FloatType ParticleType::getDefaultParticleMass(ParticlesObject::Type typeClass, 
 
 		// Sometimes atom type names have additional letters/numbers appended.
 		if(particleTypeName.length() > 1 && particleTypeName.length() <= 5) {
-			return getDefaultParticleMass(typeClass, particleTypeName.left(particleTypeName.length() - 1), numericTypeId, executionContext);
+			return getDefaultParticleMass(typeClass, particleTypeName.left(particleTypeName.length() - 1), numericTypeId, initializationHints);
 		}
 	}
 

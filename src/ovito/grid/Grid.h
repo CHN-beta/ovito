@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,14 +31,13 @@
 #include <ovito/mesh/Mesh.h>
 #include <ovito/stdobj/StdObj.h>
 
-namespace Ovito {
-	namespace Grid {
-		using namespace Ovito::Mesh;
-		using namespace Ovito::StdObj;
+namespace Ovito::Grid 
+{
+	using namespace Ovito::Mesh;
+	using namespace Ovito::StdObj;
 
-		class VoxelGrid;
-		class VoxelGridVis;
-	}
+	class VoxelGrid;
+	class VoxelGridVis;
 }
 
 #endif

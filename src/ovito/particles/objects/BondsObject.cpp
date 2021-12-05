@@ -49,16 +49,16 @@ BondsObject::BondsObject(DataSet* dataset) : PropertyContainer(dataset)
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void BondsObject::initializeObject(ExecutionContext executionContext)
+void BondsObject::initializeObject(ObjectInitializationHints hints)
 {
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());
 
 	// Create and attach a default visualization element for rendering the bonds.
-	if(!visElement())
-		setVisElement(OORef<BondsVis>::create(dataset(), executionContext));
+	if(!visElement() && !hints.testFlag(WithoutVisElement))
+		setVisElement(OORef<BondsVis>::create(dataset(), hints));
 
-	PropertyContainer::initializeObject(executionContext);
+	PropertyContainer::initializeObject(hints);
 }
 
 /******************************************************************************
@@ -80,7 +80,7 @@ void BondsObject::generatePeriodicImageProperty(const ParticlesObject* particles
 	const AffineTransformation inverseCellMatrix = simulationCellObject->reciprocalCellMatrix();
 
 	auto topoIter = bondTopologyProperty.begin();
-	PropertyAccess<Vector3I> bondPeriodicImageProperty = createProperty(BondsObject::PeriodicImageProperty, false, ExecutionContext::Scripting);
+	PropertyAccess<Vector3I> bondPeriodicImageProperty = createProperty(BondsObject::PeriodicImageProperty, false, ObjectInitializationHint::LoadFactoryDefaults);
 	for(Vector3I& pbcVec : bondPeriodicImageProperty) {
 		size_t particleIndex1 = (*topoIter)[0];
 		size_t particleIndex2 = (*topoIter)[1];
@@ -101,7 +101,7 @@ void BondsObject::generatePeriodicImageProperty(const ParticlesObject* particles
 /******************************************************************************
 * Creates new bonds making sure bonds are not created twice.
 ******************************************************************************/
-size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const ParticlesObject* particles, ExecutionContext executionContext, const std::vector<PropertyPtr>& bondProperties, DataOORef<const BondType> bondType)
+size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const ParticlesObject* particles, ObjectInitializationHints initializationHints, const std::vector<PropertyPtr>& bondProperties, DataOORef<const BondType> bondType)
 {
 	OVITO_ASSERT(isSafeToModify());
 
@@ -113,9 +113,9 @@ size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsV
 		setElementCount(newBonds.size());
 
 		// Create essential bond properties.
-		PropertyAccess<ParticleIndexPair> topologyProperty = createProperty(BondsObject::TopologyProperty, false, executionContext);
-		PropertyAccess<Vector3I> periodicImageProperty = createProperty(BondsObject::PeriodicImageProperty, false, executionContext);
-		PropertyObject* bondTypeProperty = bondType ? createProperty(BondsObject::TypeProperty, false, executionContext) : nullptr;
+		PropertyAccess<ParticleIndexPair> topologyProperty = createProperty(BondsObject::TopologyProperty, false, initializationHints);
+		PropertyAccess<Vector3I> periodicImageProperty = createProperty(BondsObject::PeriodicImageProperty, false, initializationHints);
+		PropertyObject* bondTypeProperty = bondType ? createProperty(BondsObject::TypeProperty, false, initializationHints) : nullptr;
 
 		// Transfer per-bond data into the standard property arrays.
 		auto t = topologyProperty.begin();
@@ -177,8 +177,8 @@ size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsV
 		setElementCount(outputBondCount);
 
 		PropertyAccess<ParticleIndexPair> newBondsTopology = expectMutableProperty(BondsObject::TopologyProperty);
-		PropertyAccess<Vector3I> newBondsPeriodicImages = createProperty(BondsObject::PeriodicImageProperty, true, executionContext);
-		PropertyAccess<int> newBondTypeProperty = bondType ? createProperty(BondsObject::TypeProperty, true, executionContext) : nullptr;
+		PropertyAccess<Vector3I> newBondsPeriodicImages = createProperty(BondsObject::PeriodicImageProperty, true, initializationHints);
+		PropertyAccess<int> newBondTypeProperty = bondType ? createProperty(BondsObject::TypeProperty, true, initializationHints) : nullptr;
 
 		if(newBondTypeProperty && !newBondTypeProperty.buffer()->elementType(bondType->numericId()))
 			newBondTypeProperty.buffer()->addElementType(bondType);
@@ -228,7 +228,7 @@ size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsV
 
 			PropertyObject* propertyObject;
 			if(bprop->type() != BondsObject::UserProperty) {
-				propertyObject = createProperty(bprop->type(), true, executionContext);
+				propertyObject = createProperty(bprop->type(), true, initializationHints);
 			}
 			else {
 				propertyObject = createProperty(bprop->name(), bprop->dataType(), bprop->componentCount(), bprop->stride(), true);
@@ -245,7 +245,7 @@ size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsV
 /******************************************************************************
 * Creates a storage object for standard bond properties.
 ******************************************************************************/
-PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t bondsCount, int type, bool initializeMemory, ExecutionContext executionContext, const ConstDataObjectPath& containerPath) const
+PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t bondsCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const
 {
 	// Initialize memory if requested.
 	if(initializeMemory && containerPath.size() >= 2) {
@@ -303,7 +303,7 @@ PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* da
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, executionContext, bondsCount, dataType, componentCount, stride,
+	PropertyPtr property = PropertyPtr::create(dataset, initializationHints, bondsCount, dataType, componentCount, stride,
 								propertyName, false, type, componentNames);
 
 	if(initializeMemory) {
@@ -351,7 +351,7 @@ void BondsObject::OOMetaClass::initialize()
 /******************************************************************************
 * Returns the default color for a numeric type ID.
 ******************************************************************************/
-Color BondsObject::OOMetaClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ExecutionContext executionContext) const
+Color BondsObject::OOMetaClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ObjectInitializationHints initializationHints) const
 {
 	if(property.type() == BondsObject::TypeProperty) {
 
@@ -370,7 +370,7 @@ Color BondsObject::OOMetaClass::getElementTypeDefaultColor(const PropertyReferen
 		return defaultTypeColors[std::abs(numericTypeId) % (sizeof(defaultTypeColors) / sizeof(defaultTypeColors[0]))];
 	}
 
-	return PropertyContainerClass::getElementTypeDefaultColor(property, typeName, numericTypeId, executionContext);
+	return PropertyContainerClass::getElementTypeDefaultColor(property, typeName, numericTypeId, initializationHints);
 }
 
 /******************************************************************************

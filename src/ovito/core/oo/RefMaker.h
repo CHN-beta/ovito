@@ -294,17 +294,16 @@ public:
 	/// \return True if the object is found in the list of referenced targets.
 	bool vectorReferenceFieldContains(const PropertyFieldDescriptor* field, const RefTarget* target) const;
 
-	/// \brief Loads the user-defined default values of this object's parameter fields from the
-	///        application's settings store.
+	/// \brief Initializes a new object instance as part of a two-phase initialization.
 	///
 	/// This function should be called immediately after creation of the object instance.
-	/// It loads the default value for every property field for which the user has set
+	/// It should loads the default value for every property field for which the user has set
 	/// a default value. This is usually the case for property fields that have the
 	/// PROPERTY_FIELD_MEMORIZE flag set.
 	///
 	/// This function is recursive, i.e., it also loads default parameter values for
 	/// referenced objects (when the PROPERTY_FIELD_MEMORIZE flag is set for this RefMaker's reference field).
-	virtual void initializeObject(ExecutionContext executionContext);
+	virtual void initializeObject(ObjectInitializationHints hints);
 
 	/// Creates a snapshot of the object's parameter values that will serve as reference to detect parameter changes made by the user.
 	void freezeInitialParameterValues(std::initializer_list<const PropertyFieldDescriptor*> propertyFields);
@@ -343,21 +342,24 @@ public:
 
 	///////////////////////////// DataSet access ///////////////////////////////
 
+#ifndef OVITO_DEBUG
 	/// \brief Returns the dataset this object belongs to.
-	const QPointer<DataSet>& dataset() const { return _dataset; }
+	DataSet* dataset() const { return _dataset; }
 
 	/// \brief Changes the dataset this object belongs to.
-	void setDataset(QPointer<DataSet> dataset) { _dataset.swap(dataset); }
+	void setDataset(DataSet* dataset) { _dataset = dataset; }
+#else
+	/// \brief Returns the dataset this object belongs to.
+	DataSet* dataset() const;
+
+	/// \brief Changes the dataset this object belongs to.
+	void setDataset(DataSet* dataset);
+#endif
 
 	///////////////////////////// Exceptions & Errors ///////////////////////////////
 
 	/// \brief This helper method throws an Exception with the given message text.
-#ifndef Q_CC_MSVC
-	[[noreturn]]
-#else
-	__declspec(noreturn)
-#endif
-	void throwException(const QString& msg) const;
+	[[noreturn]] void throwException(const QString& msg) const;
 
 private:
 
@@ -368,7 +370,13 @@ private:
 	static void walkNode(QSet<RefTarget*>& nodes, const RefMaker* node);
 
 	/// The dataset this object belongs to.
-	QPointer<DataSet> _dataset;
+	DataSet* _dataset = nullptr;
+
+#ifdef OVITO_DEBUG
+	/// A weak pointer to the dataset this object belongs to. 
+	/// This is used to detect when the dataset is deleted before all other objects belonging to it are deleted.
+	QPointer<DataSet> _datasetWeakPointer;
+#endif
 
 	friend class RefTarget;
 	friend class PropertyFieldBase;

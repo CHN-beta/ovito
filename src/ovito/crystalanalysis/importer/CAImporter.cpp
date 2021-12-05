@@ -426,7 +426,7 @@ void CAImporter::FrameLoader::loadFile()
 				defectSurfaceObj = state().makeMutable(existingSurfaceObj);
 			}
 			else {
-				defectSurfaceObj = state().createObject<SurfaceMesh>(dataSource(), executionContext(), tr("Defect mesh"));
+				defectSurfaceObj = state().createObject<SurfaceMesh>(dataSource(), initializationHints(), tr("Defect mesh"));
 				SurfaceMeshVis* vis = defectSurfaceObj->visElement<SurfaceMeshVis>();
 				vis->setShowCap(true);
 				vis->setSmoothShading(true);
@@ -527,7 +527,7 @@ void CAImporter::FrameLoader::loadFile()
 			clusterGraphObj = state().makeMutable(existingClusterGraphObj);
 		}
 		else {
-			clusterGraphObj = state().createObject<ClusterGraphObject>(dataSource(), executionContext());
+			clusterGraphObj = state().createObject<ClusterGraphObject>(dataSource(), initializationHints());
 		}
 		clusterGraphObj->setStorage(std::move(clusterGraph));
 	}
@@ -539,7 +539,7 @@ void CAImporter::FrameLoader::loadFile()
 			dislocationNetwork = state().makeMutable(existingDislocationsObj);
 		}
 		else {
-			dislocationNetwork = state().createObject<DislocationNetworkObject>(dataSource(), executionContext());
+			dislocationNetwork = state().createObject<DislocationNetworkObject>(dataSource(), initializationHints());
 		}
 		dislocationNetwork->setDomain(simulationCell());
 		dislocationNetwork->setStorage(dislocations);
@@ -549,7 +549,7 @@ void CAImporter::FrameLoader::loadFile()
 			if(dislocationNetwork->structureByName(patterns[i].longName))
 				continue;
 
-			DataOORef<MicrostructurePhase> pattern = DataOORef<MicrostructurePhase>::create(dataset(), executionContext());
+			DataOORef<MicrostructurePhase> pattern = DataOORef<MicrostructurePhase>::create(dataset(), initializationHints());
 			pattern->setColor(patterns[i].color);
 			pattern->setShortName(patterns[i].shortName);
 			pattern->setLongName(patterns[i].longName);
@@ -561,7 +561,7 @@ void CAImporter::FrameLoader::loadFile()
 
 			// Add Burgers vector families.
 			for(int j = 0; j < patterns[i].burgersVectorFamilies.size(); j++) {
-				DataOORef<BurgersVectorFamily> family = DataOORef<BurgersVectorFamily>::create(dataset(), executionContext());
+				DataOORef<BurgersVectorFamily> family = DataOORef<BurgersVectorFamily>::create(dataset(), initializationHints());
 				family->setNumericId(patterns[i].burgersVectorFamilies[j].id);
 				family->setColor(patterns[i].burgersVectorFamilies[j].color);
 				family->setName(patterns[i].burgersVectorFamilies[j].name);
@@ -572,7 +572,7 @@ void CAImporter::FrameLoader::loadFile()
 
 			// Make sure there always is a default family.
 			if(pattern->burgersVectorFamilies().empty())
-				pattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), executionContext()));
+				pattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), initializationHints()));
 		}
 
 		// Determine the main crystal structure of the system, which has the most atoms.
@@ -583,7 +583,7 @@ void CAImporter::FrameLoader::loadFile()
 		}
 
 		// Compute dislocation line statistics.
-		DislocationAnalysisEngine::generateDislocationStatistics(dataSource(), executionContext(), state(), dislocationNetwork, true, mainStructure);
+		DislocationAnalysisEngine::generateDislocationStatistics(dataSource(), initializationHints(), state(), dislocationNetwork, true, mainStructure);
 	}
 
 	state().setStatus(tr("Number of dislocations: %1").arg(numDislocationSegments));

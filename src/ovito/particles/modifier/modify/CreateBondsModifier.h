@@ -93,10 +93,10 @@ private:
 	public:
 
 		/// Constructor.
-		BondsEngine(const PipelineObject* dataSource, ExecutionContext executionContext, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
+		BondsEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
 				const SimulationCellObject* simCell, DataOORef<BondsObject> bondsObject, DataOORef<BondType> bondType, const ParticlesObject* particles, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
 				std::vector<FloatType> typeVdWRadiusMap, FloatType vdwPrefactor, ConstPropertyPtr moleculeIDs, std::vector<bool> isHydrogenType) :
-					Engine(dataSource, executionContext),
+					Engine(request),
 					_positions(std::move(positions)),
 					_particleTypes(std::move(particleTypes)),
 					_simCell(simCell),
@@ -123,7 +123,7 @@ private:
 		virtual void perform() override;
 
 		/// Injects the computed results into the data pipeline.
-		virtual void applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+		virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 		/// This method is called by the system whenever the preliminary pipeline input changes.
 		virtual bool pipelineInputChanged() override { return false; }
@@ -161,10 +161,10 @@ public:
 
 	/// Initializes the object's parameter fields with default values and loads 
 	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ExecutionContext executionContext) override;	
+	virtual void initializeObject(ObjectInitializationHints hints) override;	
 
 	/// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
-	virtual void initializeModifier(TimePoint time, ModifierApplication* modApp, ExecutionContext executionContext) override;
+	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
 	/// Sets the cutoff radius for a pair of particle types.
 	void setPairwiseCutoff(const QVariant& typeA, const QVariant& typeB, FloatType cutoff);
@@ -178,11 +178,11 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Creates a computation engine that will compute the modifier's results.
-	virtual Future<EnginePtr> createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext) override;
+	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 	/// This function is called from AsynchronousModifier::evaluateSynchronous() to apply the results from the last 
 	/// asycnhronous compute engine during a synchronous pipeline evaluation.
-	virtual bool applyCachedResultsSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;
+	virtual bool applyCachedResultsSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	/// Looks up a particle type in the type list based on the name or the numeric ID.
 	static const ElementType* lookupParticleType(const PropertyObject* typeProperty, const QVariant& typeSpecification);

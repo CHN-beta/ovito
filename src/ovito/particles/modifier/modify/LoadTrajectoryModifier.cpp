@@ -48,13 +48,13 @@ LoadTrajectoryModifier::LoadTrajectoryModifier(DataSet* dataset) : Modifier(data
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void LoadTrajectoryModifier::initializeObject(ExecutionContext executionContext)
+void LoadTrajectoryModifier::initializeObject(ObjectInitializationHints hints)
 {
 	// Create the file source object, which will be responsible for loading
 	// and caching the trajectory data.
-	setTrajectorySource(OORef<FileSource>::create(dataset(), executionContext));
+	setTrajectorySource(OORef<FileSource>::create(dataset(), hints));
 
-	Modifier::initializeObject(executionContext);
+	Modifier::initializeObject(hints);
 }
 
 /******************************************************************************
@@ -68,9 +68,9 @@ bool LoadTrajectoryModifier::OOMetaClass::isApplicableTo(const DataCollection& i
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/
-TimeInterval LoadTrajectoryModifier::validityInterval(const PipelineEvaluationRequest& request, const ModifierApplication* modApp) const
+TimeInterval LoadTrajectoryModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
-	TimeInterval iv = Modifier::validityInterval(request, modApp);
+	TimeInterval iv = Modifier::validityInterval(request);
 
 	if(trajectorySource())
 		iv.intersect(trajectorySource()->validityInterval(request));
@@ -81,7 +81,7 @@ TimeInterval LoadTrajectoryModifier::validityInterval(const PipelineEvaluationRe
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> LoadTrajectoryModifier::evaluate(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input)
+Future<PipelineFlowState> LoadTrajectoryModifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	OVITO_ASSERT(input);
 
@@ -93,24 +93,24 @@ Future<PipelineFlowState> LoadTrajectoryModifier::evaluate(const PipelineEvaluat
 	SharedFuture<PipelineFlowState> trajStateFuture = trajectorySource()->evaluate(request);
 
 	// Wait for the data to become available.
-	return trajStateFuture.then(modApp->executor(), [state = input, modApp](const PipelineFlowState& trajState) mutable {
+	return trajStateFuture.then(request.modApp()->executor(), [state = input, request](const PipelineFlowState& trajState) mutable {
 
-		if(LoadTrajectoryModifier* trajModifier = dynamic_object_cast<LoadTrajectoryModifier>(modApp->modifier())) {
+		if(LoadTrajectoryModifier* trajModifier = dynamic_object_cast<LoadTrajectoryModifier>(request.modifier())) {
 			// Make sure the obtained configuration is valid and ready to use.
 			if(trajState.status().type() == PipelineStatus::Error) {
 				if(FileSource* fileSource = dynamic_object_cast<FileSource>(trajModifier->trajectorySource())) {
 					if(fileSource->sourceUrls().empty())
-						modApp->throwException(tr("Please pick a trajectory file."));
+						request.modApp()->throwException(tr("Please pick a trajectory file."));
 				}
 				state.setStatus(trajState.status());
 			}
 			else {
-				trajModifier->applyTrajectoryState(state, trajState);
+				trajModifier->applyTrajectoryState(state, trajState, request.initializationHints());
 
 				// Invalidate the synchronous state cache of the modifier application.
 				// This is needed to force the pipeline system to call our evaluateSynchronous() method
 				// again next time the system request a synchronous state from the pipeline.
-				modApp->pipelineCache().invalidateSynchronousState();
+				request.modApp()->pipelineCache().invalidateSynchronousState();
 			}
 		}
 
@@ -121,11 +121,11 @@ Future<PipelineFlowState> LoadTrajectoryModifier::evaluate(const PipelineEvaluat
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void LoadTrajectoryModifier::evaluateSynchronous(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void LoadTrajectoryModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	if(trajectorySource()) {
-		const PipelineFlowState& trajState = trajectorySource()->evaluateSynchronous(time);
-		applyTrajectoryState(state, trajState);
+		const PipelineFlowState& trajState = trajectorySource()->evaluateSynchronous(request);
+		applyTrajectoryState(state, trajState, request.initializationHints());
 	}
 }
 
@@ -133,7 +133,7 @@ void LoadTrajectoryModifier::evaluateSynchronous(TimePoint time, ModifierApplica
 * Transfers the particle positions from the trajectory frame to the current 
 * pipeline input state.
 ******************************************************************************/
-void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, const PipelineFlowState& trajState)
+void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, const PipelineFlowState& trajState, ObjectInitializationHints initializationHints)
 {
 	if(!trajState)
 		throwException(tr("Data source has not been specified yet or is empty. Please pick a trajectory file."));
@@ -221,7 +221,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 			bool replacingProperty;
 			if(property->type() != ParticlesObject::UserProperty) {
 				replacingProperty = (particles->getProperty(property->type()) != nullptr);
-				outputProperty = particles->createProperty(property->type(), true, Application::instance()->executionContext());
+				outputProperty = particles->createProperty(property->type(), true, initializationHints);
 				if(outputProperty->dataType() != property->dataType()
 					|| outputProperty->componentCount() != property->componentCount())
 					continue; // Types of source property and output property are not compatible.
@@ -260,7 +260,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 
 				BondsObject* bonds = particles->makeBondsMutable();
 				if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty)) {
-					PropertyAccess<Vector3I> periodicImageProperty = bonds->createProperty(BondsObject::PeriodicImageProperty, true, Application::instance()->executionContext());
+					PropertyAccess<Vector3I> periodicImageProperty = bonds->createProperty(BondsObject::PeriodicImageProperty, true, initializationHints);
 
 					// Wrap bonds crossing a periodic boundary by resetting their PBC shift vectors.
 					for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
@@ -326,7 +326,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 				}
 
 				// Perform lookup of particle IDs.
-				PropertyAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty, false, ExecutionContext::Scripting);
+				PropertyAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty, false, initializationHints);
 				auto t = bondTopologyArray.begin();
 				for(const ParticleIndexPair& bond : ConstPropertyAccess<ParticleIndexPair>(bondParticleIdentifiers)) {
 					auto iter1 = idToIndexMap.find(bond[0]);

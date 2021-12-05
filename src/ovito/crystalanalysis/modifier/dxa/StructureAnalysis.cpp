@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,7 +68,7 @@ StructureAnalysis::StructureAnalysis(ConstPropertyPtr positions, const Simulatio
 	_structureTypes(std::move(outputStructures)),
 	_structureTypesArray(_structureTypes),
 	_particleSelection(std::move(particleSelection)),
-	_atomClusters(ParticlesObject::OOClass().createStandardProperty(positions->dataset(), positions->size(), ParticlesObject::ClusterProperty, true, ExecutionContext::Scripting)),
+	_atomClusters(ParticlesObject::OOClass().createStandardProperty(positions->dataset(), positions->size(), ParticlesObject::ClusterProperty, true, ObjectInitializationHint::LoadFactoryDefaults)),
 	_atomClustersArray(_atomClusters),
 	_atomSymmetryPermutations(positions->size()),
 	_clusterGraph(std::make_shared<ClusterGraph>()),

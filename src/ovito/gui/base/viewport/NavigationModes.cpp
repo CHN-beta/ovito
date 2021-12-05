@@ -473,17 +473,20 @@ void PickOrbitCenterMode::renderOverlay3D(Viewport* vp, SceneRenderer* renderer)
 	renderer->setWorldTransform(AffineTransformation::translation(center - Point3::Origin()) * AffineTransformation::scaling(symbolSize));
 
 	if(!renderer->isBoundingBoxPass()) {
-		// Create line buffer.
-		DataBufferAccessAndRef<Point3> basePositions = DataBufferPtr::create(vp->dataset(), ExecutionContext::Scripting, 3, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<Point3> headPositions = DataBufferPtr::create(vp->dataset(), ExecutionContext::Scripting, 3, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<Color> colors = DataBufferPtr::create(vp->dataset(), ExecutionContext::Scripting, 3, DataBuffer::Float, 3, 0, false);
+		// Create rendering primitive.
+		DataBufferAccessAndRef<Point3> basePositions = DataBufferPtr::create(vp->dataset(), 3, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Point3> headPositions = DataBufferPtr::create(vp->dataset(), 3, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Color> colors = DataBufferPtr::create(vp->dataset(), 3, DataBuffer::Float, 3, 0, false);
 		basePositions[0] = Point3(-1,0,0); headPositions[0] = Point3(1,0,0); colors[0] = Color(1,0,0);
 		basePositions[1] = Point3(0,-1,0); headPositions[1] = Point3(0,1,0); colors[1] = Color(0,1,0);
 		basePositions[2] = Point3(0,0,-1); headPositions[2] = Point3(0,0,1); colors[2] = Color(0.4,0.4,1);
-		std::shared_ptr<CylinderPrimitive> orbitCenterMarker = renderer->createCylinderPrimitive(CylinderPrimitive::CylinderShape, CylinderPrimitive::NormalShading, CylinderPrimitive::HighQuality);
-		orbitCenterMarker->setUniformRadius(0.05);
-		orbitCenterMarker->setPositions(basePositions.take(), headPositions.take());
-		orbitCenterMarker->setColors(colors.take());
+		CylinderPrimitive orbitCenterMarker;
+		orbitCenterMarker.setShape(CylinderPrimitive::CylinderShape);
+		orbitCenterMarker.setShadingMode(CylinderPrimitive::NormalShading);
+		orbitCenterMarker.setRenderingQuality(CylinderPrimitive::HighQuality);
+		orbitCenterMarker.setUniformRadius(0.05);
+		orbitCenterMarker.setPositions(basePositions.take(), headPositions.take());
+		orbitCenterMarker.setColors(colors.take());
 		renderer->renderCylinders(orbitCenterMarker);
 	}
 	else {

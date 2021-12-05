@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,23 +44,23 @@ AcklandJonesModifier::AcklandJonesModifier(DataSet* dataset) : StructureIdentifi
 * Initializes the object's parameter fields with default values and loads 
 * user-defined default values from the application's settings store (GUI only).
 ******************************************************************************/
-void AcklandJonesModifier::initializeObject(ExecutionContext executionContext)
+void AcklandJonesModifier::initializeObject(ObjectInitializationHints hints)
 {
 	// Create the structure types.
-	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, executionContext);
-	createStructureType(FCC, ParticleType::PredefinedStructureType::FCC, executionContext);
-	createStructureType(HCP, ParticleType::PredefinedStructureType::HCP, executionContext);
-	createStructureType(BCC, ParticleType::PredefinedStructureType::BCC, executionContext);
-	createStructureType(ICO, ParticleType::PredefinedStructureType::ICO, executionContext);
+	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, hints);
+	createStructureType(FCC, ParticleType::PredefinedStructureType::FCC, hints);
+	createStructureType(HCP, ParticleType::PredefinedStructureType::HCP, hints);
+	createStructureType(BCC, ParticleType::PredefinedStructureType::BCC, hints);
+	createStructureType(ICO, ParticleType::PredefinedStructureType::ICO, hints);
 	
-	StructureIdentificationModifier::initializeObject(executionContext);
+	StructureIdentificationModifier::initializeObject(hints);
 }
 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> AcklandJonesModifier::createEngine(const PipelineEvaluationRequest& request, ModifierApplication* modApp, const PipelineFlowState& input, ExecutionContext executionContext)
+Future<AsynchronousModifier::EnginePtr> AcklandJonesModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -74,7 +74,7 @@ Future<AsynchronousModifier::EnginePtr> AcklandJonesModifier::createEngine(const
 	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<AcklandJonesAnalysisEngine>(modApp, executionContext, dataset(), particles, posProperty, simCell, structureTypes(), selectionProperty);
+	return std::make_shared<AcklandJonesAnalysisEngine>(request, particles, posProperty, simCell, structureTypes(), selectionProperty);
 }
 
 /******************************************************************************
@@ -198,16 +198,16 @@ AcklandJonesModifier::StructureType AcklandJonesModifier::AcklandJonesAnalysisEn
 /******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
-void AcklandJonesModifier::AcklandJonesAnalysisEngine::applyResults(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state)
+void AcklandJonesModifier::AcklandJonesAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-	StructureIdentificationEngine::applyResults(time, modApp, state);
+	StructureIdentificationEngine::applyResults(request, state);
 
 	// Also output structure type counts, which have been computed by the base class.
-	state.addAttribute(QStringLiteral("AcklandJones.counts.OTHER"), QVariant::fromValue(getTypeCount(OTHER)), modApp);
-	state.addAttribute(QStringLiteral("AcklandJones.counts.FCC"), QVariant::fromValue(getTypeCount(FCC)), modApp);
-	state.addAttribute(QStringLiteral("AcklandJones.counts.HCP"), QVariant::fromValue(getTypeCount(HCP)), modApp);
-	state.addAttribute(QStringLiteral("AcklandJones.counts.BCC"), QVariant::fromValue(getTypeCount(BCC)), modApp);
-	state.addAttribute(QStringLiteral("AcklandJones.counts.ICO"), QVariant::fromValue(getTypeCount(ICO)), modApp);
+	state.addAttribute(QStringLiteral("AcklandJones.counts.OTHER"), QVariant::fromValue(getTypeCount(OTHER)), request.modApp());
+	state.addAttribute(QStringLiteral("AcklandJones.counts.FCC"), QVariant::fromValue(getTypeCount(FCC)), request.modApp());
+	state.addAttribute(QStringLiteral("AcklandJones.counts.HCP"), QVariant::fromValue(getTypeCount(HCP)), request.modApp());
+	state.addAttribute(QStringLiteral("AcklandJones.counts.BCC"), QVariant::fromValue(getTypeCount(BCC)), request.modApp());
+	state.addAttribute(QStringLiteral("AcklandJones.counts.ICO"), QVariant::fromValue(getTypeCount(ICO)), request.modApp());
 }
 
 }	// End of namespace

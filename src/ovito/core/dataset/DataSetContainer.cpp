@@ -207,7 +207,7 @@ void DataSetContainer::onAnimationSettingsReplaced(AnimationSettings* newAnimati
 bool DataSetContainer::newDataset()
 {
 	OORef<DataSet> newSet = new DataSet();
-	newSet->initializeObject(Application::instance()->executionContext());
+	newSet->initializeObject(Application::instance()->executionContext() == ExecutionContext::Interactive ? LoadUserDefaults : LoadFactoryDefaults);
 	setCurrentSet(std::move(newSet));
 	return true;
 }
@@ -229,7 +229,7 @@ bool DataSetContainer::loadDataset(const QString& filename)
 			throw Exception(tr("Failed to open session state file '%1' for reading: %2").arg(absoluteFilepath).arg(fileStream.errorString()), this);
 
 		QDataStream dataStream(&fileStream);
-		ObjectLoadStream stream(dataStream, SynchronousOperation::create(taskManager()));
+		ObjectLoadStream stream(dataStream, SynchronousOperation::create(taskManager(), ObjectInitializationHint::LoadFactoryDefaults));
 
 #if 0
 		// Issue a warning when the floating-point precision of the input file does not match
