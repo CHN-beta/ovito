@@ -69,8 +69,7 @@ public:
 
 	/// \brief Sets the coordinates of the particles.
 	virtual void setPositions(ConstDataBufferPtr coordinates) {
-		OVITO_ASSERT(coordinates);
-		OVITO_ASSERT(coordinates->dataType() == DataBuffer::Float && coordinates->componentCount() == 3);
+		OVITO_ASSERT(!coordinates || (coordinates->dataType() == DataBuffer::Float && coordinates->componentCount() == 3));
 		_positions = std::move(coordinates);
 	}
 

@@ -307,10 +307,10 @@ void VulkanViewportWindow::init()
     OVITO_ASSERT(!_pickingRenderer);
 
 	// Create the interactive viewport renderer. Pass our shared Vulkan device to the renderer.
-    _viewportRenderer = OORef<ViewportVulkanSceneRenderer>::create(viewport()->dataset(), ExecutionContext::Scripting, context());
+    _viewportRenderer = OORef<ViewportVulkanSceneRenderer>::create(viewport()->dataset(), ObjectInitializationHint::LoadFactoryDefaults, context());
 
 	// Create the object picking renderer.
-	_pickingRenderer = OORef<PickingVulkanSceneRenderer>::create(viewport()->dataset(), ExecutionContext::Scripting, context(), this);
+	_pickingRenderer = OORef<PickingVulkanSceneRenderer>::create(viewport()->dataset(), ObjectInitializationHint::LoadFactoryDefaults, context(), this);
 
     _status = StatusDeviceReady;
 }

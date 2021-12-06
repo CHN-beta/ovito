@@ -26,12 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "VulkanContext.h"
-#include "VulkanLinePrimitive.h"
-#include "VulkanParticlePrimitive.h"
-#include "VulkanCylinderPrimitive.h"
-#include "VulkanMeshPrimitive.h"
-#include "VulkanImagePrimitive.h"
-#include "VulkanTextPrimitive.h"
+#include "VulkanPipeline.h"
 
 namespace Ovito {
 
@@ -131,41 +126,23 @@ public:
 	/// Returns the sample count used by the current Vulkan target rendering buffer.
     VkSampleCountFlagBits sampleCount() const { return _sampleCount; }
 
-	/// Creates a new line rendering primitive.
-	virtual std::shared_ptr<LinePrimitive> createLinePrimitive() override;
-
-	/// Creates a new particle rendering primitive.
-	virtual std::shared_ptr<ParticlePrimitive> createParticlePrimitive(ParticlePrimitive::ParticleShape shape, ParticlePrimitive::ShadingMode shadingMode, ParticlePrimitive::RenderingQuality renderingQuality) override;
-
-	/// Creates a new cylinder rendering primitive.
-	virtual std::shared_ptr<CylinderPrimitive> createCylinderPrimitive(CylinderPrimitive::Shape shape, CylinderPrimitive::ShadingMode shadingMode, CylinderPrimitive::RenderingQuality renderingQuality) override;
-
-	/// Creates a new image rendering primitive.
-	virtual std::shared_ptr<ImagePrimitive> createImagePrimitive() override;
-
-	/// Creates a new text rendering primitive.
-	virtual std::shared_ptr<TextPrimitive> createTextPrimitive() override;
-
-	/// Creates a new mesh rendering primitive.
-	virtual std::shared_ptr<MeshPrimitive> createMeshPrimitive() override;
-
 	/// Renders a line primitive.
-	virtual void renderLines(const std::shared_ptr<LinePrimitive>& primitive) override;
+	virtual void renderLines(const LinePrimitive& primitive) override;
 
 	/// Renders a particles primitive.
-	virtual void renderParticles(const std::shared_ptr<ParticlePrimitive>& primitive) override;
+	virtual void renderParticles(const ParticlePrimitive& primitive) override;
 
 	/// Renders the cylinder or arrow primitives.
-	virtual void renderCylinders(const std::shared_ptr<CylinderPrimitive>& primitive) override;
+	virtual void renderCylinders(const CylinderPrimitive& primitive) override;
 
 	/// Renders an image primitive.
-	virtual void renderImage(const std::shared_ptr<ImagePrimitive>& primitive) override;
+	virtual void renderImage(const ImagePrimitive& primitive) override;
 
 	/// Renders a text primitive.
-	virtual void renderText(const std::shared_ptr<TextPrimitive>& primitive) override;
+	virtual void renderText(const TextPrimitive& primitive) override;
 
 	/// Renders a mesh primitive.
-	virtual void renderMesh(const std::shared_ptr<MeshPrimitive>& primitive) override;
+	virtual void renderMesh(const MeshPrimitive& primitive) override;
 
 	/// Returns a 4x4 matrix that can be used to correct for coordinate system differences between OpenGL and Vulkan.
     const Matrix4& clipCorrection() const { return _clipCorrection; } 
@@ -181,7 +158,6 @@ public:
 
 	/// Uploads a color coding map to the Vulkan device as a uniforms buffer.
 	VkDescriptorSet uploadColorMap(ColorCodingGradient* gradient);
-
 
 protected:
 
@@ -201,6 +177,72 @@ private:
 
 	/// Creates the Vulkan resources needed by this renderer.
 	void initResources();
+
+	/// Renders a text label using an image primitive.
+	void renderTextImplementation(const TextPrimitive& primitive);
+
+	/// Renders a set of cylinders or arrow glyphs.
+	void renderCylindersImplementation(const CylinderPrimitive& primitive);
+
+	/// Renders a set of lines.
+	void renderLinesImplementation(const LinePrimitive& primitive);
+
+	/// Renders a set of lines using GL_LINES mode.
+	void renderThinLinesImplementation(const LinePrimitive& primitive);
+
+	/// Renders a set of lines using triangle strips.
+	void renderThickLinesImplementation(const LinePrimitive& primitive);
+
+	/// Renders a 2d pixel image into the output framebuffer.
+	void renderImageImplementation(const ImagePrimitive& primitive);
+
+	/// Renders a set of particles.
+	void renderParticlesImplementation(const ParticlePrimitive& primitive);
+
+	/// Renders a triangle mesh.
+	void renderMeshImplementation(const MeshPrimitive& primitive);
+
+	/// Renders just the edges of a triangle mesh as a wireframe model.
+	void renderMeshWireframeImplementation(const MeshPrimitive& primitive, const QMatrix4x4& mvp);
+
+	/// Generates the wireframe line elements for the visible edges of a mesh.
+	const ConstDataBufferPtr& generateMeshWireframeLines(const MeshPrimitive& primitive);
+
+	/// Prepares the OpenGL buffer with the per-instance transformation matrices for 
+	/// rendering a set of meshes.
+	VkBuffer getMeshInstanceTMBuffer(const MeshPrimitive& primitive);
+
+	/// Creates the Vulkan pipelines for the line rendering primitive.
+	VulkanPipeline& createLinePrimitivePipeline(VulkanPipeline& pipeline);
+
+	/// Creates the Vulkan pipelines for the cylinder rendering primitive.
+	VkPipelineLayout createCylinderPrimitivePipeline(VulkanPipeline& pipeline);
+
+	/// Creates the Vulkan pipelines for the mesh rendering primitive.
+	VulkanPipeline& createMeshPrimitivePipeline(VulkanPipeline& pipeline);
+
+	/// Creates the Vulkan pipelines for the particle rendering primitive.
+	VulkanPipeline& createParticlePrimitivePipeline(VulkanPipeline& pipeline);
+
+	/// Creates the Vulkan pipelines for the image rendering primitive.
+	void initImagePrimitivePipelines();
+
+	/// Destroys the Vulkan pipelines for the line rendering primitive.
+	void releaseLinePrimitivePipelines();
+
+	/// Destroys the Vulkan pipelines for the particle rendering primitive.
+	void releaseParticlePrimitivePipelines();
+
+	/// Destroys the Vulkan pipelines for the cylinder rendering primitive.
+	void releaseCylinderPrimitivePipelines();
+
+	/// Destroys the Vulkan pipelines for the mesh rendering primitive.
+	void releaseMeshPrimitivePipelines();
+
+	/// Destroys the Vulkan pipelines for the image rendering primitive.
+	void releaseImagePrimitivePipelines();
+
+private:
 
 	/// The logical Vulkan device used by the renderer.
 	std::shared_ptr<VulkanContext> _context;
@@ -233,31 +275,75 @@ private:
 	VulkanContext::ResourceFrameHandle _currentResourceFrame = 0;
 
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
-	std::vector<std::pair<AffineTransformation, std::shared_ptr<VulkanParticlePrimitive>>> _translucentParticles;
+	std::vector<std::pair<AffineTransformation, ParticlePrimitive>> _translucentParticles;
 
 	/// List of semi-transparent cylinder primitives collected during the first rendering pass, which need to be rendered during the second pass.
-	std::vector<std::pair<AffineTransformation, std::shared_ptr<VulkanCylinderPrimitive>>> _translucentCylinders;
+	std::vector<std::pair<AffineTransformation, CylinderPrimitive>> _translucentCylinders;
 
 	/// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
-	std::vector<std::pair<AffineTransformation, std::shared_ptr<VulkanMeshPrimitive>>> _translucentMeshes;
+	std::vector<std::pair<AffineTransformation, MeshPrimitive>> _translucentMeshes;
 
 	/// Indicates that the Vulkan resources needed by this renderer have been created.
 	bool _resourcesInitialized = false;
 
 	/// Data structure holding the Vulkan pipelines used by the line drawing primitive.
-	VulkanLinePrimitive::Pipelines _linePrimitivePipelines;
+	struct {
+		VulkanPipeline thinWithColors;
+		VulkanPipeline thinUniformColor;
+		VulkanPipeline thinPicking;
+	} _linePrimitivePipelines;
 
 	/// Data structure holding the Vulkan pipelines used by the particle drawing primitive.
-	VulkanParticlePrimitive::Pipelines _particlePrimitivePipelines;
+	struct VulkanParticlePrimitivePipelines {
+		VulkanPipeline cube;
+		VulkanPipeline cube_picking;
+		VulkanPipeline sphere;
+		VulkanPipeline sphere_picking;
+		VulkanPipeline square;
+		VulkanPipeline square_picking;
+		VulkanPipeline circle;
+		VulkanPipeline circle_picking;
+		VulkanPipeline imposter;
+		VulkanPipeline imposter_picking;
+		VulkanPipeline box;
+		VulkanPipeline box_picking;
+		VulkanPipeline ellipsoid;
+		VulkanPipeline ellipsoid_picking;
+		VulkanPipeline superquadric;
+		VulkanPipeline superquadric_picking;
+	} _particlePrimitivePipelines;
 
 	/// Data structure holding the Vulkan pipelines used by the cylinder drawing primitive.
-	VulkanCylinderPrimitive::Pipelines _cylinderPrimitivePipelines;
-
-	/// Data structure holding the Vulkan pipelines used by the mesh drawing primitive.
-	VulkanMeshPrimitive::Pipelines _meshPrimitivePipelines;
+	struct {
+		VulkanPipeline cylinder;
+		VulkanPipeline cylinder_picking;
+		VulkanPipeline cylinder_flat;
+		VulkanPipeline cylinder_flat_picking;
+		VulkanPipeline arrow_head;
+		VulkanPipeline arrow_head_picking;
+		VulkanPipeline arrow_tail;
+		VulkanPipeline arrow_tail_picking;
+		VulkanPipeline arrow_flat;
+		VulkanPipeline arrow_flat_picking;
+	} _cylinderPrimitivePipelines;
 
 	/// Data structure holding the Vulkan pipelines used by the image drawing primitive.
-	VulkanImagePrimitive::Pipelines _imagePrimitivePipelines;
+	struct {
+		VulkanPipeline imageQuad;
+		VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
+	} _imagePrimitivePipelines;
+
+	/// Data structure holding the Vulkan pipelines used by the mesh drawing primitive.
+	struct VulkanMeshPrimitivePipelines {
+		VulkanPipeline mesh;
+		VulkanPipeline mesh_picking;
+		VulkanPipeline mesh_wireframe;
+		VulkanPipeline mesh_wireframe_instanced;
+		VulkanPipeline mesh_instanced;
+		VulkanPipeline mesh_instanced_picking;
+		VulkanPipeline mesh_instanced_with_colors;
+		VulkanPipeline mesh_color_mapping;
+	} _meshPrimitivePipelines;
 
 	/// A 4x4 matrix that can be used to correct for coordinate system differences between OpenGL and Vulkan.
 	/// By pre-multiplying the projection matrix with this matrix, applications can
@@ -288,13 +374,6 @@ private:
 
 	VkDescriptorSetLayout _globalUniformsDescriptorSetLayout = VK_NULL_HANDLE;
 	VkDescriptorSetLayout _colorMapDescriptorSetLayout = VK_NULL_HANDLE;
-
-	friend class VulkanTextPrimitive;
-	friend class VulkanImagePrimitive;
-	friend class VulkanLinePrimitive;
-	friend class VulkanParticlePrimitive;
-	friend class VulkanCylinderPrimitive;
-	friend class VulkanMeshPrimitive;
 };
 
 }	// End of namespace

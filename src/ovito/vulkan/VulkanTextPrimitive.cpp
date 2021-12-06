@@ -21,59 +21,62 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include "VulkanTextPrimitive.h"
 #include "VulkanSceneRenderer.h"
 
 namespace Ovito {
 
 /******************************************************************************
-* Renders the text string.
+* Renders a text label using an image primitive.
 ******************************************************************************/
-void VulkanTextPrimitive::render(VulkanSceneRenderer* renderer)
+void VulkanSceneRenderer::renderTextImplementation(const TextPrimitive& primitive)
 {
-	if(text().isEmpty() || renderer->isPicking())
+	if(primitive.text().isEmpty() || isPicking())
 		return;
-
-	if(!_imageBuffer)
-		_imageBuffer = renderer->createImagePrimitive();
 	
-	if(_imageUpdateNeeded) {
-		_imageUpdateNeeded = false;
+    // The look-up key for the image primtive cache.
+	ImagePrimitive& cachedImagePrimitive = context()->lookup<ImagePrimitive>(
+		RendererResourceKey<struct TextImageCache, QString, ColorA, ColorA, QString>{ 
+			primitive.text(), 
+			primitive.color(), 
+			primitive.backgroundColor(), 
+			primitive.font().key() }, 
+		currentResourceFrame());
+
+	if(cachedImagePrimitive.image().isNull()) {
 
 		// Measure text size.
 		QRect rect;
-		qreal devicePixelRatio = renderer->devicePixelRatio();
+		qreal devicePixelRatio = this->devicePixelRatio();
 		{
 			QImage textureImage(1, 1, QImage::Format_RGB32);
 			textureImage.setDevicePixelRatio(devicePixelRatio);
 			QPainter painter(&textureImage);
-			painter.setFont(font());
-			rect = painter.boundingRect(QRect(), Qt::AlignLeft | Qt::AlignTop, text());
+			painter.setFont(primitive.font());
+			rect = painter.boundingRect(QRect(), Qt::AlignLeft | Qt::AlignTop, primitive.text());
 		}
 
 		// Generate texture image.
 		QImage textureImage((rect.width() * devicePixelRatio)+1, (rect.height() * devicePixelRatio)+1, QImage::Format_ARGB32_Premultiplied);
 		textureImage.setDevicePixelRatio(devicePixelRatio);
-		textureImage.fill((QColor)backgroundColor());
+		textureImage.fill((QColor)primitive.backgroundColor());
 		{
 			QPainter painter(&textureImage);
-			painter.setFont(font());
-			painter.setPen((QColor)color());
-			painter.drawText(rect, Qt::AlignLeft | Qt::AlignTop, text());
+			painter.setFont(primitive.font());
+			painter.setPen((QColor)primitive.color());
+			painter.drawText(rect, Qt::AlignLeft | Qt::AlignTop, primitive.text());
 		}
-		_textOffset = rect.topLeft();
 
-		_imageBuffer->setImage(textureImage);
+		cachedImagePrimitive.setImage(std::move(textureImage));
 	}
 
-	Point2 alignedPos = position();
-	Vector2 size = Vector2(_imageBuffer->image().width(), _imageBuffer->image().height()) * (FloatType)renderer->antialiasingLevel();
-	if(alignment() & Qt::AlignRight) alignedPos.x() += -size.x();
-	else if(alignment() & Qt::AlignHCenter) alignedPos.x() += -size.x() / 2;
-	if(alignment() & Qt::AlignBottom) alignedPos.y() += -size.y();
-	else if(alignment() & Qt::AlignVCenter) alignedPos.y() += -size.y() / 2;
-	_imageBuffer->setRectWindow(Box2(alignedPos, alignedPos + size));
-	renderer->renderImage(_imageBuffer);
+	Point2 alignedPos = primitive.position();
+	Vector2 size = Vector2(cachedImagePrimitive.image().width(), cachedImagePrimitive.image().height()) * (FloatType)antialiasingLevel();
+	if(primitive.alignment() & Qt::AlignRight) alignedPos.x() += -size.x();
+	else if(primitive.alignment() & Qt::AlignHCenter) alignedPos.x() += -size.x() / 2;
+	if(primitive.alignment() & Qt::AlignBottom) alignedPos.y() += -size.y();
+	else if(primitive.alignment() & Qt::AlignVCenter) alignedPos.y() += -size.y() / 2;
+	cachedImagePrimitive.setRectWindow(Box2(alignedPos, alignedPos + size));
+	renderImage(cachedImagePrimitive);
 }
 
 }	// End of namespace

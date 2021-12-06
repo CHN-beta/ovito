@@ -525,7 +525,6 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 
 	// The type of lookup key used for caching the mesh rendering primitives:
 	using ShapeMeshCacheKey = RendererResourceKey<struct ParticlesVisMeshCache,
-		QPointer<PipelineSceneNode>,// The pipeline scene node
 		ConstDataObjectRef,			// Particle type property
 		FloatType,					// Default particle radius
 		FloatType,					// Global radius scaling factor
@@ -547,7 +546,6 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 
 	// Look up the rendering primitives for mesh-based particle types in the vis cache.
 	ShapeMeshCacheValue& meshVisCache = dataset()->visCache().get<ShapeMeshCacheValue>(ShapeMeshCacheKey{
-		const_cast<PipelineSceneNode*>(contextNode),
 		typeProperty,
 		defaultParticleRadius(),
 		radiusScaleFactor(),
@@ -712,10 +710,6 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 
 		// The lookup key for the cached rendering primitive:
 		using ParticleCacheKey = RendererResourceKey<struct ParticlesVisPrimitiveCache,
-			QPointer<PipelineSceneNode>,		// Pipeline scene node
-			ParticlePrimitive::ShadingMode,		// Effective particle shading mode
-			ParticlePrimitive::RenderingQuality,// Effective particle rendering quality
-			ParticlePrimitive::ParticleShape,	// Effective particle shape
 			ConstDataObjectRef,					// Particle type property
 			size_t,								// Total particle count
 			ParticlesVis::ParticleShape			// Global particle shape
@@ -727,16 +721,8 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 			bool isCreated = false;
 		};
 
-		// Determine effective primitive shape and shading mode.
-		ParticlePrimitive::ParticleShape primitiveParticleShape = effectiveParticleShape(shape, asphericalShapeProperty, orientationProperty, roundnessProperty);
-		ParticlePrimitive::ShadingMode primitiveShadingMode = (shape == Circle || shape == Square) ? ParticlePrimitive::FlatShading : ParticlePrimitive::NormalShading;
-
 		// Look up the rendering primitive in the vis cache.
 		auto& visCache = dataset()->visCache().get<ParticleCacheValue>(ParticleCacheKey(
-			const_cast<PipelineSceneNode*>(contextNode),
-			primitiveShadingMode,
-			primitiveRenderQuality,
-			primitiveParticleShape,
 			typeProperty,
 			particles->elementCount(),
 			particleShape()));
@@ -775,9 +761,6 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 				}
 			}
 			// Set up the rendering primitive.
-			visCache.primitive.setParticleShape(primitiveParticleShape);
-			visCache.primitive.setShadingMode(primitiveShadingMode);
-			visCache.primitive.setRenderingQuality(primitiveRenderQuality);
 			// Enable/disable indexed rendering of particle primitives.
 			visCache.primitive.setIndices(activeParticleIndices.take());
 			// Also create the corresponding picking record.
@@ -797,6 +780,13 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 		visCache.primitive.setOrientations(orientationProperty);
 		visCache.primitive.setRoundness(roundnessProperty);
 		visCache.primitive.setSelectionColor(selectionParticleColor());
+
+		// Configure rendering primitive style.
+		ParticlePrimitive::ParticleShape primitiveParticleShape = effectiveParticleShape(shape, asphericalShapeProperty, orientationProperty, roundnessProperty);
+		ParticlePrimitive::ShadingMode primitiveShadingMode = (shape == Circle || shape == Square) ? ParticlePrimitive::FlatShading : ParticlePrimitive::NormalShading;
+		visCache.primitive.setParticleShape(primitiveParticleShape);
+		visCache.primitive.setShadingMode(primitiveShadingMode);
+		visCache.primitive.setRenderingQuality(primitiveRenderQuality);
 
 		// The type of lookup key used for caching the particle radii:
 		using RadiiCacheKey = RendererResourceKey<struct ParticlesVisPrimitiveRadiusCache,
@@ -890,7 +880,6 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 
 		// The lookup key for the cached rendering primitive:
 		using ParticleCacheKey = RendererResourceKey<struct ParticlesVisCylindersCache,
-			QPointer<PipelineSceneNode>,		// Pipeline scene node
 			ConstDataObjectRef,					// Position property
 			ConstDataObjectRef,					// Type property
 			ConstDataObjectRef,					// Selection property
@@ -914,7 +903,6 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 
 		// Look up the rendering primitive in the vis cache.
 		auto& visCache = dataset()->visCache().get<ParticleCacheValue>(ParticleCacheKey(
-			const_cast<PipelineSceneNode*>(contextNode),
 			positionProperty,
 			typeProperty,
 			selectionProperty,

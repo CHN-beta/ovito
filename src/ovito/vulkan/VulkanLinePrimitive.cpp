@@ -21,15 +21,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include "VulkanLinePrimitive.h"
 #include "VulkanSceneRenderer.h"
 
 namespace Ovito {
 
 /******************************************************************************
-* Creates the Vulkan pipelines for this rendering primitive.
+* Creates the Vulkan pipelines for the line rendering primitive.
 ******************************************************************************/
-VulkanPipeline& VulkanLinePrimitive::Pipelines::create(VulkanSceneRenderer* renderer, VulkanPipeline& pipeline)
+VulkanPipeline& VulkanSceneRenderer::createLinePrimitivePipeline(VulkanPipeline& pipeline)
 {
     if(pipeline.isCreated())
         return pipeline;
@@ -38,15 +37,15 @@ VulkanPipeline& VulkanLinePrimitive::Pipelines::create(VulkanSceneRenderer* rend
     std::array<VkDynamicState, 2> extraDynamicState;
 
     // Are wide lines supported by the Vulkan device?
-    if(renderer->context()->supportsWideLines())
+    if(context()->supportsWideLines())
         extraDynamicState[extraDynamicStateCount++] = VK_DYNAMIC_STATE_LINE_WIDTH;
 
     // Are extended dynamic states supported by the Vulkan device?
-    if(renderer->context()->supportsExtendedDynamicState())
+    if(context()->supportsExtendedDynamicState())
         extraDynamicState[extraDynamicStateCount++] = VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT;
 
     // Create pipeline for shader "thin_with_colors":
-    if(&pipeline == &thinWithColors)
+    if(&pipeline == &_linePrimitivePipelines.thinWithColors)
     {
         VkVertexInputBindingDescription vertexBindingDesc[2];
         vertexBindingDesc[0].binding = 0;
@@ -71,9 +70,9 @@ VulkanPipeline& VulkanLinePrimitive::Pipelines::create(VulkanSceneRenderer* rend
             }
         };
 
-        thinWithColors.create(*renderer->context(),
+        pipeline.create(*context(),
             QStringLiteral("lines/thin_with_colors"),
-            renderer->defaultRenderPass(),
+            defaultRenderPass(),
             sizeof(Matrix_4<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
@@ -87,7 +86,7 @@ VulkanPipeline& VulkanLinePrimitive::Pipelines::create(VulkanSceneRenderer* rend
     }
 
     // Create pipeline for shader "thin_uniform_color":
-    if(&pipeline == &thinUniformColor)
+    if(&pipeline == &_linePrimitivePipelines.thinUniformColor)
     {
         VkVertexInputBindingDescription vertexBindingDesc[1];
         memset(vertexBindingDesc, 0, sizeof(vertexBindingDesc));
@@ -104,9 +103,9 @@ VulkanPipeline& VulkanLinePrimitive::Pipelines::create(VulkanSceneRenderer* rend
             }
         };
 
-        thinUniformColor.create(*renderer->context(),
+        pipeline.create(*context(),
             QStringLiteral("lines/thin_uniform_color"), 
-            renderer->defaultRenderPass(),
+            defaultRenderPass(),
             sizeof(Matrix_4<float>), // vertexPushConstantSize
             sizeof(ColorAT<float>),  // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
@@ -120,7 +119,7 @@ VulkanPipeline& VulkanLinePrimitive::Pipelines::create(VulkanSceneRenderer* rend
     }
     
     // Create pipeline for shader "thin_picking":
-    if(&pipeline == &thinPicking)
+    if(&pipeline == &_linePrimitivePipelines.thinPicking)
     {
         VkVertexInputBindingDescription vertexBindingDesc[1];
         memset(vertexBindingDesc, 0, sizeof(vertexBindingDesc));
@@ -137,9 +136,9 @@ VulkanPipeline& VulkanLinePrimitive::Pipelines::create(VulkanSceneRenderer* rend
             }
         };
 
-        thinPicking.create(*renderer->context(),
+        pipeline.create(*context(),
             QStringLiteral("lines/thin_picking"), 
-            renderer->defaultRenderPass(),
+            defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
@@ -152,113 +151,114 @@ VulkanPipeline& VulkanLinePrimitive::Pipelines::create(VulkanSceneRenderer* rend
         );    
     }
 
+    OVITO_ASSERT(pipeline.isCreated());
     return pipeline; 
 }
 
 /******************************************************************************
 * Destroys the Vulkan pipelines for this rendering primitive.
 ******************************************************************************/
-void VulkanLinePrimitive::Pipelines::release(VulkanSceneRenderer* renderer)
+void VulkanSceneRenderer::releaseLinePrimitivePipelines()
 {
-	thinWithColors.release(*renderer->context());
-	thinUniformColor.release(*renderer->context());
-	thinPicking.release(*renderer->context());
+	_linePrimitivePipelines.thinWithColors.release(*context());
+	_linePrimitivePipelines.thinUniformColor.release(*context());
+	_linePrimitivePipelines.thinPicking.release(*context());
 }
 
 /******************************************************************************
 * Renders the geometry.
 ******************************************************************************/
-void VulkanLinePrimitive::render(VulkanSceneRenderer* renderer, Pipelines& pipelines)
+void VulkanSceneRenderer::renderLinesImplementation(const LinePrimitive& primitive)
 {
     // Make sure there is something to be rendered. Otherwise, step out early.
-	if(!positions() || positions()->size() == 0)
+	if(!primitive.positions() || primitive.positions()->size() == 0)
 		return;
 
 #if 1
     // For now always rely on the line drawing capabilities of the Vulkan implementation,
     // even for lines wides than 1 pixel.
-    renderThinLines(renderer, pipelines);
+    renderThinLinesImplementation(primitive);
 #else
-	if(lineWidth() == 1 || (lineWidth() <= 0 && renderer->devicePixelRatio() <= 1))
-		renderThinLines(renderer, pipelines);
+	if(primitive.lineWidth() == 1 || (primitive.lineWidth() <= 0 && devicePixelRatio() <= 1))
+		renderThinLinesImplementation(primitive);
 	else
-		renderThickLines(renderer, pipelines);
+		renderThickLinesImplementation(primitive);
 #endif
 }
 
 /******************************************************************************
-* Renders the lines exactly one pixel wide.
+* Renders the lines using Vulkan line primitives.
 ******************************************************************************/
-void VulkanLinePrimitive::renderThinLines(VulkanSceneRenderer* renderer, Pipelines& pipelines)
+void VulkanSceneRenderer::renderThinLinesImplementation(const LinePrimitive& primitive)
 {
     // Bind the right pipeline.
-	if(colors() && !renderer->isPicking()) {
-        pipelines.create(renderer, pipelines.thinWithColors).bind(*renderer->context(), renderer->currentCommandBuffer());
+	if(primitive.colors() && !isPicking()) {
+        createLinePrimitivePipeline(_linePrimitivePipelines.thinWithColors).bind(*context(), currentCommandBuffer());
     }
     else {
-        if(!renderer->isPicking()) {
-            pipelines.create(renderer, pipelines.thinUniformColor).bind(*renderer->context(), renderer->currentCommandBuffer());
+        if(!isPicking()) {
+            createLinePrimitivePipeline(_linePrimitivePipelines.thinUniformColor).bind(*context(), currentCommandBuffer());
         }
         else {
-            pipelines.create(renderer, pipelines.thinPicking).bind(*renderer->context(), renderer->currentCommandBuffer());
+            createLinePrimitivePipeline(_linePrimitivePipelines.thinPicking).bind(*context(), currentCommandBuffer());
         }
     }
 
     // Specify line width if the Vulkan implementation supports it. 
-    if(renderer->context()->supportsWideLines()) {
-        FloatType effectiveLineWidth = (lineWidth() <= 0) ? renderer->devicePixelRatio() : lineWidth();
-        renderer->deviceFunctions()->vkCmdSetLineWidth(renderer->currentCommandBuffer(), static_cast<float>(effectiveLineWidth));
+    if(context()->supportsWideLines()) {
+        FloatType effectiveLineWidth = (primitive.lineWidth() <= 0) ? devicePixelRatio() : primitive.lineWidth();
+        deviceFunctions()->vkCmdSetLineWidth(currentCommandBuffer(), static_cast<float>(effectiveLineWidth));
     }
 
     // Specify dynamic depth-test enabled state if Vulkan implementation supports it.
-    if(renderer->context()->supportsExtendedDynamicState()) {
-        renderer->context()->vkCmdSetDepthTestEnableEXT(renderer->currentCommandBuffer(), renderer->_depthTestEnabled);
+    if(context()->supportsExtendedDynamicState()) {
+        context()->vkCmdSetDepthTestEnableEXT(currentCommandBuffer(), _depthTestEnabled);
     }
 
     // Compute full view-projection matrix including correction for OpenGL/Vulkan convention difference.
-    QMatrix4x4 mvp = renderer->clipCorrection() * renderer->projParams().projectionMatrix * renderer->modelViewTM();
+    QMatrix4x4 mvp = clipCorrection() * projParams().projectionMatrix * modelViewTM();
 
-	if(colors() && !renderer->isPicking()) {
+	if(primitive.colors() && !isPicking()) {
 		// Pass transformation matrix to vertex shader as a push constant.
-	    renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelines.thinWithColors.layout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
+	    deviceFunctions()->vkCmdPushConstants(currentCommandBuffer(), _linePrimitivePipelines.thinWithColors.layout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
 
 		// Bind vertex buffers for vertex positions and colors.
 		std::array<VkBuffer, 2> buffers = {
-			renderer->context()->uploadDataBuffer(positions(), renderer->currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT), 
-			renderer->context()->uploadDataBuffer(colors(), renderer->currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)
+			context()->uploadDataBuffer(primitive.positions(), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT), 
+			context()->uploadDataBuffer(primitive.colors(), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)
 		};
 		std::array<VkDeviceSize, 2> offsets = { 0, 0 };
-		renderer->deviceFunctions()->vkCmdBindVertexBuffers(renderer->currentCommandBuffer(), 0, buffers.size(), buffers.data(), offsets.data());
+		deviceFunctions()->vkCmdBindVertexBuffers(currentCommandBuffer(), 0, buffers.size(), buffers.data(), offsets.data());
 	}
 	else {
-        if(!renderer->isPicking()) {
+        if(!isPicking()) {
             // Pass transformation matrix to vertex shader as a push constant.
-            renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelines.thinUniformColor.layout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
+            deviceFunctions()->vkCmdPushConstants(currentCommandBuffer(), _linePrimitivePipelines.thinUniformColor.layout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
             // Pass uniform line color to fragment shader as a push constant.
-            renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelines.thinUniformColor.layout(), VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(Matrix_4<float>), sizeof(ColorAT<float>), ColorAT<float>(uniformColor()).data());
+            deviceFunctions()->vkCmdPushConstants(currentCommandBuffer(), _linePrimitivePipelines.thinUniformColor.layout(), VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(Matrix_4<float>), sizeof(ColorAT<float>), ColorAT<float>(primitive.uniformColor()).data());
         }
         else {
             // Pass transformation matrix to vertex shader as a push constant.
-            renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelines.thinPicking.layout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
+            deviceFunctions()->vkCmdPushConstants(currentCommandBuffer(), _linePrimitivePipelines.thinPicking.layout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Matrix_4<float>), mvp.data());
             // Pass picking base ID to vertex shader as a push constant.
-    		uint32_t pickingBaseId = renderer->registerSubObjectIDs(positions()->size() / 2);
-            renderer->deviceFunctions()->vkCmdPushConstants(renderer->currentCommandBuffer(), pipelines.thinPicking.layout(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(pickingBaseId), &pickingBaseId);
+    		uint32_t pickingBaseId = registerSubObjectIDs(primitive.positions()->size() / 2);
+            deviceFunctions()->vkCmdPushConstants(currentCommandBuffer(), _linePrimitivePipelines.thinPicking.layout(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(Matrix_4<float>), sizeof(pickingBaseId), &pickingBaseId);
         }
 
 		// Bind vertex buffer for vertex positions.
-		VkBuffer buffer = renderer->context()->uploadDataBuffer(positions(), renderer->currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+		VkBuffer buffer = context()->uploadDataBuffer(primitive.positions(), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 		VkDeviceSize offset = 0;
-		renderer->deviceFunctions()->vkCmdBindVertexBuffers(renderer->currentCommandBuffer(), 0, 1, &buffer, &offset);
+		deviceFunctions()->vkCmdBindVertexBuffers(currentCommandBuffer(), 0, 1, &buffer, &offset);
 	}
 
     // Draw lines.
-    renderer->deviceFunctions()->vkCmdDraw(renderer->currentCommandBuffer(), positions()->size(), 1, 0, 0);
+    deviceFunctions()->vkCmdDraw(currentCommandBuffer(), primitive.positions()->size(), 1, 0, 0);
 }
 
 /******************************************************************************
 * Renders the lines of arbitrary width using polygons.
 ******************************************************************************/
-void VulkanLinePrimitive::renderThickLines(VulkanSceneRenderer* renderer, Pipelines& pipelines)
+void VulkanSceneRenderer::renderThickLinesImplementation(const LinePrimitive& primitive)
 {
     // Not implemented yet.
 }

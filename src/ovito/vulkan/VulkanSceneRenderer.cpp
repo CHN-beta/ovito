@@ -147,11 +147,7 @@ void VulkanSceneRenderer::initResources()
 {
     // Create the resources of the rendering primitives.
     if(!_resourcesInitialized) {
-        _linePrimitivePipelines.init(this);
-        _particlePrimitivePipelines.init(this);
-        _cylinderPrimitivePipelines.init(this);
-        _meshPrimitivePipelines.init(this);
-        _imagePrimitivePipelines.init(this);
+        initImagePrimitivePipelines();
         _resourcesInitialized = true;
     }
 }
@@ -208,19 +204,19 @@ bool VulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& vie
         }
 
 		// Render translucent objects in a second pass.
-		for(auto& deferredPrimitive : _translucentParticles) {
-			setWorldTransform(deferredPrimitive.first);
-			deferredPrimitive.second->render(this, _particlePrimitivePipelines);
+		for(const auto& [tm, primitive] : _translucentParticles) {
+			setWorldTransform(tm);
+			renderParticlesImplementation(primitive);
 		}
 		_translucentParticles.clear();
-		for(auto& deferredPrimitive : _translucentCylinders) {
-			setWorldTransform(deferredPrimitive.first);
-			deferredPrimitive.second->render(this, _cylinderPrimitivePipelines);
+		for(const auto& [tm, primitive] : _translucentCylinders) {
+			setWorldTransform(tm);
+			renderCylindersImplementation(primitive);
 		}
 		_translucentCylinders.clear();
-		for(auto& deferredPrimitive : _translucentMeshes) {
-			setWorldTransform(deferredPrimitive.first);
-			deferredPrimitive.second->render(this, _meshPrimitivePipelines);
+		for(const auto& [tm, primitive] : _translucentMeshes) {
+			setWorldTransform(tm);
+			renderMeshImplementation(primitive);
 		}
 		_translucentMeshes.clear();
     }
@@ -257,11 +253,11 @@ void VulkanSceneRenderer::releaseVulkanDeviceResources()
 	OVITO_ASSERT(deviceFunctions());
 
     // Destroy the resources of the rendering primitives.
-    _linePrimitivePipelines.release(this);
-    _particlePrimitivePipelines.release(this);
-    _cylinderPrimitivePipelines.release(this);
-    _meshPrimitivePipelines.release(this);
-    _imagePrimitivePipelines.release(this);
+    releaseLinePrimitivePipelines();
+    releaseParticlePrimitivePipelines();
+    releaseCylinderPrimitivePipelines();
+    releaseMeshPrimitivePipelines();
+    releaseImagePrimitivePipelines();
 
     if(_globalUniformsDescriptorSetLayout != VK_NULL_HANDLE) {
         deviceFunctions()->vkDestroyDescriptorSetLayout(logicalDevice(), _globalUniformsDescriptorSetLayout, nullptr);
@@ -277,141 +273,75 @@ void VulkanSceneRenderer::releaseVulkanDeviceResources()
 }
 
 /******************************************************************************
-* Creates a new line rendering primitive.
-******************************************************************************/
-std::shared_ptr<LinePrimitive> VulkanSceneRenderer::createLinePrimitive()
-{
-	OVITO_ASSERT(!isBoundingBoxPass());
-	return std::make_shared<VulkanLinePrimitive>();
-}
-
-/******************************************************************************
-* Creates a new particle rendering primitive.
-******************************************************************************/
-std::shared_ptr<ParticlePrimitive> VulkanSceneRenderer::createParticlePrimitive(ParticlePrimitive::ParticleShape shape, ParticlePrimitive::ShadingMode shadingMode, ParticlePrimitive::RenderingQuality renderingQuality)
-{
-	OVITO_ASSERT(!isBoundingBoxPass());
-	return std::make_shared<VulkanParticlePrimitive>(shape, shadingMode, renderingQuality);
-}
-
-/******************************************************************************
-* Creates a new cylinder rendering primitive.
-******************************************************************************/
-std::shared_ptr<CylinderPrimitive> VulkanSceneRenderer::createCylinderPrimitive(CylinderPrimitive::Shape shape, CylinderPrimitive::ShadingMode shadingMode, CylinderPrimitive::RenderingQuality renderingQuality)
-{
-	OVITO_ASSERT(!isBoundingBoxPass());
-	return std::make_shared<VulkanCylinderPrimitive>(shape, shadingMode, renderingQuality);
-}
-
-/******************************************************************************
-* Creates a new image rendering primitive.
-******************************************************************************/
-std::shared_ptr<ImagePrimitive> VulkanSceneRenderer::createImagePrimitive()
-{
-	OVITO_ASSERT(!isBoundingBoxPass());
-	return std::make_shared<VulkanImagePrimitive>();
-}
-
-/******************************************************************************
-* Creates a new text rendering primitive.
-******************************************************************************/
-std::shared_ptr<TextPrimitive> VulkanSceneRenderer::createTextPrimitive()
-{
-	OVITO_ASSERT(!isBoundingBoxPass());
-	return std::make_shared<VulkanTextPrimitive>();
-}
-
-/******************************************************************************
-* Creates a new mesh rendering primitive.
-******************************************************************************/
-std::shared_ptr<MeshPrimitive> VulkanSceneRenderer::createMeshPrimitive()
-{
-	OVITO_ASSERT(!isBoundingBoxPass());
-	return std::make_shared<VulkanMeshPrimitive>();
-}
-
-/******************************************************************************
 * Renders a line primitive.
 ******************************************************************************/
-void VulkanSceneRenderer::renderLines(const std::shared_ptr<LinePrimitive>& primitive)
+void VulkanSceneRenderer::renderLines(const LinePrimitive& primitive)
 {
     OVITO_ASSERT(!isBoundingBoxPass());
-    std::shared_ptr<VulkanLinePrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanLinePrimitive>(primitive);
-    OVITO_ASSERT(vulkanPrimitive);
-	vulkanPrimitive->render(this, _linePrimitivePipelines);
+	renderLinesImplementation(primitive);
 }
 
 /******************************************************************************
 * Renders a particle primitive.
 ******************************************************************************/
-void VulkanSceneRenderer::renderParticles(const std::shared_ptr<ParticlePrimitive>& primitive)
+void VulkanSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
 {
     OVITO_ASSERT(!isBoundingBoxPass());
-    std::shared_ptr<VulkanParticlePrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanParticlePrimitive>(primitive);
-    OVITO_ASSERT(vulkanPrimitive);
 
 	// Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to 
     // draw the semi-transparent objects after everything else has been drawn.
-	if(isPicking() || !vulkanPrimitive->transparencies())
-    	vulkanPrimitive->render(this, _particlePrimitivePipelines);
+	if(isPicking() || !primitive.transparencies())
+    	renderParticlesImplementation(primitive);
 	else
-		_translucentParticles.emplace_back(worldTransform(), std::move(vulkanPrimitive));
+		_translucentParticles.emplace_back(worldTransform(), primitive);
 }
 
 /******************************************************************************
 * Renders a cylinder primitive.
 ******************************************************************************/
-void VulkanSceneRenderer::renderCylinders(const std::shared_ptr<CylinderPrimitive>& primitive)
+void VulkanSceneRenderer::renderCylinders(const CylinderPrimitive& primitive)
 {
     OVITO_ASSERT(!isBoundingBoxPass());
-    std::shared_ptr<VulkanCylinderPrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanCylinderPrimitive>(primitive);
-    OVITO_ASSERT(vulkanPrimitive);
 
 	// Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to 
     // draw the semi-transparent objects after everything else has been drawn.
-	if(isPicking() || !vulkanPrimitive->transparencies())
-    	vulkanPrimitive->render(this, _cylinderPrimitivePipelines);
+	if(isPicking() || !primitive.transparencies())
+        renderCylindersImplementation(primitive);
 	else
-		_translucentCylinders.emplace_back(worldTransform(), std::move(vulkanPrimitive));
+		_translucentCylinders.emplace_back(worldTransform(), primitive);
 }
 
 /******************************************************************************
 * Renders a mesh primitive.
 ******************************************************************************/
-void VulkanSceneRenderer::renderMesh(const std::shared_ptr<MeshPrimitive>& primitive)
+void VulkanSceneRenderer::renderMesh(const MeshPrimitive& primitive)
 {
     OVITO_ASSERT(!isBoundingBoxPass());
-    std::shared_ptr<VulkanMeshPrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanMeshPrimitive>(primitive);
-    OVITO_ASSERT(vulkanPrimitive);
 
 	// Render primitives now if they are all fully opaque. Otherwise defer rendering to a later time to 
     // draw the semi-transparent objects after everything else has been drawn.
-	if(isPicking() || vulkanPrimitive->isFullyOpaque())
-    	vulkanPrimitive->render(this, _meshPrimitivePipelines);
+	if(isPicking() || primitive.isFullyOpaque())
+        renderMeshImplementation(primitive);
 	else
-		_translucentMeshes.emplace_back(worldTransform(), std::move(vulkanPrimitive));
+		_translucentMeshes.emplace_back(worldTransform(), primitive);
 }
 
 /******************************************************************************
 * Renders an image primitive.
 ******************************************************************************/
-void VulkanSceneRenderer::renderImage(const std::shared_ptr<ImagePrimitive>& primitive)
+void VulkanSceneRenderer::renderImage(const ImagePrimitive& primitive)
 {
     OVITO_ASSERT(!isBoundingBoxPass());
-    std::shared_ptr<VulkanImagePrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanImagePrimitive>(primitive);
-    OVITO_ASSERT(vulkanPrimitive);
-	vulkanPrimitive->render(this, _imagePrimitivePipelines);
+	renderImageImplementation(primitive);
 }
 
 /******************************************************************************
 * Renders a text primitive.
 ******************************************************************************/
-void VulkanSceneRenderer::renderText(const std::shared_ptr<TextPrimitive>& primitive)
+void VulkanSceneRenderer::renderText(const TextPrimitive& primitive)
 {
     OVITO_ASSERT(!isBoundingBoxPass());
-    std::shared_ptr<VulkanTextPrimitive> vulkanPrimitive = dynamic_pointer_cast<VulkanTextPrimitive>(primitive);
-    OVITO_ASSERT(vulkanPrimitive);
-	vulkanPrimitive->render(this);
+	renderTextImplementation(primitive);
 }
 
 /******************************************************************************

@@ -66,7 +66,6 @@ void OpenGLSceneRenderer::renderTextImplementation(const TextPrimitive& primitiv
 			painter.setPen((QColor)primitive.color());
 			painter.drawText(rect, Qt::AlignLeft | Qt::AlignTop, primitive.text());
 		}
-//		_textOffset = rect.topLeft();
 
 		cachedImagePrimitive.setImage(std::move(textureImage));
 	}

@@ -146,14 +146,22 @@ void PluginManager::loadAllPlugins()
 void PluginManager::registerLoadedPluginClasses()
 {
 	for(OvitoClass* clazz = OvitoClass::_firstMetaClass; clazz != _lastRegisteredClass; clazz = clazz->_nextMetaclass) {
-		Plugin* classPlugin = this->plugin(clazz->pluginId());
+		clazz->initialize();
+		OVITO_ASSERT(clazz->pluginId() != nullptr);
+		
+		Plugin* classPlugin = nullptr;
+		for(Plugin* plugin : plugins()) {
+			if(plugin->pluginId() == clazz->pluginId()) {
+				classPlugin = plugin;
+				break;
+			}
+		}
 		if(!classPlugin) {
 			classPlugin = new Plugin(clazz->pluginId());
 			registerPlugin(classPlugin);
 		}
 		OVITO_ASSERT(clazz->plugin() == nullptr);
 		clazz->_plugin = classPlugin;
-		clazz->initialize();
 		classPlugin->registerClass(clazz);
 	}
 	_lastRegisteredClass = OvitoClass::_firstMetaClass;

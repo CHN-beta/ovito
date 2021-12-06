@@ -106,10 +106,10 @@ public:
 
 	/// Sets the coordinates of the base and the head points.
 	void setPositions(ConstDataBufferPtr baseCoordinates, ConstDataBufferPtr headCoordinates) {
-		OVITO_ASSERT(baseCoordinates && headCoordinates);
-		OVITO_ASSERT(baseCoordinates->dataType() == DataBuffer::Float && baseCoordinates->componentCount() == 3);
-		OVITO_ASSERT(headCoordinates->dataType() == DataBuffer::Float && headCoordinates->componentCount() == 3);
-		OVITO_ASSERT(baseCoordinates->size() == headCoordinates->size());
+		OVITO_ASSERT((baseCoordinates != nullptr) == (headCoordinates != nullptr));
+		OVITO_ASSERT(!baseCoordinates || (baseCoordinates->dataType() == DataBuffer::Float && baseCoordinates->componentCount() == 3));
+		OVITO_ASSERT(!headCoordinates || (headCoordinates->dataType() == DataBuffer::Float && headCoordinates->componentCount() == 3));
+		OVITO_ASSERT(!baseCoordinates || baseCoordinates->size() == headCoordinates->size());
 		_basePositions = std::move(baseCoordinates);
 		_headPositions = std::move(headCoordinates);
 	}
