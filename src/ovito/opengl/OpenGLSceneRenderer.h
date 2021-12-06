@@ -71,7 +71,7 @@ public:
 	virtual qreal devicePixelRatio() const override { return antialiasingLevel() * SceneRenderer::devicePixelRatio(); }
 
 	/// Renders the current animation frame.
-	virtual bool renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation) override;
+	virtual bool renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation) override;
 
 	/// This method is called just before renderFrame() is called.
 	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect) override;
@@ -197,6 +197,9 @@ protected:
 	}
 
 private:
+
+	/// Render all semi-transparent geometry in a second rendering pass.
+	void renderTransparentGeometry();
 
 	/// Renders a set of particles.
 	void renderParticlesImplementation(const ParticlePrimitive& primitive);

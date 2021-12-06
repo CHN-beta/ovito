@@ -326,7 +326,7 @@ void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool OffscreenVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation)
+bool OffscreenVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation)
 {
 	// This method must be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == context()->thread());
@@ -337,7 +337,7 @@ bool OffscreenVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const Q
 	shiftedViewportRect.moveTo(0,0);
 
 	// Let the base class do the main rendering work.
-	if(!VulkanSceneRenderer::renderFrame(frameBuffer, shiftedViewportRect, stereoTask, std::move(operation)))
+	if(!VulkanSceneRenderer::renderFrame(frameBuffer, shiftedViewportRect, std::move(operation)))
 		return false;
 
 	return true;

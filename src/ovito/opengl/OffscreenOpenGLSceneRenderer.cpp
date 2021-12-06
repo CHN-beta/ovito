@@ -136,7 +136,7 @@ void OffscreenOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool OffscreenOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation)
+bool OffscreenOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation)
 {
 	OVITO_ASSERT(frameBuffer != nullptr);
 
@@ -146,7 +146,7 @@ bool OffscreenOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const Q
 	shiftedViewportRect.moveTo(0,0);
 
 	// Let the base class do the main rendering work.
-	if(!OpenGLSceneRenderer::renderFrame(frameBuffer, shiftedViewportRect, stereoTask, std::move(operation)))
+	if(!OpenGLSceneRenderer::renderFrame(frameBuffer, shiftedViewportRect, std::move(operation)))
 		return false;
 
 	return true;

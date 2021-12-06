@@ -57,8 +57,7 @@ Viewport::Viewport(DataSet* dataset) : RefTarget(dataset),
 		_cameraTransformation(AffineTransformation::Identity()),
 		_cameraUpDirection(Vector3::Zero()),
 		_gridMatrix(AffineTransformation::Identity()),
-		_isGridVisible(false),
-		_stereoscopicMode(false)
+		_isGridVisible(false)
 {
 	connect(&ViewportSettings::getSettings(), &ViewportSettings::settingsChanged, this, &Viewport::viewportSettingsChanged);
 }
@@ -466,7 +465,7 @@ void Viewport::propertyChanged(const PropertyFieldDescriptor* field)
 		// Update view matrix when the up-vector has been changed.
 		setCameraDirection(cameraDirection());
 	}
-	else if(field == PROPERTY_FIELD(isGridVisible) || field == PROPERTY_FIELD(renderPreviewMode) || field == PROPERTY_FIELD(stereoscopicMode)) {
+	else if(field == PROPERTY_FIELD(isGridVisible) || field == PROPERTY_FIELD(renderPreviewMode)) {
 		Q_EMIT viewportChanged();
 	}
 	updateViewport();
@@ -581,51 +580,11 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 			}
 		}
 
-		if(!_projParams.isPerspective || !stereoscopicMode() || renderer->isPicking()) {
+		// Pass final projection parameters to renderer.
+		renderer->setProjParams(_projParams);
 
-			// Pass final projection parameters to renderer.
-			renderer->setProjParams(_projParams);
-
-			// Call the viewport renderer to render the scene objects.
-			renderer->renderFrame(nullptr, vpRect, SceneRenderer::NonStereoscopic, renderOperation.subOperation());
-		}
-		else {
-
-			// Stereoscopic parameters
-			FloatType eyeSeparation = FloatType(16);
-			FloatType convergence = (orbitCenter() - Point3::Origin() - _projParams.inverseViewMatrix.translation()).length();
-			convergence = std::max(convergence, _projParams.znear);
-			ViewProjectionParameters params = _projParams;
-
-			// Setup projection of left eye.
-			FloatType top = params.znear * tan(params.fieldOfView / 2);
-			FloatType bottom = -top;
-			FloatType a = tan(params.fieldOfView / 2) / params.aspectRatio * convergence;
-			FloatType b = a - eyeSeparation / 2;
-			FloatType c = a + eyeSeparation / 2;
-			FloatType left = -b * params.znear / convergence;
-			FloatType right = c * params.znear / convergence;
-			params.projectionMatrix = Matrix4::frustum(left, right, bottom, top, params.znear, params.zfar);
-			params.inverseProjectionMatrix = params.projectionMatrix.inverse();
-			params.viewMatrix = AffineTransformation::translation(Vector3(eyeSeparation / 2, 0, 0)) * _projParams.viewMatrix;
-			params.inverseViewMatrix = params.viewMatrix.inverse();
-			renderer->setProjParams(params);
-
-			// Render image of left eye.
-			renderer->renderFrame(nullptr, vpRect, SceneRenderer::StereoscopicLeft, renderOperation.subOperation());
-
-			// Setup projection of right eye.
-			left = -c * params.znear / convergence;
-			right = b * params.znear / convergence;
-			params.projectionMatrix = Matrix4::frustum(left, right, bottom, top, params.znear, params.zfar);
-			params.inverseProjectionMatrix = params.projectionMatrix.inverse();
-			params.viewMatrix = AffineTransformation::translation(Vector3(-eyeSeparation / 2, 0, 0)) * _projParams.viewMatrix;
-			params.inverseViewMatrix = params.viewMatrix.inverse();
-			renderer->setProjParams(params);
-
-			// Render image of right eye.
-			renderer->renderFrame(nullptr, vpRect, SceneRenderer::StereoscopicRight, renderOperation.subOperation());
-		}
+		// Call the viewport renderer to render the scene objects.
+		renderer->renderFrame(nullptr, vpRect, renderOperation.subOperation());
 
 		// Render viewport overlays.
 		if(renderPreviewMode() && !renderer->isPicking()) {

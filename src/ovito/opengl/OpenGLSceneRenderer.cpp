@@ -308,20 +308,12 @@ void OpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameB
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation)
+bool OpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation)
 {
 	OVITO_ASSERT(_glcontext == QOpenGLContext::currentContext());
     OVITO_REPORT_OPENGL_ERRORS(this);
 
-	// Set up poor man's stereosopic rendering using red/green filtering.
-	if(stereoTask == StereoscopicLeft) {
-		OVITO_CHECK_OPENGL(this, this->glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE));
-	}
-	else if(stereoTask == StereoscopicRight) {
-		OVITO_CHECK_OPENGL(this, this->glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE));
-	}
-
-	// Render the 3D scene objects.
+	// Let the visual elements in the scene send their primitives to this renderer.
 	if(renderScene(operation.subOperation())) {
 		OVITO_REPORT_OPENGL_ERRORS(this);
 
@@ -332,27 +324,37 @@ bool OpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& vie
 		}
 
 		// Render translucent objects in a second pass.
-		for(const auto& [tm, primitive] : _translucentParticles) {
-			setWorldTransform(tm);
-			renderParticlesImplementation(primitive);
-		}
-		_translucentParticles.clear();
-		for(const auto& [tm, primitive] : _translucentCylinders) {
-			setWorldTransform(tm);
-			renderCylindersImplementation(primitive);
-		}
-		_translucentCylinders.clear();
-		for(const auto& [tm, primitive] : _translucentMeshes) {
-			setWorldTransform(tm);
-			renderMeshImplementation(primitive);
-		}
-		_translucentMeshes.clear();
+		renderTransparentGeometry();
 	}
 
 	// Restore default OpenGL state.
 	OVITO_CHECK_OPENGL(this, this->glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
 
 	return !operation.isCanceled();
+}
+
+/******************************************************************************
+* Renders all semi-transparent geometry in a second rendering pass.
+******************************************************************************/
+void OpenGLSceneRenderer::renderTransparentGeometry()
+{
+	for(const auto& [tm, primitive] : _translucentParticles) {
+		setWorldTransform(tm);
+		renderParticlesImplementation(primitive);
+	}
+	_translucentParticles.clear();
+
+	for(const auto& [tm, primitive] : _translucentCylinders) {
+		setWorldTransform(tm);
+		renderCylindersImplementation(primitive);
+	}
+	_translucentCylinders.clear();
+	
+	for(const auto& [tm, primitive] : _translucentMeshes) {
+		setWorldTransform(tm);
+		renderMeshImplementation(primitive);
+	}
+	_translucentMeshes.clear();
 }
 
 /******************************************************************************

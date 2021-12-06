@@ -71,14 +71,6 @@ class OVITO_CORE_EXPORT SceneRenderer : public RefTarget
 
 public:
 
-	enum StereoRenderingTask {
-		NonStereoscopic,
-		StereoscopicLeft,
-		StereoscopicRight
-	};
-
-public:
-
 	/// This may be called on a renderer before startRender() to control its supersampling level.
 	virtual void setAntialiasingHint(int antialiasingLevel) {}
 
@@ -127,7 +119,7 @@ public:
 
 	/// Renders the current animation frame.
 	/// Returns false if the operation has been canceled by the user.
-	virtual bool renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation) = 0;
+	virtual bool renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation) = 0;
 
 	/// This method is called after renderFrame() has been called.
 	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect) {}

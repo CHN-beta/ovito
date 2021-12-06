@@ -42,7 +42,7 @@ PickingVulkanSceneRenderer::PickingVulkanSceneRenderer(DataSet* dataset, std::sh
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool PickingVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation)
+bool PickingVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation)
 {
 	// Caller should never provide an external frame buffer.
 	OVITO_ASSERT(!frameBuffer);
@@ -53,7 +53,7 @@ bool PickingVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRe
 	resetPickingBuffer();
 
 	// Let the base class do the main rendering work.
-	if(!OffscreenVulkanSceneRenderer::renderFrame(frameBuffer, viewportRect, stereoTask, std::move(operation)))
+	if(!OffscreenVulkanSceneRenderer::renderFrame(frameBuffer, viewportRect, std::move(operation)))
 		return false;
 
 	return true;

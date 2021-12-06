@@ -109,7 +109,8 @@ public:
 		OVITO_ASSERT(frame > 0);
 
 		// Remove frame from the list of active frames.
-		// There is no need to maintain the origin list order.
+		// There is no need to maintain the original list order. 
+		// We can move the last item into the erased list position.
 		auto iter = std::find(_activeResourceFrames.begin(), _activeResourceFrames.end(), frame);
 		OVITO_ASSERT(iter != _activeResourceFrames.end());
 		*iter = _activeResourceFrames.back();

@@ -41,13 +41,13 @@ PickingOpenGLSceneRenderer::PickingOpenGLSceneRenderer(DataSet* dataset) : Offsc
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool PickingOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation)
+bool PickingOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation)
 {
 	// Clear previous object records.
 	reset();
 
 	// Let the base class do the main rendering work.
-	if(!OffscreenInteractiveOpenGLSceneRenderer::renderFrame(frameBuffer, viewportRect, stereoTask, std::move(operation)))
+	if(!OffscreenInteractiveOpenGLSceneRenderer::renderFrame(frameBuffer, viewportRect, std::move(operation)))
 		return false;
 
 	if(framebufferObject()) {

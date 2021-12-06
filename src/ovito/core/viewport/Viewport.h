@@ -319,9 +319,6 @@ private:
 	/// Indicates whether the grid is shown.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, isGridVisible, setGridVisible, PROPERTY_FIELD_NO_UNDO);
 
-	/// Enables stereoscopic rendering.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, stereoscopicMode, setStereoscopicMode, PROPERTY_FIELD_NO_UNDO);
-
 	/// The scene node (camera) that has been selected as the view node.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineSceneNode>, viewNode, setViewNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 

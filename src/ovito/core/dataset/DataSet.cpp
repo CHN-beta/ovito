@@ -658,7 +658,7 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 
 				// Let the scene renderer do its work.
 				renderer->beginFrame(renderTime, projParams, viewport, destinationRect);
-				if(!renderer->renderFrame(frameBuffer, destinationRect, SceneRenderer::NonStereoscopic, operation.subOperation())) {
+				if(!renderer->renderFrame(frameBuffer, destinationRect, operation.subOperation())) {
 					renderer->endFrame(false, frameBuffer, destinationRect);
 					return false;
 				}

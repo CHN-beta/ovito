@@ -96,10 +96,10 @@ void StandardSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParam
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool StandardSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation)
+bool StandardSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation)
 {
 	// Delegate rendering work to implementation class.
-	if(!_internalRenderer->renderFrame(frameBuffer, viewportRect, stereoTask, std::move(operation)))
+	if(!_internalRenderer->renderFrame(frameBuffer, viewportRect, std::move(operation)))
 		return false;
 
 	return true;

@@ -193,7 +193,7 @@ void VulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool VulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation)
+bool VulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation)
 {
 	// Render the 3D scene objects.
 	if(renderScene(operation.subOperation())) {

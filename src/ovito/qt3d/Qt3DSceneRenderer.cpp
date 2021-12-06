@@ -60,7 +60,7 @@ void Qt3DSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameter
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool Qt3DSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, StereoRenderingTask stereoTask, SynchronousOperation operation)
+bool Qt3DSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation)
 {
 	// Render the 3D scene objects.
 	if(renderScene(operation.subOperation())) {
