@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../../global_uniforms.glsl"
-#include "../../shading.glsl"
+#include <shading.frag>
 
 // Inputs:
 flat in vec4 color_fs;

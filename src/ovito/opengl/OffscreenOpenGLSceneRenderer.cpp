@@ -167,8 +167,6 @@ void OffscreenOpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 
 		// Fetch rendered image from OpenGL framebuffer.
 		QImage renderedImage = _framebufferObject->toImage();
-		// We need it in ARGB32 format for best results.
-		renderedImage.reinterpretAsFormat(QImage::Format_ARGB32);
 		// Rescale supersampled image.
 		QSize originalSize(renderedImage.width() / antialiasingLevel(), renderedImage.height() / antialiasingLevel());
 		QImage scaledImage = renderedImage.scaled(originalSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);

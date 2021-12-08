@@ -279,7 +279,7 @@ void OpenGLShaderHelper::bindBuffer(QOpenGLBuffer& buffer, const char* attribute
     int attrIndex = _shader->attributeLocation(attributeName);
     if(attrIndex < 0) {
         qWarning() << "OpenGLShaderHelper::bindBuffer() failed for shader" << _shader->objectName() << ": attribute with name" << attributeName << "does not exist in shader.";
-        _renderer->throwException(QStringLiteral("Attribute with name %1 does not exist in shader '%2'.").arg(attributeName).arg(_shader->objectName()));
+        _renderer->throwException(QStringLiteral("Attribute with name %1 does not exist in OpenGL shader program '%2'.").arg(attributeName).arg(_shader->objectName()));
     }
     bindBuffer(buffer, attrIndex, type, tupleSize, stride, offset, inputRate);
 }

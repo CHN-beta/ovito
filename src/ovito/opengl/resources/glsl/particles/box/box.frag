@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../../global_uniforms.glsl"
-#include "../../shading.glsl"
+#include <shading.frag>
 #include <flat_normal.frag>
 
 // Inputs:

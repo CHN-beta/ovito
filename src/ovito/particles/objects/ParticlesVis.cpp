@@ -725,14 +725,16 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 		using ParticleCacheKey = RendererResourceKey<struct ParticlesVisPrimitiveCache,
 			ConstDataObjectRef,					// Particle type property
 			ParticlesVis::ParticleShape,		// Current particle shape
-			ParticlesVis::ParticleShape			// Global particle shape
+			ParticlesVis::ParticleShape,			// Global particle shape
+			size_t								// Particle count
 		>;
 
 		// Look up the particle indices in the vis cache.
 		ConstDataBufferPtr& indices = dataset()->visCache().get<ConstDataBufferPtr>(ParticleCacheKey(
 			typeProperty,
 			shape,
-			uniformShape));
+			uniformShape,
+			particles->elementCount()));
 
 		if(!indices) {
 			// Determine the set of particles to be rendered using the current primitive shape.
@@ -772,13 +774,15 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 				FloatType,							// Default particle radius
 				FloatType,							// Global radius scaling factor
 				ConstDataObjectRef,					// Radius property
-				ConstDataObjectRef					// Type property
+				ConstDataObjectRef,					// Type property
+				size_t								// Particle count
 			>;
 			ConstPropertyPtr& radiusBuffer = dataset()->visCache().get<ConstPropertyPtr>(RadiiCacheKey(
 				defaultParticleRadius(),
 				radiusScaleFactor(),
 				radiusProperty,
-				typeRadiusProperty));
+				typeRadiusProperty,
+				particles->elementCount()));
 			if(!radiusBuffer)
 				radiusBuffer = particleRadii(particles, true);
 			primitive.setRadii(radiusBuffer);
@@ -788,11 +792,13 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 			// The type of lookup key used for caching the particle colors:
 			using ColorCacheKey = RendererResourceKey<struct ParticlesVisPrimitiveColorCache,
 				ConstDataObjectRef,					// Type property
-				ConstDataObjectRef					// Color property
+				ConstDataObjectRef,					// Color property
+				size_t								// Particle count
 			>;
 			ConstPropertyPtr& colorBuffer = dataset()->visCache().get<ConstPropertyPtr>(ColorCacheKey(
 				typeProperty,
-				colorProperty));
+				colorProperty,
+				particles->elementCount()));
 			if(!colorBuffer)
 				colorBuffer = particleColors(particles, false);
 			primitive.setColors(colorBuffer);

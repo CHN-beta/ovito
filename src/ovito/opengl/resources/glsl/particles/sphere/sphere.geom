@@ -36,6 +36,7 @@ uniform vec3 unit_cube_triangle_strip[14];
 flat out vec4 color_fs;
 flat out vec3 particle_view_pos_fs;
 flat out float particle_radius_squared_fs;
+
 void main()
 {
     for(int corner = 0; corner < 14; corner++) 

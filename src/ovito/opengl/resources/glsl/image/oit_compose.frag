@@ -20,16 +20,22 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-// Texture sampler:
-uniform sampler2D tex;
+// Texture samplers:
+uniform sampler2D accumulationTex;
+uniform sampler2D revealageTex;
 
 // Inputs:
 in vec2 texcoord_fs;
 
 void main()
 {
-	if(texcoord_fs.x >= 0.5)
-		<fragColor> = <texture2D>(tex, texcoord_fs);
-	else
-		discard;
+	// Post processing (compositing) fragment shader:
+
+	vec4 accum = <texture2D>(accumulationTex, texcoord_fs);
+	float r = accum.a;
+	if(r >= 1.0)
+        discard;
+	accum.a = <texture2D>(revealageTex, texcoord_fs).r;
+//	<fragColor> = vec4(accum.rgb / clamp(accum.a, 1e-4, 5e4), r);
+	<fragColor> = vec4(accum.rgb / clamp(accum.a, 1e-4, 5e4), 1.0-r);
 }

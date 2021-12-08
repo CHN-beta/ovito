@@ -182,7 +182,7 @@ public:
 protected:
 
 	/// Loads and compiles a GLSL shader and adds it to the given program object.
-	void loadShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderType shaderType, const QString& filename);
+	void loadShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderType shaderType, const QString& filename, bool isWBOITPass);
 
 	/// Makes the renderer's GL context current.
 	void makeContextCurrent();

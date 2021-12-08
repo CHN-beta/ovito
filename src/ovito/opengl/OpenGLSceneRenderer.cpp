@@ -38,6 +38,10 @@
 #include <QSurface>
 #include <QWindow>
 #include <QScreen>
+#include <QOpenGLFunctions_3_0>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	#include <QOpenGLVersionFunctionsFactory>
+#endif
 #ifdef OVITO_DEBUG
 	#include <QOpenGLDebugLogger>
 #endif
@@ -367,8 +371,12 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
 		if(!_oitFramebuffer->bind())
 			throwException(tr("Failed to bind OpenGL framebuffer object for order-independent transparency."));
 
+		// Render to the two output textures simultaneously.
+		constexpr GLenum drawBuffersList[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+		OVITO_CHECK_OPENGL(this, this->glDrawBuffers(2, drawBuffersList));
+
 		// Clear the contents of the OIT buffer.
-		setClearColor(ColorA(0, 0, 0, 0));
+		setClearColor(ColorA(0, 0, 0, 1));
 		clearFrameBuffer(false, false);
 
 		// Blit depth buffer from primary FBO to transparency FBO.
@@ -378,8 +386,10 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
 		
 		// Disable writing to the depth buffer.
 		OVITO_CHECK_OPENGL(this, this->glDepthMask(GL_FALSE));
+
 		// Enable blending.
 		OVITO_CHECK_OPENGL(this, this->glEnable(GL_BLEND));
+		OVITO_CHECK_OPENGL(this, this->glBlendEquation(GL_FUNC_ADD));
 		OVITO_CHECK_OPENGL(this, this->glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA));
 	}
 	_isTransparencyPass = true;
@@ -404,11 +414,14 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
 
 	_isTransparencyPass = false;
 	if(orderIndependentTransparency()) {
-		OVITO_ASSERT(this->glIsEnabled(GL_BLEND));
-		OVITO_CHECK_OPENGL(this, this->glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA));
 
 		// Switch back to the primary rendering buffer.
 		OVITO_CHECK_OPENGL(this, this->glBindFramebuffer(GL_FRAMEBUFFER, _primaryFramebuffer));
+		constexpr GLenum drawBuffersList[] = { GL_COLOR_ATTACHMENT0 };
+		this->glDrawBuffers(1, drawBuffersList);		
+
+		OVITO_ASSERT(this->glIsEnabled(GL_BLEND));
+		OVITO_CHECK_OPENGL(this, this->glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE));
 
 		// Perform 2D compositing step.
 		setDepthTestEnabled(false);
@@ -420,8 +433,16 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
 		shader.setVerticesPerInstance(4);
 		shader.setInstanceCount(1);
 
-		// Bind the OIT framebuffer as a texture.
-		OVITO_CHECK_OPENGL(this, this->glBindTexture(GL_TEXTURE_2D, _oitFramebuffer->texture()));
+		// Bind the OIT framebuffer as textures.
+		QVector<GLuint> textureIds = _oitFramebuffer->textures();
+		OVITO_ASSERT(textureIds.size() == 2);
+		OVITO_CHECK_OPENGL(this, this->glActiveTexture(GL_TEXTURE0));
+		OVITO_CHECK_OPENGL(this, this->glBindTexture(GL_TEXTURE_2D, textureIds[0]));
+		shader.setUniformValue("accumulationTex", 0);
+		OVITO_CHECK_OPENGL(this, this->glActiveTexture(GL_TEXTURE1));
+		OVITO_CHECK_OPENGL(this, this->glBindTexture(GL_TEXTURE_2D, textureIds[1]));
+		shader.setUniformValue("revealageTex", 1);
+		OVITO_CHECK_OPENGL(this, this->glActiveTexture(GL_TEXTURE0));
 
 		// Draw a quad with 4 vertices.
 		shader.drawArrays(GL_TRIANGLE_STRIP);
@@ -544,11 +565,13 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 	OVITO_ASSERT(QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Vertex));
 	OVITO_ASSERT(QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Fragment));
 
+	// Are we doing the transparency pass for "Weighted Blended Order-Independent Transparency"?
+	bool isWBOITPass = (_isTransparencyPass && orderIndependentTransparency());
+
 	// Compile a separate version of each shader for the transparency pass.
 	QString mangledId = id;
-	if(_isTransparencyPass && orderIndependentTransparency()) {
+	if(isWBOITPass)
 		mangledId += QStringLiteral(".transparency");
-	}
 
 	// Each OpenGL shader is only created once per OpenGL context group.
 	std::unique_ptr<QOpenGLShaderProgram> program(contextGroup->findChild<QOpenGLShaderProgram*>(mangledId));
@@ -560,14 +583,14 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 	program->setObjectName(mangledId);
 
 	// Load and compile vertex shader source.
-	loadShader(program.get(), QOpenGLShader::Vertex, vertexShaderFile);
+	loadShader(program.get(), QOpenGLShader::Vertex, vertexShaderFile, isWBOITPass);
 
 	// Load and compile fragment shader source.
-	loadShader(program.get(), QOpenGLShader::Fragment, fragmentShaderFile);
+	loadShader(program.get(), QOpenGLShader::Fragment, fragmentShaderFile, isWBOITPass);
 
 	// Load and compile geometry shader source.
 	if(!geometryShaderFile.isEmpty()) {
-		loadShader(program.get(), QOpenGLShader::Geometry, geometryShaderFile);
+		loadShader(program.get(), QOpenGLShader::Geometry, geometryShaderFile, isWBOITPass);
 	}
 
 	// Make the shader program a child object of the GL context group.
@@ -589,7 +612,7 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 /******************************************************************************
 * Loads and compiles a GLSL shader and adds it to the given program object.
 ******************************************************************************/
-void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderType shaderType, const QString& filename)
+void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderType shaderType, const QString& filename, bool isWBOITPass)
 {
 	QByteArray shaderSource;
 	bool isGLES = QOpenGLContext::currentContext()->isOpenGLES();
@@ -656,11 +679,39 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 		}
 	}
 
-	// Declare the fragment color output variable referenced by the <fragColor> placeholder.
-	if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) {
-		if(shaderType == QOpenGLShader::Fragment) {
-			shaderSource.append("out vec4 fragColor;\n");
+	if(!isWBOITPass) {
+		// Declare the fragment color output variable referenced by the <fragColor> placeholder.
+		if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) {
+			if(shaderType == QOpenGLShader::Fragment) {
+				shaderSource.append("out vec4 fragColor;\n");
+			}
 		}
+	}
+	else {
+		/*
+		// Declare the fragment output variables referenced by the <fragAccumulation> and <fragRevealage> placeholders.
+		if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) {
+			if(shaderType == QOpenGLShader::Fragment) {
+				if(_glversion >= QT_VERSION_CHECK(3, 3, 0)) {
+					shaderSource.append("layout(location = 0) out vec4 fragAccumulation;\n");
+					shaderSource.append("layout(location = 1) out float fragRevealage;\n");
+				}
+				else {
+					shaderSource.append("out vec4 fragAccumulation;\n");
+					shaderSource.append("out float fragRevealage;\n");
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+					if(QOpenGLFunctions_3_0* glfunc30 = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_3_0>(glcontext())) {
+#else
+					if(QOpenGLFunctions_3_0* glfunc30 = glcontext()->versionFunctions<QOpenGLFunctions_3_0>()) {
+#endif				
+						OVITO_CHECK_OPENGL(this, glfunc30->glBindFragDataLocation(program->programId(), 0, "fragAccumulation"));
+						OVITO_CHECK_OPENGL(this, glfunc30->glBindFragDataLocation(program->programId(), 1, "fragRevealage"));
+					}
+					else qWarning() << "WARNING: Could not resolve OpenGL 3.0 API functions.";
+				}
+			}
+		}
+		*/
 	}
 
 	// Helper function that appends a source code line to the buffer after preprocessing it.
@@ -693,19 +744,32 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 			}
 		}
 
-		// Writing to the fragment color output variable.
-		if(_glversion < QT_VERSION_CHECK(3, 0, 0))
-			line.replace("<fragColor>", "gl_FragColor");
-		else
-			line.replace("<fragColor>", "fragColor");
+		if(!isWBOITPass) {
+			// Writing to the fragment color output variable.
+			if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+				line.replace("<fragColor>", "gl_FragColor");
+			else
+				line.replace("<fragColor>", "fragColor");
 
-		// Writing to the fragment depth output variable.
-		if(_glversion >= QT_VERSION_CHECK(3, 0, 0) || isGLES == false)
-			line.replace("<fragDepth>", "gl_FragDepth");
-		else if(line.contains("<fragDepth>")) { // For GLES2:
-			line.replace("<fragDepth>", "gl_FragDepthEXT");
-			line.prepend(QByteArrayLiteral("#if defined(GL_EXT_frag_depth)\n"));
-			line.append(QByteArrayLiteral("#endif\n"));
+			// Writing to the fragment depth output variable.
+			if(_glversion >= QT_VERSION_CHECK(3, 0, 0) || isGLES == false)
+				line.replace("<fragDepth>", "gl_FragDepth");
+			else if(line.contains("<fragDepth>")) { // For GLES2:
+				line.replace("<fragDepth>", "gl_FragDepthEXT");
+				line.prepend(QByteArrayLiteral("#if defined(GL_EXT_frag_depth)\n"));
+				line.append(QByteArrayLiteral("#endif\n"));
+			}
+		}
+		else {
+//			if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+				line.replace("<fragAccumulation>", "gl_FragData[0]");
+//			else
+//				line.replace("<fragAccumulation>", "fragAccumulation");
+
+//			if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+				line.replace("<fragRevealage>", "gl_FragData[1].r");
+//			else
+//				line.replace("<fragRevealage>", "fragRevealage");
 		}
 
 		// Old GLSL versions do not provide an inverse() function for mat3 matrices.
@@ -808,7 +872,11 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 			QString includeFilePath;
 
 			// Special include statement which require preprocessing.
-			if(line.contains("<view_ray.vert>")) {
+			if(line.contains("<shading.frag>")) {
+				if(!isWBOITPass) includeFilePath = QStringLiteral(":/openglrenderer/glsl/shading.frag");
+				else includeFilePath = QStringLiteral(":/openglrenderer/glsl/shading_transparency.frag");
+			}
+			else if(line.contains("<view_ray.vert>")) {
 				if(_glversion < QT_VERSION_CHECK(3, 0, 0)) continue; // Skip this include file, because view ray calculation is performed by the fragment shaders in old GLSL versions.
 				includeFilePath = QStringLiteral(":/openglrenderer/glsl/view_ray.vert");
 			}
