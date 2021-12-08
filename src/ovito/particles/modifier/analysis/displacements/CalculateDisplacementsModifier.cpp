@@ -56,7 +56,7 @@ void CalculateDisplacementsModifier::initializeObject(ObjectInitializationHints 
 	// to the current particle positions.
 	vectorVis()->setReverseArrowDirection(false);
 	vectorVis()->setArrowPosition(VectorVis::Head);
-	if(hints.testFlags(LoadUserDefaults))
+	if(hints.testFlag(LoadUserDefaults))
 		vectorVis()->colorMapping()->setSourceProperty(ParticlePropertyReference(ParticlesObject::DisplacementMagnitudeProperty));
 
 	ReferenceConfigurationModifier::initializeObject(hints);

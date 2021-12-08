@@ -59,7 +59,7 @@ void AssignColorModifier::initializeObject(ObjectInitializationHints hints)
 	// Let this modifier operate on particles by default.
 	createDefaultModifierDelegate(AssignColorModifierDelegate::OOClass(), QStringLiteral("ParticlesAssignColorModifierDelegate"), hints);
 
-	if(hints.testFlags(LoadUserDefaults)) {
+	if(hints.testFlag(LoadUserDefaults)) {
 		// In the graphical environment, we clear the selection by default to make the assigned colors visible.
 		setKeepSelection(false);
 	}

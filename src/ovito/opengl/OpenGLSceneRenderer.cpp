@@ -356,7 +356,7 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
 		// Create additional offscreen OpenGL framebuffer.
 		if(!_oitFramebuffer || !_oitFramebuffer->isValid() || _oitFramebuffer->size() != viewportRect().size()) {
 			QOpenGLFramebufferObjectFormat framebufferFormat;
-			framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+			framebufferFormat.setAttachment(QOpenGLFramebufferObject::Depth);
 			framebufferFormat.setInternalTextureFormat(GL_RGBA16F);
 			_oitFramebuffer = std::make_unique<QOpenGLFramebufferObject>(viewportRect().size(), framebufferFormat);
 			_oitFramebuffer->addColorAttachment(_oitFramebuffer->size(), GL_R16F);
@@ -568,10 +568,11 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 	// Are we doing the transparency pass for "Weighted Blended Order-Independent Transparency"?
 	bool isWBOITPass = (_isTransparencyPass && orderIndependentTransparency());
 
-	// Compile a separate version of each shader for the transparency pass.
+	// Compile a modified version of each shader for the transparency pass.
+	// This is accomplished by giving the shader a unique identifier.
 	QString mangledId = id;
 	if(isWBOITPass)
-		mangledId += QStringLiteral(".transparency");
+		mangledId += QStringLiteral(".wboi_transparency");
 
 	// Each OpenGL shader is only created once per OpenGL context group.
 	std::unique_ptr<QOpenGLShaderProgram> program(contextGroup->findChild<QOpenGLShaderProgram*>(mangledId));
@@ -616,28 +617,39 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 {
 	QByteArray shaderSource;
 	bool isGLES = QOpenGLContext::currentContext()->isOpenGLES();
+	int glslVersion = 0;
 
 	// Insert GLSL version string at the top.
 	// Pick GLSL language version based on current OpenGL version.
 	if(!isGLES) {
 		// Inject GLSL version directive into shader source. 
 		// Note: Use GLSL 1.50 when running on a OpenGL 3.2+ platform.
-		if(shaderType == QOpenGLShader::Geometry || _glversion >= QT_VERSION_CHECK(3, 2, 0))
+		if(shaderType == QOpenGLShader::Geometry || _glversion >= QT_VERSION_CHECK(3, 2, 0)) {
 			shaderSource.append("#version 150\n");
-		else if(_glversion >= QT_VERSION_CHECK(3, 1, 0))
+			glslVersion = QT_VERSION_CHECK(1, 5, 0);
+		}
+		else if(_glversion >= QT_VERSION_CHECK(3, 1, 0)) {
 			shaderSource.append("#version 140\n");
-		else if(_glversion >= QT_VERSION_CHECK(3, 0, 0))
+			glslVersion = QT_VERSION_CHECK(1, 4, 0);
+		}
+		else if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) {
 			shaderSource.append("#version 130\n");
-		else
+			glslVersion = QT_VERSION_CHECK(1, 3, 0);
+		}
+		else {
 			shaderSource.append("#version 120\n");
+			glslVersion = QT_VERSION_CHECK(1, 2, 0);
+		}
 	}
 	else {
 		// Using OpenGL ES context.
 		// Inject GLSL version directive into shader source. 
 		if(glformat().majorVersion() >= 3) {
 			shaderSource.append("#version 300 es\n");
+			glslVersion = QT_VERSION_CHECK(3, 0, 0);
 		}
 		else {
+			glslVersion = QT_VERSION_CHECK(1, 2, 0);
 			shaderSource.append("precision highp float;\n");
 
 			if(shaderType == QOpenGLShader::Fragment) {
@@ -688,11 +700,10 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 		}
 	}
 	else {
-		/*
 		// Declare the fragment output variables referenced by the <fragAccumulation> and <fragRevealage> placeholders.
-		if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) {
-			if(shaderType == QOpenGLShader::Fragment) {
-				if(_glversion >= QT_VERSION_CHECK(3, 3, 0)) {
+		if(shaderType == QOpenGLShader::Fragment) {
+			if(glslVersion >= QT_VERSION_CHECK(3, 0, 0)) {
+				if(glslVersion >= QT_VERSION_CHECK(3, 3, 0)) {
 					shaderSource.append("layout(location = 0) out vec4 fragAccumulation;\n");
 					shaderSource.append("layout(location = 1) out float fragRevealage;\n");
 				}
@@ -711,7 +722,6 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 				}
 			}
 		}
-		*/
 	}
 
 	// Helper function that appends a source code line to the buffer after preprocessing it.
@@ -761,15 +771,15 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 			}
 		}
 		else {
-//			if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+			if(glslVersion < QT_VERSION_CHECK(3, 0, 0))
 				line.replace("<fragAccumulation>", "gl_FragData[0]");
-//			else
-//				line.replace("<fragAccumulation>", "fragAccumulation");
+			else
+				line.replace("<fragAccumulation>", "fragAccumulation");
 
-//			if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+			if(glslVersion < QT_VERSION_CHECK(3, 0, 0))
 				line.replace("<fragRevealage>", "gl_FragData[1].r");
-//			else
-//				line.replace("<fragRevealage>", "fragRevealage");
+			else
+				line.replace("<fragRevealage>", "fragRevealage");
 		}
 
 		// Old GLSL versions do not provide an inverse() function for mat3 matrices.

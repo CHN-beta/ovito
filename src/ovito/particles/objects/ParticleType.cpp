@@ -63,19 +63,19 @@ void ParticleType::initializeType(const PropertyReference& property, ObjectIniti
 	// Load standard display radius.
 	setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadFactoryDefaults, DisplayRadius));
 	freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::radius)});
-	if(initializationHints.testFlags(LoadUserDefaults))
+	if(initializationHints.testFlag(LoadUserDefaults))
 		setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadUserDefaults, DisplayRadius));
 	
 	// Load standard van der Waals radius.
 	setVdwRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadFactoryDefaults, VanDerWaalsRadius));
 	freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::vdwRadius)});
-	if(initializationHints.testFlags(LoadUserDefaults))
+	if(initializationHints.testFlag(LoadUserDefaults))
 		setVdwRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadUserDefaults, VanDerWaalsRadius));
 	
 	// Load standard mass.
 	setMass(getDefaultParticleMass(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadFactoryDefaults));
 	freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::mass)});
-	if(initializationHints.testFlags(LoadUserDefaults))
+	if(initializationHints.testFlag(LoadUserDefaults))
 		setMass(getDefaultParticleMass(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadUserDefaults));
 }
 
