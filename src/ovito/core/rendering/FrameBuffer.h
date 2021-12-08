@@ -93,17 +93,17 @@ private:
 	/// The format of the image on disk.
 	QByteArray _format;
 
-	friend SaveStream& operator<<(SaveStream& stream, const ImageInfo& i);
-	friend LoadStream& operator>>(LoadStream& stream, ImageInfo& i);
+	friend OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const ImageInfo& i);
+	friend OVITO_CORE_EXPORT LoadStream& operator>>(LoadStream& stream, ImageInfo& i);
 };
 
 /// Writes an ImageInfo to an output stream.
 /// \relates ImageInfo
-SaveStream& operator<<(SaveStream& stream, const ImageInfo& i);
+OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const ImageInfo& i);
 
 /// Reads an ImageInfo from an input stream.
 /// \relates ImageInfo
-LoadStream& operator>>(LoadStream& stream, ImageInfo& i);
+OVITO_CORE_EXPORT LoadStream& operator>>(LoadStream& stream, ImageInfo& i);
 
 /**
  * A frame buffer is used by a renderer to store the rendered image.
