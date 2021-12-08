@@ -176,7 +176,7 @@ Box3 DislocationVis::boundingBox(TimePoint time, const ConstDataObjectPath& path
 	if(!cellObject) return {};
 
 	// The key type used for caching the computed bounding box:
-	using CacheKey = std::tuple<
+	using CacheKey = RendererResourceKey<struct DislocationVisBoundingBoxCache,
 		ConstDataObjectRef,	// Source object
 		ConstDataObjectRef,	// Simulation cell
 		FloatType,			// Line width
@@ -262,7 +262,7 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 
 	// Make sure we don't exceed our internal limits.
 	if(renderableLines->lineSegments().size() > (size_t)std::numeric_limits<int>::max())
-		throwException(tr("Cannot render more than %1 dislocation segments.").arg(std::numeric_limits<int>::max()));
+		throw RenderException(tr("Cannot render more than %1 dislocation segments.").arg(std::numeric_limits<int>::max()));
 
 	// Get the original dislocation lines.
 	const PeriodicDomainDataObject* domainObj = dynamic_object_cast<PeriodicDomainDataObject>(renderableLines->sourceDataObject().get());

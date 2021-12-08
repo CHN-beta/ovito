@@ -29,7 +29,6 @@
 
 namespace Ovito {
 
-
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
@@ -84,6 +83,9 @@ void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(TimePoint time, const V
 		// Bind OpenGL framebuffer.
 		if(!_framebufferObject->bind())
 			throwException(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
+
+		// Tell the base class about the FBO we are rendering into.
+		setPrimaryFramebuffer(_framebufferObject->handle());
 	}
 	else {
 		// When running in a web browser environment which supports the WEBGL_depth_texture extension,
@@ -118,6 +120,9 @@ void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(TimePoint time, const V
 		// Check framebuffer status.
 		if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 			throwException(tr("Failed to create OpenGL framebuffer for picking offscreen rendering."));
+
+		// Tell the base class about the FBO we are rendering into.
+		setPrimaryFramebuffer(_framebufferObjectGLES);
 	}
 
 	OpenGLSceneRenderer::beginFrame(time, params, vp, viewportRect);
@@ -192,6 +197,7 @@ void OffscreenInteractiveOpenGLSceneRenderer::endFrame(bool renderingSuccessful,
 		glDeleteTextures(2, _framebufferTexturesGLES);
 		_framebufferTexturesGLES[0] = _framebufferTexturesGLES[1] = 0;
 	}
+	setPrimaryFramebuffer(0);
 	OpenGLSceneRenderer::endFrame(renderingSuccessful, frameBuffer, viewportRect);
 
 	// Reactivate old GL context.

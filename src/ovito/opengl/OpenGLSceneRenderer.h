@@ -33,6 +33,8 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLBuffer>
+#include <QOpenGLFramebufferObject> 
+#include <QOpenGLFramebufferObjectFormat>
 
 namespace Ovito {
 
@@ -150,6 +152,9 @@ public:
 	/// Indicates whether OpenGL geometry shaders are supported.
 	bool useGeometryShaders() const { return QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry, glcontext()); }
 
+	/// Sets the primary framebuffer to be used by the renderer.
+	void setPrimaryFramebuffer(GLuint primaryFramebuffer) { _primaryFramebuffer = primaryFramebuffer; }
+
 	/// Returns the vendor name of the OpenGL implementation in use.
 	static const QByteArray& openGLVendor() { return _openGLVendor; }
 
@@ -238,6 +243,9 @@ private:
 	/// Renders a text string into the output framebuffer.
 	void renderTextImplementation(const TextPrimitive& primitive);
 
+	/// Returns whether the renderer is using a two-pass OIT method.
+	bool orderIndependentTransparency() const { return _orderIndependentTransparency; }
+
 private:
 
 	/// The OpenGL context this renderer uses.
@@ -266,6 +274,19 @@ private:
 
 	/// Controls the number of sub-pixels to render.
 	int _antialiasingLevel = 1;
+
+	/// Controls whether the renderer is using a two-pass OIT method.
+	bool _orderIndependentTransparency = false;
+
+	/// Indicates that we are currently rendering the semi-transparent geometry of the scene.
+	bool _isTransparencyPass = false;
+
+	/// The primary framebuffer used by the renderer. The FBO's lifetime is managed by the subclass.
+	/// It may be null when rendering to the system framebuffer provided by QOpenGLWidget.
+	GLuint _primaryFramebuffer = 0;
+
+	/// The additional framebuffer used for the OIT transparency pass.
+	std::unique_ptr<QOpenGLFramebufferObject> _oitFramebuffer;
 
 	/// The monotonically increasing identifier of the current frame being rendered.
 	OpenGLResourceManager::ResourceFrameHandle _currentResourceFrame = 0;

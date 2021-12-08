@@ -31,7 +31,6 @@ in vec3 position;
 
 // Outputs:
 flat out vec4 color_fs;
-
 void main()
 {
 	// Const array of vertex positions for the marker glyph.
@@ -56,11 +55,11 @@ void main()
 			+ projection_matrix[2][3] * view_position.z + projection_matrix[3][3];
 
 	// The vertex coordinates in model space.
-	vec3 delta = marker[gl_VertexID] * (w * marker_size);
+	vec3 delta = marker[<VertexID>] * (w * marker_size);
 
 	// Apply model-view-projection matrix.
 	gl_Position = modelview_projection_matrix * vec4(position + delta, 1.0);
 
     // Compute color from object ID.
-    color_fs = pickingModeColor(gl_InstanceID);
+    color_fs = pickingModeColor(<InstanceID>);
 }

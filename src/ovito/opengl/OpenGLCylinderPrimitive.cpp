@@ -103,7 +103,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
 	shader.setInstanceCount(primitive.basePositions()->size());
 
     // Are we rendering semi-transparent cylinders?
-    bool useBlending = !isPicking() && (primitive.transparencies() != nullptr);
+    bool useBlending = !isPicking() && (primitive.transparencies() != nullptr) && !orderIndependentTransparency();
 	if(useBlending) shader.enableBlending();
 
 	// Pass picking base ID to shader.

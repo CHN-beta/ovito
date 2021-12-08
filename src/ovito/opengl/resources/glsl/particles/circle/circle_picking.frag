@@ -24,9 +24,6 @@
 flat in vec4 color_fs;
 in vec2 uv_fs;
 
-// Outputs:
-out vec4 fragColor;
-
 void main()
 {
 	// Test if fragment is within the unit circle.
@@ -34,5 +31,5 @@ void main()
 	if(rsq >= 1.0) discard;
 
     // Use flat shading in picking mode.
-    fragColor = color_fs;
+    <fragColor> = color_fs;
 }

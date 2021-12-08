@@ -30,11 +30,10 @@ uniform vec2 unit_quad_triangle_strip[4];
 
 // Outputs:
 flat out vec4 color_fs;
-
 void main()
 {
     // The index of the quad corner.
-    int corner = gl_VertexID;
+    int corner = <VertexID>;
 
     // Transform particle center to view space.
 	vec3 eye_position = (modelview_matrix * vec4(position, 1.0)).xyz;
@@ -46,5 +45,5 @@ void main()
     gl_Position = projection_matrix * (vec4(eye_position, 1.0) + vec4(unit_quad_triangle_strip[corner] * viewspace_radius, 0.0, 0.0));
 
     // Compute color from object ID.
-    color_fs = pickingModeColor(gl_InstanceID);
+    color_fs = pickingModeColor(<InstanceID>);
 }

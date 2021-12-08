@@ -33,11 +33,10 @@ in vec4 color_to;
 
 // Outputs:
 out vec4 color_fs;
-
 void main()
 {
     // The index of the quad corner.
-    int corner = gl_VertexID;
+    int corner = <VertexID>;
 
 	// Apply model-view-projection matrix to line points.
 	vec4 proj_from = modelview_projection_matrix * position_from;

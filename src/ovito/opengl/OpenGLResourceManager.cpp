@@ -22,6 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include "OpenGLResourceManager.h"
+#include "OpenGLTexture.h"
 
 #include <QThreadStorage>
 #include <QOpenGLContextGroup>
@@ -47,11 +48,11 @@ QOpenGLTexture* OpenGLResourceManager::uploadImage(const QImage& image, Resource
 
     // Check if this image has already been uploaded to the GPU.
 	RendererResourceKey<struct ImageCache, quint64, QOpenGLContextGroup*> cacheKey{ image.cacheKey(), QOpenGLContextGroup::currentContextGroup() };
-    std::unique_ptr<QOpenGLTexture>& texture = lookup<std::unique_ptr<QOpenGLTexture>>(cacheKey, resourceFrame);
+    std::unique_ptr<OpenGLTexture>& texture = lookup<std::unique_ptr<OpenGLTexture>>(cacheKey, resourceFrame);
 
 	// Create the texture object.
-    if(!texture) {
-		texture = std::make_unique<QOpenGLTexture>(image, genMipMaps);
+    if(!texture || !texture->isCreated()) {
+		texture = std::make_unique<OpenGLTexture>(image, genMipMaps);
 		if(genMipMaps == QOpenGLTexture::DontGenerateMipMaps) {
 			texture->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
 		}
@@ -67,9 +68,9 @@ QOpenGLTexture* OpenGLResourceManager::uploadColorMap(ColorCodingGradient* gradi
 {
     // Check if this color map has already been uploaded to the GPU.
 	RendererResourceKey<struct ColorMapCache, OORef<ColorCodingGradient>, QOpenGLContextGroup*> cacheKey{ gradient, QOpenGLContextGroup::currentContextGroup() };
-    std::unique_ptr<QOpenGLTexture>& texture = lookup<std::unique_ptr<QOpenGLTexture>>(cacheKey, resourceFrame);
+    std::unique_ptr<OpenGLTexture>& texture = lookup<std::unique_ptr<OpenGLTexture>>(cacheKey, resourceFrame);
 
-    if(!texture) {
+    if(!texture || !texture->isCreated()) {
 		// Sample the color gradient to produce a row of RGB pixel data.
 		int resolution;
 		std::vector<uint8_t> pixelData;
@@ -90,7 +91,7 @@ QOpenGLTexture* OpenGLResourceManager::uploadColorMap(ColorCodingGradient* gradi
 		}
 
 		// Create the 1-d texture object.
-		texture = std::make_unique<QOpenGLTexture>(QOpenGLTexture::Target1D);
+		texture = std::make_unique<OpenGLTexture>(QOpenGLTexture::Target1D);
 		texture->setFormat(QOpenGLTexture::RGB8_UNorm);
 		texture->setSize(resolution);
 		texture->allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt8);

@@ -35,7 +35,6 @@ in float pseudocolor;
 out float pseudocolor_fs;
 flat out float selected_face_fs;
 out vec3 normal_fs;
-
 void main()
 {
 	// Apply model-view-projection matrix to vertex.

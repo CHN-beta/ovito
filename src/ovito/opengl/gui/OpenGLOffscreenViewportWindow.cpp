@@ -81,6 +81,10 @@ OpenGLOffscreenViewportWindow::OpenGLOffscreenViewportWindow(Viewport* vp, Viewp
 	_pickingRenderer = new PickingOpenGLSceneRenderer(viewport()->dataset());
 	_pickingRenderer->setInteractive(true);
 
+	// Tell the renderers about the FBO we are rendering into.
+	_viewportRenderer->setPrimaryFramebuffer(_framebufferObject->handle());
+	_pickingRenderer->setPrimaryFramebuffer(_framebufferObject->handle());
+
 	// Render the window for the first time.
 	renderLater();
 }
@@ -156,12 +160,16 @@ void OpenGLOffscreenViewportWindow::setSize(const QSize& size)
 	if(!_offscreenContext.makeCurrent(_offscreenSurface))
 		throw Exception(tr("Failed to make OpenGL context current."));
 
-	// Create offscreen framebuffer.
+	// Recreate offscreen framebuffer.
 	QOpenGLFramebufferObjectFormat framebufferFormat;
 	framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
 	_framebufferObject = std::make_unique<QOpenGLFramebufferObject>(size, framebufferFormat);
 	if(!_framebufferObject->isValid())
 		throw Exception(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
+
+	// Tell the renderers about the new FBO.
+	_viewportRenderer->setPrimaryFramebuffer(_framebufferObject->handle());
+	_pickingRenderer->setPrimaryFramebuffer(_framebufferObject->handle());
 
 	renderLater();
 }

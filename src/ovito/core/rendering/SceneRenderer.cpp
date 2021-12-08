@@ -243,14 +243,15 @@ void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSc
 				status = vis->render(time(), dataObjectPath, state, this, pipeline);
 				// Pass error status codes to the exception handler below.
 				if(status.type() == PipelineStatus::Error)
-					throwException(status.text());
+					throw DataVis::RenderException(status.text());
 				// In console mode, print warning messages to the terminal.
 				if(status.type() == PipelineStatus::Warning && !status.text().isEmpty() && Application::instance()->consoleMode()) {
 					qWarning() << "WARNING: Visual element" << vis->objectTitle() << "reported:" << status.text();
 				}
 			}
-			catch(Exception& ex) {
+			catch(DataVis::RenderException& ex) {
 				status = ex;
+				ex.setContext(vis->dataset());
 				ex.prependGeneralMessage(tr("Visual element '%1' reported an error during rendering.").arg(vis->objectTitle()));
 				// If the vis element fails, interrupt rendering process in console mode; swallow exceptions in GUI mode.
 				if(!isInteractive()) 

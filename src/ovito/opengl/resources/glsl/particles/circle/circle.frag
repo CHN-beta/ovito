@@ -20,12 +20,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#include "../../global_uniforms.glsl"
+#include "../../shading.glsl"
+
 // Inputs:
 flat in vec4 color_fs;
 in vec2 uv_fs;
-
-// Outputs:
-out vec4 fragColor;
 
 void main()
 {
@@ -34,5 +34,5 @@ void main()
 	if(rsq >= 1.0) discard;
 
     // Flat shading:
-    fragColor = color_fs;
+    outputFlat(color_fs);
 }

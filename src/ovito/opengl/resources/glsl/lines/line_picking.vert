@@ -28,11 +28,10 @@ in vec4 position;
 
 // Outputs:
 out vec4 color_fs;
-
 void main()
 {
 	// Compute color from primitive index.
-	color_fs = pickingModeColor(gl_VertexID / 2);
+	color_fs = pickingModeColor(<VertexID> / 2);
 
 	// Apply model-view-projection matrix.
 	gl_Position = modelview_projection_matrix * position;

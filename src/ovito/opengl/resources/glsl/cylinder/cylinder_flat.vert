@@ -35,11 +35,10 @@ uniform vec2 unit_quad_triangle_strip[4];
 
 // Outputs:
 out vec4 color_fs;
-
 void main()
 {
     // The index of the quad corner.
-    int corner = gl_VertexID;
+    int corner = <VertexID>;
 
     // Vector pointing from camera to cylinder base in object space:
 	vec3 view_dir;

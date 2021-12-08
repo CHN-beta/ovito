@@ -28,11 +28,10 @@ uniform float line_thickness; // Half line width in viewport space.
 // Inputs:
 in vec4 position_from;
 in vec4 position_to;
-
 void main()
 {
     // The index of the quad corner.
-    int corner = gl_VertexID;
+    int corner = <VertexID>;
 
 	// Apply model-view-projection matrix to line points.
 	vec4 proj_from = modelview_projection_matrix * position_from;

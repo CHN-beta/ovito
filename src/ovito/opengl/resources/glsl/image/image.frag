@@ -26,10 +26,7 @@ uniform sampler2D tex;
 // Inputs:
 in vec2 texcoord_fs;
 
-// Ouputs:
-out vec4 fragColor;
-
 void main()
 {
-	fragColor = texture(tex, texcoord_fs);
+	<fragColor> = <texture2D>(tex, texcoord_fs);
 }

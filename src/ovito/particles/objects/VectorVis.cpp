@@ -98,7 +98,7 @@ Box3 VectorVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, con
 		vectorProperty = nullptr;
 
 	// The key type used for caching the computed bounding box:
-	using CacheKey = std::tuple<
+	using CacheKey = RendererResourceKey<struct VectorVisBoundingBoxCache,
 		ConstDataObjectRef,		// Vector property
 		ConstDataObjectRef,		// Particle position property
 		FloatType,				// Scaling factor
@@ -186,7 +186,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 
 	// Make sure we don't exceed our internal limits.
 	if(vectorProperty && vectorProperty->size() > (size_t)std::numeric_limits<int>::max()) {
-		throwException(tr("This version of OVITO cannot render more than %1 vector arrows.").arg(std::numeric_limits<int>::max()));
+		throw RenderException(tr("This version of OVITO cannot render more than %1 vector arrows.").arg(std::numeric_limits<int>::max()));
 	}
 
 	// Look for selected pseudo-coloring property.

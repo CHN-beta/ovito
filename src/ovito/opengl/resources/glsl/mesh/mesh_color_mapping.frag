@@ -33,16 +33,13 @@ in float pseudocolor_fs;
 flat in float selected_face_fs;
 in vec3 normal_fs;
 
-// Outputs:
-out vec4 fragColor;
-
 void main()
 {
     if(selected_face_fs == 0.0) {
-        vec3 color = texture(color_map, pseudocolor_fs).xyz; // texture1D
-        fragColor = shadeSurfaceColor(normalize(normal_fs), vec4(color, opacity));
+        vec3 color = <texture1D>(color_map, pseudocolor_fs).xyz;
+        outputShaded(vec4(color, opacity), normalize(normal_fs));
     }
     else {
-        fragColor = shadeSurfaceColor(normalize(normal_fs), selection_color);
+        outputShaded(selection_color, normalize(normal_fs));
     }
 }

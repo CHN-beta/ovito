@@ -21,17 +21,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../../global_uniforms.glsl"
+#include <view_ray.frag>
 
 // Inputs:
 flat in vec4 color_fs;
 flat in mat3 view_particle_matrix_fs;
 flat in vec3 particle_view_pos_fs;
-noperspective in vec3 ray_origin;
-noperspective in vec3 ray_dir;
 flat in vec2 particle_exponents_fs;
 
-// Outputs:
-out vec4 fragColor;
 
 const int PLANECOUNT = 9;
 const vec4 planes[PLANECOUNT] = vec4[](
@@ -317,10 +314,11 @@ bool check_hit2(in vec3 P, in vec3 D, in float t0, inout vec3 P0, in float v0, i
 
     return false;
 }
-
 void main()
 {
-	vec3 ray_dir_norm = normalize(ray_dir);
+    // Calculate ray passing through the fragment (in view space).
+    <calculate_view_ray_through_fragment>;
+
 	vec3 ray_origin_shifted = ray_origin;
 	// This is to improve numeric precision of intersection calculation:
 	if(!is_perspective())
@@ -462,8 +460,8 @@ void main()
 	// The eye coordinate Z value must be transformed to normalized device
 	// coordinates before being assigned as the final fragment depth.
 	vec4 projected_intersection = projection_matrix * vec4(view_intersection_pnt, 1.0);
-	gl_FragDepth = (projected_intersection.z / projected_intersection.w + 1.0) * 0.5;
+	<fragDepth> = (projected_intersection.z / projected_intersection.w + 1.0) * 0.5;
 
 	// Use flat shading in picking mode.
-    fragColor = color_fs;
+    <fragColor> = color_fs;
 }

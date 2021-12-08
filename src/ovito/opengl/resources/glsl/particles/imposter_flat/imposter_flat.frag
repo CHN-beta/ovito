@@ -27,9 +27,6 @@
 flat in vec4 color_fs;
 in vec2 uv_fs;
 
-// Outputs:
-out vec4 fragColor;
-
 void main()
 {
 	// Test if fragment is within the unit circle.
@@ -40,5 +37,5 @@ void main()
 	vec3 surface_normal = vec3(uv_fs, sqrt(1.0 - rsq));
 
 	// Compute local surface color.
-	fragColor = shadeSurfaceColorDir(surface_normal, color_fs, vec3(0.0, 0.0, -1.0));
+	outputShadedRay(color_fs, surface_normal, vec3(0.0, 0.0, -1.0));
 }

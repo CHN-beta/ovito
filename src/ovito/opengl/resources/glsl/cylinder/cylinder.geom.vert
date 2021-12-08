@@ -35,7 +35,6 @@ out vec3 head_gs;
 out float radius_gs;
 out vec4 color1_gs;
 out vec4 color2_gs;
-
 void main()
 {
     // Forward data to geometry shader.

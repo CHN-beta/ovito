@@ -95,7 +95,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     shader.setVerticesPerInstance(mesh.faceCount() * 3);
 
     // Are we rendering a semi-transparent mesh?
-    bool useBlending = !isPicking() && !primitive.isFullyOpaque();
+    bool useBlending = !isPicking() && !primitive.isFullyOpaque() && !orderIndependentTransparency();
 	if(useBlending) shader.enableBlending();
 
     // Turn back-face culling off if requested.
@@ -309,11 +309,13 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         }
     }
 
-    if(isPicking() || primitive.isFullyOpaque()) {
+    if(!useBlending) {
 		// Draw triangles in regular storage order (not sorted).
 		shader.drawArrays(GL_TRIANGLES);
 	}
     else if(primitive.depthSortingMode() == MeshPrimitive::ConvexShapeMode) {
+        OVITO_ASSERT(!orderIndependentTransparency() && !isPicking());
+
         // Assuming that the input mesh is convex, render semi-transparent triangles in two passes: 
         // First, render triangles facing away from the viewer, then render triangles facing toward the viewer.
         // Each time we pass the entire triangle list to OpenGL and use OpenGL's backface/frontfrace culling
@@ -330,6 +332,8 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         shader.drawArrays(GL_TRIANGLES);
     }
     else if(!primitive.useInstancedRendering()) {
+        OVITO_ASSERT(!orderIndependentTransparency() && !isPicking());
+
         // Create a buffer for an indexed drawing command to render the triangles in back-to-front order. 
 
         // Viewing direction in object space:
@@ -388,6 +392,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 		indexBuffer.release();
     }
 	else {
+        OVITO_ASSERT(!orderIndependentTransparency() && !isPicking());
         // Render the mesh instances in back-to-front order. 
 
         // Viewing direction in object space:
@@ -508,7 +513,7 @@ void OpenGLSceneRenderer::renderMeshWireframeImplementation(const MeshPrimitive&
 	else
 		shader.load("mesh_wireframe_instanced", "mesh/mesh_wireframe_instanced.vert", "mesh/mesh_wireframe_instanced.frag");
 
-    bool useBlending = (primitive.uniformColor().a() < 1.0);
+    bool useBlending = (primitive.uniformColor().a() < 1.0) && !orderIndependentTransparency();
 	if(useBlending) shader.enableBlending();
 
 	// Pass uniform line color to fragment shader as a uniform value.

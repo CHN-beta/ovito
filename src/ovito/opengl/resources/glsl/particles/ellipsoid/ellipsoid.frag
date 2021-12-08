@@ -22,20 +22,19 @@
 
 #include "../../global_uniforms.glsl"
 #include "../../shading.glsl"
+#include <view_ray.frag>
 
 // Inputs:
 flat in vec4 color_fs;
 flat in mat3 view_to_sphere_fs;
 flat in mat3 sphere_to_view_fs;
 flat in vec3 particle_view_pos_fs;
-noperspective in vec3 ray_origin;
-noperspective in vec3 ray_dir;
-
-// Outputs:
-out vec4 fragColor;
 
 void main()
 {
+    // Calculate ray passing through the fragment (in view space).
+    <calculate_view_ray_through_fragment>;
+
 	vec3 sphere_dir = view_to_sphere_fs * (particle_view_pos_fs - ray_origin);
 
 	// Ray direction in sphere coordinate system.
@@ -70,9 +69,9 @@ void main()
 	// The eye coordinate Z value must be transformed to normalized device
 	// coordinates before being assigned as the final fragment depth.
 	vec4 projected_intersection = projection_matrix * vec4(view_intersection_pnt, 1.0);
-	gl_FragDepth = (projected_intersection.z / projected_intersection.w + 1.0) * 0.5;
+	float zdepth = (projected_intersection.z / projected_intersection.w + 1.0) * 0.5;
 
     // Calculate surface normal in view coordinate system.
     vec3 surface_normal = normalize(sphere_intersection_pnt * view_to_sphere_fs);
-    fragColor = shadeSurfaceColorDir(surface_normal, color_fs, normalize(ray_dir));
+    outputShadedRayAndDepth(color_fs, surface_normal, ray_dir_norm, zdepth);
 }

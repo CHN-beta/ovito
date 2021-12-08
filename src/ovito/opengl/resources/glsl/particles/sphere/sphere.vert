@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../../global_uniforms.glsl"
+#include <view_ray.vert>
 
 // Inputs:
 in vec3 position;
@@ -32,13 +33,10 @@ uniform vec3 unit_cube_triangle_strip[14];
 flat out vec4 color_fs;
 flat out vec3 particle_view_pos_fs;
 flat out float particle_radius_squared_fs;
-noperspective out vec3 ray_origin;
-noperspective out vec3 ray_dir;
-
 void main()
 {
     // The index of the cube corner.
-    int corner = gl_VertexID;
+    int corner = <VertexID>;
 
 	// Apply model-view-projection matrix to particle position displaced by the cube vertex position.
     gl_Position = modelview_projection_matrix * vec4(position + unit_cube_triangle_strip[corner] * radius, 1.0);
@@ -52,5 +50,5 @@ void main()
 	particle_view_pos_fs = (modelview_matrix * vec4(position, 1.0)).xyz;
 
     // Calculate ray passing through the vertex (in view space).
-    calculate_view_ray(vec2(gl_Position.x / gl_Position.w, gl_Position.y / gl_Position.w), ray_origin, ray_dir);
+    <calculate_view_ray_through_vertex>;
 }

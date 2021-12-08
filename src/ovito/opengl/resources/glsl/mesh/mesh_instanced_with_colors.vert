@@ -33,7 +33,6 @@ in vec4 instance_color;
 // Outputs:
 flat out vec4 color_fs;
 out vec3 normal_fs;
-
 void main()
 {
     // Apply instance transformation.

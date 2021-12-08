@@ -20,13 +20,13 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#include "../global_uniforms.glsl"
+#include "../shading.glsl"
+
 // Uniforms:
 uniform vec4 color;
 
-// Outputs:
-out vec4 fragColor;
-
 void main()
 {
-    fragColor = color;
+    outputFlat(color);
 }

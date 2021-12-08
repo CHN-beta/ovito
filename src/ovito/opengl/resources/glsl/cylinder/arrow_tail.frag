@@ -22,6 +22,7 @@
 
 #include "../global_uniforms.glsl"
 #include "../shading.glsl"
+#include <view_ray.frag>
 
 // Inputs:
 flat in vec4 color_fs;
@@ -29,15 +30,11 @@ flat in vec3 cylinder_view_base;		// Transformed cylinder position in view coord
 flat in vec3 cylinder_view_axis;		// Transformed cylinder axis in view coordinates
 flat in float cylinder_radius_sq_fs;	// The squared radius of the cylinder
 flat in float cylinder_length;			// The length of the cylinder
-noperspective in vec3 ray_origin;
-noperspective in vec3 ray_dir;
-
-// Outputs:
-out vec4 fragColor;
 
 void main()
 {
-	vec3 ray_dir_norm = normalize(ray_dir);
+    // Calculate ray passing through the fragment (in view space).
+    <calculate_view_ray_through_fragment>;
 
 	// Perform ray-cylinder intersection test.
 	vec3 n = cross(ray_dir_norm, cylinder_view_axis);
@@ -121,7 +118,7 @@ void main()
 	// The eye coordinate Z value must be transformed to normalized device
 	// coordinates before being assigned as the final fragment depth.
 	vec4 projected_intersection = projection_matrix * vec4(view_intersection_pnt, 1.0);
-	gl_FragDepth = (projected_intersection.z / projected_intersection.w + 1.0) * 0.5;
+	float zdepth = (projected_intersection.z / projected_intersection.w + 1.0) * 0.5;
 
-    fragColor = shadeSurfaceColorDir(normalize(surface_normal), color_fs, ray_dir_norm);
+    outputShadedRayAndDepth(color_fs, normalize(surface_normal), ray_dir_norm, zdepth);
 }

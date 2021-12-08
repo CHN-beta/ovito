@@ -27,10 +27,7 @@
 in vec4 color_fs;
 in vec3 normal_fs;
 
-// Outputs:
-out vec4 fragColor;
-
 void main()
 {
-    fragColor = shadeSurfaceColor(normalize(normal_fs), color_fs);
+    outputShaded(color_fs, normalize(normal_fs));
 }

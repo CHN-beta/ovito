@@ -24,6 +24,7 @@ layout(points) in;
 layout(triangle_strip, max_vertices=14) out;
 
 #include "../global_uniforms.glsl"
+#include <view_ray.vert>
 
 // Inputs:
 in vec3 base_gs[1];
@@ -40,9 +41,6 @@ flat out vec3 cylinder_view_base;		// Transformed cylinder position in view coor
 flat out vec3 cylinder_view_axis;		// Transformed cylinder axis in view coordinates
 flat out float cylinder_radius_sq_fs;	// The squared radius of the cylinder
 flat out float cylinder_length;			// The length of the cylinder
-noperspective out vec3 ray_origin;
-noperspective out vec3 ray_dir;
-
 void main()
 {
     // Set up an axis tripod that is aligned with the cylinder.
@@ -86,7 +84,7 @@ void main()
         cylinder_length = length(cylinder_view_axis_);
 
         // Calculate ray passing through the vertex (in view space).
-        calculate_view_ray(vec2(gl_Position.x / gl_Position.w, gl_Position.y / gl_Position.w), ray_origin, ray_dir);
+        <calculate_view_ray_through_vertex>;
 
         EmitVertex();
     }

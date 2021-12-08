@@ -33,7 +33,6 @@ out vec3 position_gs;
 out float radius_gs;
 out vec4 color_gs;
 out mat4 shape_orientation_gs;
-
 void main()
 {
     // Forward particle position to geometry shader.

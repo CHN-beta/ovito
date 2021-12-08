@@ -41,6 +41,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
 	if(primitive.indices() && primitive.indices()->size() == 0)
         return;
 
+
 	rebindVAO();
 
 	// Activate the right OpenGL shader program.
@@ -207,7 +208,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
 	shader.setInstanceCount(primitive.indices() ? primitive.indices()->size() : primitive.positions()->size());
 
     // Are we rendering semi-transparent particles?
-    bool useBlending = !isPicking() && (primitive.transparencies() != nullptr);
+    bool useBlending = !isPicking() && (primitive.transparencies() != nullptr) && !orderIndependentTransparency();
 	if(useBlending) shader.enableBlending();
 
 	// Pass picking base ID to shader.
@@ -483,12 +484,12 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     }
 
     if(!useBlending) {
-        // Draw triangle strip instances in regular storage order (not sorted).
+        // Draw triangle strip instances in regular storage order (unsorted).
 		shader.drawArrays(GL_TRIANGLE_STRIP);
     }
     else {
         // Render the particles in back-to-front order. 
-        OVITO_ASSERT(!isPicking());
+        OVITO_ASSERT(!isPicking() && !orderIndependentTransparency());
 
         // Viewing direction in object space:
         const Vector3 direction = modelViewTM().inverse().column(2);

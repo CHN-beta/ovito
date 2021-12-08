@@ -33,7 +33,6 @@ uniform vec3 unit_cube_triangle_strip[14];
 
 // Outputs:
 flat out vec4 color_fs;
-
 void main()
 {
     for(int corner = 0; corner < 14; corner++) 

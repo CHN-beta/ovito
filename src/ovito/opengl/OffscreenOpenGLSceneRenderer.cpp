@@ -109,6 +109,9 @@ bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 	if(!_framebufferObject->bind())
 		throwException(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
 
+	// Tell the base class about the FBO we are rendering into.
+	setPrimaryFramebuffer(_framebufferObject->handle());
+
 	return true;
 }
 
@@ -216,6 +219,7 @@ void OffscreenOpenGLSceneRenderer::endRender()
 		_offscreenContext->doneCurrent();
 	_framebufferObject.reset();
 	_offscreenContext.reset();
+	setPrimaryFramebuffer(0);
 	// Keep offscreen surface alive and re-use it in subsequent render passes until the renderer is deleted.
 }
 

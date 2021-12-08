@@ -22,6 +22,7 @@
 
 #include "../global_uniforms.glsl"
 #include "../picking.glsl"
+#include <view_ray.vert>
 
 // Inputs:
 in vec3 base;
@@ -35,13 +36,10 @@ flat out vec3 cylinder_view_base;		// Transformed cylinder position in view coor
 flat out vec3 cylinder_view_axis;		// Transformed cylinder axis in view coordinates
 flat out float cylinder_radius_sq_fs;	// The squared radius of the cylinder
 flat out float cylinder_length;			// The length of the cylinder
-noperspective out vec3 ray_origin;
-noperspective out vec3 ray_dir;
-
 void main()
 {
     // The index of the box corner.
-    int corner = gl_VertexID;
+    int corner = <VertexID>;
 
     // Set up an axis tripod that is aligned with the cylinder.
     mat3 orientation_tm;
@@ -61,7 +59,7 @@ void main()
     gl_Position = modelview_projection_matrix * vec4(base + (orientation_tm * unit_cube_triangle_strip[corner]), 1.0);
 
     // Compute color from object ID.
-    color_fs = pickingModeColor(gl_InstanceID);
+    color_fs = pickingModeColor(<InstanceID>);
 
     // Apply additional scaling to cylinder radius due to model-view transformation. 
     float viewspace_radius = radius * length(modelview_matrix[0]);
@@ -77,5 +75,5 @@ void main()
 	cylinder_length = length(cylinder_view_axis);
 
     // Calculate ray passing through the vertex (in view space).
-    calculate_view_ray(vec2(gl_Position.x / gl_Position.w, gl_Position.y / gl_Position.w), ray_origin, ray_dir);
+    <calculate_view_ray_through_vertex>;
 }

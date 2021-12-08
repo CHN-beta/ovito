@@ -58,7 +58,7 @@ public:
 
 	/// Is called after rendering has finished.
 	virtual void endRender() override;
-
+	
 private:
 
 	/// Creates the QOffscreenSurface in the main thread.

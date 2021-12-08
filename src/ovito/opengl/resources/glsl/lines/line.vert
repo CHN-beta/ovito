@@ -28,7 +28,6 @@ in vec4 color;
 
 // Outputs:
 out vec4 color_fs;
-
 void main()
 {
 	// Forward color to fragment shader.

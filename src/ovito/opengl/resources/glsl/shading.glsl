@@ -25,14 +25,20 @@ const float diffuse_strength = 1.0 - ambient;
 const float shininess = 6.0;
 const vec3 specular_lightdir = normalize(vec3(-1.8, 1.5, -0.2));
 
-vec4 shadeSurfaceColorDir(in vec3 surface_normal, in vec4 color, in vec3 ray_dir)
+void outputShadedRay(in vec4 color, in vec3 surface_normal, in vec3 ray_dir)
 {
     float specular = pow(max(0.0, dot(reflect(specular_lightdir, surface_normal), ray_dir)), shininess) * 0.25;
     float diffuse = abs(surface_normal.z) * diffuse_strength;
-    return vec4(color.rgb * (diffuse + ambient) + vec3(specular), color.a);
+    <fragColor> = vec4(color.rgb * (diffuse + ambient) + vec3(specular), color.a);
 }
 
-vec4 shadeSurfaceColor(in vec3 surface_normal, in vec4 color)
+void outputShadedRayAndDepth(in vec4 color, in vec3 surface_normal, in vec3 ray_dir, in float zdepth)
+{
+    outputShadedRay(color, surface_normal, ray_dir);
+    <fragDepth> = zdepth;
+}
+
+void outputShaded(in vec4 color, in vec3 surface_normal)
 {
     vec3 ray_dir;
     if(is_perspective()) {
@@ -42,5 +48,10 @@ vec4 shadeSurfaceColor(in vec3 surface_normal, in vec4 color)
     else {
         ray_dir = vec3(0.0, 0.0, -1.0);
     }
-    return shadeSurfaceColorDir(surface_normal, color, ray_dir);
+    outputShadedRay(color, surface_normal, ray_dir);
+}
+
+void outputFlat(in vec4 color)
+{
+    <fragColor> = color;
 }

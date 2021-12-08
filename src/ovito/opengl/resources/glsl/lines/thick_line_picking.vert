@@ -32,11 +32,10 @@ in vec4 position_to;
 
 // Outputs:
 out vec4 color_fs;
-
 void main()
 {
     // The index of the quad corner.
-    int corner = gl_VertexID;
+    int corner = <VertexID>;
 
 	// Apply model-view-projection matrix to line points.
 	vec4 proj_from = modelview_projection_matrix * position_from;
@@ -63,5 +62,5 @@ void main()
 		gl_Position = proj_to + vec4(delta.y * proj_to.w, -delta.x * proj_to.w, 0.0, 0.0);
 
 	// Compute color from primitive index.
-	color_fs = pickingModeColor(gl_InstanceID);
+	color_fs = pickingModeColor(<InstanceID>);
 }

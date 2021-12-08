@@ -36,14 +36,6 @@ bool is_perspective()
         || projection_matrix[3][3] != 1.0;
 }
 
-void calculate_view_ray(in vec2 viewport_position, out vec3 ray_origin, out vec3 ray_dir)
-{
-    vec4 near = inverse_projection_matrix * vec4(viewport_position, -1.0, 1.0);
-    vec4 far = near + inverse_projection_matrix[2];
-    ray_origin = near.xyz / near.w;
-    ray_dir = far.xyz / far.w - ray_origin;
-}
-
 // Replacement for inverse(mat3) function, which is only available in GLSL version 1.40. 
 float determinant_mat2(in mat2 matrix) {
     return matrix[0].x * matrix[1].y - matrix[0].y * matrix[1].x;

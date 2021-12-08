@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../../global_uniforms.glsl"
+#include <flat_normal.vert>
 
 // Inputs:
 in vec3 position;
@@ -31,12 +32,10 @@ uniform vec3 unit_cube_strip_normals[14];
 
 // Outputs:
 flat out vec4 color_fs;
-flat out vec3 flat_normal_fs;
-
 void main()
 {
     // The index of the cube corner.
-    int corner = gl_VertexID;
+    int corner = <VertexID>;
 
 	// Apply model-view-projection matrix to particle position displaced by the cube vertex position.
     gl_Position = modelview_projection_matrix * vec4(position + unit_cube_triangle_strip[corner] * radius, 1.0);
@@ -45,5 +44,5 @@ void main()
     color_fs = color;
 
     // Transform local vertex normal.
-    flat_normal_fs = vec3(normal_tm * vec4(unit_cube_strip_normals[corner], 0.0));
+    <flat_normal.output> = vec3(normal_tm * vec4(unit_cube_strip_normals[corner], 0.0));
 }

@@ -34,11 +34,10 @@ uniform vec2 unit_quad_triangle_strip[4];
 
 // Outputs:
 flat out vec4 color_fs;
-
 void main()
 {
     // The index of the quad corner.
-    int corner = gl_VertexID;
+    int corner = <VertexID>;
 
     // Vector pointing from camera to cylinder base in object space:
 	vec3 view_dir;
@@ -57,5 +56,5 @@ void main()
     gl_Position = modelview_projection_matrix * vec4(base + uv_tm[0] + uv_tm * vec3(unit_quad_triangle_strip[corner], 0.0), 1.0);
 
     // Compute color from object ID.
-    color_fs = pickingModeColor(gl_InstanceID);
+    color_fs = pickingModeColor(<InstanceID>);
 }

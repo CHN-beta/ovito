@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../global_uniforms.glsl"
+#include <view_ray.vert>
 
 // Inputs:
 in vec3 base;
@@ -35,13 +36,10 @@ flat out vec4 color_fs;
 flat out vec3 center;	// Transformed cone vertex in view coordinates
 flat out vec3 axis;		// Transformed cone axis in view coordinates
 flat out float cone_radius;	// The radius of the cone
-noperspective out vec3 ray_origin;
-noperspective out vec3 ray_dir;
-
 void main()
 {
     // The index of the box corner.
-    int corner = gl_VertexID;
+    int corner = <VertexID>;
 
     float arrowHeadRadius = radius * 2.5;
     float arrowHeadLength = (arrowHeadRadius * 1.8);
@@ -82,5 +80,5 @@ void main()
     axis = (modelview_matrix * vec4(-orientation_tm[2], 0.0)).xyz;
 
     // Calculate ray passing through the vertex (in view space).
-    calculate_view_ray(vec2(gl_Position.x / gl_Position.w, gl_Position.y / gl_Position.w), ray_origin, ray_dir);
+    <calculate_view_ray_through_vertex>;
 }

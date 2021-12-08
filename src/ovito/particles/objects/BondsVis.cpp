@@ -70,7 +70,7 @@ Box3 BondsVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, cons
 	const SimulationCellObject* simulationCell = flowState.getObject<SimulationCellObject>();
 
 	// The key type used for caching the computed bounding box:
-	using CacheKey = std::tuple<
+	using CacheKey = RendererResourceKey<struct BondsVisBoundingBoxCache,
 		ConstDataObjectRef,		// Bond topology property
 		ConstDataObjectRef,		// Bond PBC vector property
 		ConstDataObjectRef,		// Particle position property
@@ -163,7 +163,7 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 
 	// Make sure we don't exceed our internal limits.
 	if(bondTopologyProperty && bondTopologyProperty->size() * 2 > (size_t)std::numeric_limits<int>::max()) {
-		throwException(tr("This version of OVITO cannot render more than %1 bonds.").arg(std::numeric_limits<int>::max() / 2));
+		throw RenderException(tr("This version of OVITO cannot render more than %1 bonds.").arg(std::numeric_limits<int>::max() / 2));
 	}
 
 	// The key type used for caching the rendering primitive:

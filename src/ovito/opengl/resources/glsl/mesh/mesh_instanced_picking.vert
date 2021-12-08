@@ -31,7 +31,6 @@ in vec4 instance_tm_row3;
 
 // Outputs:
 flat out vec4 color_fs;
-
 void main()
 {
     // Apply instance transformation.
@@ -44,5 +43,5 @@ void main()
     gl_Position = modelview_projection_matrix * vec4(instance_position, 1.0);
 
     // Compute color from object ID.
-    color_fs = pickingModeColor(gl_InstanceID);
+    color_fs = pickingModeColor(<InstanceID>);
 }

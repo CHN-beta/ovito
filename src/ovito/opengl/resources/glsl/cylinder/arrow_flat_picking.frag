@@ -23,11 +23,8 @@
 // Inputs:
 flat in vec4 color_fs;
 
-// Outputs:
-out vec4 fragColor;
-
 void main()
 {
     // Flat shading:
-    fragColor = color_fs;
+    <fragColor> = color_fs;
 }

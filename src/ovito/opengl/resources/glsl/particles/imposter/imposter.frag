@@ -28,9 +28,6 @@ flat in vec4 color_fs;
 in vec2 uv_fs;
 flat in vec2 radius_and_eyez_fs;
 
-// Outputs:
-out vec4 fragColor;
-
 void main()
 {
 	// Test if fragment is within the unit circle.
@@ -40,11 +37,11 @@ void main()
 	// Calculate surface normal in view coordinate system.
 	vec3 surface_normal = vec3(uv_fs, sqrt(1.0 - rsq));
 
-	// Compute local surface color.
-	fragColor = shadeSurfaceColorDir(surface_normal, color_fs, vec3(0.0, 0.0, -1.0));
-
 	// Vary the depth value across the imposter to obtain proper intersections between particles.
 	float ze = radius_and_eyez_fs.y + surface_normal.z * radius_and_eyez_fs.x;
 	float zn = (projection_matrix[2][2] * ze + projection_matrix[3][2]) / (projection_matrix[2][3] * ze + projection_matrix[3][3]);
-	gl_FragDepth = 0.5 * (zn * gl_DepthRange.diff + (gl_DepthRange.far + gl_DepthRange.near));
+	float zdepth = 0.5 * (zn * gl_DepthRange.diff + (gl_DepthRange.far + gl_DepthRange.near));
+
+	// Compute local surface color.
+	outputShadedRayAndDepth(color_fs, surface_normal, vec3(0.0, 0.0, -1.0), zdepth);
 }

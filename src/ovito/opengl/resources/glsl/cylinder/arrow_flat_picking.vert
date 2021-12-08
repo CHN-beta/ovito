@@ -33,7 +33,6 @@ in float radius;
 
 // Outputs:
 flat out vec4 color_fs;
-
 void main()
 {
     // Vector pointing from camera to cylinder base in object space:
@@ -52,19 +51,20 @@ void main()
     vec2 vpos;
     float arrowHeadRadius = 2.5;
     float arrowHeadLength = (radius * arrowHeadRadius * 1.8) / length(uv_tm[0]);
+    int vidx = <VertexID>;
     if(arrowHeadLength < 1.0) {
-        if(gl_VertexID == 0) vpos = vec2(1.0, 0.0);
-        else if(gl_VertexID == 1) vpos = vec2(1.0 - arrowHeadLength, arrowHeadRadius);
-        else if(gl_VertexID == 2) vpos = vec2(1.0 - arrowHeadLength, 1.0);
-        else if(gl_VertexID == 3) vpos = vec2(0.0, 1.0);
-        else if(gl_VertexID == 4) vpos = vec2(0.0,-1.0);
-        else if(gl_VertexID == 5) vpos = vec2(1.0 - arrowHeadLength,-1.0);
-        else if(gl_VertexID == 6) vpos = vec2(1.0 - arrowHeadLength,-arrowHeadRadius);
+        if(vidx == 0) vpos = vec2(1.0, 0.0);
+        else if(vidx == 1) vpos = vec2(1.0 - arrowHeadLength, arrowHeadRadius);
+        else if(vidx == 2) vpos = vec2(1.0 - arrowHeadLength, 1.0);
+        else if(vidx == 3) vpos = vec2(0.0, 1.0);
+        else if(vidx == 4) vpos = vec2(0.0,-1.0);
+        else if(vidx == 5) vpos = vec2(1.0 - arrowHeadLength,-1.0);
+        else if(vidx == 6) vpos = vec2(1.0 - arrowHeadLength,-arrowHeadRadius);
     }
     else {
-        if(gl_VertexID == 0) vpos = vec2(1.0, 0.0);
-        else if(gl_VertexID == 1) vpos = vec2(0.0, arrowHeadRadius / arrowHeadLength);
-        else if(gl_VertexID == 6) vpos = vec2(0.0,-arrowHeadRadius / arrowHeadLength);
+        if(vidx == 0) vpos = vec2(1.0, 0.0);
+        else if(vidx == 1) vpos = vec2(0.0, arrowHeadRadius / arrowHeadLength);
+        else if(vidx == 6) vpos = vec2(0.0,-arrowHeadRadius / arrowHeadLength);
         else vpos = vec2(0.0, 0.0);
     }
 
@@ -72,5 +72,5 @@ void main()
     gl_Position = modelview_projection_matrix * vec4(base + uv_tm * vec3(vpos, 0.0), 1.0);
 
     // Compute color from object ID.
-    color_fs = pickingModeColor(gl_InstanceID);
+    color_fs = pickingModeColor(<InstanceID>);
 }

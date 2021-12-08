@@ -24,6 +24,7 @@ layout(points) in;
 layout(triangle_strip, max_vertices=14) out;
 
 #include "../../global_uniforms.glsl"
+#include <view_ray.vert>
 
 // Inputs:
 in vec3 position_gs[1];
@@ -35,9 +36,6 @@ uniform vec3 unit_cube_triangle_strip[14];
 flat out vec4 color_fs;
 flat out vec3 particle_view_pos_fs;
 flat out float particle_radius_squared_fs;
-noperspective out vec3 ray_origin;
-noperspective out vec3 ray_dir;
-
 void main()
 {
     for(int corner = 0; corner < 14; corner++) 
@@ -54,7 +52,7 @@ void main()
         particle_view_pos_fs = (modelview_matrix * vec4(position_gs[0], 1.0)).xyz;
 
         // Calculate ray passing through the vertex (in view space).
-        calculate_view_ray(vec2(gl_Position.x / gl_Position.w, gl_Position.y / gl_Position.w), ray_origin, ray_dir);
+        <calculate_view_ray_through_vertex>;
 
         EmitVertex();
     }

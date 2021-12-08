@@ -33,14 +33,13 @@ out vec3 position_gs;
 out vec4 color_gs;
 out mat4 shape_orientation_gs;
 out vec2 roundness_gs;
-
 void main()
 {
     // Forward particle position to geometry shader.
     position_gs = position;
 
     // Compute color from object ID.
-    color_gs = pickingModeColor(gl_VertexID);
+    color_gs = pickingModeColor(<VertexID>);
 
     // Forward particle shape and orientation to geometry shader.
     shape_orientation_gs = shape_orientation;

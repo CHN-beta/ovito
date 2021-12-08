@@ -20,14 +20,14 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#include "../../global_uniforms.glsl"
+#include "../../shading.glsl"
+
 // Inputs:
 flat in vec4 color_fs;
-
-// Outputs:
-out vec4 fragColor;
 
 void main()
 {
     // Flat shading:
-    fragColor = color_fs;
+    outputFlat(color_fs);
 }

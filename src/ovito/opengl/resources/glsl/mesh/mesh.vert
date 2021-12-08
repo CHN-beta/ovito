@@ -30,7 +30,6 @@ in vec4 color;
 // Outputs:
 out vec4 color_fs;
 out vec3 normal_fs;
-
 void main()
 {
 	// Apply model-view-projection matrix to vertex.

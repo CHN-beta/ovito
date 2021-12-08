@@ -21,21 +21,18 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../global_uniforms.glsl"
+#include <view_ray.frag>
 
 // Inputs:
 flat in vec4 color_fs;
 flat in vec3 center;	// Transformed cone vertex in view coordinates
 flat in vec3 axis;		// Transformed cone axis in view coordinates
 flat in float cone_radius;	// The radius of the cone
-noperspective in vec3 ray_origin;
-noperspective in vec3 ray_dir;
-
-// Outputs:
-out vec4 fragColor;
 
 void main()
 {
-	vec3 ray_dir_norm = normalize(ray_dir);
+    // Calculate ray passing through the fragment (in view space).
+    <calculate_view_ray_through_fragment>;
 
 	float zmin;
 	vec3 ray_origin_shifted = ray_origin;
@@ -144,8 +141,8 @@ void main()
 	// The eye coordinate Z value must be transformed to normalized device
 	// coordinates before being assigned as the final fragment depth.
 	vec4 projected_intersection = projection_matrix * vec4(view_intersection_pnt, 1.0);
-	gl_FragDepth = (projected_intersection.z / projected_intersection.w + 1.0) * 0.5;
+	<fragDepth> = (projected_intersection.z / projected_intersection.w + 1.0) * 0.5;
 
     // Flat shading:
-    fragColor = color_fs;
+    <fragColor> = color_fs;
 }

@@ -26,9 +26,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/opengl/OpenGLSceneRenderer.h>
 
-#include <QOpenGLFramebufferObject> 
-#include <QOpenGLFramebufferObjectFormat>
-
 namespace Ovito {
 
 /**
@@ -65,7 +62,7 @@ protected:
 
 	/// Returns the OpenGL texture used as depth buffer (only on OpenGGL ES1 platform).
 	GLuint depthTextureId() const { return _framebufferTexturesGLES[1]; }
-
+	
 private:
 
 	/// The OpenGL offscreen framebuffer used on desktop OpenGL platform.

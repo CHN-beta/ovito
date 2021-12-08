@@ -480,7 +480,7 @@ PipelineStatus ParticlesVis::render(TimePoint time, const ConstDataObjectPath& p
 	// Make sure we don't exceed the internal limits. Rendering of more than 2 billion particles is not yet supported by OVITO.
 	size_t particleCount = particles->elementCount();
 	if(particleCount > (size_t)std::numeric_limits<int>::max()) {
-		throwException(tr("This version of OVITO doesn't support rendering more than %1 particles.").arg(std::numeric_limits<int>::max()));
+		throw RenderException(tr("This version of OVITO doesn't support rendering more than %1 particles.").arg(std::numeric_limits<int>::max()));
 	}
 
 	// Render all mesh-based particle types.
@@ -698,8 +698,21 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 	if(!positionProperty)
 		return;
 
+	// Prepare the particle rendering primitive.
+	ParticlePrimitive primitive;
+
 	// Pick render quality level adaptively based on current number of particles.
 	ParticlePrimitive::RenderingQuality primitiveRenderQuality = effectiveRenderingQuality(renderer, particles);
+	primitive.setRenderingQuality(primitiveRenderQuality);
+
+	// Fill rendering primitive with particle properties.
+	primitive.setPositions(positionProperty);
+	primitive.setTransparencies(transparencyProperty);
+	primitive.setSelection(selectionProperty);
+	primitive.setAsphericalShapes(asphericalShapeProperty);
+	primitive.setOrientations(orientationProperty);
+	primitive.setRoundness(roundnessProperty);
+	primitive.setSelectionColor(selectionParticleColor());
 
 	// Create separate rendering primitives for the different shapes supported by the method.
 	for(ParticlesVis::ParticleShape shape : {ParticleShape::Sphere, ParticleShape::Box, ParticleShape::Circle, ParticleShape::Square}) {
@@ -708,31 +721,21 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 		if(uniformShape != ParticleShape::Default && uniformShape != shape) 
 			continue;
 
-		// The lookup key for the cached rendering primitive:
+		// The lookup key for the cached particle indices for the current shape type:
 		using ParticleCacheKey = RendererResourceKey<struct ParticlesVisPrimitiveCache,
 			ConstDataObjectRef,					// Particle type property
-			size_t,								// Total particle count
+			ParticlesVis::ParticleShape,		// Current particle shape
 			ParticlesVis::ParticleShape			// Global particle shape
 		>;
-		// The data structure stored in the vis cache.
-		struct ParticleCacheValue {
-			ParticlePrimitive primitive;
-			OORef<ParticlePickInfo> pickInfo;
-			bool isCreated = false;
-		};
 
-		// Look up the rendering primitive in the vis cache.
-		auto& visCache = dataset()->visCache().get<ParticleCacheValue>(ParticleCacheKey(
+		// Look up the particle indices in the vis cache.
+		ConstDataBufferPtr& indices = dataset()->visCache().get<ConstDataBufferPtr>(ParticleCacheKey(
 			typeProperty,
-			particles->elementCount(),
-			particleShape()));
+			shape,
+			uniformShape));
 
-		// Check if the rendering primitive needs to be recreated from scratch.
-		if(!visCache.isCreated) {
-			visCache.isCreated = true;
-
+		if(!indices) {
 			// Determine the set of particles to be rendered using the current primitive shape.
-			DataBufferAccessAndRef<int> activeParticleIndices;
 			if(uniformShape != shape) {
 				OVITO_ASSERT(typeProperty);
 
@@ -746,81 +749,69 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 				}
 
 				// Collect indices of all particles that have an active type.
-				activeParticleIndices = DataBufferPtr::create(dataset(), 0, DataBuffer::Int, 1, 0, false);
+				DataBufferAccessAndRef<int> activeParticleIndices = DataBufferPtr::create(dataset(), 0, DataBuffer::Int, 1, 0, false);
 				size_t index = 0;
 				for(int t : ConstPropertyAccess<int>(typeProperty)) {
 					if(boost::find(activeParticleTypes, t) != activeParticleTypes.cend())
 						activeParticleIndices.push_back(index);
 					index++;
 				}
-
-				if(activeParticleIndices.size() == 0) {
-					visCache.primitive = ParticlePrimitive();
-					visCache.pickInfo.reset();
-					continue;	// No particles to be rendered using the current primitive shape.
-				}
+				indices = activeParticleIndices.take();
 			}
-			// Set up the rendering primitive.
-			// Enable/disable indexed rendering of particle primitives.
-			visCache.primitive.setIndices(activeParticleIndices.take());
-			// Also create the corresponding picking record.
-			visCache.pickInfo = new ParticlePickInfo(this, particles);
 		}
-		if(!visCache.pickInfo)
-			continue;
 
-		// Update the pick info record with the latest particle data.
-		visCache.pickInfo->setParticles(particles);
+		if(indices && indices->size() == 0)
+			continue;	// No particles to be rendered using the current primitive shape.
 
-		// Fill rendering primitive with particle properties.
-		visCache.primitive.setPositions(positionProperty);
-		visCache.primitive.setTransparencies(transparencyProperty);
-		visCache.primitive.setSelection(selectionProperty);
-		visCache.primitive.setAsphericalShapes(asphericalShapeProperty);
-		visCache.primitive.setOrientations(orientationProperty);
-		visCache.primitive.setRoundness(roundnessProperty);
-		visCache.primitive.setSelectionColor(selectionParticleColor());
+		// Enable/disable indexed rendering of particle primitives.
+		primitive.setIndices(indices);
 
-		// Configure rendering primitive style.
+		if(!primitive.radii()) {
+			// The type of lookup key used for caching the particle radii:
+			using RadiiCacheKey = RendererResourceKey<struct ParticlesVisPrimitiveRadiusCache,
+				FloatType,							// Default particle radius
+				FloatType,							// Global radius scaling factor
+				ConstDataObjectRef,					// Radius property
+				ConstDataObjectRef					// Type property
+			>;
+			ConstPropertyPtr& radiusBuffer = dataset()->visCache().get<ConstPropertyPtr>(RadiiCacheKey(
+				defaultParticleRadius(),
+				radiusScaleFactor(),
+				radiusProperty,
+				typeRadiusProperty));
+			if(!radiusBuffer)
+				radiusBuffer = particleRadii(particles, true);
+			primitive.setRadii(radiusBuffer);
+		}
+
+		if(!primitive.colors()) {
+			// The type of lookup key used for caching the particle colors:
+			using ColorCacheKey = RendererResourceKey<struct ParticlesVisPrimitiveColorCache,
+				ConstDataObjectRef,					// Type property
+				ConstDataObjectRef					// Color property
+			>;
+			ConstPropertyPtr& colorBuffer = dataset()->visCache().get<ConstPropertyPtr>(ColorCacheKey(
+				typeProperty,
+				colorProperty));
+			if(!colorBuffer)
+				colorBuffer = particleColors(particles, false);
+			primitive.setColors(colorBuffer);
+		}
+
+		// Configure rendering shape and shading style.
 		ParticlePrimitive::ParticleShape primitiveParticleShape = effectiveParticleShape(shape, asphericalShapeProperty, orientationProperty, roundnessProperty);
 		ParticlePrimitive::ShadingMode primitiveShadingMode = (shape == Circle || shape == Square) ? ParticlePrimitive::FlatShading : ParticlePrimitive::NormalShading;
-		visCache.primitive.setParticleShape(primitiveParticleShape);
-		visCache.primitive.setShadingMode(primitiveShadingMode);
-		visCache.primitive.setRenderingQuality(primitiveRenderQuality);
+		primitive.setParticleShape(primitiveParticleShape);
+		primitive.setShadingMode(primitiveShadingMode);
 
-		// The type of lookup key used for caching the particle radii:
-		using RadiiCacheKey = RendererResourceKey<struct ParticlesVisPrimitiveRadiusCache,
-			FloatType,							// Default particle radius
-			FloatType,							// Global radius scaling factor
-			ConstDataObjectRef,					// Radius property
-			ConstDataObjectRef					// Type property
-		>;
-		ConstPropertyPtr& radiusBuffer = dataset()->visCache().get<ConstPropertyPtr>(RadiiCacheKey(
-			defaultParticleRadius(),
-			radiusScaleFactor(),
-			radiusProperty,
-			typeRadiusProperty));
-		if(!radiusBuffer) {
-			radiusBuffer = particleRadii(particles, true);
-			visCache.primitive.setRadii(radiusBuffer);
+		if(renderer->isPicking()) {
+			// Look up or create the pick info record with the latest particle data.
+			OORef<ParticlePickInfo>& pickingInfo = dataset()->visCache().get<OORef<ParticlePickInfo>>(ConstDataObjectRef(particles));
+			if(!pickingInfo) pickingInfo = new ParticlePickInfo(this, particles);
+			renderer->beginPickObject(contextNode, pickingInfo);
 		}
-
-		// The type of lookup key used for caching the particle colors:
-		using ColorCacheKey = RendererResourceKey<struct ParticlesVisPrimitiveColorCache,
-			ConstDataObjectRef,					// Type property
-			ConstDataObjectRef					// Color property
-		>;
-		ConstPropertyPtr& colorBuffer = dataset()->visCache().get<ConstPropertyPtr>(ColorCacheKey(
-			typeProperty,
-			colorProperty));
-		if(!colorBuffer) {
-			colorBuffer = particleColors(particles, false);
-			visCache.primitive.setColors(colorBuffer);
-		}
-
 		// Render the particle primitive.
-		if(renderer->isPicking()) renderer->beginPickObject(contextNode, visCache.pickInfo);
-		renderer->renderParticles(visCache.primitive);
+		renderer->renderParticles(primitive);
 		if(renderer->isPicking()) renderer->endPickObject();
 	}
 }

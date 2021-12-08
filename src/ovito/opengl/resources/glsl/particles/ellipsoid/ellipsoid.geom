@@ -24,6 +24,7 @@ layout(points) in;
 layout(triangle_strip, max_vertices=14) out;
 
 #include "../../global_uniforms.glsl"
+#include <view_ray.vert>
 
 // Inputs:
 in vec3 position_gs[1];
@@ -37,9 +38,6 @@ flat out vec4 color_fs;
 flat out mat3 view_to_sphere_fs;
 flat out mat3 sphere_to_view_fs;
 flat out vec3 particle_view_pos_fs;
-noperspective out vec3 ray_origin;
-noperspective out vec3 ray_dir;
-
 void main()
 {
     // Compute particle center position in view space.
@@ -47,7 +45,7 @@ void main()
 
     // Matrices for converting to/from unit sphere space.
     mat3 sphere_to_view = mat3(modelview_matrix) * mat3(shape_orientation_gs[0]);
-    mat3 view_to_sphere = inverse(sphere_to_view);
+    mat3 view_to_sphere = <inverse_mat3>(sphere_to_view);
 
     for(int corner = 0; corner < 14; corner++) 
     {
@@ -66,7 +64,7 @@ void main()
         sphere_to_view_fs = sphere_to_view;
 
         // Calculate ray passing through the vertex (in view space).
-        calculate_view_ray(vec2(gl_Position.x / gl_Position.w, gl_Position.y / gl_Position.w), ray_origin, ray_dir);
+        <calculate_view_ray_through_vertex>;
 
         EmitVertex();
     }

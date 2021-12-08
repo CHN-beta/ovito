@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../../global_uniforms.glsl"
+#include <flat_normal.vert>
 
 // Inputs:
 in vec3 position;
@@ -32,12 +33,10 @@ uniform vec3 unit_cube_strip_normals[14];
 
 // Outputs:
 flat out vec4 color_fs;
-flat out vec3 flat_normal_fs;
-
 void main()
 {
     // The index of the box corner.
-    int corner = gl_VertexID;
+    int corner = <VertexID>;
 
     // Compute rotated and scaled unit cube corner coordinates.
     vec4 scaled_corner = vec4(position, 1.0) + (shape_orientation * vec4(unit_cube_triangle_strip[corner], 0.0));
@@ -49,5 +48,5 @@ void main()
     color_fs = color;
 
     // Transform local vertex normal.
-    flat_normal_fs = normalize(vec3(normal_tm * shape_orientation * vec4(unit_cube_strip_normals[corner], 0.0)));
+    <flat_normal.output> = normalize(vec3(normal_tm * shape_orientation * vec4(unit_cube_strip_normals[corner], 0.0)));
 }

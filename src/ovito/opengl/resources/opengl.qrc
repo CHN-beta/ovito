@@ -5,6 +5,12 @@
 	<file>glsl/global_uniforms.glsl</file>
 	<file>glsl/picking.glsl</file>
 	<file>glsl/shading.glsl</file>
+	<file>glsl/view_ray.vert</file>
+	<file>glsl/view_ray.frag</file>
+	<file>glsl/flat_normal.vert</file>
+	<file>glsl/flat_normal.frag</file>
+	<file>glsl/flat_normal.GLES.vert</file>
+	<file>glsl/flat_normal.GLES.frag</file>
 
 	<file>glsl/particles/sphere/sphere.vert</file>
 	<file>glsl/particles/sphere/sphere.frag</file>
@@ -141,6 +147,8 @@
 	
 	<file>glsl/image/image.vert</file>
 	<file>glsl/image/image.frag</file>
+	<file>glsl/image/oit_compose.vert</file>
+	<file>glsl/image/oit_compose.frag</file>
 
 	<file>glsl/marker/marker_box.vert</file>
 	<file>glsl/marker/marker_box.frag</file>

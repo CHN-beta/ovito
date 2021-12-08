@@ -31,11 +31,10 @@ uniform vec3 unit_cube_triangle_strip[14];
 
 // Outputs:
 flat out vec4 color_fs;
-
 void main()
 {
 	// The index of the box corner.
-    int corner = gl_VertexID;
+    int corner = <VertexID>;
 
     // Compute rotated and scaled unit cube corner coordinates.
     vec4 scaled_corner = vec4(position, 1.0) + (shape_orientation * vec4(unit_cube_triangle_strip[corner], 0.0));
@@ -44,5 +43,5 @@ void main()
     gl_Position = modelview_projection_matrix * scaled_corner;
 
     // Compute color from object ID.
-    color_fs = pickingModeColor(gl_InstanceID);
+    color_fs = pickingModeColor(<InstanceID>);
 }

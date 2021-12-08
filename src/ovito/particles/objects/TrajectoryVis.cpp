@@ -76,7 +76,7 @@ Box3 TrajectoryVis::boundingBox(TimePoint time, const ConstDataObjectPath& path,
 	const SimulationCellObject* simulationCell = wrappedLines() ? flowState.getObject<SimulationCellObject>() : nullptr;
 
 	// The key type used for caching the computed bounding box:
-	using CacheKey = std::tuple<
+	using CacheKey = RendererResourceKey<struct TrajectoryVisBoundBoxCache,
 		ConstDataObjectRef,		// Trajectory object
 		FloatType,				// Line width
 		ConstDataObjectRef		// Simulation cell

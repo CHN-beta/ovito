@@ -32,6 +32,7 @@
 #include <ovito/core/rendering/RenderSettings.h>
 #include "OpenGLSceneRenderer.h"
 #include "OpenGLHelpers.h"
+#include "OpenGLShaderHelper.h"
 
 #include <QOffscreenSurface>
 #include <QSurface>
@@ -151,6 +152,8 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 ******************************************************************************/
 void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect)
 {
+	_orderIndependentTransparency = true;
+
 	// Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
 	QRect openGLViewportRect(viewportRect.x() * antialiasingLevel(), viewportRect.y() * antialiasingLevel(), viewportRect.width() * antialiasingLevel(), viewportRect.height() * antialiasingLevel());
 
@@ -251,7 +254,6 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 void OpenGLSceneRenderer::initializeGLState()
 {
 	// Set up OpenGL state.
-    OVITO_CHECK_OPENGL(this, this->glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
 	OVITO_CHECK_OPENGL(this, this->glDisable(GL_STENCIL_TEST));
 	OVITO_CHECK_OPENGL(this, this->glDisable(GL_BLEND));
 	OVITO_CHECK_OPENGL(this, this->glEnable(GL_DEPTH_TEST));
@@ -327,9 +329,6 @@ bool OpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& vie
 		renderTransparentGeometry();
 	}
 
-	// Restore default OpenGL state.
-	OVITO_CHECK_OPENGL(this, this->glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
-
 	return !operation.isCanceled();
 }
 
@@ -338,6 +337,53 @@ bool OpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& vie
 ******************************************************************************/
 void OpenGLSceneRenderer::renderTransparentGeometry()
 {
+	// Skip this step if there are no semi-transparent objects in the scene.
+	if(_translucentParticles.empty() && _translucentCylinders.empty() && _translucentMeshes.empty()) {
+		_oitFramebuffer.reset();
+		return;
+	}
+
+	// Transparency should never play a role in a picking render pass.
+	OVITO_ASSERT(!isPicking());
+
+	// Prepare for order-independent transparency pass.
+	if(orderIndependentTransparency()) {
+
+		// Create additional offscreen OpenGL framebuffer.
+		if(!_oitFramebuffer || !_oitFramebuffer->isValid() || _oitFramebuffer->size() != viewportRect().size()) {
+			QOpenGLFramebufferObjectFormat framebufferFormat;
+			framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+			framebufferFormat.setInternalTextureFormat(GL_RGBA16F);
+			_oitFramebuffer = std::make_unique<QOpenGLFramebufferObject>(viewportRect().size(), framebufferFormat);
+			_oitFramebuffer->addColorAttachment(_oitFramebuffer->size(), GL_R16F);
+		}
+
+		// Clear OpenGL error state and verify validity of framebuffer.
+		while(this->glGetError() != GL_NO_ERROR);
+		if(!_oitFramebuffer->isValid())
+			throwException(tr("Failed to create offscreen OpenGL framebuffer object for order-independent transparency."));
+
+		// Bind OpenGL framebuffer.
+		if(!_oitFramebuffer->bind())
+			throwException(tr("Failed to bind OpenGL framebuffer object for order-independent transparency."));
+
+		// Clear the contents of the OIT buffer.
+		setClearColor(ColorA(0, 0, 0, 0));
+		clearFrameBuffer(false, false);
+
+		// Blit depth buffer from primary FBO to transparency FBO.
+		OVITO_CHECK_OPENGL(this, this->glBindFramebuffer(GL_READ_FRAMEBUFFER, _primaryFramebuffer));
+		OVITO_CHECK_OPENGL(this, this->glBlitFramebuffer(0, 0, _oitFramebuffer->width(), _oitFramebuffer->height(), 0, 0, _oitFramebuffer->width(), _oitFramebuffer->height(), GL_DEPTH_BUFFER_BIT, GL_NEAREST));
+		OVITO_CHECK_OPENGL(this, this->glBindFramebuffer(GL_READ_FRAMEBUFFER, 0));
+		
+		// Disable writing to the depth buffer.
+		OVITO_CHECK_OPENGL(this, this->glDepthMask(GL_FALSE));
+		// Enable blending.
+		OVITO_CHECK_OPENGL(this, this->glEnable(GL_BLEND));
+		OVITO_CHECK_OPENGL(this, this->glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA));
+	}
+	_isTransparencyPass = true;
+
 	for(const auto& [tm, primitive] : _translucentParticles) {
 		setWorldTransform(tm);
 		renderParticlesImplementation(primitive);
@@ -355,6 +401,36 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
 		renderMeshImplementation(primitive);
 	}
 	_translucentMeshes.clear();
+
+	_isTransparencyPass = false;
+	if(orderIndependentTransparency()) {
+		OVITO_ASSERT(this->glIsEnabled(GL_BLEND));
+		OVITO_CHECK_OPENGL(this, this->glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA));
+
+		// Switch back to the primary rendering buffer.
+		OVITO_CHECK_OPENGL(this, this->glBindFramebuffer(GL_FRAMEBUFFER, _primaryFramebuffer));
+
+		// Perform 2D compositing step.
+		setDepthTestEnabled(false);
+		rebindVAO();
+
+		// Activate the OpenGL shader program for drawing a screen-filling quad.
+		OpenGLShaderHelper shader(this);
+		shader.load("oit_compose", "image/oit_compose.vert", "image/oit_compose.frag");
+		shader.setVerticesPerInstance(4);
+		shader.setInstanceCount(1);
+
+		// Bind the OIT framebuffer as a texture.
+		OVITO_CHECK_OPENGL(this, this->glBindTexture(GL_TEXTURE_2D, _oitFramebuffer->texture()));
+
+		// Draw a quad with 4 vertices.
+		shader.drawArrays(GL_TRIANGLE_STRIP);
+
+		this->glBindTexture(GL_TEXTURE_2D, 0);
+		this->glDepthMask(GL_TRUE);
+		this->glDisable(GL_BLEND);
+		setDepthTestEnabled(true);
+	}
 }
 
 /******************************************************************************
@@ -468,14 +544,20 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 	OVITO_ASSERT(QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Vertex));
 	OVITO_ASSERT(QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Fragment));
 
+	// Compile a separate version of each shader for the transparency pass.
+	QString mangledId = id;
+	if(_isTransparencyPass && orderIndependentTransparency()) {
+		mangledId += QStringLiteral(".transparency");
+	}
+
 	// Each OpenGL shader is only created once per OpenGL context group.
-	std::unique_ptr<QOpenGLShaderProgram> program(contextGroup->findChild<QOpenGLShaderProgram*>(id));
+	std::unique_ptr<QOpenGLShaderProgram> program(contextGroup->findChild<QOpenGLShaderProgram*>(mangledId));
 	if(program)
 		return program.release();
 
 	// The program's source code hasn't been compiled so far. Do it now and cache the shader program.
 	program = std::make_unique<QOpenGLShaderProgram>();
-	program->setObjectName(id);
+	program->setObjectName(mangledId);
 
 	// Load and compile vertex shader source.
 	loadShader(program.get(), QOpenGLShader::Vertex, vertexShaderFile);
@@ -490,11 +572,11 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 
 	// Make the shader program a child object of the GL context group.
 	program->setParent(contextGroup);
-	OVITO_ASSERT(contextGroup->findChild<QOpenGLShaderProgram*>(id));
+	OVITO_ASSERT(contextGroup->findChild<QOpenGLShaderProgram*>(mangledId));
 
 	// Compile the shader program.
 	if(!program->link()) {
-		Exception ex(QString("The OpenGL shader program %1 failed to link.").arg(id));
+		Exception ex(QString("The OpenGL shader program %1 failed to link.").arg(mangledId));
 		ex.appendDetailMessage(program->log());
 		throw ex;
 	}
@@ -574,6 +656,13 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 		}
 	}
 
+	// Declare the fragment color output variable referenced by the <fragColor> placeholder.
+	if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) {
+		if(shaderType == QOpenGLShader::Fragment) {
+			shaderSource.append("out vec4 fragColor;\n");
+		}
+	}
+
 	// Helper function that appends a source code line to the buffer after preprocessing it.
 	auto preprocessShaderLine = [&](QByteArray& line) {
 		if(_glversion < QT_VERSION_CHECK(3, 0, 0)) {
@@ -581,20 +670,8 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 			if(shaderType == QOpenGLShader::Vertex) {
 				if(line.startsWith("in ")) line = QByteArrayLiteral("attribute") + line.mid(2);
 				else if(line.startsWith("out ")) line = QByteArrayLiteral("varying") + line.mid(3);
-				else if(line.startsWith("flat out vec3 flat_normal_fs")) {
-					if(!isGLES) return;
-					line = QByteArrayLiteral("varying vec3 tex_coords;\n");
-				}
 				else if(line.startsWith("flat out ")) line = QByteArrayLiteral("varying") + line.mid(8);
-				else if(line.startsWith("noperspective out ")) return;
-				else if(line.contains("calculate_view_ray(vec2(")) return;
-				else if(line.contains("flat_normal_fs")) {
-					if(!isGLES) line = "gl_TexCoord[1] = inverse_projection_matrix * gl_Position;\n";
-					else line = "tex_coords = (inverse_projection_matrix * gl_Position).xyz;\n";
-				}
 				else {
-					line.replace("gl_VertexID", "int(mod(vertexID+0.5, float(vertices_per_instance)))");
-					line.replace("gl_InstanceID", "(int(vertexID) / vertices_per_instance)");
 					if(!isGLES) {
 						line.replace("float(objectID & 0xFF)", "floor(mod(objectID, 256.0))");
 						line.replace("float((objectID >> 8) & 0xFF)", "floor(mod(objectID / 256.0, 256.0))");
@@ -607,59 +684,112 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 						line.replace("float((objectID >> 16) & 0xFF)", "floor(mod(float(objectID) / 65536.0, 256.0))");
 						line.replace("float((objectID >> 24) & 0xFF)", "floor(mod(float(objectID) / 16777216.0, 256.0))");
 					}
-					line.replace("inverse(mat3(", "inverse_mat3(mat3(");
 				}
 			}
 			else if(shaderType == QOpenGLShader::Fragment) {
 				if(line.startsWith("in ")) line = QByteArrayLiteral("varying") + line.mid(2);
-				else if(line.startsWith("flat in vec3 flat_normal_fs")) {
-					if(!isGLES) return;
-					line = QByteArrayLiteral("varying vec3 tex_coords;\n");
-				}
 				else if(line.startsWith("flat in ")) line = QByteArrayLiteral("varying") + line.mid(7);
-				else if(line.startsWith("noperspective in ")) return;
 				else if(line.startsWith("out ")) return;
-				else if(line.contains("vec3 ray_dir_norm =")) {
-					line = QByteArrayLiteral(
-						"vec2 viewport_position = ((gl_FragCoord.xy - viewport_origin) * inverse_viewport_size) - 1.0;\n"
-						"vec4 _near = inverse_projection_matrix * vec4(viewport_position, -1.0, 1.0);\n"
-						"vec4 _far = _near + inverse_projection_matrix[2];\n"
-						"vec3 ray_origin = _near.xyz / _near.w;\n"
-						"vec3 ray_dir_norm = normalize(_far.xyz / _far.w - ray_origin);\n");
-				}
-				else {
-					line.replace("fragColor", "gl_FragColor");
-					if(!line.contains("texture1D"))
-						line.replace("texture(", "texture2D(");
-					else
-						line.replace("texture(", "texture1D(");
-					line.replace("shadeSurfaceColor(flat_normal_fs", 
-						!isGLES ? "shadeSurfaceColor(normalize(cross(dFdx(gl_TexCoord[1].xyz), dFdy(gl_TexCoord[1].xyz)))"
-						: "shadeSurfaceColor(normalize(cross(dFdx(tex_coords), dFdy(tex_coords)))");
-					line.replace("inverse(view_to_sphere_fs)", "inverse_mat3(view_to_sphere_fs)");
-					if(isGLES) {
-						if(line.contains("gl_FragDepth")) {
-							line.replace("gl_FragDepth", "gl_FragDepthEXT");
-							line.prepend(QByteArrayLiteral("#if defined(GL_EXT_frag_depth)\n"));
-							line.append(QByteArrayLiteral("#endif\n"));
-						}
-					}
-				}
 			}
 		}
-		else {
-			// Automatically back-port shader source code to make it compatible with OpenGL 3.0 - 3.2:
-			if(shaderType == QOpenGLShader::Vertex) {
-				if(_glversion < QT_VERSION_CHECK(3, 3, 0)) {
-					line.replace("gl_VertexID", "(gl_VertexID % vertices_per_instance)");
-					line.replace("gl_InstanceID", "(gl_VertexID / vertices_per_instance)");
-				}
-				if(_glversion < QT_VERSION_CHECK(3, 1, 0))
-					line.replace("inverse(mat3(", "inverse_mat3(mat3(");
+
+		// Writing to the fragment color output variable.
+		if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+			line.replace("<fragColor>", "gl_FragColor");
+		else
+			line.replace("<fragColor>", "fragColor");
+
+		// Writing to the fragment depth output variable.
+		if(_glversion >= QT_VERSION_CHECK(3, 0, 0) || isGLES == false)
+			line.replace("<fragDepth>", "gl_FragDepth");
+		else if(line.contains("<fragDepth>")) { // For GLES2:
+			line.replace("<fragDepth>", "gl_FragDepthEXT");
+			line.prepend(QByteArrayLiteral("#if defined(GL_EXT_frag_depth)\n"));
+			line.append(QByteArrayLiteral("#endif\n"));
+		}
+
+		// Old GLSL versions do not provide an inverse() function for mat3 matrices.
+		// Replace calls to the inverse() function with a custom implementation. 
+		if(_glversion < QT_VERSION_CHECK(3, 3, 0))
+			line.replace("<inverse_mat3>", "inverse_mat3"); //  Emulate inverse(mat3) with own function.
+		else
+			line.replace("<inverse_mat3>", "inverse"); // inverse(mat3) is natively supported.
+
+		// The per-instance vertex ID.
+		if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+			line.replace("<VertexID>", "int(mod(vertexID + 0.5, float(vertices_per_instance)))"); // gl_VertexID is not available, requires a VBO with explicit vertex IDs
+		else if(_glversion < QT_VERSION_CHECK(3, 3, 0))
+			line.replace("<VertexID>", "(gl_VertexID % vertices_per_instance)"); // gl_VertexID is available but no instanced arrays.
+		else
+			line.replace("<VertexID>", "gl_VertexID"); // gl_VertexID is fully supported.
+
+		// The instance ID.
+		if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+			line.replace("<InstanceID>", "(int(vertexID) / vertices_per_instance)"); // Compute the instance ID from the running vertex index, which is read from a VBO array.
+		else if(_glversion < QT_VERSION_CHECK(3, 3, 0))
+			line.replace("<InstanceID>", "(gl_VertexID / vertices_per_instance)"); // Compute the instance ID from the running vertex index.
+		else
+			line.replace("<InstanceID>", "gl_InstanceID"); // gl_InstanceID is fully supported.
+
+		// 1-D texture sampler.
+		if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+			line.replace("<texture1D>", "texture1D"); 
+		else
+			line.replace("<texture1D>", "texture");
+
+		// 2-D texture sampler.
+		if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+			line.replace("<texture2D>", "texture2D"); 
+		else
+			line.replace("<texture2D>", "texture");
+
+		// View ray calculation in vertex and geometry shaders.
+		if(line.contains("<calculate_view_ray_through_vertex>")) {
+			if(_glversion >= QT_VERSION_CHECK(3, 0, 0))
+				line.replace("<calculate_view_ray_through_vertex>", "calculate_view_ray_through_vertex()");
+			else 
+				return; // Skip view ray calculation in vertex/geometry shader and let the fragement shader do the full calculation for each fragment.
+		}
+
+		// View ray calculation in fragment shaders.
+		if(line.contains("<calculate_view_ray_through_fragment>")) {
+			if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) {
+				// Calculate view ray based on interpolated values coming from the vertex shader.
+				line.replace("<calculate_view_ray_through_fragment>", "vec3 ray_dir_norm = normalize(ray_dir);");
 			}
-			else if(shaderType == QOpenGLShader::Fragment) { 
-				if(_glversion < QT_VERSION_CHECK(3, 1, 0))
-					line.replace("inverse(view_to_sphere_fs)", "inverse_mat3(view_to_sphere_fs)");
+			else {
+				// Perform full view ray computation in the fragment shader's main function.
+				line.replace("<calculate_view_ray_through_fragment>", 
+					"vec2 viewport_position = ((gl_FragCoord.xy - viewport_origin) * inverse_viewport_size) - 1.0;\n"
+					"vec4 _near = inverse_projection_matrix * vec4(viewport_position, -1.0, 1.0);\n"
+					"vec4 _far = _near + inverse_projection_matrix[2];\n"
+					"vec3 ray_origin = _near.xyz / _near.w;\n"
+					"vec3 ray_dir_norm = normalize(_far.xyz / _far.w - ray_origin);\n");
+			}
+		}
+
+		// Flat surface normal calculation in vertex and geometry shaders.
+		if(line.contains("<flat_normal.output>")) {
+			if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) {
+				line.replace("<flat_normal.output>", "flat_normal_fs"); // Note: "flat_normal_fs" is defined in "flat_normal.vert". 
+			}
+			else {
+				// Pass view-space coordinates of vertex to fragment shader as texture coordintes.
+				if(!isGLES) line = "gl_TexCoord[1] = inverse_projection_matrix * gl_Position;\n";
+				else line = "tex_coords = (inverse_projection_matrix * gl_Position).xyz;\n";
+			}
+		}
+
+		// Flat surface normal calculation in fragment shaders.
+		if(line.contains("<flat_normal.input>")) {
+			if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) {
+				line.replace("<flat_normal.input>", "flat_normal_fs"); // Note: "flat_normal_fs" is defined in "flat_normal.frag". 
+			}
+			else {
+				// Calculate surface normal from cross product of UV tangents.
+				line.replace("<flat_normal.input>", 
+					!isGLES ? "normalize(cross(dFdx(gl_TexCoord[1].xyz), dFdy(gl_TexCoord[1].xyz))"
+						: "normalize(cross(dFdx(tex_coords), dFdy(tex_coords))");
 			}
 		}
 
@@ -675,13 +805,37 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 	while(!shaderSourceFile.atEnd()) {
 		QByteArray line = shaderSourceFile.readLine();
 		if(line.startsWith("#include")) {
-			// Resolve relative file paths.
-			QFileInfo includeFile(QFileInfo(shaderSourceFile).dir(), QString::fromUtf8(line.mid(8).replace('\"', "").trimmed()));
+			QString includeFilePath;
+
+			// Special include statement which require preprocessing.
+			if(line.contains("<view_ray.vert>")) {
+				if(_glversion < QT_VERSION_CHECK(3, 0, 0)) continue; // Skip this include file, because view ray calculation is performed by the fragment shaders in old GLSL versions.
+				includeFilePath = QStringLiteral(":/openglrenderer/glsl/view_ray.vert");
+			}
+			else if(line.contains("<view_ray.frag>")) {
+				if(_glversion < QT_VERSION_CHECK(3, 0, 0)) continue; // Skip this include file, because view ray calculation is performed by the fragment shaders in old GLSL versions.
+				includeFilePath = QStringLiteral(":/openglrenderer/glsl/view_ray.frag");
+			}
+			else if(line.contains("<flat_normal.vert>")) {
+				if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) includeFilePath = QStringLiteral(":/openglrenderer/glsl/flat_normal.vert");
+				else if(isGLES) includeFilePath = QStringLiteral(":/openglrenderer/glsl/flat_normal.GLES.vert");
+				else continue;
+			}
+			else if(line.contains("<flat_normal.frag>")) {
+				if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) includeFilePath = QStringLiteral(":/openglrenderer/glsl/flat_normal.frag");
+				else if(isGLES) includeFilePath = QStringLiteral(":/openglrenderer/glsl/flat_normal.GLES.frag");
+				else continue;
+			}
+			else {
+				// Resolve relative file paths.
+				QFileInfo includeFile(QFileInfo(shaderSourceFile).dir(), QString::fromUtf8(line.mid(8).replace('\"', "").trimmed()));
+				includeFilePath = includeFile.filePath();
+			}
 
 			// Load the secondary shader file and insert it into the source of the primary shader.
-			QFile secondarySourceFile(includeFile.filePath());
+			QFile secondarySourceFile(includeFilePath);
 			if(!secondarySourceFile.open(QFile::ReadOnly))
-				throw Exception(QString("Unable to open shader source file %1 referenced by include directive in shader file %2.").arg(includeFile.filePath()).arg(filename));
+				throw Exception(QString("Unable to open shader source file %1 referenced by include directive in shader file %2.").arg(includeFilePath).arg(filename));
 			while(!secondarySourceFile.atEnd()) {
 				line = secondarySourceFile.readLine();
 				preprocessShaderLine(line);

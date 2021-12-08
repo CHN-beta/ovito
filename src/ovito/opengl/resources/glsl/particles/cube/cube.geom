@@ -24,6 +24,7 @@ layout(points) in;
 layout(triangle_strip, max_vertices=14) out;
 
 #include "../../global_uniforms.glsl"
+#include <flat_normal.vert>
 
 // Inputs:
 in vec3 position_gs[1];
@@ -34,8 +35,6 @@ uniform vec3 unit_cube_strip_normals[14];
 
 // Outputs:
 flat out vec4 color_fs;
-flat out vec3 flat_normal_fs;
-
 void main()
 {
     for(int corner = 0; corner < 14; corner++) 
@@ -47,7 +46,7 @@ void main()
         color_fs = color_gs[0];
 
         // Transform local vertex normal.
-        flat_normal_fs = vec3(normal_tm * vec4(unit_cube_strip_normals[corner], 0.0));
+        <flat_normal.output> = vec3(normal_tm * vec4(unit_cube_strip_normals[corner], 0.0));
 
         EmitVertex();
     }

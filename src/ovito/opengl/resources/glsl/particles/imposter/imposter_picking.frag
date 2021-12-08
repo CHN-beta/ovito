@@ -27,20 +27,17 @@ flat in vec4 color_fs;
 in vec2 uv_fs;
 flat in vec2 radius_and_eyez_fs;
 
-// Outputs:
-out vec4 fragColor;
-
 void main()
 {
 	// Test if fragment is within the unit circle.
 	float rsq = dot(uv_fs, uv_fs);
 	if(rsq >= 1.0) discard;
 
-    // Use flat shading in picking mode.
-    fragColor = color_fs;
-
 	// Vary the depth value across the imposter to obtain proper intersections between particles.
 	float ze = radius_and_eyez_fs.y + sqrt(1.0 - rsq) * radius_and_eyez_fs.x;
 	float zn = (projection_matrix[2][2] * ze + projection_matrix[3][2]) / (projection_matrix[2][3] * ze + projection_matrix[3][3]);
-	gl_FragDepth = 0.5 * (zn * gl_DepthRange.diff + (gl_DepthRange.far + gl_DepthRange.near));
+	<fragDepth> = 0.5 * (zn * gl_DepthRange.diff + (gl_DepthRange.far + gl_DepthRange.near));
+
+    // Use flat shading in picking mode.
+    <fragColor> = color_fs;
 }

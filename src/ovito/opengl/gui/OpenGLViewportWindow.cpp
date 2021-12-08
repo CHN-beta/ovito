@@ -120,6 +120,7 @@ ViewportPickResult OpenGLViewportWindow::pick(const QPointF& pos)
 				// Request a new frame from the resource manager for this render pass.
 				previousResourceFrame = pickingRenderer()->currentResourceFrame();
 				pickingRenderer()->setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
+				pickingRenderer()->setPrimaryFramebuffer(defaultFramebufferObject());
 
 				// Let the viewport do the actual rendering work.
 				viewport()->renderInteractive(pickingRenderer());
@@ -232,6 +233,7 @@ void OpenGLViewportWindow::paintGL()
 		// Request a new frame from the resource manager for this render pass.
 		OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = _viewportRenderer->currentResourceFrame();
 		_viewportRenderer->setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
+		_viewportRenderer->setPrimaryFramebuffer(defaultFramebufferObject());
 
 		try {
 			// Let the Viewport class do the actual rendering work.
@@ -254,9 +256,9 @@ void OpenGLViewportWindow::paintGL()
 			ex.appendDetailMessage(openGLReport);
 
 			QCoreApplication::removePostedEvents(nullptr, 0);
+			ex.reportError(true);
 			if(gui())
 				gui()->shutdown();
-			ex.reportError(true);
 			QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
 			QCoreApplication::exit();
 		}

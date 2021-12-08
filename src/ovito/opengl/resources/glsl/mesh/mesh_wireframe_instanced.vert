@@ -27,7 +27,6 @@ in vec4 position;
 in vec4 instance_tm_row1;
 in vec4 instance_tm_row2;
 in vec4 instance_tm_row3;
-
 void main()
 {
     // Apply instance transformation.

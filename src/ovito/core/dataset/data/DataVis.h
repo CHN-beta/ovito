@@ -44,6 +44,14 @@ protected:
 
 public:
 
+	/// A special exception type thrown by the DataVis::render() method
+	/// to indicate that the visual element is currently unable to fulfill 
+	/// the rendering request. Users will be notified with an error symbol in the GUI.
+	class OVITO_CORE_EXPORT RenderException : public Exception {
+	public:
+		using Exception::Exception;
+	};
+
 	/// \brief Lets the vis element render a data object.
 	///
 	/// \param time The animation time at which to render the object

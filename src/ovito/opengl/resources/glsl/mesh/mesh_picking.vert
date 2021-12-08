@@ -28,12 +28,11 @@ in vec3 position;
 
 // Outputs:
 flat out vec4 color_fs;
-
 void main()
 {
 	// Apply model-view-projection matrix to vertex.
     gl_Position = modelview_projection_matrix * vec4(position, 1.0);
 
     // Compute color from object ID.
-    color_fs = pickingModeColor(gl_VertexID / 3);
+    color_fs = pickingModeColor(<VertexID> / 3);
 }

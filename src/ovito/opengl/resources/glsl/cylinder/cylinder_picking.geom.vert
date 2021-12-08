@@ -33,7 +33,6 @@ out vec3 base_gs;
 out vec3 head_gs;
 out float radius_gs;
 out vec4 color_gs;
-
 void main()
 {
     // Forward data to geometry shader.
@@ -42,5 +41,5 @@ void main()
     radius_gs = radius;
 
     // Compute color from object ID.
-    color_gs = pickingModeColor(gl_VertexID);
+    color_gs = pickingModeColor(<VertexID>);
 }
