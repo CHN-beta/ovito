@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/utilities/concurrent/Future.h>
+#include <ovito/core/dataset/DataSet.h>
 #include "PipelineFlowState.h"
 #include "PipelineStatus.h"
 #include "ModifierClass.h"

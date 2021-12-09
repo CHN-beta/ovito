@@ -40,9 +40,6 @@ namespace Ovito {
 ******************************************************************************/
 RefMaker::RefMaker(DataSet* dataset) : _dataset(dataset)
 {
-#ifdef OVITO_DEBUG
-	_datasetWeakPointer = dataset;
-#endif
 }
 
 /******************************************************************************
@@ -69,26 +66,6 @@ void RefMaker::throwException(const QString& msg) const
 {
 	throw Exception(msg, dataset());
 }
-
-#ifdef OVITO_DEBUG
-/******************************************************************************
-* Returns the dataset this object belongs to.
-******************************************************************************/
-DataSet* RefMaker::dataset() const 
-{ 
-	OVITO_ASSERT(_dataset == _datasetWeakPointer.data());
-	return _dataset; 
-}
-
-/******************************************************************************
-* Changes the dataset this object belongs to.
-******************************************************************************/
-void RefMaker::setDataset(DataSet* dataset) 
-{ 
-	_dataset = dataset;
-	_datasetWeakPointer = dataset; 
-}
-#endif
 
 /******************************************************************************
 * Returns the value stored in a non-animatable property field of this RefMaker object.

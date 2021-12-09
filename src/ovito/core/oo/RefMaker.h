@@ -341,19 +341,11 @@ public:
 
 	///////////////////////////// DataSet access ///////////////////////////////
 
-#ifndef OVITO_DEBUG
 	/// \brief Returns the dataset this object belongs to.
-	DataSet* dataset() const { return _dataset; }
+	const QPointer<DataSet>& dataset() const { return _dataset; }
 
 	/// \brief Changes the dataset this object belongs to.
-	void setDataset(DataSet* dataset) { _dataset = dataset; }
-#else
-	/// \brief Returns the dataset this object belongs to.
-	DataSet* dataset() const;
-
-	/// \brief Changes the dataset this object belongs to.
-	void setDataset(DataSet* dataset);
-#endif
+	void setDataset(QPointer<DataSet> dataset) { _dataset.swap(dataset); }
 
 	///////////////////////////// Exceptions & Errors ///////////////////////////////
 
@@ -369,13 +361,7 @@ private:
 	static void walkNode(QSet<RefTarget*>& nodes, const RefMaker* node);
 
 	/// The dataset this object belongs to.
-	DataSet* _dataset = nullptr;
-
-#ifdef OVITO_DEBUG
-	/// A weak pointer to the dataset this object belongs to. 
-	/// This is used to detect when the dataset is deleted before all other objects belonging to it are deleted.
-	QPointer<DataSet> _datasetWeakPointer;
-#endif
+	QPointer<DataSet> _dataset;
 
 	friend class RefTarget;
 	friend class PropertyFieldBase;
