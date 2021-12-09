@@ -104,6 +104,22 @@ void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
 }
 
 /******************************************************************************
+* Constructor.
+******************************************************************************/
+OpenGLSceneRenderer::OpenGLSceneRenderer(DataSet* dataset) : SceneRenderer(dataset) 
+{
+	// Determine which transparency rendering method has been selected by the user in the 
+	// application settings dialog.
+#ifndef OVITO_DISABLE_QSETTINGS
+	QSettings applicationSettings;
+	if(applicationSettings.value("rendering/transparency_method").toInt() == 2) {
+		// Activate the Weighted Blended Order-Independent Transparency method.
+		_orderIndependentTransparency = true;
+	}
+#endif
+}
+
+/******************************************************************************
 * Determines the capabilities of the current OpenGL implementation.
 ******************************************************************************/
 void OpenGLSceneRenderer::determineOpenGLInfo()
@@ -156,8 +172,6 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 ******************************************************************************/
 void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect)
 {
-	_orderIndependentTransparency = true;
-
 	// Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
 	QRect openGLViewportRect(viewportRect.x() * antialiasingLevel(), viewportRect.y() * antialiasingLevel(), viewportRect.width() * antialiasingLevel(), viewportRect.height() * antialiasingLevel());
 
@@ -352,6 +366,7 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
 
 	// Prepare for order-independent transparency pass.
 	if(orderIndependentTransparency()) {
+		// Implementation of the "Weighted Blended Order-Independent Transparency" method.
 
 		// Create additional offscreen OpenGL framebuffer.
 		if(!_oitFramebuffer || !_oitFramebuffer->isValid() || _oitFramebuffer->size() != viewportRect().size()) {
@@ -500,8 +515,49 @@ void OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
 	// Render particles immediately if they are all fully opaque. Otherwise defer rendering to a later time.
 	if(isPicking() || !primitive.transparencies())
 		renderParticlesImplementation(primitive);
-	else
+	else {
+		if(orderIndependentTransparency()) {
+			// The order-independent transparency method does not support fully opaque geometry (transparency=0) very well.
+			// Any such geometry still appears translucent and does not fully occlude the objects behind it. To mitigate the problem,
+			// we render the fully opaque geometry already during the first rendering pass to fill the z-buffer.
+			struct OpaqueParticlesCache {
+				ConstDataBufferPtr opaqueIndices;
+				bool initialized = false;
+			};
+			auto& cache = OpenGLResourceManager::instance()->lookup<OpaqueParticlesCache>(
+				RendererResourceKey<struct OpaqueParticlesCacheKey, ConstDataBufferPtr, ConstDataBufferPtr>(primitive.transparencies(), primitive.indices()), currentResourceFrame());
+			if(!cache.initialized) {
+				cache.initialized = true;
+				// Are there any particles having a non-positive transparency value?
+				std::vector<int> fullyOpaqueIndices;
+				if(!primitive.indices()) {
+					int index = 0;
+					for(FloatType t : ConstDataBufferAccess<FloatType>(primitive.transparencies())) {
+						if(t <= 0) fullyOpaqueIndices.push_back(index);
+						index++;
+					}
+				}
+				else {
+					ConstDataBufferAccess<FloatType> transparencies(primitive.transparencies());
+					for(int index : ConstDataBufferAccess<int>(primitive.indices())) {
+						if(transparencies[index] <= 0) fullyOpaqueIndices.push_back(index);
+					}
+				}
+				if(!fullyOpaqueIndices.empty()) {
+					DataBufferAccessAndRef<int> indexArray = DataBufferPtr::create(dataset(), fullyOpaqueIndices.size(), DataBuffer::Int, 1, 0, false);
+					std::copy(fullyOpaqueIndices.begin(), fullyOpaqueIndices.end(), indexArray.begin());
+					cache.opaqueIndices = indexArray.take();
+				}
+			}
+			if(cache.opaqueIndices) {
+				ParticlePrimitive opaqueParticles = primitive;
+				opaqueParticles.setTransparencies({});
+				opaqueParticles.setIndices(cache.opaqueIndices);
+				renderParticlesImplementation(opaqueParticles);
+			}
+		}
 		_translucentParticles.emplace_back(worldTransform(), primitive);
+	}
 }
 
 /******************************************************************************
@@ -760,15 +816,6 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 				line.replace("<fragColor>", "gl_FragColor");
 			else
 				line.replace("<fragColor>", "fragColor");
-
-			// Writing to the fragment depth output variable.
-			if(_glversion >= QT_VERSION_CHECK(3, 0, 0) || isGLES == false)
-				line.replace("<fragDepth>", "gl_FragDepth");
-			else if(line.contains("<fragDepth>")) { // For GLES2:
-				line.replace("<fragDepth>", "gl_FragDepthEXT");
-				line.prepend(QByteArrayLiteral("#if defined(GL_EXT_frag_depth)\n"));
-				line.append(QByteArrayLiteral("#endif\n"));
-			}
 		}
 		else {
 			if(glslVersion < QT_VERSION_CHECK(3, 0, 0))
@@ -780,6 +827,15 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 				line.replace("<fragRevealage>", "gl_FragData[1].r");
 			else
 				line.replace("<fragRevealage>", "fragRevealage");
+		}
+
+		// Writing to the fragment depth output variable.
+		if(_glversion >= QT_VERSION_CHECK(3, 0, 0) || isGLES == false)
+			line.replace("<fragDepth>", "gl_FragDepth");
+		else if(line.contains("<fragDepth>")) { // For GLES2:
+			line.replace("<fragDepth>", "gl_FragDepthEXT");
+			line.prepend(QByteArrayLiteral("#if defined(GL_EXT_frag_depth)\n"));
+			line.append(QByteArrayLiteral("#endif\n"));
 		}
 
 		// Old GLSL versions do not provide an inverse() function for mat3 matrices.

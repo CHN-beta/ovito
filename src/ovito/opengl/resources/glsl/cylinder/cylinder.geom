@@ -41,6 +41,7 @@ flat out vec3 cylinder_view_base;		// Transformed cylinder position in view coor
 flat out vec3 cylinder_view_axis;		// Transformed cylinder axis in view coordinates
 flat out float cylinder_radius_sq_fs;	// The squared radius of the cylinder
 flat out float cylinder_length;			// The length of the cylinder
+
 void main()
 {
     // Set up an axis tripod that is aligned with the cylinder.

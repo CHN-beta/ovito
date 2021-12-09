@@ -503,7 +503,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
         };
 
         // Render primitives.
-        shader.drawArraysOrdered(GL_TRIANGLE_STRIP, orderingCacheKey, [&]() {
+        shader.drawArraysOrdered(GL_TRIANGLE_STRIP, std::move(orderingCacheKey), [&]() {
 
             // First, compute distance of each particle from the camera along the viewing direction (=camera z-axis).
             std::vector<FloatType> distances(shader.instanceCount());

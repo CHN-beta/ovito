@@ -63,8 +63,8 @@ public:
 
 public:
 
-	/// Default constructor.
-	explicit OpenGLSceneRenderer(DataSet* dataset) : SceneRenderer(dataset) {}
+	/// Constructor.
+	explicit OpenGLSceneRenderer(DataSet* dataset);
 
 	/// This may be called on a renderer before startRender() to control its supersampling level.
 	virtual void setAntialiasingHint(int antialiasingLevel) override { _antialiasingLevel = antialiasingLevel; }

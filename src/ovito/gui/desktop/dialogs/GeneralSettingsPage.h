@@ -58,6 +58,7 @@ private:
 	QCheckBox* _sortModifiersByCategory;
 	QButtonGroup* _graphicsSystem;
 	QComboBox* _vulkanDevices;
+	QComboBox* _transparencyRenderingMethod;
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
 	QCheckBox* _enableUpdateChecks;
 #endif

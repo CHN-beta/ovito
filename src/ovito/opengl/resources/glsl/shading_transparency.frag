@@ -42,12 +42,15 @@ void outputShadedRayAndDepth(in vec4 color, in vec3 surface_normal, in vec3 ray_
 {
     float specular = pow(max(0.0, dot(reflect(specular_lightdir, surface_normal), ray_dir)), shininess) * 0.25;
     float diffuse = abs(surface_normal.z) * diffuse_strength;
+    <fragDepth> = zdepth;
     outputFragment(vec4(color.rgb * (diffuse + ambient) + vec3(specular), color.a), zdepth);
 }
 
 void outputShadedRay(in vec4 color, in vec3 surface_normal, in vec3 ray_dir)
 {
-    outputShadedRayAndDepth(color, surface_normal, ray_dir, gl_FragCoord.z);
+    float specular = pow(max(0.0, dot(reflect(specular_lightdir, surface_normal), ray_dir)), shininess) * 0.25;
+    float diffuse = abs(surface_normal.z) * diffuse_strength;
+    outputFragment(vec4(color.rgb * (diffuse + ambient) + vec3(specular), color.a), gl_FragCoord.z);
 }
 
 void outputShaded(in vec4 color, in vec3 surface_normal)

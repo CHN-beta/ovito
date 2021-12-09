@@ -141,6 +141,19 @@ void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* se
 		openglOption->setChecked(true);
 	if(!qt3dOption->isEnabled() && qt3dOption->isChecked())
 		openglOption->setChecked(true);
+	_vulkanDevices->setEnabled(vulkanOption->isChecked());
+	connect(vulkanOption, &QAbstractButton::toggled, _vulkanDevices, &QComboBox::setEnabled);
+
+	// Transparency rendering method.
+	_transparencyRenderingMethod = new QComboBox();
+	_transparencyRenderingMethod->addItem(tr("Back-to-Front Ordered"), QVariant::fromValue(1));
+	_transparencyRenderingMethod->addItem(tr("Weighted Blended Order-Independent"), QVariant::fromValue(2));
+	_transparencyRenderingMethod->setCurrentIndex(
+		_transparencyRenderingMethod->findData(settings.value("rendering/transparency_method", 1)));
+	layout2->addWidget(new QLabel(tr("Transparency rendering method:")), 3, 0);
+	layout2->addWidget(_transparencyRenderingMethod, 3, 1, 1, 2);
+	_transparencyRenderingMethod->setEnabled(openglOption->isChecked());
+	connect(openglOption, &QAbstractButton::toggled, _transparencyRenderingMethod, &QComboBox::setEnabled);
 
 	// Group "Program updates":
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
@@ -223,6 +236,12 @@ void GeneralSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, 
 	// Check if a different Vulkan device was selected by the user.
 	if(settings.value("rendering/vulkan/selected_device", 0).toInt() != _vulkanDevices->currentIndex()) {
 		settings.setValue("rendering/vulkan/selected_device", _vulkanDevices->currentIndex());
+		recreateViewportWindows = true;
+	}
+
+	// Check if a different transparency rendering method was selected by the user.
+	if(settings.value("rendering/transparency_method", 1).toInt() != _transparencyRenderingMethod->currentData().toInt()) {
+		settings.setValue("rendering/transparency_method", _transparencyRenderingMethod->currentData().toInt());
 		recreateViewportWindows = true;
 	}
 
