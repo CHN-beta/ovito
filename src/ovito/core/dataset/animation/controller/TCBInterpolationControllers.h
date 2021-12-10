@@ -34,7 +34,7 @@ namespace Ovito {
 template<class BaseKeyClass>
 class OVITO_CORE_EXPORT TCBAnimationKey : public BaseKeyClass
 {
-	OVITO_CLASS_TEMPLATE(TCBAnimationKey, BaseKeyClass, "Core")
+	OVITO_CLASS_TEMPLATE(TCBAnimationKey, BaseKeyClass)
 
 public:
 

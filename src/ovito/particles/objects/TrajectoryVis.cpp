@@ -30,6 +30,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(TrajectoryVis);
 DEFINE_REFERENCE_FIELD(TrajectoryVis, colorMapping);
 SET_PROPERTY_FIELD_LABEL(TrajectoryVis, lineWidth, "Line width");
 SET_PROPERTY_FIELD_LABEL(TrajectoryVis, lineColor, "Line color");

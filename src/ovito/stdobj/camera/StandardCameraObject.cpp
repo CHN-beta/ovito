@@ -34,12 +34,14 @@
 
 namespace Ovito::StdObj {
 
+IMPLEMENT_OVITO_CLASS(StandardCameraObject);
 SET_PROPERTY_FIELD_LABEL(StandardCameraObject, isPerspective, "Perspective projection");
 SET_PROPERTY_FIELD_LABEL(StandardCameraObject, fov, "FOV angle");
 SET_PROPERTY_FIELD_LABEL(StandardCameraObject, zoom, "FOV size");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(StandardCameraObject, fov, AngleParameterUnit, FloatType(1e-3), FLOATTYPE_PI - FloatType(1e-2));
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(StandardCameraObject, zoom, WorldParameterUnit, 0);
 
+IMPLEMENT_OVITO_CLASS(CameraVis);
 
 /******************************************************************************
 * Constructs a camera object.

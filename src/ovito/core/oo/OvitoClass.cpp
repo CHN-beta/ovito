@@ -32,38 +32,27 @@
 namespace Ovito {
 
 // Head of linked list of native meta-classes.
-OvitoClass* OvitoClass::_firstMetaClass = nullptr;
+OvitoClass* OvitoClass::_firstMetaClass{};
 
 /******************************************************************************
 * Constructor used for non-templated classes.
 ******************************************************************************/
-OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const QMetaObject* qtClassInfo) :
+OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId, const QMetaObject* qtClassInfo) :
 	_name(name),
 	_displayName(name),
 	_superClass(superClass),
+	_pluginId(pluginId),
 	_qtClassInfo(qtClassInfo)
 {
-	OVITO_ASSERT(superClass != nullptr || name == "OvitoObject");
+	OVITO_ASSERT(superClass != nullptr || name == QStringLiteral("OvitoObject"));
+	OVITO_ASSERT(pluginId != nullptr);
 
 	// Insert into linked list of all object types.
 	_nextMetaclass = _firstMetaClass;
 	_firstMetaClass = this;
-}
 
-/******************************************************************************
-* Constructor used for templated classes.
-******************************************************************************/
-OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId) :
-	_name(name),
-	_displayName(name),
-	_superClass(superClass),
-	_pluginId(pluginId)
-{
-	OVITO_ASSERT(superClass != nullptr);
-
-	// Insert into linked list of all object types.
-	_nextMetaclass = _firstMetaClass;
-	_firstMetaClass = this;
+//	if(name == "DataObject")
+//		qDebug() << "OvitoClass:" << name << (void*)this;
 }
 
 /******************************************************************************
@@ -71,6 +60,9 @@ OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char
 ******************************************************************************/
 void OvitoClass::initialize()
 {
+	// Class must have been initialized with a plugin id.
+	OVITO_ASSERT(_pluginId != nullptr);
+
 	// Remove namespace qualifier from Qt's class name.
 	if(qtMetaObject()) {
 		// Mark classes as abstract that don't have an invokable constructor.
@@ -84,9 +76,6 @@ void OvitoClass::initialize()
 			}
 		}
 
-		// Class must have been initialized without a plugin id.
-		OVITO_ASSERT(_pluginId == nullptr);
-
 		// Fetch display name assigned to the Qt object class.
 		if(int idx = qtMetaObject()->indexOfClassInfo("DisplayName"); idx >= 0)
 			setDisplayName(QString::fromLocal8Bit(qtMetaObject()->classInfo(idx).value()));
@@ -94,18 +83,10 @@ void OvitoClass::initialize()
 		// Load name alias assigned to the Qt object class.
 		if(int idx = qtMetaObject()->indexOfClassInfo("ClassNameAlias"); idx >= 0)
 			setNameAlias(QString::fromLocal8Bit(qtMetaObject()->classInfo(idx).value()));
-
-		// Load plugin id.
-		if(int idx = qtMetaObject()->indexOfClassInfo("OvitoPluginId"); idx >= 0)
-			_pluginId = qtMetaObject()->classInfo(idx).value();
-		OVITO_ASSERT(_pluginId != nullptr);
 	}
 	else {
 		// Templated classes are always abstract.
 		setAbstract(true);
-
-		// Class must have been initialized with a plugin id.
-		OVITO_ASSERT(_pluginId != nullptr);
 	}
 }
 

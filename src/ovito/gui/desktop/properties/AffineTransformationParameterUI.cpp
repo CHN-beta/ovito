@@ -25,6 +25,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(AffineTransformationParameterUI);
 
 /******************************************************************************
 * Constructor for a Qt property.

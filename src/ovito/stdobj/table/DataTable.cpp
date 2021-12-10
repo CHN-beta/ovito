@@ -26,6 +26,7 @@
 
 namespace Ovito::StdObj {
 
+IMPLEMENT_OVITO_CLASS(DataTable);
 
 /******************************************************************************
 * Registers all standard properties with the property traits class.

@@ -29,6 +29,7 @@
 
 namespace VRPlugin {
 
+IMPLEMENT_OVITO_CLASS(VRSettingsObjectEditor);
 SET_OVITO_OBJECT_EDITOR(VRSettingsObject, VRSettingsObjectEditor);
 
 /******************************************************************************

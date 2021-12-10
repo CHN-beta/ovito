@@ -36,6 +36,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(SpatialCorrelationFunctionModifier);
 SET_PROPERTY_FIELD_LABEL(SpatialCorrelationFunctionModifier, sourceProperty1, "First property");
 SET_PROPERTY_FIELD_LABEL(SpatialCorrelationFunctionModifier, sourceProperty2, "Second property");
 SET_PROPERTY_FIELD_LABEL(SpatialCorrelationFunctionModifier, averagingDirection, "Averaging direction");

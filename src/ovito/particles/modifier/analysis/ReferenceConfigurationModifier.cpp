@@ -31,6 +31,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(ReferenceConfigurationModifier);
 DEFINE_REFERENCE_FIELD(ReferenceConfigurationModifier, referenceConfiguration);
 SET_PROPERTY_FIELD_LABEL(ReferenceConfigurationModifier, referenceConfiguration, "Reference Configuration");
 SET_PROPERTY_FIELD_LABEL(ReferenceConfigurationModifier, affineMapping, "Affine mapping");
@@ -41,6 +42,7 @@ SET_PROPERTY_FIELD_LABEL(ReferenceConfigurationModifier, referenceFrameOffset, "
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ReferenceConfigurationModifier, referenceFrameNumber, IntegerParameterUnit, 0);
 
 // This class can be removed in a future version of OVITO:
+IMPLEMENT_OVITO_CLASS(ReferenceConfigurationModifierApplication);
 
 /******************************************************************************
 * Constructs the modifier object.

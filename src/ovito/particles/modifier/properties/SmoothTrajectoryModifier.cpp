@@ -33,11 +33,13 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(SmoothTrajectoryModifier);
 SET_PROPERTY_FIELD_LABEL(SmoothTrajectoryModifier, useMinimumImageConvention, "Use minimum image convention");
 SET_PROPERTY_FIELD_LABEL(SmoothTrajectoryModifier, smoothingWindowSize, "Smoothing window size");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(SmoothTrajectoryModifier, smoothingWindowSize, IntegerParameterUnit, 1, 200);
 
 // This class can be removed in a future version of OVITO:
+IMPLEMENT_OVITO_CLASS(InterpolateTrajectoryModifierApplication);
 
 /******************************************************************************
 * Constructs the modifier object.

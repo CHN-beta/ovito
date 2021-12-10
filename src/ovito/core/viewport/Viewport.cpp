@@ -42,6 +42,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(Viewport);
 DEFINE_REFERENCE_FIELD(Viewport, viewNode);
 DEFINE_VECTOR_REFERENCE_FIELD(Viewport, overlays);
 DEFINE_VECTOR_REFERENCE_FIELD(Viewport, underlays);

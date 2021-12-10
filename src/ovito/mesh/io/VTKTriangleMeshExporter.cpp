@@ -27,6 +27,7 @@
 
 namespace Ovito::Mesh {
 
+IMPLEMENT_OVITO_CLASS(VTKTriangleMeshExporter);
 
 /******************************************************************************
  * This is called once for every output file to be written and before

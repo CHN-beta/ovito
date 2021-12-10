@@ -27,6 +27,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(NucleotidesVisEditor);
 SET_OVITO_OBJECT_EDITOR(NucleotidesVis, NucleotidesVisEditor);
 
 /******************************************************************************

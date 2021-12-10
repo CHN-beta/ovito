@@ -28,6 +28,7 @@
 
 namespace Ovito::CrystalAnalysis {
 
+IMPLEMENT_OVITO_CLASS(BurgersVectorFamilyEditor);
 SET_OVITO_OBJECT_EDITOR(BurgersVectorFamily, BurgersVectorFamilyEditor);
 
 /******************************************************************************

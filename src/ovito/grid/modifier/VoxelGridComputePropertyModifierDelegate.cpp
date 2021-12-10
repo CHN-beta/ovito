@@ -27,6 +27,7 @@
 
 namespace Ovito::Grid {
 
+IMPLEMENT_OVITO_CLASS(VoxelGridComputePropertyModifierDelegate);
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

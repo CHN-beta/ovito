@@ -37,6 +37,7 @@
 
 namespace Ovito::CrystalAnalysis {
 
+IMPLEMENT_OVITO_CLASS(GrainSegmentationModifierEditor);
 SET_OVITO_OBJECT_EDITOR(GrainSegmentationModifier, GrainSegmentationModifierEditor);
 
 /******************************************************************************

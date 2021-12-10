@@ -26,6 +26,14 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS_TEMPLATE(TCBAnimationKey<FloatAnimationKey>);
+IMPLEMENT_OVITO_CLASS(FloatTCBAnimationKey);
+
+IMPLEMENT_OVITO_CLASS_TEMPLATE(TCBAnimationKey<PositionAnimationKey>);
+IMPLEMENT_OVITO_CLASS(PositionTCBAnimationKey);
+
+IMPLEMENT_OVITO_CLASS(TCBPositionController);
+
 // This had to be removed for now, because it leads to a segmentation fault on Linux/Unix platforms.
 // Apparently, global static initializers are run before C++17 inline static initializers of class templates.
 // We leave these parameter fields without labels for now (they are not used in the GUI anyway) until

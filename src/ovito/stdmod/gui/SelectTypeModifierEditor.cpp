@@ -29,6 +29,7 @@
 
 namespace Ovito::StdMod {
 
+IMPLEMENT_OVITO_CLASS(SelectTypeModifierEditor);
 SET_OVITO_OBJECT_EDITOR(SelectTypeModifier, SelectTypeModifierEditor);
 
 /******************************************************************************

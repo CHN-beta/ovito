@@ -30,6 +30,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(FileSourcePlaybackRateEditor);
 
 /******************************************************************************
 * Sets up the UI of the editor.

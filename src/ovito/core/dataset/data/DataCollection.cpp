@@ -30,6 +30,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(DataCollection);
 DEFINE_VECTOR_REFERENCE_FIELD(DataCollection, objects);
 SET_PROPERTY_FIELD_LABEL(DataCollection, objects, "Data objects");
 

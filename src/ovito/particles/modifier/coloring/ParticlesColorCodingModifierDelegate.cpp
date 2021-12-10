@@ -28,6 +28,9 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(ParticlesColorCodingModifierDelegate);
+IMPLEMENT_OVITO_CLASS(ParticleVectorsColorCodingModifierDelegate);
+IMPLEMENT_OVITO_CLASS(BondsColorCodingModifierDelegate);
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

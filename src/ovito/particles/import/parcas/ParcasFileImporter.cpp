@@ -28,6 +28,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(ParcasFileImporter);
 
 // Byte-swaps a 32 bit word.
 #define SWAP32(x) (((uint32_t)(x) >> 24) |			\

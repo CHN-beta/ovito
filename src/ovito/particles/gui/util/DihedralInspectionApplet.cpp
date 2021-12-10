@@ -27,6 +27,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(DihedralInspectionApplet);
 
 /******************************************************************************
 * Lets the applet create the UI widget that is to be placed into the data

@@ -30,6 +30,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(TriMeshVis);
 DEFINE_REFERENCE_FIELD(TriMeshVis, transparencyController);
 SET_PROPERTY_FIELD_LABEL(TriMeshVis, color, "Display color");
 SET_PROPERTY_FIELD_LABEL(TriMeshVis, transparencyController, "Transparency");

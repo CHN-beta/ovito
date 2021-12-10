@@ -32,6 +32,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(CentroSymmetryModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CentroSymmetryModifier, CentroSymmetryModifierEditor);
 
 /******************************************************************************

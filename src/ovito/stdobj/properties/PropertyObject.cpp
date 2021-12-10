@@ -27,6 +27,7 @@
 
 namespace Ovito::StdObj {
 
+IMPLEMENT_OVITO_CLASS(PropertyObject);
 DEFINE_VECTOR_REFERENCE_FIELD(PropertyObject, elementTypes);
 SET_PROPERTY_FIELD_LABEL(PropertyObject, elementTypes, "Element types");
 SET_PROPERTY_FIELD_LABEL(PropertyObject, title, "Title");
@@ -55,6 +56,8 @@ PropertyObject::PropertyObject(DataSet* dataset, size_t elementCount, int dataTy
 ******************************************************************************/
 OORef<RefTarget> PropertyObject::clone(bool deepCopy, CloneHelper& cloneHelper) const
 {
+	OVITO_ASSERT(this->identifier() == this->name());
+
 	// Let the base class create an instance of this class.
 	OORef<PropertyObject> clone = static_object_cast<PropertyObject>(DataBuffer::clone(deepCopy, cloneHelper));
 

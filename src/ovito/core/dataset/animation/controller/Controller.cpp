@@ -32,6 +32,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(Controller);
 
 /******************************************************************************
 * Returns the float controller's value at the current animation time.

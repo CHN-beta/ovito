@@ -31,6 +31,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(XTCImporter);
 
 class XTCFile
 {

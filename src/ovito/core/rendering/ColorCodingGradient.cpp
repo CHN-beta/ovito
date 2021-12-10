@@ -25,6 +25,16 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(ColorCodingGradient);
+IMPLEMENT_OVITO_CLASS(ColorCodingHSVGradient);
+IMPLEMENT_OVITO_CLASS(ColorCodingGrayscaleGradient);
+IMPLEMENT_OVITO_CLASS(ColorCodingHotGradient);
+IMPLEMENT_OVITO_CLASS(ColorCodingJetGradient);
+IMPLEMENT_OVITO_CLASS(ColorCodingBlueWhiteRedGradient);
+IMPLEMENT_OVITO_CLASS(ColorCodingViridisGradient);
+IMPLEMENT_OVITO_CLASS(ColorCodingMagmaGradient);
+IMPLEMENT_OVITO_CLASS(ColorCodingTableGradient);
+IMPLEMENT_OVITO_CLASS(ColorCodingImageGradient);
 
 
 /******************************************************************************

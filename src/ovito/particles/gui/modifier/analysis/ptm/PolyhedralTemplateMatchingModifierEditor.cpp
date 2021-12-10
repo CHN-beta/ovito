@@ -34,6 +34,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(PolyhedralTemplateMatchingModifierEditor);
 SET_OVITO_OBJECT_EDITOR(PolyhedralTemplateMatchingModifier, PolyhedralTemplateMatchingModifierEditor);
 
 /******************************************************************************

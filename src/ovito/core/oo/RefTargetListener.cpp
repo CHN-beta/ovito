@@ -26,6 +26,8 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(RefTargetListenerBase);
+IMPLEMENT_OVITO_CLASS(VectorRefTargetListenerBase);
 DEFINE_REFERENCE_FIELD(RefTargetListenerBase, target);
 DEFINE_VECTOR_REFERENCE_FIELD(VectorRefTargetListenerBase, targets);
 

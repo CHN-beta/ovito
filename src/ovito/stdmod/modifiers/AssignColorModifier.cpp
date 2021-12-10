@@ -33,7 +33,9 @@
 
 namespace Ovito::StdMod {
 
+IMPLEMENT_OVITO_CLASS(AssignColorModifierDelegate);
 
+IMPLEMENT_OVITO_CLASS(AssignColorModifier);
 DEFINE_REFERENCE_FIELD(AssignColorModifier, colorController);
 SET_PROPERTY_FIELD_LABEL(AssignColorModifier, colorController, "Color");
 SET_PROPERTY_FIELD_LABEL(AssignColorModifier, keepSelection, "Keep selection");

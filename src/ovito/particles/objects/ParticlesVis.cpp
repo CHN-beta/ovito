@@ -34,6 +34,8 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(ParticlesVis);
+IMPLEMENT_OVITO_CLASS(ParticlePickInfo);
 SET_PROPERTY_FIELD_LABEL(ParticlesVis, defaultParticleRadius, "Standard radius");
 SET_PROPERTY_FIELD_LABEL(ParticlesVis, radiusScaleFactor, "Radius scaling factor");
 SET_PROPERTY_FIELD_LABEL(ParticlesVis, renderingQuality, "Rendering quality");

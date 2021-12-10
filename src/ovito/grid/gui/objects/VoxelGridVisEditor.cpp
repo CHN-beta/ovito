@@ -31,6 +31,7 @@
 
 namespace Ovito::Grid {
 
+IMPLEMENT_OVITO_CLASS(VoxelGridVisEditor);
 SET_OVITO_OBJECT_EDITOR(VoxelGridVis, VoxelGridVisEditor);
 
 /******************************************************************************

@@ -30,6 +30,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(VulkanSceneRenderer);
 
 /******************************************************************************
 * Is called by OVITO to query the class for any information that should be 

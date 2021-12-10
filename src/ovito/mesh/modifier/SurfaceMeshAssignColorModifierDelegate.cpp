@@ -26,6 +26,9 @@
 
 namespace Ovito::Mesh {
 
+IMPLEMENT_OVITO_CLASS(SurfaceMeshVerticesAssignColorModifierDelegate);
+IMPLEMENT_OVITO_CLASS(SurfaceMeshFacesAssignColorModifierDelegate);
+IMPLEMENT_OVITO_CLASS(SurfaceMeshRegionsAssignColorModifierDelegate);
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

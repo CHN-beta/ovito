@@ -28,6 +28,7 @@
 
 namespace Ovito::CrystalAnalysis {
 
+IMPLEMENT_OVITO_CLASS(DislocationNetworkObjectEditor);
 SET_OVITO_OBJECT_EDITOR(DislocationNetworkObject, DislocationNetworkObjectEditor);
 
 /******************************************************************************

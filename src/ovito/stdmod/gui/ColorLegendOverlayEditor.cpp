@@ -43,6 +43,7 @@
 
 namespace Ovito::StdMod {
 
+IMPLEMENT_OVITO_CLASS(ColorLegendOverlayEditor);
 SET_OVITO_OBJECT_EDITOR(ColorLegendOverlay, ColorLegendOverlayEditor);
 
 /******************************************************************************

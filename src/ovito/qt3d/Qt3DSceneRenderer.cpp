@@ -30,6 +30,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(Qt3DSceneRenderer);
 
 /******************************************************************************
 * Constructor.

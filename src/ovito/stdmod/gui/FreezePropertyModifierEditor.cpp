@@ -31,6 +31,7 @@
 
 namespace Ovito::StdMod {
 
+IMPLEMENT_OVITO_CLASS(FreezePropertyModifierEditor);
 SET_OVITO_OBJECT_EDITOR(FreezePropertyModifier, FreezePropertyModifierEditor);
 
 /******************************************************************************

@@ -25,6 +25,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(AsynchronousModifierApplication);
 SET_MODIFIER_APPLICATION_TYPE(AsynchronousModifier, AsynchronousModifierApplication);
 
 /******************************************************************************

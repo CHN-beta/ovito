@@ -27,6 +27,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(DataVis);
 
 /******************************************************************************
 * Constructor.

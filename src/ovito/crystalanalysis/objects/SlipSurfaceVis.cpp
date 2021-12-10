@@ -33,6 +33,8 @@
 
 namespace Ovito::CrystalAnalysis {
 
+IMPLEMENT_OVITO_CLASS(SlipSurfaceVis);
+IMPLEMENT_OVITO_CLASS(SlipSurfacePickInfo);
 
 /******************************************************************************
 * Constructor.

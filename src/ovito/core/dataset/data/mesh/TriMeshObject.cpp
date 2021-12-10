@@ -28,6 +28,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(TriMeshObject);
 
 /******************************************************************************
 * Default constructor.

@@ -26,6 +26,13 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(AnimationKey);
+IMPLEMENT_OVITO_CLASS(FloatAnimationKey);
+IMPLEMENT_OVITO_CLASS(IntegerAnimationKey);
+IMPLEMENT_OVITO_CLASS(Vector3AnimationKey);
+IMPLEMENT_OVITO_CLASS(PositionAnimationKey);
+IMPLEMENT_OVITO_CLASS(RotationAnimationKey);
+IMPLEMENT_OVITO_CLASS(ScalingAnimationKey);
 SET_PROPERTY_FIELD_LABEL(AnimationKey, time, "Time");
 SET_PROPERTY_FIELD_UNITS(AnimationKey, time, TimeParameterUnit);
 SET_PROPERTY_FIELD_LABEL(FloatAnimationKey, value, "Value");

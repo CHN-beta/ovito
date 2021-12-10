@@ -27,6 +27,7 @@
 
 namespace Ovito::Mesh {
 
+IMPLEMENT_OVITO_CLASS(VTKFileImporter);
 
 /******************************************************************************
 * Returns whether this importer class supports importing data of the given type.

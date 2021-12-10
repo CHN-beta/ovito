@@ -35,6 +35,7 @@
 
 namespace Ovito::StdObj {
 
+IMPLEMENT_OVITO_CLASS(StandardCameraSource);
 DEFINE_REFERENCE_FIELD(StandardCameraSource, fovController);
 DEFINE_REFERENCE_FIELD(StandardCameraSource, zoomController);
 SET_PROPERTY_FIELD_LABEL(StandardCameraSource, isPerspective, "Perspective projection");

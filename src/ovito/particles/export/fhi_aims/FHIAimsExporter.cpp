@@ -29,6 +29,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(FHIAimsExporter);
 
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.

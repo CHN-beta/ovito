@@ -36,6 +36,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(ClusterAnalysisModifier);
 SET_PROPERTY_FIELD_LABEL(ClusterAnalysisModifier, neighborMode, "Neighbor mode");
 SET_PROPERTY_FIELD_LABEL(ClusterAnalysisModifier, cutoff, "Cutoff distance");
 SET_PROPERTY_FIELD_LABEL(ClusterAnalysisModifier, onlySelectedParticles, "Use only selected particles");

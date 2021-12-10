@@ -39,6 +39,7 @@
 
 namespace Ovito::StdMod {
 
+IMPLEMENT_OVITO_CLASS(ComputePropertyModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ComputePropertyModifier, ComputePropertyModifierEditor);
 
 /******************************************************************************

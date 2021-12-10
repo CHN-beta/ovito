@@ -41,6 +41,7 @@
 
 namespace Ovito::StdMod {
 
+IMPLEMENT_OVITO_CLASS(ScatterPlotModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ScatterPlotModifier, ScatterPlotModifierEditor);
 
 /******************************************************************************

@@ -27,6 +27,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(LAMMPSDumpExporterEditor);
 SET_OVITO_OBJECT_EDITOR(LAMMPSDumpExporter, LAMMPSDumpExporterEditor);
 
 /******************************************************************************

@@ -28,6 +28,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(XYZExporter);
 SET_PROPERTY_FIELD_LABEL(XYZExporter, subFormat, "XYZ format style");
 
 /******************************************************************************

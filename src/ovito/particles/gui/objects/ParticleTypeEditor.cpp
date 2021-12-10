@@ -39,6 +39,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(ParticleTypeEditor);
 SET_OVITO_OBJECT_EDITOR(ParticleType, ParticleTypeEditor);
 
 /******************************************************************************

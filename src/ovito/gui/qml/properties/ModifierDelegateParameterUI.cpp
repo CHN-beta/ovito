@@ -30,6 +30,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(ModifierDelegateParameterUI);
 
 /******************************************************************************
 * Sets the class of delegates the user can choose from.

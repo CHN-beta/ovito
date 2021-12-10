@@ -38,6 +38,7 @@
 
 namespace Ovito::StdObj {
 
+IMPLEMENT_OVITO_CLASS(PropertyColorMappingEditor);
 SET_OVITO_OBJECT_EDITOR(PropertyColorMapping, PropertyColorMappingEditor);
 
 /******************************************************************************

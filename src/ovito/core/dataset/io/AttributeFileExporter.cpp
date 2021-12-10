@@ -29,6 +29,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(AttributeFileExporter);
 
 /******************************************************************************
  * This is called once for every output file to be written and before

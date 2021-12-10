@@ -26,6 +26,7 @@
 
 namespace Ovito::Mesh {
 
+IMPLEMENT_OVITO_CLASS(SurfaceMeshInspectionApplet);
 
 /******************************************************************************
 * Lets the applet create the UI widget that is to be placed into the data

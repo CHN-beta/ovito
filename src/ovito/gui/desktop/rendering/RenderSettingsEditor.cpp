@@ -39,6 +39,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(RenderSettingsEditor);
 DEFINE_REFERENCE_FIELD(RenderSettingsEditor, activeViewport);
 SET_OVITO_OBJECT_EDITOR(RenderSettings, RenderSettingsEditor);
 

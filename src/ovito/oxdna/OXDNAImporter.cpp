@@ -33,6 +33,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(OXDNAImporter);
 SET_PROPERTY_FIELD_LABEL(OXDNAImporter, topologyFileUrl, "Topology file");
 
 /******************************************************************************

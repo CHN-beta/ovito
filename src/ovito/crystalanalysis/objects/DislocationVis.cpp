@@ -33,6 +33,7 @@
 
 namespace Ovito::CrystalAnalysis {
 
+IMPLEMENT_OVITO_CLASS(DislocationVis);
 SET_PROPERTY_FIELD_LABEL(DislocationVis, lineWidth, "Line width");
 SET_PROPERTY_FIELD_LABEL(DislocationVis, shadingMode, "Shading mode");
 SET_PROPERTY_FIELD_LABEL(DislocationVis, burgersVectorWidth, "Burgers vector width");
@@ -44,6 +45,7 @@ SET_PROPERTY_FIELD_LABEL(DislocationVis, lineColoringMode, "Line coloring");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DislocationVis, lineWidth, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DislocationVis, burgersVectorWidth, WorldParameterUnit, 0);
 
+IMPLEMENT_OVITO_CLASS(DislocationPickInfo);
 
 /******************************************************************************
 * Constructor.

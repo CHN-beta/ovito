@@ -34,6 +34,7 @@
 
 namespace Ovito::Mesh {
 
+IMPLEMENT_OVITO_CLASS(SurfaceMeshVisEditor);
 SET_OVITO_OBJECT_EDITOR(SurfaceMeshVis, SurfaceMeshVisEditor);
 
 /******************************************************************************

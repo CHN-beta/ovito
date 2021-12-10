@@ -29,6 +29,7 @@
 
 namespace Ovito::StdMod {
 
+IMPLEMENT_OVITO_CLASS(ReplicateModifier);
 SET_PROPERTY_FIELD_LABEL(ReplicateModifier, numImagesX, "Number of images - X");
 SET_PROPERTY_FIELD_LABEL(ReplicateModifier, numImagesY, "Number of images - Y");
 SET_PROPERTY_FIELD_LABEL(ReplicateModifier, numImagesZ, "Number of images - Z");
@@ -38,6 +39,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ReplicateModifier, numImagesX, IntegerParam
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ReplicateModifier, numImagesY, IntegerParameterUnit, 1);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ReplicateModifier, numImagesZ, IntegerParameterUnit, 1);
 
+IMPLEMENT_OVITO_CLASS(ReplicateModifierDelegate);
 
 /******************************************************************************
 * Constructs the modifier object.

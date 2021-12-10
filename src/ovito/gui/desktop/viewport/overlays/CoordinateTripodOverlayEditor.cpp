@@ -39,6 +39,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(CoordinateTripodOverlayEditor);
 SET_OVITO_OBJECT_EDITOR(CoordinateTripodOverlay, CoordinateTripodOverlayEditor);
 
 /******************************************************************************

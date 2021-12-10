@@ -26,6 +26,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(DihedralsObject);
 
 /******************************************************************************
 * Constructor.

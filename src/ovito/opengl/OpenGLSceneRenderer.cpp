@@ -48,6 +48,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(OpenGLSceneRenderer);
 
 /// The vendor of the OpenGL implementation in use.
 QByteArray OpenGLSceneRenderer::_openGLVendor;

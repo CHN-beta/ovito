@@ -27,6 +27,7 @@
 
 namespace Ovito::CrystalAnalysis {
 
+IMPLEMENT_OVITO_CLASS(CAImporterEditor);
 SET_OVITO_OBJECT_EDITOR(CAImporter, CAImporterEditor);
 
 /******************************************************************************

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,9 @@
 #include "OvitoObject.h"
 
 namespace Ovito {
+
+// The class descriptor instance for the OvitoObject class.
+const OvitoClass OvitoObject::__OOClass_instance{QStringLiteral("OvitoObject"), nullptr, OVITO_PLUGIN_NAME, &OvitoObject::staticMetaObject};
 
 #ifdef OVITO_DEBUG
 /******************************************************************************

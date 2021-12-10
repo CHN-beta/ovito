@@ -29,6 +29,8 @@
 
 namespace Ovito::Grid {
 
+IMPLEMENT_OVITO_CLASS(ParaViewVTSGridImporter);
+IMPLEMENT_OVITO_CLASS(GridParaViewVTMFileFilter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

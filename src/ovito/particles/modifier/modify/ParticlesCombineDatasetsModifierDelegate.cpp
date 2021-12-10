@@ -33,6 +33,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(ParticlesCombineDatasetsModifierDelegate);
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

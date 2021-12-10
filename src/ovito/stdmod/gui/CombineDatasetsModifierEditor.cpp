@@ -28,6 +28,7 @@
 
 namespace Ovito::StdMod {
 
+IMPLEMENT_OVITO_CLASS(CombineDatasetsModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CombineDatasetsModifier, CombineDatasetsModifierEditor);
 
 /******************************************************************************

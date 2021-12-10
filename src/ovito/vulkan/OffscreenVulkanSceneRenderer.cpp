@@ -28,6 +28,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(OffscreenVulkanSceneRenderer);
 
 /******************************************************************************
 * Helper function that looks for an existing logical Vulkan context in the current

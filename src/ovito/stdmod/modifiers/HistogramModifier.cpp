@@ -33,6 +33,7 @@
 
 namespace Ovito::StdMod {
 
+IMPLEMENT_OVITO_CLASS(HistogramModifier);
 SET_PROPERTY_FIELD_LABEL(HistogramModifier, numberOfBins, "Number of histogram bins");
 SET_PROPERTY_FIELD_LABEL(HistogramModifier, selectInRange, "Select value range");
 SET_PROPERTY_FIELD_LABEL(HistogramModifier, selectionRangeStart, "Selection range start");

@@ -34,6 +34,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(SceneNode);
 DEFINE_REFERENCE_FIELD(SceneNode, transformationController);
 DEFINE_REFERENCE_FIELD(SceneNode, lookatTargetNode);
 DEFINE_VECTOR_REFERENCE_FIELD(SceneNode, children);

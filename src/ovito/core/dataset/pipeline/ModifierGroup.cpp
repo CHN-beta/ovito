@@ -26,6 +26,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(ModifierGroup);
 SET_PROPERTY_FIELD_LABEL(ModifierGroup, isCollapsed, "Collapsed");
 
 /******************************************************************************

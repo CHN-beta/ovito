@@ -34,7 +34,7 @@ namespace Ovito {
 template<class BaseKeyClass>
 class OVITO_CORE_EXPORT SplineAnimationKey : public BaseKeyClass
 {
-	OVITO_CLASS_TEMPLATE(SplineAnimationKey, BaseKeyClass, "Core")
+	OVITO_CLASS_TEMPLATE(SplineAnimationKey, BaseKeyClass)
 
 public:
 

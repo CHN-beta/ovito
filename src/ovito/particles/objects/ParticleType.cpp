@@ -27,6 +27,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(ParticleType);
 DEFINE_REFERENCE_FIELD(ParticleType, shapeMesh);
 SET_PROPERTY_FIELD_LABEL(ParticleType, radius, "Display radius");
 SET_PROPERTY_FIELD_LABEL(ParticleType, vdwRadius, "Van der Waals radius");

@@ -27,6 +27,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(ViewportLayoutCell);
 DEFINE_REFERENCE_FIELD(ViewportLayoutCell, viewport);
 DEFINE_VECTOR_REFERENCE_FIELD(ViewportLayoutCell, children);
 

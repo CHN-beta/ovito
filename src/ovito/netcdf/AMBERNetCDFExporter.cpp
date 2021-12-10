@@ -54,6 +54,7 @@ const char NC_SCALE_FACTOR_STR[]  = "scale_factor";
 	#define NC_OVITO_FLOATTYPE NC_DOUBLE
 #endif
 
+IMPLEMENT_OVITO_CLASS(AMBERNetCDFExporter);
 
 /******************************************************************************
  * This is called once for every output file to be written and before

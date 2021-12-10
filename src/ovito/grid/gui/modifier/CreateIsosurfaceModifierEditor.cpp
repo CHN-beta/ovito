@@ -39,6 +39,7 @@
 
 namespace Ovito::Grid {
 
+IMPLEMENT_OVITO_CLASS(CreateIsosurfaceModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CreateIsosurfaceModifier, CreateIsosurfaceModifierEditor);
 
 /******************************************************************************

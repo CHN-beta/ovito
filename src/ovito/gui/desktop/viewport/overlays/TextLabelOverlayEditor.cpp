@@ -42,6 +42,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(TextLabelOverlayEditor);
 DEFINE_REFERENCE_FIELD(TextLabelOverlayEditor, sourceNode);
 SET_OVITO_OBJECT_EDITOR(TextLabelOverlay, TextLabelOverlayEditor);
 

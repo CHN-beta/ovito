@@ -26,6 +26,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(TrajectoryColorCodingModifierDelegate);
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

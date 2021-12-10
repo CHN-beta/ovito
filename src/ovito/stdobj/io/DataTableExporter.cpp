@@ -26,6 +26,7 @@
 
 namespace Ovito::StdObj {
 
+IMPLEMENT_OVITO_CLASS(DataTableExporter);
 
 /******************************************************************************
  * This is called once for every output file to be written and before

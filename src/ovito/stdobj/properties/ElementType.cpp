@@ -30,6 +30,7 @@
 
 namespace Ovito::StdObj {
 
+IMPLEMENT_OVITO_CLASS(ElementType);
 SET_PROPERTY_FIELD_LABEL(ElementType, numericId, "Id");
 SET_PROPERTY_FIELD_LABEL(ElementType, name, "Name");
 SET_PROPERTY_FIELD_LABEL(ElementType, color, "Color");

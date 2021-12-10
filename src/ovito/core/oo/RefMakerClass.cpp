@@ -35,6 +35,8 @@ namespace Ovito {
 void RefMakerClass::initialize()
 {
 	OvitoClass::initialize();
+//	if(name() == "DataObject")
+//		qDebug() << "RefMakerClass::initialize():" << name() << (void*)this;
 
 	// Collect all property fields of the class hierarchy in one array.
 	for(const RefMakerClass* clazz = this; clazz != &RefMaker::OOClass(); clazz = static_cast<const RefMakerClass*>(clazz->superClass())) {

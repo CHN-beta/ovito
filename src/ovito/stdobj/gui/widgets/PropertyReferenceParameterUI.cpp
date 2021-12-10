@@ -27,6 +27,7 @@
 
 namespace Ovito::StdObj {
 
+IMPLEMENT_OVITO_CLASS(PropertyReferenceParameterUI);
 
 /******************************************************************************
 * Constructor.

@@ -27,6 +27,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(StandardSceneRendererEditor);
 SET_OVITO_OBJECT_EDITOR(StandardSceneRenderer, StandardSceneRendererEditor);
 
 /******************************************************************************

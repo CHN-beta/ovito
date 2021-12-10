@@ -27,6 +27,7 @@
 
 namespace Ovito::StdObj {
 
+IMPLEMENT_OVITO_CLASS(GenericPropertyModifier);
 
 /******************************************************************************
 * Constructs the modifier object.

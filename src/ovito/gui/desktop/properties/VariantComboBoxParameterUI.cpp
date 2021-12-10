@@ -26,6 +26,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(VariantComboBoxParameterUI);
 
 /******************************************************************************
 * Constructor for a Qt property.

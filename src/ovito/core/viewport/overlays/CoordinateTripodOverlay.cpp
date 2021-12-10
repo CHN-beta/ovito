@@ -28,6 +28,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(CoordinateTripodOverlay);
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, alignment, "Position");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, tripodSize, "Size factor");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, lineWidth, "Line width");

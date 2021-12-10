@@ -30,6 +30,7 @@
 
 namespace Ovito::CrystalAnalysis {
 
+IMPLEMENT_OVITO_CLASS(VTKDislocationsExporter);
 
 /******************************************************************************
  * This is called once for every output file to be written and before

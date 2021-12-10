@@ -29,6 +29,7 @@
 
 namespace Ovito::CrystalAnalysis {
 
+IMPLEMENT_OVITO_CLASS(MicrostructurePhaseEditor);
 SET_OVITO_OBJECT_EDITOR(MicrostructurePhase, MicrostructurePhaseEditor);
 
 /******************************************************************************

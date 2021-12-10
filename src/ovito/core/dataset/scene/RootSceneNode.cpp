@@ -25,6 +25,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(RootSceneNode);
 
 /******************************************************************************
 * Default constructor.

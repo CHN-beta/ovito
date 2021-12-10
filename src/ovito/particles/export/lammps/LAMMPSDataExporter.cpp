@@ -32,6 +32,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(LAMMPSDataExporter);
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, atomStyle, "Atom style");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, atomSubStyles, "Atom sub-styles");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, omitMassesSection, "Omit 'Masses' section");

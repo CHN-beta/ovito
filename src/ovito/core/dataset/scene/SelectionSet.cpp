@@ -25,6 +25,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(SelectionSet);
 DEFINE_VECTOR_REFERENCE_FIELD(SelectionSet, nodes);
 SET_PROPERTY_FIELD_LABEL(SelectionSet, nodes, "Nodes");
 

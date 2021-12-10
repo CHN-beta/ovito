@@ -28,6 +28,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(AnimationSettings);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(AnimationSettings, playbackEveryNthFrame, IntegerParameterUnit, 1);
 
 /******************************************************************************

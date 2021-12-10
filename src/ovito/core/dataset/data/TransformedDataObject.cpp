@@ -25,5 +25,6 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(TransformedDataObject);
 
 }	// End of namespace

@@ -25,6 +25,7 @@
 
 namespace VRPlugin {
 
+IMPLEMENT_OVITO_CLASS(VRCacheModifier);
 
 /******************************************************************************
 * This modifies the input object in a specific way.

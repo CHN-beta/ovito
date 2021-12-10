@@ -32,6 +32,7 @@
 
 namespace Ovito::CrystalAnalysis {
 
+IMPLEMENT_OVITO_CLASS(DislocationVisEditor);
 SET_OVITO_OBJECT_EDITOR(DislocationVis, DislocationVisEditor);
 
 /******************************************************************************

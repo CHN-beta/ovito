@@ -29,6 +29,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(DataInspectionApplet);
 
 /******************************************************************************
 * Determines whether the given pipeline dataset contains data that can be

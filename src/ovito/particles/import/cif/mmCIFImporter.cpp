@@ -34,6 +34,7 @@ namespace Ovito::Particles {
 
 namespace cif = gemmi::cif;
 
+IMPLEMENT_OVITO_CLASS(mmCIFImporter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

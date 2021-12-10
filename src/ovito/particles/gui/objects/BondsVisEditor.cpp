@@ -32,6 +32,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(BondsVisEditor);
 SET_OVITO_OBJECT_EDITOR(BondsVis, BondsVisEditor);
 
 /******************************************************************************

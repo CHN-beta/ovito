@@ -30,6 +30,7 @@
 
 namespace Ovito::StdObj {
 
+IMPLEMENT_OVITO_CLASS(SimulationCellEditor);
 SET_OVITO_OBJECT_EDITOR(SimulationCellObject, SimulationCellEditor);
 
 /******************************************************************************

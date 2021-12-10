@@ -57,7 +57,6 @@ namespace Ovito {
 class OVITO_CORE_EXPORT OvitoObject : public QObject
 {
 	Q_OBJECT
-	Q_CLASSINFO("OvitoPluginId", "Core")
 
 	Q_PROPERTY(QString className READ className CONSTANT)
 	Q_PROPERTY(QString pluginId READ pluginId CONSTANT)
@@ -65,10 +64,7 @@ class OVITO_CORE_EXPORT OvitoObject : public QObject
 private:
 
 	// The class descriptor instance.
-	static inline const OvitoClass __OOClass_instance{
-		QStringLiteral("OvitoObject"), 
-		nullptr, 
-		&staticMetaObject};
+	static const OvitoClass __OOClass_instance;
 
 public:
 

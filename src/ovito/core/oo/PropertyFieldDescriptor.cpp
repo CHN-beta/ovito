@@ -56,6 +56,8 @@ PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, c
 	// Insert into linked list of reference fields stored in the defining class' descriptor.
 	this->_next = definingClass->_firstPropertyField;
 	definingClass->_firstPropertyField = this;
+//	if(qstrcmp(identifier, "identifier") == 0)
+//		qDebug() << "PropertyFieldDescriptor:" << identifier << (void*)definingClass;
 }
 
 /// Constructor	for a property field that stores a single reference to a RefTarget.

@@ -32,6 +32,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(CreateBondsModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CreateBondsModifier, CreateBondsModifierEditor);
 
 /******************************************************************************

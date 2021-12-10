@@ -29,6 +29,7 @@
 
 namespace Ovito::Mesh {
 
+IMPLEMENT_OVITO_CLASS(SurfaceMeshAffineTransformationModifierDelegate);
 
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.

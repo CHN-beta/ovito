@@ -27,6 +27,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(XTCImporterEditor);
 SET_OVITO_OBJECT_EDITOR(XTCImporter, XTCImporterEditor);
 
 /******************************************************************************

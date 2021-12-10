@@ -30,6 +30,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(WasmDataSetContainer);
 
 /******************************************************************************
 * Initializes the dataset manager.

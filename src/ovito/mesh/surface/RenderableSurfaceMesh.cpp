@@ -25,5 +25,6 @@
 
 namespace Ovito::Mesh {
 
+IMPLEMENT_OVITO_CLASS(RenderableSurfaceMesh);
 
 }	// End of namespace

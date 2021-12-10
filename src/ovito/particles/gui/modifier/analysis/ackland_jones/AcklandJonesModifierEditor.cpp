@@ -29,6 +29,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(AcklandJonesModifierEditor);
 SET_OVITO_OBJECT_EDITOR(AcklandJonesModifier, AcklandJonesModifierEditor);
 
 /******************************************************************************

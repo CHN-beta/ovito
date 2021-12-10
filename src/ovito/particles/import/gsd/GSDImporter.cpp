@@ -39,6 +39,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(GSDImporter);
 SET_PROPERTY_FIELD_LABEL(GSDImporter, roundingResolution, "Shape rounding resolution");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(GSDImporter, roundingResolution, IntegerParameterUnit, 1, 6);
 

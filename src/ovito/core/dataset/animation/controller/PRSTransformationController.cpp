@@ -29,6 +29,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(PRSTransformationController);
 DEFINE_REFERENCE_FIELD(PRSTransformationController, positionController);
 DEFINE_REFERENCE_FIELD(PRSTransformationController, rotationController);
 DEFINE_REFERENCE_FIELD(PRSTransformationController, scalingController);

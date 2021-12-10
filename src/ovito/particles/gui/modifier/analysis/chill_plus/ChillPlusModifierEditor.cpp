@@ -31,6 +31,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(ChillPlusModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ChillPlusModifier, ChillPlusModifierEditor);
 
 /******************************************************************************

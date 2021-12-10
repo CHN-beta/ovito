@@ -36,6 +36,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(CommonNeighborAnalysisModifier);
 SET_PROPERTY_FIELD_LABEL(CommonNeighborAnalysisModifier, cutoff, "Cutoff radius");
 SET_PROPERTY_FIELD_LABEL(CommonNeighborAnalysisModifier, mode, "Mode");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CommonNeighborAnalysisModifier, cutoff, WorldParameterUnit, 0);

@@ -30,6 +30,7 @@
 
 namespace Ovito::CrystalAnalysis {
 
+IMPLEMENT_OVITO_CLASS(SimplifyMicrostructureModifier);
 SET_PROPERTY_FIELD_LABEL(SimplifyMicrostructureModifier, smoothingLevel, "Smoothing level");
 SET_PROPERTY_FIELD_LABEL(SimplifyMicrostructureModifier, kPB, "Smoothing param kPB");
 SET_PROPERTY_FIELD_LABEL(SimplifyMicrostructureModifier, lambda, "Smoothing param lambda");

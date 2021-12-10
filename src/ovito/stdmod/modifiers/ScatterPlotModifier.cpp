@@ -31,6 +31,7 @@
 
 namespace Ovito::StdMod {
 
+IMPLEMENT_OVITO_CLASS(ScatterPlotModifier);
 SET_PROPERTY_FIELD_LABEL(ScatterPlotModifier, selectXAxisInRange, "Select elements in x-range");
 SET_PROPERTY_FIELD_LABEL(ScatterPlotModifier, selectionXAxisRangeStart, "Selection x-range start");
 SET_PROPERTY_FIELD_LABEL(ScatterPlotModifier, selectionXAxisRangeEnd, "Selection x-range end");

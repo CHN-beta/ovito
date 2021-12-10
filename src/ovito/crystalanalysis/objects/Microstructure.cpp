@@ -25,6 +25,7 @@
 
 namespace Ovito::CrystalAnalysis {
 
+IMPLEMENT_OVITO_CLASS(Microstructure);
 
 /******************************************************************************
 * Initializes the object's parameter fields with default values and loads 

@@ -25,6 +25,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(ObjectStatusDisplay);
 DEFINE_REFERENCE_FIELD(ObjectStatusDisplay, activeObject);
 
 /******************************************************************************

@@ -27,6 +27,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(ApplicationSettingsDialogPage);
 
 /******************************************************************************
 * The constructor of the settings dialog class.

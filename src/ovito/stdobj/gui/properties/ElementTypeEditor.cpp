@@ -31,6 +31,7 @@
 
 namespace Ovito::StdObj {
 
+IMPLEMENT_OVITO_CLASS(ElementTypeEditor);
 SET_OVITO_OBJECT_EDITOR(ElementType, ElementTypeEditor);
 
 /******************************************************************************

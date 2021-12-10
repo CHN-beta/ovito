@@ -27,6 +27,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(ParameterUI);
 DEFINE_REFERENCE_FIELD(ParameterUI, editObject);
 
 /******************************************************************************

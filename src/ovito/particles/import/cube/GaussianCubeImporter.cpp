@@ -31,6 +31,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(GaussianCubeImporter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

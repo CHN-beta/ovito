@@ -27,6 +27,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(GSDImporterEditor);
 SET_OVITO_OBJECT_EDITOR(GSDImporter, GSDImporterEditor);
 
 /******************************************************************************

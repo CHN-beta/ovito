@@ -27,6 +27,7 @@
 
 namespace Ovito::Particles {
 
+IMPLEMENT_OVITO_CLASS(POSCARImporterEditor);
 SET_OVITO_OBJECT_EDITOR(POSCARImporter, POSCARImporterEditor);
 
 /******************************************************************************

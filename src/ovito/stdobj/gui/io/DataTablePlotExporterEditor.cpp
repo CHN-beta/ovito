@@ -28,6 +28,7 @@
 
 namespace Ovito::StdObj {
 
+IMPLEMENT_OVITO_CLASS(DataTablePlotExporterEditor);
 SET_OVITO_OBJECT_EDITOR(DataTablePlotExporter, DataTablePlotExporterEditor);
 
 /******************************************************************************

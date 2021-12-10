@@ -29,6 +29,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(ColorParameterUI);
 
 /******************************************************************************
 * The constructor.

@@ -36,6 +36,7 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(PipelineSceneNode);
 DEFINE_REFERENCE_FIELD(PipelineSceneNode, dataProvider);
 DEFINE_VECTOR_REFERENCE_FIELD(PipelineSceneNode, visElements);
 DEFINE_VECTOR_REFERENCE_FIELD(PipelineSceneNode, replacedVisElements);
