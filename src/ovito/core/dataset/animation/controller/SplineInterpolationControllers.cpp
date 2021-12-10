@@ -25,10 +25,16 @@
 
 namespace Ovito {
 
+// This had to be removed for now, because it leads to a segmentation fault on Linux/Unix platforms.
+// Apparently, global static initializers are run before C++17 inline static initializers of class templates.
+// We leave these parameter fields without labels for now (they are not used in the GUI anyway) until
+// a better solution for static initialization order problem is found.
+#if 0 
 SET_PROPERTY_FIELD_LABEL(FloatSplineAnimationKey, inTangent, "In Tangent");
 SET_PROPERTY_FIELD_LABEL(FloatSplineAnimationKey, outTangent, "Out Tangent");
 
 SET_PROPERTY_FIELD_LABEL(PositionSplineAnimationKey, inTangent, "In Tangent");
 SET_PROPERTY_FIELD_LABEL(PositionSplineAnimationKey, outTangent, "Out Tangent");
+#endif
 
 }	// End of namespace
