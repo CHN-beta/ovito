@@ -48,6 +48,14 @@ SceneRenderer::SceneRenderer(DataSet* dataset) : RefTarget(dataset)
 }
 
 /******************************************************************************
+* This helper method throws a RendererException with the given message text.
+******************************************************************************/
+void SceneRenderer::throwRendererException(const QString& msg) const
+{
+	throw RendererException(msg, dataset());
+}
+
+/******************************************************************************
 * Returns the device pixel ratio of the output device we are rendering to.
 ******************************************************************************/
 qreal SceneRenderer::devicePixelRatio() const
@@ -245,13 +253,18 @@ void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSc
 				status = vis->render(time(), dataObjectPath, state, this, pipeline);
 				// Pass error status codes to the exception handler below.
 				if(status.type() == PipelineStatus::Error)
-					throw DataVis::RenderException(status.text());
+					throwException(status.text());
 				// In console mode, print warning messages to the terminal.
 				if(status.type() == PipelineStatus::Warning && !status.text().isEmpty() && Application::instance()->consoleMode()) {
 					qWarning() << "WARNING: Visual element" << vis->objectTitle() << "reported:" << status.text();
 				}
 			}
-			catch(DataVis::RenderException& ex) {
+			catch(SceneRenderer::RendererException& ex) {
+				ex.setContext(vis->dataset());
+				// Always interrupt rendering process by rethrowing the exception.
+				throw;
+			}
+			catch(Exception& ex) {
 				status = ex;
 				ex.setContext(vis->dataset());
 				ex.prependGeneralMessage(tr("Visual element '%1' reported an error during rendering.").arg(vis->objectTitle()));

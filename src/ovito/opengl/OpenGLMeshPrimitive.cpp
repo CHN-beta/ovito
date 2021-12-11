@@ -384,7 +384,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 
         // Bind index buffer.
 		if(!indexBuffer.bind())
-			throwException(QStringLiteral("Failed to bind OpenGL index buffer for shader '%1'.").arg(shader.shaderObject().objectName()));
+			throwRendererException(QStringLiteral("Failed to bind OpenGL index buffer for shader '%1'.").arg(shader.shaderObject().objectName()));
 
         // Draw triangles in sorted order.
 		OVITO_CHECK_OPENGL(this, glDrawElements(GL_TRIANGLES, mesh.faceCount() * 3, GL_UNSIGNED_INT, nullptr));

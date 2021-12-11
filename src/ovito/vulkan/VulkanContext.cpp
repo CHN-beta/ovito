@@ -23,6 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/rendering/SceneRenderer.h>
 #include "VulkanContext.h"
 
 #include <QLibrary>
@@ -87,7 +88,7 @@ std::shared_ptr<QVulkanInstance> VulkanContext::vkInstance()
             << VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
 		
         if(!inst->create()) {
-            throw Exception(tr("Failed to initialize Vulkan interface (error code %1). Please make sure the Vulkan library is installed on your system and the graphics driver supports at least Vulkan API 1.0. "
+            throw SceneRenderer::RendererException(tr("Failed to initialize Vulkan interface (error code %1). Please make sure the Vulkan library is installed on your system and the graphics driver supports at least Vulkan API 1.0. "
                 "If the Vulkan interface doesn't work, you can change the rendering interface back to OpenGL in the application settings dialog of OVITO.").arg(inst->errorCode()));
         }
 		globalInstance = inst;
@@ -228,7 +229,7 @@ bool VulkanContext::create(QWindow* window)
 	// Get the list of available physical devices.
     availablePhysicalDevices();
     if(_physDevs.isEmpty())
-		throw Exception(tr("No Vulkan devices present in the system."));
+		throw SceneRenderer::RendererException(tr("No Vulkan devices present in the system."));
 
     if(_physDevIndex < 0 || _physDevIndex >= _physDevs.count()) {
         qWarning("VulkanContext: Invalid physical device index; defaulting to 0");
@@ -395,7 +396,7 @@ bool VulkanContext::create(QWindow* window)
         return false;
     }
     if(err != VK_SUCCESS)
-        throw Exception(tr("Failed to create logical Vulkan device (error code %1).").arg(err));
+        throw SceneRenderer::RendererException(tr("Failed to create logical Vulkan device (error code %1).").arg(err));
 
 	// Get the function pointers for device-specific Vulkan functions.
     _deviceFunctions = vulkanInstance()->deviceFunctions(_device);
@@ -455,13 +456,13 @@ bool VulkanContext::create(QWindow* window)
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     err = deviceFunctions()->vkCreateCommandPool(logicalDevice(), &poolInfo, nullptr, &_cmdPool);
     if(err != VK_SUCCESS)
-        throw Exception(tr("Failed to create Vulkan command pool (error code %1).").arg(err));
+        throw SceneRenderer::RendererException(tr("Failed to create Vulkan command pool (error code %1).").arg(err));
     if(separatePresentQueue()) {
         poolInfo.queueFamilyIndex = _presQueueFamilyIdx;
         poolInfo.flags = 0;
         err = deviceFunctions()->vkCreateCommandPool(logicalDevice(), &poolInfo, nullptr, &_presCmdPool);
         if(err != VK_SUCCESS)
-	        throw Exception(tr("Failed to create Vulkan command pool for present queue (error code %1).").arg(err));
+	        throw SceneRenderer::RendererException(tr("Failed to create Vulkan command pool for present queue (error code %1).").arg(err));
     }
 
     // Create command pool used for data transfers.
@@ -536,7 +537,7 @@ bool VulkanContext::create(QWindow* window)
     VkPipelineCacheCreateInfo pipelineCacheInfo = { VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO };
     err = deviceFunctions()->vkCreatePipelineCache(logicalDevice(), &pipelineCacheInfo, nullptr, &_pipelineCache);
     if(err != VK_SUCCESS)
-        throw Exception(tr("Failed to create Vulkan pipeline cache (error code %1).").arg(err));
+        throw SceneRenderer::RendererException(tr("Failed to create Vulkan pipeline cache (error code %1).").arg(err));
 
     // Create a standard texture sampler.
 	VkSamplerCreateInfo samplerInfo = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
@@ -551,7 +552,7 @@ bool VulkanContext::create(QWindow* window)
 	samplerInfo.minLod = samplerInfo.maxLod = 0.0f;
 	err = deviceFunctions()->vkCreateSampler(logicalDevice(), &samplerInfo, nullptr, &_samplerNearest);
     if(err != VK_SUCCESS)
-        throw Exception(tr("Failed to create Vulkan texture sampler (error code %1).").arg(err));
+        throw SceneRenderer::RendererException(tr("Failed to create Vulkan texture sampler (error code %1).").arg(err));
 
     // Create the descriptor pool.
     std::array<VkDescriptorPoolSize, 2> poolSizes;
@@ -566,7 +567,7 @@ bool VulkanContext::create(QWindow* window)
     descriptorPoolInfo.maxSets = 200;
 	err = deviceFunctions()->vkCreateDescriptorPool(logicalDevice(), &descriptorPoolInfo, nullptr, &_descriptorPool);
     if(err != VK_SUCCESS)
-        throw Exception(tr("Failed to create Vulkan descriptor pool (error code %1).").arg(err));
+        throw SceneRenderer::RendererException(tr("Failed to create Vulkan descriptor pool (error code %1).").arg(err));
 
 	return true;
 }
@@ -857,7 +858,7 @@ VkShaderModule VulkanContext::createShader(const QString& filename)
 {
     QFile file(filename);
     if(!file.open(QIODevice::ReadOnly))
-		throw Exception(tr("File to load Vulkan shader file '%1': %2").arg(filename).arg(file.errorString()));
+		throw SceneRenderer::RendererException(tr("File to load Vulkan shader file '%1': %2").arg(filename).arg(file.errorString()));
     QByteArray blob = file.readAll();
     file.close();
 
@@ -869,7 +870,7 @@ VkShaderModule VulkanContext::createShader(const QString& filename)
     VkShaderModule shaderModule;
     VkResult err = deviceFunctions()->vkCreateShaderModule(_device, &shaderInfo, nullptr, &shaderModule);
     if(err != VK_SUCCESS)
-		throw Exception(tr("File to create Vulkan shader module '%1'. Error code: %2").arg(filename).arg(err));
+		throw SceneRenderer::RendererException(tr("File to create Vulkan shader module '%1'. Error code: %2").arg(filename).arg(err));
 
     return shaderModule;
 }
@@ -888,7 +889,7 @@ void VulkanContext::immediateTransferSubmit(std::function<void(VkCommandBuffer)>
     VkResult err = deviceFunctions()->vkAllocateCommandBuffers(logicalDevice(), &cmdAllocInfo, &cmdBuf);
     if(err != VK_SUCCESS) {
 		qWarning("VulkanContext: Failed to allocate transfer command buffer: %d", err);
-		throw Exception(QStringLiteral("Failed to allocate Vulkan transfer command buffer."));
+		throw SceneRenderer::RendererException(QStringLiteral("Failed to allocate Vulkan transfer command buffer."));
     }
 
 	// Begin the command buffer recording. We will use this command buffer exactly once, so we want to let Vulkan know that.
@@ -896,7 +897,7 @@ void VulkanContext::immediateTransferSubmit(std::function<void(VkCommandBuffer)>
     err = deviceFunctions()->vkBeginCommandBuffer(cmdBuf, &cmdBufBeginInfo);
     if(err != VK_SUCCESS) {
 		qWarning("VulkanContext: Failed to begin transfer command buffer: %d", err);
-		throw Exception(QStringLiteral("Failed to begin Vulkan transfer command buffer."));
+		throw SceneRenderer::RendererException(QStringLiteral("Failed to begin Vulkan transfer command buffer."));
     }
 
     // Execute the function supplied by the caller.
@@ -906,7 +907,7 @@ void VulkanContext::immediateTransferSubmit(std::function<void(VkCommandBuffer)>
     err = deviceFunctions()->vkEndCommandBuffer(cmdBuf);
     if(err != VK_SUCCESS) {
 		qWarning("VulkanContext: Failed to end transfer command buffer: %d", err);
-		throw Exception(QStringLiteral("Failed to end Vulkan transfer command buffer."));
+		throw SceneRenderer::RendererException(QStringLiteral("Failed to end Vulkan transfer command buffer."));
     }
 
 	// Submit command buffer to the queue and execute it.
@@ -916,7 +917,7 @@ void VulkanContext::immediateTransferSubmit(std::function<void(VkCommandBuffer)>
 	err = deviceFunctions()->vkQueueSubmit(graphicsQueue(), 1, &submitInfo, _transferFence);
     if(err != VK_SUCCESS) {
         qWarning("VulkanContext: Failed to submit transfer commands to Vulkan queue: %d", err);
-        throw Exception(QStringLiteral("Failed to submit transfer commands to Vulkan queue."));
+        throw SceneRenderer::RendererException(QStringLiteral("Failed to submit transfer commands to Vulkan queue."));
     }
 
     // Block until the transfer operation completes.
@@ -951,13 +952,13 @@ VulkanContext::VulkanDataBuffer VulkanContext::createCachedBufferImpl(VkDeviceSi
     allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     VkResult err = vmaCreateBuffer(allocator(), &bufferCreateInfo, &allocInfo, &bufferInfo.buffer, &bufferInfo.allocation, nullptr);
     if(err != VK_SUCCESS)
-        throw Exception(tr("Failed to allocate Vulkan buffer object of size %1 (error code %2).").arg(bufferSize).arg(err));
+        throw SceneRenderer::RendererException(tr("Failed to allocate Vulkan buffer object of size %1 (error code %2).").arg(bufferSize).arg(err));
 
     // Fill the buffer with data.
     void* p;
     err = vmaMapMemory(allocator(), bufferInfo.allocation, &p);
     if(err != VK_SUCCESS)
-        throw Exception(tr("Failed to map memory of Vulkan data buffer (error code %1).").arg(err));
+        throw SceneRenderer::RendererException(tr("Failed to map memory of Vulkan data buffer (error code %1).").arg(err));
     vmaFlushAllocation(allocator(), bufferInfo.allocation, 0, VK_WHOLE_SIZE);
     // Call the user-supplied function that fills the buffer with data to be uploaded to GPU memory.
     std::move(fillMemoryFunc)(p);
@@ -984,7 +985,7 @@ VkBuffer VulkanContext::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, R
     }
     else {
         OVITO_ASSERT(false);
-        dataBuffer->throwException(tr("Cannot create Vulkan vertex buffer for DataBuffer with data type %1.").arg(dataBuffer->dataType()));
+        throw SceneRenderer::RendererException(tr("Cannot create Vulkan vertex buffer for DataBuffer with data type %1.").arg(dataBuffer->dataType()));
     }
 
     // Create a Vulkan buffer object and fill it with the data from the OVITO DataBuffer object. 
@@ -1049,13 +1050,13 @@ VkImageView VulkanContext::uploadImage(const QImage& image, ResourceFrameHandle 
     VmaAllocation stagingAllocation;
     VkResult err = vmaCreateBuffer(allocator(), &bufferCreateInfo, &allocInfo, &stagingBuffer, &stagingAllocation, nullptr);
     if(err != VK_SUCCESS)
-        throw Exception(QStringLiteral("Failed to create Vulkan image staging buffer (error code %1).").arg(err));
+        throw SceneRenderer::RendererException(QStringLiteral("Failed to create Vulkan image staging buffer (error code %1).").arg(err));
 
     // Fill the staging buffer with the image data.
     void* p;
     err = vmaMapMemory(allocator(), stagingAllocation, &p);
     if(err != VK_SUCCESS)
-        throw Exception(QStringLiteral("Failed to map memory of Vulkan image staging buffer (error code %1).").arg(err));
+        throw SceneRenderer::RendererException(QStringLiteral("Failed to map memory of Vulkan image staging buffer (error code %1).").arg(err));
     memcpy(p, image.constBits(), bufferSize);
     vmaFlushAllocation(allocator(), stagingAllocation, 0, VK_WHOLE_SIZE);
     vmaUnmapMemory(allocator(), stagingAllocation);
@@ -1077,7 +1078,7 @@ VkImageView VulkanContext::uploadImage(const QImage& image, ResourceFrameHandle 
 	imgAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 	err = vmaCreateImage(allocator(), &imgCreateInfo, &imgAllocInfo, &textureInfo.image, &textureInfo.allocation, nullptr);
     if(err != VK_SUCCESS)
-        throw Exception(QStringLiteral("Failed to allocate and create Vulkan texture image (error code %1).").arg(err));
+        throw SceneRenderer::RendererException(QStringLiteral("Failed to allocate and create Vulkan texture image (error code %1).").arg(err));
 
     // Perform upload transfer from staging buffer to destination image.
     immediateTransferSubmit([&](VkCommandBuffer cmdBuf) {
@@ -1132,7 +1133,7 @@ VkImageView VulkanContext::uploadImage(const QImage& image, ResourceFrameHandle 
     imgViewInfo.subresourceRange.levelCount = imgViewInfo.subresourceRange.layerCount = 1;
     err = deviceFunctions()->vkCreateImageView(logicalDevice(), &imgViewInfo, nullptr, &textureInfo.imageView);
     if(err != VK_SUCCESS)
-        throw Exception(QStringLiteral("Failed to create Vulkan texture image view (error code %1).").arg(err));
+        throw SceneRenderer::RendererException(QStringLiteral("Failed to create Vulkan texture image view (error code %1).").arg(err));
 
     return textureInfo.imageView;
 }
@@ -1155,7 +1156,7 @@ VulkanContext::VulkanDescriptorSet VulkanContext::createDescriptorSetImpl(VkDesc
     VulkanDescriptorSet descriptorSet(this);
     VkResult err = deviceFunctions()->vkAllocateDescriptorSets(logicalDevice(), &allocInfo, &descriptorSet.descriptorSet);
     if(err != VK_SUCCESS)
-        throw Exception(tr("Failed to create Vulkan descriptor set (error code %1).").arg(err));
+        throw SceneRenderer::RendererException(tr("Failed to create Vulkan descriptor set (error code %1).").arg(err));
 
     return descriptorSet;
 }

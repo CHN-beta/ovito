@@ -135,7 +135,7 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 	QOpenGLContext* currentContext = QOpenGLContext::currentContext();
 	if(!currentContext) {
 		if(!tempContext.create())
-			throw Exception(tr("Failed to create an OpenGL context. Please check your graphics driver installation to make sure your system supports OpenGL applications. "
+			throw RendererException(tr("Failed to create an OpenGL context. Please check your graphics driver installation to make sure your system supports OpenGL applications. "
 								"Sometimes this may only be a temporary error after an automatic operating system update was installed in the background. In this case, simply rebooting your computer can help."));
 		if(Application::instance()->headlessMode() == false) {
 			// Create a hidden, temporary window to make the GL context current.
@@ -144,16 +144,16 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 			window->setFormat(tempContext.format());
 			window->create();
 			if(!tempContext.makeCurrent(window.get()))
-				throw Exception(tr("Failed to make OpenGL context current. Cannot query OpenGL information."));
+				throw RendererException(tr("Failed to make OpenGL context current. Cannot query OpenGL information."));
 		}
 		else {
 			// Create temporary offscreen buffer to make GL context current.
 			offscreenSurface.setFormat(tempContext.format());
 			offscreenSurface.create();
 			if(!offscreenSurface.isValid())
-				throw Exception(tr("Failed to create temporary offscreen rendering surface. Cannot query OpenGL information."));
+				throw RendererException(tr("Failed to create temporary offscreen rendering surface. Cannot query OpenGL information."));
 			if(!tempContext.makeCurrent(&offscreenSurface))
-				throw Exception(tr("Failed to make OpenGL context current on offscreen rendering surface. Cannot query OpenGL information."));
+				throw RendererException(tr("Failed to make OpenGL context current on offscreen rendering surface. Cannot query OpenGL information."));
 		}
 		OVITO_ASSERT(QOpenGLContext::currentContext() == &tempContext);
 		currentContext = &tempContext;
@@ -179,19 +179,19 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 	SceneRenderer::beginFrame(time, params, vp, openGLViewportRect);
 
 	if(Application::instance()->headlessMode())
-		throwException(tr("Cannot use OpenGL renderer in headless mode."));
+		throwRendererException(tr("Cannot use OpenGL renderer in headless mode."));
 
 	// Get the GL context being used for the current rendering pass.
 	_glcontext = QOpenGLContext::currentContext();
 	if(!_glcontext)
-		throwException(tr("Cannot render scene: There is no active OpenGL context"));
+		throwRendererException(tr("Cannot render scene: There is no active OpenGL context"));
 	_glcontextGroup = _glcontext->shareGroup();
 	_glsurface = _glcontext->surface();
 	OVITO_ASSERT(_glsurface != nullptr);
 
 	// Check OpenGL version.
 	if(_glcontext->format().majorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MAJOR || (_glcontext->format().majorVersion() == OVITO_OPENGL_MINIMUM_VERSION_MAJOR && _glcontext->format().minorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MINOR)) {
-		throwException(tr(
+		throw RendererException(tr(
 				"The OpenGL implementation available on this system does not support OpenGL version %4.%5 or newer.\n\n"
 				"Ovito requires modern graphics hardware to accelerate 3d rendering. You current system configuration is not compatible with Ovito.\n\n"
 				"To avoid this error message, please install the newest graphics driver, or upgrade your graphics card.\n\n"
@@ -205,7 +205,7 @@ void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 				.arg(QString(OpenGLSceneRenderer::openGLVersion()))
 				.arg(OVITO_OPENGL_MINIMUM_VERSION_MAJOR)
 				.arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR)
-				);
+				), dataset();
 	}
 
 	// Prepare a functions table allowing us to call OpenGL functions in a platform-independent way.
@@ -381,11 +381,11 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
 		// Clear OpenGL error state and verify validity of framebuffer.
 		while(this->glGetError() != GL_NO_ERROR);
 		if(!_oitFramebuffer->isValid())
-			throwException(tr("Failed to create offscreen OpenGL framebuffer object for order-independent transparency."));
+			throwRendererException(tr("Failed to create offscreen OpenGL framebuffer object for order-independent transparency."));
 
 		// Bind OpenGL framebuffer.
 		if(!_oitFramebuffer->bind())
-			throwException(tr("Failed to bind OpenGL framebuffer object for order-independent transparency."));
+			throwRendererException(tr("Failed to bind OpenGL framebuffer object for order-independent transparency."));
 
 		// Render to the two output textures simultaneously.
 		constexpr GLenum drawBuffersList[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
@@ -478,7 +478,7 @@ void OpenGLSceneRenderer::makeContextCurrent()
 #ifndef Q_OS_WASM
 	OVITO_ASSERT(glcontext());
 	if(!glcontext()->makeCurrent(_glsurface))
-		throwException(tr("Failed to make OpenGL context current."));
+		throwRendererException(tr("Failed to make OpenGL context current."));
 #endif		
 }
 
@@ -657,7 +657,7 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 
 	// Compile the shader program.
 	if(!program->link()) {
-		Exception ex(QString("The OpenGL shader program %1 failed to link.").arg(mangledId));
+		RendererException ex(QString("The OpenGL shader program %1 failed to link.").arg(mangledId), dataset());
 		ex.appendDetailMessage(program->log());
 		throw ex;
 	}
@@ -930,7 +930,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 	// Load actual shader source code.
 	QFile shaderSourceFile(filename);
 	if(!shaderSourceFile.open(QFile::ReadOnly))
-		throw Exception(QString("Unable to open shader source file %1.").arg(filename));
+		throwRendererException(QString("Unable to open shader source file %1.").arg(filename));
 
 	// Parse each line of the shader file and process #include directives.
 	while(!shaderSourceFile.atEnd()) {
@@ -970,7 +970,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 			// Load the secondary shader file and insert it into the source of the primary shader.
 			QFile secondarySourceFile(includeFilePath);
 			if(!secondarySourceFile.open(QFile::ReadOnly))
-				throw Exception(QString("Unable to open shader source file %1 referenced by include directive in shader file %2.").arg(includeFilePath).arg(filename));
+				throwRendererException(QString("Unable to open shader source file %1 referenced by include directive in shader file %2.").arg(includeFilePath).arg(filename));
 			while(!secondarySourceFile.atEnd()) {
 				line = secondarySourceFile.readLine();
 				preprocessShaderLine(line);
@@ -984,7 +984,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 
 	// Load and compile vertex shader source.
 	if(!program->addShaderFromSourceCode(shaderType, shaderSource)) {
-		Exception ex(QString("The shader source file %1 failed to compile.").arg(filename));
+		RendererException ex(QString("The shader source file %1 failed to compile.").arg(filename), dataset());
 		ex.appendDetailMessage(program->log());
 		ex.appendDetailMessage(QStringLiteral("Problematic shader source:"));
 		ex.appendDetailMessage(shaderSource);

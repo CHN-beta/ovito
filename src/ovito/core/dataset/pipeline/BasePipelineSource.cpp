@@ -124,7 +124,7 @@ bool BasePipelineSource::referenceEvent(RefTarget* source, const ReferenceEvent&
 			notifyTargetChanged();
 		}
 		else {
-			// When the data collection was change by a script, then we simply invalidate the pipeline cache
+			// When the data collection was modified by a script, then we simply invalidate the pipeline cache
 			// and inform the scene that the pipeline must be re-evaluated.
 			pipelineCache().invalidate();
 			notifyTargetChanged();

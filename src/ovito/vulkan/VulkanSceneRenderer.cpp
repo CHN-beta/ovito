@@ -365,7 +365,7 @@ VkDescriptorSetLayout VulkanSceneRenderer::globalUniformsDescriptorSetLayout()
         layoutInfo.pBindings = &layoutBinding;
         VkResult err = deviceFunctions()->vkCreateDescriptorSetLayout(logicalDevice(), &layoutInfo, nullptr, &_globalUniformsDescriptorSetLayout);
         if(err != VK_SUCCESS)
-            throwException(QStringLiteral("Failed to create Vulkan descriptor set layout (error code %1).").arg(err));
+            throwRendererException(QStringLiteral("Failed to create Vulkan descriptor set layout (error code %1).").arg(err));
     }
 
     return _globalUniformsDescriptorSetLayout;
@@ -391,7 +391,7 @@ VkDescriptorSetLayout VulkanSceneRenderer::colorMapDescriptorSetLayout()
         layoutInfo.pBindings = &layoutBinding;
         VkResult err = deviceFunctions()->vkCreateDescriptorSetLayout(logicalDevice(), &layoutInfo, nullptr, &_colorMapDescriptorSetLayout);
         if(err != VK_SUCCESS)
-            throwException(QStringLiteral("Failed to create Vulkan descriptor set layout (error code %1).").arg(err));
+            throwRendererException(QStringLiteral("Failed to create Vulkan descriptor set layout (error code %1).").arg(err));
     }
 
     return _colorMapDescriptorSetLayout;

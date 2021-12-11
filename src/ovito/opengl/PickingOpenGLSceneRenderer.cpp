@@ -92,11 +92,11 @@ bool PickingOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRe
 		// Clear OpenGL error state and verify validity of framebuffer.
 		while(this->glGetError() != GL_NO_ERROR);
 		if(!framebufferObject.isValid())
-			throwException(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
+			throwRendererException(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
 
 		// Bind OpenGL framebuffer.
 		if(!framebufferObject.bind())
-			throwException(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
+			throwRendererException(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
 
 		// Reset OpenGL context state.
 		this->glDisable(GL_CULL_FACE);

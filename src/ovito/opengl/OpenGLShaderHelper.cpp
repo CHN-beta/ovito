@@ -49,7 +49,7 @@ void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile
 
     // Bind the OpenGL shader program.
     if(!_shader->bind())
-        _renderer->throwException(QStringLiteral("Failed to bind OpenGL shader '%1'.").arg(id));
+        _renderer->throwRendererException(QStringLiteral("Failed to bind OpenGL shader '%1'.").arg(id));
     OVITO_REPORT_OPENGL_ERRORS(_renderer);
 
     // Set shader uniforms.
@@ -145,7 +145,7 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QO
     QOpenGLBuffer bufferObject(usage);
 	bufferObject.setUsagePattern(QOpenGLBuffer::StaticDraw);
 	if(!bufferObject.create())
-		throw Exception(QStringLiteral("Failed to create OpenGL buffer object."));
+		_renderer->throwRendererException(QStringLiteral("Failed to create OpenGL buffer object."));
 
 	if(!bufferObject.bind()) {
 		qWarning() << "QOpenGLBuffer::bind() failed in function OpenGLShaderHelper::createCachedBufferImpl()";
@@ -177,7 +177,7 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QO
     // Fill the buffer with data.
     void* p = bufferObject.map(QOpenGLBuffer::WriteOnly);
     if(p == nullptr)
-        throw Exception(QStringLiteral("Failed to map memory of newly created OpenGL buffer object of size %1 bytes.").arg(bufferSize));
+        _renderer->throwRendererException(QStringLiteral("Failed to map memory of newly created OpenGL buffer object of size %1 bytes.").arg(bufferSize));
 #else
     // WebGL 1/OpenGL ES 2.0 does not support mapping a GL buffer to memory.
     // Need to emulate the map() method by providing a temporary memory buffer on the host. 
@@ -244,7 +244,7 @@ QOpenGLBuffer OpenGLShaderHelper::uploadDataBuffer(const ConstDataBufferPtr& dat
     }
     else {
         OVITO_ASSERT(false);
-        dataBuffer->throwException(QStringLiteral("Cannot create OpenGL buffer object for DataBuffer with data type %1.").arg(dataBuffer->dataType()));
+        _renderer->throwRendererException(QStringLiteral("Cannot create OpenGL buffer object for DataBuffer with data type %1.").arg(dataBuffer->dataType()));
     }
 
     // Create an OpenGL buffer object and fill it with the data from the OVITO DataBuffer object. 
@@ -279,7 +279,7 @@ void OpenGLShaderHelper::bindBuffer(QOpenGLBuffer& buffer, const char* attribute
     int attrIndex = _shader->attributeLocation(attributeName);
     if(attrIndex < 0) {
         qWarning() << "OpenGLShaderHelper::bindBuffer() failed for shader" << _shader->objectName() << ": attribute with name" << attributeName << "does not exist in shader.";
-        _renderer->throwException(QStringLiteral("Attribute with name %1 does not exist in OpenGL shader program '%2'.").arg(attributeName).arg(_shader->objectName()));
+        _renderer->throwRendererException(QStringLiteral("Attribute with name %1 does not exist in OpenGL shader program '%2'.").arg(attributeName).arg(_shader->objectName()));
     }
     bindBuffer(buffer, attrIndex, type, tupleSize, stride, offset, inputRate);
 }
@@ -297,7 +297,7 @@ void OpenGLShaderHelper::bindBuffer(QOpenGLBuffer& buffer, int attrIndex, GLenum
     OVITO_ASSERT(buffer.isCreated());
     if(!buffer.bind()) {
         qWarning() << "OpenGLShaderHelper::bindBuffer() failed for shader" << _shader->objectName();
-        _renderer->throwException(QStringLiteral("Failed to bind OpenGL vertex buffer for shader '%1'.").arg(_shader->objectName()));
+        _renderer->throwRendererException(QStringLiteral("Failed to bind OpenGL vertex buffer for shader '%1'.").arg(_shader->objectName()));
     }
     OVITO_CHECK_OPENGL(_renderer, _shader->setAttributeBuffer(attrIndex, type, offset, tupleSize, stride));
     OVITO_CHECK_OPENGL(_renderer, _shader->enableAttributeArray(attrIndex));
@@ -377,7 +377,7 @@ void OpenGLShaderHelper::drawArraysOrderedOpenGL4(GLenum mode, QOpenGLBuffer& in
 
     // Bind the indirect drawing GL buffer.
     if(!indirectBuffer.bind())
-        _renderer->throwException(QStringLiteral("Failed to bind OpenGL indirect drawing buffer for shader '%1'.").arg(shaderObject().objectName()));
+        _renderer->throwRendererException(QStringLiteral("Failed to bind OpenGL indirect drawing buffer for shader '%1'.").arg(shaderObject().objectName()));
 
     // Draw instances in sorted order.
     OVITO_CHECK_OPENGL(_renderer, _renderer->glMultiDrawArraysIndirect(mode, nullptr, instanceCount(), 0));
@@ -405,7 +405,7 @@ void OpenGLShaderHelper::drawArraysOrderedGeometryShader(QOpenGLBuffer& indexBuf
 
     // Bind index buffer.
     if(!indexBuffer.bind())
-        _renderer->throwException(QStringLiteral("Failed to bind OpenGL index buffer for shader '%1'.").arg(shaderObject().objectName()));
+        _renderer->throwRendererException(QStringLiteral("Failed to bind OpenGL index buffer for shader '%1'.").arg(shaderObject().objectName()));
 
     // Draw point primitives in sorted order.
     OVITO_CHECK_OPENGL(_renderer, _renderer->glDrawElements(GL_POINTS, instanceCount(), GL_UNSIGNED_INT, nullptr));
@@ -430,12 +430,12 @@ void OpenGLShaderHelper::setupVertexAndInstanceIDOpenGL2()
             buf.first = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
             buf.first.setUsagePattern(QOpenGLBuffer::StaticDraw);
             if(!buf.first.create() || !buf.first.bind())
-                throw Exception(QStringLiteral("Failed to create OpenGL buffer object."));
+                _renderer->throwRendererException(QStringLiteral("Failed to create OpenGL buffer object."));
             OVITO_CHECK_OPENGL(_renderer, buf.first.allocate(buf.second * sizeof(float)));
 #ifndef Q_OS_WASM
             void* p = buf.first.map(QOpenGLBuffer::WriteOnly);
             if(p == nullptr)
-                throw Exception(QStringLiteral("Failed to map memory of newly created OpenGL vertexID buffer of size %1 bytes.").arg(buf.second * sizeof(float)));
+                _renderer->throwRendererException(QStringLiteral("Failed to map memory of newly created OpenGL vertexID buffer of size %1 bytes.").arg(buf.second * sizeof(float)));
             std::iota(reinterpret_cast<float*>(p), reinterpret_cast<float*>(p) + buf.second, 0);
             OVITO_CHECK_OPENGL(_renderer, buf.first.unmap());
 #else

@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/rendering/SceneRenderer.h>
 #include "VulkanPipeline.h"
 #include "VulkanContext.h"
 
@@ -69,7 +70,7 @@ void VulkanPipeline::create(VulkanContext& context,
     pipelineLayoutInfo.pSetLayouts = pSetLayouts;
     VkResult err = context.deviceFunctions()->vkCreatePipelineLayout(context.logicalDevice(), &pipelineLayoutInfo, nullptr, &_layout);
     if(err != VK_SUCCESS)
-        throw Exception(VulkanContext::tr("Failed to create Vulkan pipeline layout (error code %1) for shader '%2'.").arg(err).arg(shaderName));
+        throw SceneRenderer::RendererException(VulkanContext::tr("Failed to create Vulkan pipeline layout (error code %1) for shader '%2'.").arg(err).arg(shaderName));
 
     // Shaders
     VkShaderModule vertShaderModule = context.createShader(QStringLiteral(":/vulkanrenderer/%1.vert.spv").arg(shaderName));

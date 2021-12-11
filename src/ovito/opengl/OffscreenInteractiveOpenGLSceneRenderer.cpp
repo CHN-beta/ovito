@@ -48,9 +48,9 @@ void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(TimePoint time, const V
 	// Get the viewport's window.
 	ViewportWindowInterface* vpWindow = vp->window();
 	if(!vpWindow)
-		throwException(tr("Viewport window has not been created."));
+		throwRendererException(tr("Viewport window has not been created."));
 	if(!vpWindow->isVisible())
-		throwException(tr("Viewport window is not visible."));
+		throwRendererException(tr("Viewport window is not visible."));
 
 	// Before making our own GL context current, remember the old context that
 	// is currently active so that we can restore it after we are done rendering.
@@ -61,7 +61,7 @@ void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(TimePoint time, const V
 	vpWindow->makeOpenGLContextCurrent();
 	QOpenGLContext* context = QOpenGLContext::currentContext();
 	if(!context || !context->isValid())
-		throwException(tr("OpenGL context for viewport window has not been created."));
+		throwRendererException(tr("OpenGL context for viewport window has not been created."));
 
 	// Prepare a functions table allowing us to call OpenGL functions in a platform-independent way.
     initializeOpenGLFunctions();
@@ -80,11 +80,11 @@ void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(TimePoint time, const V
 		// Clear OpenGL error state and verify validity of framebuffer.
 		while(context->functions()->glGetError() != GL_NO_ERROR);
 		if(!_framebufferObject->isValid())
-			throwException(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
+			throwRendererException(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
 
 		// Bind OpenGL framebuffer.
 		if(!_framebufferObject->bind())
-			throwException(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
+			throwRendererException(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
 
 		// Tell the base class about the FBO we are rendering into.
 		setPrimaryFramebuffer(_framebufferObject->handle());
@@ -121,7 +121,7 @@ void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(TimePoint time, const V
 
 		// Check framebuffer status.
 		if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-			throwException(tr("Failed to create OpenGL framebuffer for picking offscreen rendering."));
+			throwRendererException(tr("Failed to create OpenGL framebuffer for picking offscreen rendering."));
 
 		// Tell the base class about the FBO we are rendering into.
 		setPrimaryFramebuffer(_framebufferObjectGLES);

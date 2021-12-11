@@ -71,7 +71,7 @@ void OffscreenOpenGLSceneRenderer::createOffscreenSurface()
 bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize)
 {
 	if(Application::instance()->headlessMode())
-		throwException(tr("Cannot use OpenGL renderer when running in headless mode. "
+		throwRendererException(tr("Cannot use OpenGL renderer when running in headless mode. "
 				"Please use a different rendering engine or run program on a machine where access to "
 				"graphics hardware is possible."));
 
@@ -84,17 +84,17 @@ bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 	if(QOpenGLContext::globalShareContext() && QThread::currentThread() == QOpenGLContext::globalShareContext()->thread())
 		_offscreenContext->setShareContext(QOpenGLContext::globalShareContext());
 	if(!_offscreenContext->create())
-		throwException(tr("Failed to create OpenGL context for rendering."));
+		throwRendererException(tr("Failed to create OpenGL context for rendering."));
 
 	// Check offscreen surface (creation must have happened in the main thread).
 	OVITO_ASSERT(_offscreenSurface);
 	if(!_offscreenSurface->isValid())
-		throwException(tr("Failed to create offscreen rendering surface."));
+		throwRendererException(tr("Failed to create offscreen rendering surface."));
 	OVITO_ASSERT(_offscreenSurface->format() == _offscreenContext->format());
 
 	// Make the context current.
 	if(!_offscreenContext->makeCurrent(_offscreenSurface))
-		throwException(tr("Failed to make OpenGL context current."));
+		throwRendererException(tr("Failed to make OpenGL context current."));
 
 	// Determine internal framebuffer size including supersampling.
 	_framebufferSize = QSize(frameBufferSize.width() * antialiasingLevel(), frameBufferSize.height() * antialiasingLevel());
@@ -104,11 +104,11 @@ bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 	framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
 	_framebufferObject = std::make_unique<QOpenGLFramebufferObject>(_framebufferSize, framebufferFormat);
 	if(!_framebufferObject->isValid())
-		throwException(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
+		throwRendererException(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
 
 	// Bind OpenGL buffer.
 	if(!_framebufferObject->bind())
-		throwException(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
+		throwRendererException(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
 
 	// Tell the base class about the FBO we are rendering into.
 	setPrimaryFramebuffer(_framebufferObject->handle());
@@ -123,7 +123,7 @@ void OffscreenOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 {
 	// Make GL context current.
 	if(!_offscreenContext || !_offscreenContext->makeCurrent(_offscreenSurface))
-		throwException(tr("Failed to make OpenGL context current."));
+		throwRendererException(tr("Failed to make OpenGL context current."));
 
 	// Tell the resource manager that we are beginning a new frame.
 	OVITO_ASSERT(currentResourceFrame() == 0);

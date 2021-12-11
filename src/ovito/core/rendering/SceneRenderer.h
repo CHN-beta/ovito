@@ -71,6 +71,17 @@ class OVITO_CORE_EXPORT SceneRenderer : public RefTarget
 
 public:
 
+	/// A special exception type thrown by a scene renderer from one of its renderXXX() methods
+	/// to indicate that something went wrong. The error will interrupt the rendering process and
+	/// will be shown to the user.
+	class OVITO_CORE_EXPORT RendererException : public Exception {
+	public:
+		using Exception::Exception;
+	};
+
+	/// This helper method throws a RendererException with the given message text.
+	void throwRendererException(const QString& msg) const;
+
 	/// This may be called on a renderer before startRender() to control its supersampling level.
 	virtual void setAntialiasingHint(int antialiasingLevel) {}
 
