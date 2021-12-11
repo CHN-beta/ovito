@@ -670,7 +670,7 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 				throw;
 			}
 
-			// Render viewport overlays on top.
+			// Render viewport "overlays" on top.
 			for(ViewportOverlay* layer : viewport->overlays()) {
 				if(layer->isEnabled()) {
 					layer->render(viewport, renderTime, frameBuffer, destinationRect, projParams, settings, operation.subOperation());

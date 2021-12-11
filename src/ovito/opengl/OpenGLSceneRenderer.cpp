@@ -286,14 +286,12 @@ void OpenGLSceneRenderer::initializeGLState()
 	// Set up OpenGL render viewport.
 	OVITO_CHECK_OPENGL(this, this->glViewport(viewportRect().x(), viewportRect().y(), viewportRect().width(), viewportRect().height()));
 
-    if(viewport() && viewport()->window()) {
-		// When rendering an interactive viewport, use viewport background color to clear frame buffer.
-		if(isInteractive() && !isPicking()) {
-			if(!viewport()->renderPreviewMode())
-				setClearColor(Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_BKG));
-			else if(renderSettings())
-				setClearColor(renderSettings()->backgroundColor());
-		}
+	// When rendering an interactive viewport, use viewport background color to clear frame buffer.
+    if(viewport() && viewport()->window() && isInteractive() && !isPicking()) {
+		if(!viewport()->renderPreviewMode())
+			setClearColor(Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_BKG));
+		else if(renderSettings())
+			setClearColor(renderSettings()->backgroundColor());
     }
 	else {
 		if(renderSettings() && !isPicking())
@@ -368,6 +366,11 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
 	// Prepare for order-independent transparency pass.
 	if(orderIndependentTransparency()) {
 		// Implementation of the "Weighted Blended Order-Independent Transparency" method.
+
+		if(!QOpenGLFramebufferObject::hasOpenGLFramebufferBlit())
+			throwRendererException(tr("Your OpenGL graphics driver does not support framebuffer blit operations needed for order-independent transparency."));
+		if(!openGLFeatures().testFlag(QOpenGLFunctions::MultipleRenderTargets))
+			throwRendererException(tr("Your OpenGL graphics driver does not support multiple render targets, which are required for order-independent transparency."));
 
 		// Create additional offscreen OpenGL framebuffer.
 		if(!_oitFramebuffer || !_oitFramebuffer->isValid() || _oitFramebuffer->size() != viewportRect().size()) {

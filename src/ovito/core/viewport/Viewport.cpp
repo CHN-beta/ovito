@@ -595,7 +595,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 		// Call the viewport renderer to render the scene objects.
 		renderer->renderFrame(nullptr, vpRect, renderOperation.subOperation());
 
-		// Render viewport overlays.
+		// Render viewport "overlays".
 		if(renderPreviewMode() && !renderer->isPicking()) {
 			if(boost::algorithm::any_of(overlays(), [](ViewportOverlay* layer) { return layer->isEnabled(); })) {
 				// Let overlays paint into QImage buffer, which will then be copied over the OpenGL frame buffer.
