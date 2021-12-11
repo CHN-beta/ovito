@@ -30,6 +30,11 @@
 namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ReplicateModifier);
+DEFINE_PROPERTY_FIELD(ReplicateModifier, numImagesX);
+DEFINE_PROPERTY_FIELD(ReplicateModifier, numImagesY);
+DEFINE_PROPERTY_FIELD(ReplicateModifier, numImagesZ);
+DEFINE_PROPERTY_FIELD(ReplicateModifier, adjustBoxSize);
+DEFINE_PROPERTY_FIELD(ReplicateModifier, uniqueIdentifiers);
 SET_PROPERTY_FIELD_LABEL(ReplicateModifier, numImagesX, "Number of images - X");
 SET_PROPERTY_FIELD_LABEL(ReplicateModifier, numImagesY, "Number of images - Y");
 SET_PROPERTY_FIELD_LABEL(ReplicateModifier, numImagesZ, "Number of images - Z");

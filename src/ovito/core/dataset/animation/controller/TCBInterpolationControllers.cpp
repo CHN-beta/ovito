@@ -27,18 +27,13 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS_TEMPLATE(TCBAnimationKey<FloatAnimationKey>);
+template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<FloatAnimationKey>, easeTo);
+template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<FloatAnimationKey>, easeFrom);
+template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<FloatAnimationKey>, tension);
+template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<FloatAnimationKey>, continuity);
+template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<FloatAnimationKey>, bias);
+
 IMPLEMENT_OVITO_CLASS(FloatTCBAnimationKey);
-
-IMPLEMENT_OVITO_CLASS_TEMPLATE(TCBAnimationKey<PositionAnimationKey>);
-IMPLEMENT_OVITO_CLASS(PositionTCBAnimationKey);
-
-IMPLEMENT_OVITO_CLASS(TCBPositionController);
-
-// This had to be removed for now, because it leads to a segmentation fault on Linux/Unix platforms.
-// Apparently, global static initializers are run before C++17 inline static initializers of class templates.
-// We leave these parameter fields without labels for now (they are not used in the GUI anyway) until
-// a better solution for static initialization order problem is found.
-#if 0 
 SET_PROPERTY_FIELD_LABEL(FloatTCBAnimationKey, easeTo, "Ease to");
 SET_PROPERTY_FIELD_LABEL(FloatTCBAnimationKey, easeFrom, "Ease from");
 SET_PROPERTY_FIELD_LABEL(FloatTCBAnimationKey, tension, "Tension");
@@ -50,6 +45,14 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(FloatTCBAnimationKey, tension, FloatParameter
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(FloatTCBAnimationKey, continuity, FloatParameterUnit, -1, 1);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(FloatTCBAnimationKey, bias, FloatParameterUnit, -1, 1);
 
+IMPLEMENT_OVITO_CLASS_TEMPLATE(TCBAnimationKey<PositionAnimationKey>);
+template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<PositionAnimationKey>, easeTo);
+template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<PositionAnimationKey>, easeFrom);
+template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<PositionAnimationKey>, tension);
+template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<PositionAnimationKey>, continuity);
+template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<PositionAnimationKey>, bias);
+
+IMPLEMENT_OVITO_CLASS(PositionTCBAnimationKey);
 SET_PROPERTY_FIELD_LABEL(PositionTCBAnimationKey, easeTo, "Ease to");
 SET_PROPERTY_FIELD_LABEL(PositionTCBAnimationKey, easeFrom, "Ease from");
 SET_PROPERTY_FIELD_LABEL(PositionTCBAnimationKey, tension, "Tension");
@@ -60,6 +63,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(PositionTCBAnimationKey, easeFrom, FloatPar
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(PositionTCBAnimationKey, tension, FloatParameterUnit, -1, 1);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(PositionTCBAnimationKey, continuity, FloatParameterUnit, -1, 1);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(PositionTCBAnimationKey, bias, FloatParameterUnit, -1, 1);
-#endif
+
+IMPLEMENT_OVITO_CLASS(TCBPositionController);
 
 }	// End of namespace

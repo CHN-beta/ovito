@@ -36,6 +36,7 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(FileSourceImporter);
+DEFINE_PROPERTY_FIELD(FileSourceImporter, isMultiTimestepFile);
 SET_PROPERTY_FIELD_LABEL(FileSourceImporter, isMultiTimestepFile, "File contains multiple timesteps");
 
 /******************************************************************************

@@ -36,6 +36,8 @@ IMPLEMENT_OVITO_CLASS(ColorCodingMagmaGradient);
 IMPLEMENT_OVITO_CLASS(ColorCodingTableGradient);
 IMPLEMENT_OVITO_CLASS(ColorCodingImageGradient);
 
+DEFINE_PROPERTY_FIELD(ColorCodingImageGradient, image);
+DEFINE_PROPERTY_FIELD(ColorCodingTableGradient, table);
 
 /******************************************************************************
 * Converts a scalar value to a color value.

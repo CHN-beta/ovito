@@ -33,8 +33,26 @@
 namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ColorLegendOverlay);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, alignment);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, orientation);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, legendSize);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, font);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, fontSize);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, offsetX);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, offsetY);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, aspectRatio);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, textColor);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, outlineColor);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, outlineEnabled);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, title);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, label1);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, label2);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, valueFormatString);
 DEFINE_REFERENCE_FIELD(ColorLegendOverlay, modifier);
 DEFINE_REFERENCE_FIELD(ColorLegendOverlay, colorMapping);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, sourceProperty);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, borderEnabled);
+DEFINE_PROPERTY_FIELD(ColorLegendOverlay, borderColor);
 SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, alignment, "Position");
 SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, orientation, "Orientation");
 SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, legendSize, "Size factor");

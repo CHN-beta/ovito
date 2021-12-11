@@ -43,6 +43,14 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(Viewport);
+DEFINE_PROPERTY_FIELD(Viewport, viewType);
+DEFINE_PROPERTY_FIELD(Viewport, gridMatrix);
+DEFINE_PROPERTY_FIELD(Viewport, fieldOfView);
+DEFINE_PROPERTY_FIELD(Viewport, cameraTransformation);
+DEFINE_PROPERTY_FIELD(Viewport, cameraUpDirection);
+DEFINE_PROPERTY_FIELD(Viewport, renderPreviewMode);
+DEFINE_PROPERTY_FIELD(Viewport, isGridVisible);
+DEFINE_PROPERTY_FIELD(Viewport, viewportTitle);
 DEFINE_REFERENCE_FIELD(Viewport, viewNode);
 DEFINE_VECTOR_REFERENCE_FIELD(Viewport, overlays);
 DEFINE_VECTOR_REFERENCE_FIELD(Viewport, underlays);

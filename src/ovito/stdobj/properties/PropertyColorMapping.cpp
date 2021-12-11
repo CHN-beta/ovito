@@ -31,6 +31,9 @@ namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(PropertyColorMapping);
 DEFINE_REFERENCE_FIELD(PropertyColorMapping, colorGradient);
+DEFINE_PROPERTY_FIELD(PropertyColorMapping, startValue);
+DEFINE_PROPERTY_FIELD(PropertyColorMapping, endValue);
+DEFINE_PROPERTY_FIELD(PropertyColorMapping, sourceProperty);
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, startValue, "Start value");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, endValue, "End value");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, colorGradient, "Color gradient");

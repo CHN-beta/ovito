@@ -35,6 +35,8 @@ IMPLEMENT_OVITO_CLASS(ViewportConfiguration);
 DEFINE_VECTOR_REFERENCE_FIELD(ViewportConfiguration, viewports);
 DEFINE_REFERENCE_FIELD(ViewportConfiguration, activeViewport);
 DEFINE_REFERENCE_FIELD(ViewportConfiguration, maximizedViewport);
+DEFINE_PROPERTY_FIELD(ViewportConfiguration, orbitCenterMode);
+DEFINE_PROPERTY_FIELD(ViewportConfiguration, userOrbitCenter);
 DEFINE_REFERENCE_FIELD(ViewportConfiguration, layoutRootCell);
 
 /******************************************************************************

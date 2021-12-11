@@ -33,6 +33,11 @@ namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ReferenceConfigurationModifier);
 DEFINE_REFERENCE_FIELD(ReferenceConfigurationModifier, referenceConfiguration);
+DEFINE_PROPERTY_FIELD(ReferenceConfigurationModifier, affineMapping);
+DEFINE_PROPERTY_FIELD(ReferenceConfigurationModifier, useMinimumImageConvention);
+DEFINE_PROPERTY_FIELD(ReferenceConfigurationModifier, useReferenceFrameOffset);
+DEFINE_PROPERTY_FIELD(ReferenceConfigurationModifier, referenceFrameNumber);
+DEFINE_PROPERTY_FIELD(ReferenceConfigurationModifier, referenceFrameOffset);
 SET_PROPERTY_FIELD_LABEL(ReferenceConfigurationModifier, referenceConfiguration, "Reference Configuration");
 SET_PROPERTY_FIELD_LABEL(ReferenceConfigurationModifier, affineMapping, "Affine mapping");
 SET_PROPERTY_FIELD_LABEL(ReferenceConfigurationModifier, useMinimumImageConvention, "Use minimum image convention");

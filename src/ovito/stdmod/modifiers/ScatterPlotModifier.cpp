@@ -32,6 +32,20 @@
 namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ScatterPlotModifier);
+DEFINE_PROPERTY_FIELD(ScatterPlotModifier, selectXAxisInRange);
+DEFINE_PROPERTY_FIELD(ScatterPlotModifier, selectionXAxisRangeStart);
+DEFINE_PROPERTY_FIELD(ScatterPlotModifier, selectionXAxisRangeEnd);
+DEFINE_PROPERTY_FIELD(ScatterPlotModifier, selectYAxisInRange);
+DEFINE_PROPERTY_FIELD(ScatterPlotModifier, selectionYAxisRangeStart);
+DEFINE_PROPERTY_FIELD(ScatterPlotModifier, selectionYAxisRangeEnd);
+DEFINE_PROPERTY_FIELD(ScatterPlotModifier, fixXAxisRange);
+DEFINE_PROPERTY_FIELD(ScatterPlotModifier, xAxisRangeStart);
+DEFINE_PROPERTY_FIELD(ScatterPlotModifier, xAxisRangeEnd);
+DEFINE_PROPERTY_FIELD(ScatterPlotModifier, fixYAxisRange);
+DEFINE_PROPERTY_FIELD(ScatterPlotModifier, yAxisRangeStart);
+DEFINE_PROPERTY_FIELD(ScatterPlotModifier, yAxisRangeEnd);
+DEFINE_PROPERTY_FIELD(ScatterPlotModifier, xAxisProperty);
+DEFINE_PROPERTY_FIELD(ScatterPlotModifier, yAxisProperty);
 SET_PROPERTY_FIELD_LABEL(ScatterPlotModifier, selectXAxisInRange, "Select elements in x-range");
 SET_PROPERTY_FIELD_LABEL(ScatterPlotModifier, selectionXAxisRangeStart, "Selection x-range start");
 SET_PROPERTY_FIELD_LABEL(ScatterPlotModifier, selectionXAxisRangeEnd, "Selection x-range end");

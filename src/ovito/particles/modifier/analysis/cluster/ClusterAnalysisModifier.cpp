@@ -37,6 +37,14 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ClusterAnalysisModifier);
+DEFINE_PROPERTY_FIELD(ClusterAnalysisModifier, neighborMode);
+DEFINE_PROPERTY_FIELD(ClusterAnalysisModifier, cutoff);
+DEFINE_PROPERTY_FIELD(ClusterAnalysisModifier, onlySelectedParticles);
+DEFINE_PROPERTY_FIELD(ClusterAnalysisModifier, sortBySize);
+DEFINE_PROPERTY_FIELD(ClusterAnalysisModifier, unwrapParticleCoordinates);
+DEFINE_PROPERTY_FIELD(ClusterAnalysisModifier, computeCentersOfMass);
+DEFINE_PROPERTY_FIELD(ClusterAnalysisModifier, computeRadiusOfGyration);
+DEFINE_PROPERTY_FIELD(ClusterAnalysisModifier, colorParticlesByCluster);
 SET_PROPERTY_FIELD_LABEL(ClusterAnalysisModifier, neighborMode, "Neighbor mode");
 SET_PROPERTY_FIELD_LABEL(ClusterAnalysisModifier, cutoff, "Cutoff distance");
 SET_PROPERTY_FIELD_LABEL(ClusterAnalysisModifier, onlySelectedParticles, "Use only selected particles");

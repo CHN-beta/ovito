@@ -38,6 +38,12 @@ namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(FileSource);
 DEFINE_REFERENCE_FIELD(FileSource, importer);
+DEFINE_PROPERTY_FIELD(FileSource, sourceUrls);
+DEFINE_PROPERTY_FIELD(FileSource, playbackSpeedNumerator);
+DEFINE_PROPERTY_FIELD(FileSource, playbackSpeedDenominator);
+DEFINE_PROPERTY_FIELD(FileSource, playbackStartTime);
+DEFINE_PROPERTY_FIELD(FileSource, autoGenerateFilePattern);
+DEFINE_PROPERTY_FIELD(FileSource, restrictToFrame);
 SET_PROPERTY_FIELD_LABEL(FileSource, importer, "File Importer");
 SET_PROPERTY_FIELD_LABEL(FileSource, sourceUrls, "Source location");
 SET_PROPERTY_FIELD_LABEL(FileSource, playbackSpeedNumerator, "Playback rate numerator");

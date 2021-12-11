@@ -27,6 +27,11 @@
 namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(DataTable);
+DEFINE_PROPERTY_FIELD(DataTable, intervalStart);
+DEFINE_PROPERTY_FIELD(DataTable, intervalEnd);
+DEFINE_PROPERTY_FIELD(DataTable, axisLabelX);
+DEFINE_PROPERTY_FIELD(DataTable, axisLabelY);
+DEFINE_PROPERTY_FIELD(DataTable, plotMode);
 
 /******************************************************************************
 * Registers all standard properties with the property traits class.

@@ -33,7 +33,17 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(TextLabelOverlay);
+DEFINE_PROPERTY_FIELD(TextLabelOverlay, alignment);
+DEFINE_PROPERTY_FIELD(TextLabelOverlay, font);
+DEFINE_PROPERTY_FIELD(TextLabelOverlay, fontSize);
+DEFINE_PROPERTY_FIELD(TextLabelOverlay, labelText);
+DEFINE_PROPERTY_FIELD(TextLabelOverlay, offsetX);
+DEFINE_PROPERTY_FIELD(TextLabelOverlay, offsetY);
+DEFINE_PROPERTY_FIELD(TextLabelOverlay, textColor);
+DEFINE_PROPERTY_FIELD(TextLabelOverlay, outlineColor);
+DEFINE_PROPERTY_FIELD(TextLabelOverlay, outlineEnabled);
 DEFINE_REFERENCE_FIELD(TextLabelOverlay, sourceNode);
+DEFINE_PROPERTY_FIELD(TextLabelOverlay, valueFormatString);
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, alignment, "Position");
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, font, "Font");
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, fontSize, "Font size");

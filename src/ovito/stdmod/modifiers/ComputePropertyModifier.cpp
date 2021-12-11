@@ -34,6 +34,10 @@ namespace Ovito::StdMod {
 IMPLEMENT_OVITO_CLASS(ComputePropertyModifierDelegate);
 
 IMPLEMENT_OVITO_CLASS(ComputePropertyModifier);
+DEFINE_PROPERTY_FIELD(ComputePropertyModifier, expressions);
+DEFINE_PROPERTY_FIELD(ComputePropertyModifier, outputProperty);
+DEFINE_PROPERTY_FIELD(ComputePropertyModifier, onlySelectedElements);
+DEFINE_PROPERTY_FIELD(ComputePropertyModifier, useMultilineFields);
 SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, expressions, "Expressions");
 SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, outputProperty, "Output property");
 SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, onlySelectedElements, "Compute only for selected elements");
@@ -41,6 +45,9 @@ SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, useMultilineFields, "Expand fi
 
 IMPLEMENT_OVITO_CLASS(ComputePropertyModifierApplication);
 DEFINE_VECTOR_REFERENCE_FIELD(ComputePropertyModifierApplication, cachedVisElements);
+DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModifierApplication, inputVariableNames);
+DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModifierApplication, delegateInputVariableNames);
+DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModifierApplication, inputVariableTable);
 SET_PROPERTY_FIELD_CHANGE_EVENT(ComputePropertyModifierApplication, inputVariableNames, ReferenceEvent::ObjectStatusChanged);
 SET_PROPERTY_FIELD_CHANGE_EVENT(ComputePropertyModifierApplication, inputVariableTable, ReferenceEvent::ObjectStatusChanged);
 SET_MODIFIER_APPLICATION_TYPE(ComputePropertyModifier, ComputePropertyModifierApplication);

@@ -34,7 +34,17 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(FileExporter);
+DEFINE_PROPERTY_FIELD(FileExporter, outputFilename);
+DEFINE_PROPERTY_FIELD(FileExporter, exportAnimation);
+DEFINE_PROPERTY_FIELD(FileExporter, useWildcardFilename);
+DEFINE_PROPERTY_FIELD(FileExporter, wildcardFilename);
+DEFINE_PROPERTY_FIELD(FileExporter, startFrame);
+DEFINE_PROPERTY_FIELD(FileExporter, endFrame);
+DEFINE_PROPERTY_FIELD(FileExporter, everyNthFrame);
+DEFINE_PROPERTY_FIELD(FileExporter, floatOutputPrecision);
 DEFINE_REFERENCE_FIELD(FileExporter, nodeToExport);
+DEFINE_PROPERTY_FIELD(FileExporter, dataObjectToExport);
+DEFINE_PROPERTY_FIELD(FileExporter, ignorePipelineErrors);
 SET_PROPERTY_FIELD_LABEL(FileExporter, outputFilename, "Output filename");
 SET_PROPERTY_FIELD_LABEL(FileExporter, exportAnimation, "Export animation");
 SET_PROPERTY_FIELD_LABEL(FileExporter, useWildcardFilename, "Use wildcard filename");

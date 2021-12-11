@@ -36,6 +36,7 @@
 namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(ExpressionSelectionModifier);
+DEFINE_PROPERTY_FIELD(ExpressionSelectionModifier, expression);
 SET_PROPERTY_FIELD_LABEL(ExpressionSelectionModifier, expression, "Boolean expression");
 
 IMPLEMENT_OVITO_CLASS(ExpressionSelectionModifierDelegate);

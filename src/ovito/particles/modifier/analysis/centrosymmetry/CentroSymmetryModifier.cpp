@@ -37,6 +37,8 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(CentroSymmetryModifier);
+DEFINE_PROPERTY_FIELD(CentroSymmetryModifier, numNeighbors);
+DEFINE_PROPERTY_FIELD(CentroSymmetryModifier, mode);
 SET_PROPERTY_FIELD_LABEL(CentroSymmetryModifier, numNeighbors, "Number of neighbors");
 SET_PROPERTY_FIELD_LABEL(CentroSymmetryModifier, mode, "Mode");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(CentroSymmetryModifier, numNeighbors, IntegerParameterUnit, 2, CentroSymmetryModifier::MAX_CSP_NEIGHBORS);

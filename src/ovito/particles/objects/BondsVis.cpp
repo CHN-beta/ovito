@@ -36,6 +36,11 @@ namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(BondsVis);
 IMPLEMENT_OVITO_CLASS(BondPickInfo);
+DEFINE_PROPERTY_FIELD(BondsVis, bondWidth);
+DEFINE_PROPERTY_FIELD(BondsVis, bondColor);
+DEFINE_PROPERTY_FIELD(BondsVis, shadingMode);
+DEFINE_PROPERTY_FIELD(BondsVis, renderingQuality);
+DEFINE_PROPERTY_FIELD(BondsVis, coloringMode);
 SET_PROPERTY_FIELD_LABEL(BondsVis, bondWidth, "Bond width");
 SET_PROPERTY_FIELD_LABEL(BondsVis, bondColor, "Uniform bond color");
 SET_PROPERTY_FIELD_LABEL(BondsVis, shadingMode, "Shading mode");

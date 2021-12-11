@@ -30,8 +30,25 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(RenderSettings);
+DEFINE_PROPERTY_FIELD(RenderSettings, imageInfo);
 DEFINE_REFERENCE_FIELD(RenderSettings, renderer);
 DEFINE_REFERENCE_FIELD(RenderSettings, backgroundColorController);
+DEFINE_PROPERTY_FIELD(RenderSettings, outputImageWidth);
+DEFINE_PROPERTY_FIELD(RenderSettings, outputImageHeight);
+DEFINE_PROPERTY_FIELD(RenderSettings, generateAlphaChannel);
+DEFINE_PROPERTY_FIELD(RenderSettings, saveToFile);
+DEFINE_PROPERTY_FIELD(RenderSettings, skipExistingImages);
+DEFINE_PROPERTY_FIELD(RenderSettings, renderingRangeType);
+DEFINE_PROPERTY_FIELD(RenderSettings, customRangeStart);
+DEFINE_PROPERTY_FIELD(RenderSettings, customRangeEnd);
+DEFINE_PROPERTY_FIELD(RenderSettings, customFrame);
+DEFINE_PROPERTY_FIELD(RenderSettings, everyNthFrame);
+DEFINE_PROPERTY_FIELD(RenderSettings, fileNumberBase);
+DEFINE_PROPERTY_FIELD(RenderSettings, framesPerSecond);
+DEFINE_PROPERTY_FIELD(RenderSettings, renderAllViewports);
+DEFINE_PROPERTY_FIELD(RenderSettings, layoutSeperatorsEnabled);
+DEFINE_PROPERTY_FIELD(RenderSettings, layoutSeperatorWidth);
+DEFINE_PROPERTY_FIELD(RenderSettings, layoutSeperatorColor);
 SET_PROPERTY_FIELD_LABEL(RenderSettings, imageInfo, "Image info");
 SET_PROPERTY_FIELD_LABEL(RenderSettings, renderer, "Renderer");
 SET_PROPERTY_FIELD_LABEL(RenderSettings, backgroundColorController, "Background color");

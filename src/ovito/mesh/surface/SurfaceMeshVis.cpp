@@ -38,9 +38,23 @@
 namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshVis);
+DEFINE_PROPERTY_FIELD(SurfaceMeshVis, surfaceColor);
+DEFINE_PROPERTY_FIELD(SurfaceMeshVis, capColor);
+DEFINE_PROPERTY_FIELD(SurfaceMeshVis, showCap);
+DEFINE_PROPERTY_FIELD(SurfaceMeshVis, smoothShading);
+DEFINE_PROPERTY_FIELD(SurfaceMeshVis, reverseOrientation);
+DEFINE_PROPERTY_FIELD(SurfaceMeshVis, highlightEdges);
+DEFINE_PROPERTY_FIELD(SurfaceMeshVis, surfaceIsClosed);
+DEFINE_PROPERTY_FIELD(SurfaceMeshVis, colorMappingMode);
 DEFINE_REFERENCE_FIELD(SurfaceMeshVis, surfaceTransparencyController);
 DEFINE_REFERENCE_FIELD(SurfaceMeshVis, capTransparencyController);
 DEFINE_REFERENCE_FIELD(SurfaceMeshVis, surfaceColorMapping);
+DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, surfaceColor);
+DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, capColor);
+DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, showCap);
+DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, smoothShading);
+DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, reverseOrientation);
+DEFINE_SHADOW_PROPERTY_FIELD(SurfaceMeshVis, highlightEdges);
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, surfaceColor, "Surface color");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, capColor, "Cap color");
 SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, showCap, "Show cap polygons");

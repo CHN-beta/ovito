@@ -29,6 +29,9 @@
 namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(DataTablePlotExporter);
+DEFINE_PROPERTY_FIELD(DataTablePlotExporter, plotWidth);
+DEFINE_PROPERTY_FIELD(DataTablePlotExporter, plotHeight);
+DEFINE_PROPERTY_FIELD(DataTablePlotExporter, plotDPI);
 SET_PROPERTY_FIELD_LABEL(DataTablePlotExporter, plotWidth, "Width (mm)");
 SET_PROPERTY_FIELD_LABEL(DataTablePlotExporter, plotHeight, "Height (mm)");
 SET_PROPERTY_FIELD_LABEL(DataTablePlotExporter, plotDPI, "Resolution (DPI)");

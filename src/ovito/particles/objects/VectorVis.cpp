@@ -35,8 +35,23 @@ namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(VectorVis);
 IMPLEMENT_OVITO_CLASS(VectorPickInfo);
+DEFINE_PROPERTY_FIELD(VectorVis, reverseArrowDirection);
+DEFINE_PROPERTY_FIELD(VectorVis, arrowPosition);
+DEFINE_PROPERTY_FIELD(VectorVis, arrowColor);
+DEFINE_PROPERTY_FIELD(VectorVis, arrowWidth);
+DEFINE_PROPERTY_FIELD(VectorVis, scalingFactor);
+DEFINE_PROPERTY_FIELD(VectorVis, shadingMode);
+DEFINE_PROPERTY_FIELD(VectorVis, renderingQuality);
 DEFINE_REFERENCE_FIELD(VectorVis, transparencyController);
+DEFINE_PROPERTY_FIELD(VectorVis, offset);
+DEFINE_PROPERTY_FIELD(VectorVis, coloringMode);
 DEFINE_REFERENCE_FIELD(VectorVis, colorMapping);
+DEFINE_SHADOW_PROPERTY_FIELD(VectorVis, reverseArrowDirection);
+DEFINE_SHADOW_PROPERTY_FIELD(VectorVis, arrowPosition);
+DEFINE_SHADOW_PROPERTY_FIELD(VectorVis, arrowColor);
+DEFINE_SHADOW_PROPERTY_FIELD(VectorVis, arrowWidth);
+DEFINE_SHADOW_PROPERTY_FIELD(VectorVis, scalingFactor);
+DEFINE_SHADOW_PROPERTY_FIELD(VectorVis, shadingMode);
 SET_PROPERTY_FIELD_LABEL(VectorVis, arrowColor, "Arrow color");
 SET_PROPERTY_FIELD_LABEL(VectorVis, arrowWidth, "Arrow width");
 SET_PROPERTY_FIELD_LABEL(VectorVis, scalingFactor, "Scaling factor");

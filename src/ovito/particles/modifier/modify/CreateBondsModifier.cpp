@@ -37,6 +37,14 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(CreateBondsModifier);
+DEFINE_PROPERTY_FIELD(CreateBondsModifier, cutoffMode);
+DEFINE_PROPERTY_FIELD(CreateBondsModifier, uniformCutoff);
+DEFINE_PROPERTY_FIELD(CreateBondsModifier, pairwiseCutoffs);
+DEFINE_PROPERTY_FIELD(CreateBondsModifier, minimumCutoff);
+DEFINE_PROPERTY_FIELD(CreateBondsModifier, vdwPrefactor);
+DEFINE_PROPERTY_FIELD(CreateBondsModifier, onlyIntraMoleculeBonds);
+DEFINE_PROPERTY_FIELD(CreateBondsModifier, skipHydrogenHydrogenBonds);
+DEFINE_PROPERTY_FIELD(CreateBondsModifier, autoDisableBondDisplay);
 DEFINE_REFERENCE_FIELD(CreateBondsModifier, bondType);
 DEFINE_REFERENCE_FIELD(CreateBondsModifier, bondsVis);
 SET_PROPERTY_FIELD_LABEL(CreateBondsModifier, cutoffMode, "Cutoff mode");

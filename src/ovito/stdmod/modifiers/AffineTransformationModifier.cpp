@@ -31,6 +31,11 @@
 namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(AffineTransformationModifier);
+DEFINE_PROPERTY_FIELD(AffineTransformationModifier, transformationTM);
+DEFINE_PROPERTY_FIELD(AffineTransformationModifier, selectionOnly);
+DEFINE_PROPERTY_FIELD(AffineTransformationModifier, targetCell);
+DEFINE_PROPERTY_FIELD(AffineTransformationModifier, relativeMode);
+DEFINE_PROPERTY_FIELD(AffineTransformationModifier, translationReducedCoordinates);
 SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, transformationTM, "Transformation");
 SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, selectionOnly, "Transform selected elements only");
 SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, targetCell, "Target cell shape");

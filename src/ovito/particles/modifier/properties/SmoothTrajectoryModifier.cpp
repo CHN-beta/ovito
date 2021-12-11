@@ -34,6 +34,8 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(SmoothTrajectoryModifier);
+DEFINE_PROPERTY_FIELD(SmoothTrajectoryModifier, useMinimumImageConvention);
+DEFINE_PROPERTY_FIELD(SmoothTrajectoryModifier, smoothingWindowSize);
 SET_PROPERTY_FIELD_LABEL(SmoothTrajectoryModifier, useMinimumImageConvention, "Use minimum image convention");
 SET_PROPERTY_FIELD_LABEL(SmoothTrajectoryModifier, smoothingWindowSize, "Smoothing window size");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(SmoothTrajectoryModifier, smoothingWindowSize, IntegerParameterUnit, 1, 200);

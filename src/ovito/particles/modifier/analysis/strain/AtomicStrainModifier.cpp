@@ -33,6 +33,13 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(AtomicStrainModifier);
+DEFINE_PROPERTY_FIELD(AtomicStrainModifier, cutoff);
+DEFINE_PROPERTY_FIELD(AtomicStrainModifier, calculateDeformationGradients);
+DEFINE_PROPERTY_FIELD(AtomicStrainModifier, calculateStrainTensors);
+DEFINE_PROPERTY_FIELD(AtomicStrainModifier, calculateNonaffineSquaredDisplacements);
+DEFINE_PROPERTY_FIELD(AtomicStrainModifier, selectInvalidParticles);
+DEFINE_PROPERTY_FIELD(AtomicStrainModifier, calculateStretchTensors);
+DEFINE_PROPERTY_FIELD(AtomicStrainModifier, calculateRotations);
 SET_PROPERTY_FIELD_LABEL(AtomicStrainModifier, cutoff, "Cutoff radius");
 SET_PROPERTY_FIELD_LABEL(AtomicStrainModifier, calculateDeformationGradients, "Output deformation gradient tensors");
 SET_PROPERTY_FIELD_LABEL(AtomicStrainModifier, calculateStrainTensors, "Output strain tensors");

@@ -30,6 +30,8 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSTextDumpImporter);
+DEFINE_PROPERTY_FIELD(LAMMPSTextDumpImporter, useCustomColumnMapping);
+DEFINE_PROPERTY_FIELD(LAMMPSTextDumpImporter, customColumnMapping);
 SET_PROPERTY_FIELD_LABEL(LAMMPSTextDumpImporter, useCustomColumnMapping, "Custom file column mapping");
 SET_PROPERTY_FIELD_LABEL(LAMMPSTextDumpImporter, customColumnMapping, "File column mapping");
 

@@ -39,6 +39,13 @@
 namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(GrainSegmentationModifier);
+DEFINE_PROPERTY_FIELD(GrainSegmentationModifier, mergeAlgorithm);
+DEFINE_PROPERTY_FIELD(GrainSegmentationModifier, handleCoherentInterfaces);
+DEFINE_PROPERTY_FIELD(GrainSegmentationModifier, mergingThreshold);
+DEFINE_PROPERTY_FIELD(GrainSegmentationModifier, minGrainAtomCount);
+DEFINE_PROPERTY_FIELD(GrainSegmentationModifier, orphanAdoption);
+DEFINE_PROPERTY_FIELD(GrainSegmentationModifier, outputBonds);
+DEFINE_PROPERTY_FIELD(GrainSegmentationModifier, colorParticlesByGrain);
 DEFINE_REFERENCE_FIELD(GrainSegmentationModifier, bondsVis);
 SET_PROPERTY_FIELD_LABEL(GrainSegmentationModifier, mergeAlgorithm, "Algorithm");
 SET_PROPERTY_FIELD_LABEL(GrainSegmentationModifier, handleCoherentInterfaces, "Handle coherent interfaces/stacking faults");

@@ -26,5 +26,10 @@
 namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(RenderableSurfaceMesh);
+DEFINE_RUNTIME_PROPERTY_FIELD(RenderableSurfaceMesh, surfaceMesh);
+DEFINE_RUNTIME_PROPERTY_FIELD(RenderableSurfaceMesh, capPolygonsMesh);
+DEFINE_RUNTIME_PROPERTY_FIELD(RenderableSurfaceMesh, materialColors);
+DEFINE_RUNTIME_PROPERTY_FIELD(RenderableSurfaceMesh, originalFaceMap);
+DEFINE_RUNTIME_PROPERTY_FIELD(RenderableSurfaceMesh, backfaceCulling);
 
 }	// End of namespace

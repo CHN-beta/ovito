@@ -35,6 +35,9 @@
 namespace Ovito::StdObj {
 
 IMPLEMENT_OVITO_CLASS(StandardCameraObject);
+DEFINE_PROPERTY_FIELD(StandardCameraObject, isPerspective);
+DEFINE_PROPERTY_FIELD(StandardCameraObject, fov);
+DEFINE_PROPERTY_FIELD(StandardCameraObject, zoom);
 SET_PROPERTY_FIELD_LABEL(StandardCameraObject, isPerspective, "Perspective projection");
 SET_PROPERTY_FIELD_LABEL(StandardCameraObject, fov, "FOV angle");
 SET_PROPERTY_FIELD_LABEL(StandardCameraObject, zoom, "FOV size");

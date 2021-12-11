@@ -34,6 +34,9 @@
 namespace Ovito::StdMod {
 
 IMPLEMENT_OVITO_CLASS(FreezePropertyModifier);
+DEFINE_PROPERTY_FIELD(FreezePropertyModifier, sourceProperty);
+DEFINE_PROPERTY_FIELD(FreezePropertyModifier, destinationProperty);
+DEFINE_PROPERTY_FIELD(FreezePropertyModifier, freezeTime);
 SET_PROPERTY_FIELD_LABEL(FreezePropertyModifier, sourceProperty, "Property");
 SET_PROPERTY_FIELD_LABEL(FreezePropertyModifier, destinationProperty, "Destination property");
 SET_PROPERTY_FIELD_LABEL(FreezePropertyModifier, freezeTime, "Freeze at frame");

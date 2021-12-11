@@ -36,6 +36,14 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(GenerateTrajectoryLinesModifier);
+DEFINE_PROPERTY_FIELD(GenerateTrajectoryLinesModifier, onlySelectedParticles);
+DEFINE_PROPERTY_FIELD(GenerateTrajectoryLinesModifier, useCustomInterval);
+DEFINE_PROPERTY_FIELD(GenerateTrajectoryLinesModifier, customIntervalStart);
+DEFINE_PROPERTY_FIELD(GenerateTrajectoryLinesModifier, customIntervalEnd);
+DEFINE_PROPERTY_FIELD(GenerateTrajectoryLinesModifier, everyNthFrame);
+DEFINE_PROPERTY_FIELD(GenerateTrajectoryLinesModifier, unwrapTrajectories);
+DEFINE_PROPERTY_FIELD(GenerateTrajectoryLinesModifier, transferParticleProperties);
+DEFINE_PROPERTY_FIELD(GenerateTrajectoryLinesModifier, particleProperty);
 DEFINE_REFERENCE_FIELD(GenerateTrajectoryLinesModifier, trajectoryVis);
 SET_PROPERTY_FIELD_LABEL(GenerateTrajectoryLinesModifier, onlySelectedParticles, "Only selected particles");
 SET_PROPERTY_FIELD_LABEL(GenerateTrajectoryLinesModifier, useCustomInterval, "Custom time interval");

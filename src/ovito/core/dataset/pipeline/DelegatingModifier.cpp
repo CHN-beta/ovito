@@ -30,6 +30,8 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ModifierDelegate);
+DEFINE_PROPERTY_FIELD(ModifierDelegate, isEnabled);
+DEFINE_PROPERTY_FIELD(ModifierDelegate, inputDataObject);
 SET_PROPERTY_FIELD_LABEL(ModifierDelegate, isEnabled, "Enabled");
 SET_PROPERTY_FIELD_LABEL(ModifierDelegate, inputDataObject, "Data object");
 

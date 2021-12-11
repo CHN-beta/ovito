@@ -30,6 +30,8 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(Modifier);
+DEFINE_PROPERTY_FIELD(Modifier, isEnabled);
+DEFINE_PROPERTY_FIELD(Modifier, title);
 SET_PROPERTY_FIELD_LABEL(Modifier, isEnabled, "Enabled");
 SET_PROPERTY_FIELD_CHANGE_EVENT(Modifier, isEnabled, ReferenceEvent::TargetEnabledOrDisabled);
 SET_PROPERTY_FIELD_LABEL(Modifier, title, "Name");

@@ -35,6 +35,7 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ChillPlusModifier);
+DEFINE_PROPERTY_FIELD(ChillPlusModifier, cutoff);
 SET_PROPERTY_FIELD_LABEL(ChillPlusModifier, cutoff, "Cutoff radius");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ChillPlusModifier, cutoff, WorldParameterUnit, 0);
 
