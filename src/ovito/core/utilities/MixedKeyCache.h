@@ -80,8 +80,11 @@ public:
 
 private:
 
-	/// The list of cached objects and their keys.
-	std::vector<std::tuple<any_moveonly, any_moveonly, bool>> _entries;
+	/// Stores all key-value pairs of the cache. 
+	/// Note we are using std::deque instead of std::vector here, because we require stability of pointers.
+	/// get() returns references to elements in the cache, which must remain valid even when new objects are added
+	/// to the cache.
+	std::deque<std::tuple<any_moveonly, any_moveonly, bool>> _entries;
 };
 
 }	// End of namespace

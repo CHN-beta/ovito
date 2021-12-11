@@ -206,7 +206,7 @@ private:
 	void renderMeshWireframeImplementation(const MeshPrimitive& primitive, const QMatrix4x4& mvp);
 
 	/// Generates the wireframe line elements for the visible edges of a mesh.
-	const ConstDataBufferPtr& generateMeshWireframeLines(const MeshPrimitive& primitive);
+	ConstDataBufferPtr generateMeshWireframeLines(const MeshPrimitive& primitive);
 
 	/// Prepares the OpenGL buffer with the per-instance transformation matrices for 
 	/// rendering a set of meshes.

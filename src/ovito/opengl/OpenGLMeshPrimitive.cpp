@@ -460,7 +460,7 @@ QOpenGLBuffer OpenGLSceneRenderer::getMeshInstanceTMBuffer(const MeshPrimitive& 
 /******************************************************************************
 * Generates the wireframe line elements for the visible edges of a mesh.
 ******************************************************************************/
-const ConstDataBufferPtr& OpenGLSceneRenderer::generateMeshWireframeLines(const MeshPrimitive& primitive)
+ConstDataBufferPtr OpenGLSceneRenderer::generateMeshWireframeLines(const MeshPrimitive& primitive)
 {
     OVITO_ASSERT(primitive.emphasizeEdges());
     OVITO_ASSERT(primitive.mesh());
@@ -521,7 +521,7 @@ void OpenGLSceneRenderer::renderMeshWireframeImplementation(const MeshPrimitive&
 	shader.setUniformValue("color", wireframeColor);
 
     // Get the wireframe lines geometry.
-    const ConstDataBufferPtr& wireframeLinesBuffer = generateMeshWireframeLines(primitive);
+    ConstDataBufferPtr wireframeLinesBuffer = generateMeshWireframeLines(primitive);
     shader.setVerticesPerInstance(wireframeLinesBuffer->size());
     shader.setInstanceCount(primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : 1);
 

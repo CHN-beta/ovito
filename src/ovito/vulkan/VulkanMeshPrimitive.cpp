@@ -800,7 +800,7 @@ VkBuffer VulkanSceneRenderer::getMeshInstanceTMBuffer(const MeshPrimitive& primi
 /******************************************************************************
 * Generates the list of wireframe line elements.
 ******************************************************************************/
-const ConstDataBufferPtr& VulkanSceneRenderer::generateMeshWireframeLines(const MeshPrimitive& primitive)
+ConstDataBufferPtr VulkanSceneRenderer::generateMeshWireframeLines(const MeshPrimitive& primitive)
 {
     OVITO_ASSERT(primitive.emphasizeEdges());
 

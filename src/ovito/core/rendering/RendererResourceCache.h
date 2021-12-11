@@ -117,7 +117,8 @@ public:
 		_activeResourceFrames.pop_back();
 
 		// Release the resources associated with the frame unless they are shared with another frame that is still in flight.
-		for(auto entry = _entries.begin(); entry != _entries.end(); ) {
+		auto end = _entries.end();
+		for(auto entry = _entries.begin(); entry != end; ) {
 			auto frameIter = std::find(entry->frames.begin(), entry->frames.end(), frame);
 			if(frameIter != entry->frames.end()) {
 				if(entry->frames.size() != 1) {
@@ -125,12 +126,14 @@ public:
 					entry->frames.pop_back();
 				}
 				else {
-					entry = _entries.erase(entry);
+					--end;
+					*entry = std::move(*end);
 					continue;
 				}
 			}
 			++entry;
 		}
+		_entries.erase(end, _entries.end());
 
 		OVITO_ASSERT(!_activeResourceFrames.empty() || _entries.empty());
 	}
@@ -157,8 +160,11 @@ private:
 		}
 	};
 
-	/// The key-value pairs. 
-	std::vector<CacheEntry> _entries;
+	/// Stores all key-value pairs of the cache. 
+	/// Note we are using std::deque instead of std::vector here, because we require stability of pointers.
+	/// lookup() returns references to elements in the cache, which must remain valid even when new objects are added
+	/// to the cache.
+	std::deque<CacheEntry> _entries;
 
 	/// List of frames that are currently being rendered (by the CPU and/or the GPU).
 	std::vector<ResourceFrameHandle> _activeResourceFrames;
