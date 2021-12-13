@@ -111,19 +111,6 @@ void GrainSegmentationModifierEditor::createUI(const RolloutInsertionParameters&
 	});
 	layout->addWidget(btn);
 
-	// Create plot widget for merge distances
-	_mergePlotWidget = new DataTablePlotWidget();
-	_mergePlotWidget->setMinimumHeight(200);
-	_mergePlotWidget->setMaximumHeight(200);
-	_mergeRangeIndicator = new QwtPlotZoneItem();
-	_mergeRangeIndicator->setOrientation(Qt::Vertical);
-	_mergeRangeIndicator->setZ(1);
-	_mergeRangeIndicator->attach(_mergePlotWidget);
-	_mergeRangeIndicator->hide();
-	layout->addSpacing(10);
-	layout->addWidget(_mergePlotWidget);
-	connect(this, &GrainSegmentationModifierEditor::contentsReplaced, this, &GrainSegmentationModifierEditor::plotMerges);
-
 	// Create plot widget for log distances
 	_logPlotWidget = new DataTablePlotWidget();
 	_logPlotWidget->setMinimumHeight(200);
@@ -160,16 +147,11 @@ void GrainSegmentationModifierEditor::plotMerges()
 		// Request the modifier's pipeline output.
 		const PipelineFlowState& state = getModifierOutput();
 
-		// Look up the data table in the modifier's pipeline output.
-		_mergePlotWidget->setTable(state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("grains-merge")));
-
 		// Indicate the current merge threshold in the plot.
 		FloatType mergingThreshold = modifier->mergingThreshold();
 		if(modifier->mergeAlgorithm() == GrainSegmentationModifier::GraphClusteringAutomatic) {
 			mergingThreshold = state.getAttributeValue(modifierApplication(), QStringLiteral("GrainSegmentation.auto_merge_threshold"), mergingThreshold).value<FloatType>();
 		}
-		_mergeRangeIndicator->setInterval(std::numeric_limits<double>::lowest(), mergingThreshold);
-		_mergeRangeIndicator->show();
 
 		// Look up the data table in the modifier's pipeline output.
 		_logPlotWidget->setTable(state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("grains-log")));
@@ -179,9 +161,6 @@ void GrainSegmentationModifierEditor::plotMerges()
 		_logRangeIndicator->show();
 	}
 	else {
-		_mergePlotWidget->reset();
-		_mergeRangeIndicator->hide();
-
 		_logPlotWidget->reset();
 		_logRangeIndicator->hide();
 	}

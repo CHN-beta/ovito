@@ -60,13 +60,6 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 private:
-
-	/// The graph widget to display the merge size scatter plot.
-	DataTablePlotWidget* _mergePlotWidget;
-
-	/// Marks the merge distance cutoff in the scatter plot.
-	QwtPlotZoneItem* _mergeRangeIndicator;
-
 	/// The graph widget to display the log-log scatter plot.
 	DataTablePlotWidget* _logPlotWidget;
 

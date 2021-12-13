@@ -195,10 +195,6 @@ void GrainSegmentationEngine1::applyResults(TimePoint time, ModifierApplication*
 		particles->addBonds(bonds, modifier->bondsVis(), Application::instance()->executionContext(), { neighborDisorientationAngles.take() });
 	}
 
-	// Output a data plot with the dendrogram points.
-	if(mergeSize() && mergeDistance())
-		state.createObject<DataTable>(QStringLiteral("grains-merge"), modApp, Application::instance()->executionContext(), DataTable::Scatter, GrainSegmentationModifier::tr("Merge size vs. distance"), mergeSize(), mergeDistance());
-
 	// Output a data plot with the log-log dendrogram points.
 	if(logMergeSize() && logMergeDistance())
 		state.createObject<DataTable>(QStringLiteral("grains-log"), modApp, Application::instance()->executionContext(), DataTable::Scatter, GrainSegmentationModifier::tr("Log distance vs. log merge size"), logMergeDistance(), logMergeSize());
