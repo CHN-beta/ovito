@@ -120,8 +120,8 @@ public:
 			return;
 
 		for (auto node: dendrogram) {
-			weights.push_back(node.gm_size);
-			xs.push_back(log(node.gm_size));
+			weights.push_back(node.merge_size);
+			xs.push_back(log(node.merge_size));
 			ys.push_back(log(node.distance));
 		}
 
@@ -134,7 +134,7 @@ public:
 		// Select the threshold as the inlier with the largest distance.
 		FloatType threshold = 0;
 		for(auto node : dendrogram) {
-			FloatType x = log(node.gm_size);
+			FloatType x = log(node.merge_size);
 			FloatType y = log(node.distance);
 
 			FloatType prediction = x * gradient + intercept;

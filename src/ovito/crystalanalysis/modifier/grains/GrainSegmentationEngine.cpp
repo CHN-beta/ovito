@@ -425,7 +425,7 @@ FILE* fout = fopen(filename, "w");
 		size_t sa = uf.nodesize(uf.find(node.a));
 		size_t sb = uf.nodesize(uf.find(node.b));
 		size_t dsize = std::min(sa, sb);
-		node.gm_size = sqrt(sa * sb);
+		node.merge_size = 2. / (1. / sa + 1. / sb);    //harmonic mean
 		uf.merge(node.a, node.b);
 
 #if DEBUG_OUTPUT
