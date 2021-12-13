@@ -446,20 +446,6 @@ fclose(fout);
 
 	if(_algorithmType == GrainSegmentationModifier::GraphClusteringAutomatic || _algorithmType == GrainSegmentationModifier::GraphClusteringManual) {
 
-		// Create PropertyStorage objects for the output plot.
-		PropertyAccess<FloatType> mergeDistanceArray = _mergeDistance = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, 0, GrainSegmentationModifier::tr("Log merge distance"), false, DataTable::XProperty);
-		PropertyAccess<FloatType> mergeSizeArray = _mergeSize = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, 0, GrainSegmentationModifier::tr("Delta merge size"), false, DataTable::YProperty);
-
-		// Generate output data plot points from dendrogram data.
-		FloatType* mergeDistanceIter = mergeDistanceArray.begin();
-		FloatType* mergeSizeIter = mergeSizeArray.begin();
-		for(const DendrogramNode& node : _dendrogram) {
-			if(node.size >= _minPlotSize) {
-				*mergeDistanceIter++ = std::log(node.distance);
-				*mergeSizeIter++ = node.size;
-			}
-		}
-
 		auto regressor = ThresholdSelection::Regressor(_dendrogram);
 		_suggestedMergingThreshold = regressor.calculate_threshold(_dendrogram, 1.5);
 
@@ -469,7 +455,7 @@ fclose(fout);
 			numPlot += (y > 0) ? 1 : 0; // plot positive distances only, for clarity
 		}
 
-		PropertyAccess<FloatType> logMergeSizeArray = _logMergeSize = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, 0, GrainSegmentationModifier::tr("Log geometric merge size"), false, DataTable::XProperty);
+		PropertyAccess<FloatType> logMergeSizeArray = _logMergeSize = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, 0, GrainSegmentationModifier::tr("Log merge size"), false, DataTable::XProperty);
 		PropertyAccess<FloatType> logMergeDistanceArray = _logMergeDistance = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, 0, GrainSegmentationModifier::tr("Log merge distance"), false, DataTable::YProperty);
 
 		// Generate output data plot points from dendrogram data.
@@ -485,8 +471,8 @@ fclose(fout);
 	}
 	else {
 		// Create PropertyStorage objects for the output plot.
-		PropertyAccess<FloatType> mergeDistanceArray = _mergeDistance = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, 0, GrainSegmentationModifier::tr("Misorientation (degrees)"), false, DataTable::XProperty);
-		PropertyAccess<FloatType> mergeSizeArray = _mergeSize = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, 0, GrainSegmentationModifier::tr("Merge size"), false, DataTable::YProperty);
+		PropertyAccess<FloatType> mergeDistanceArray = _logMergeDistance = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, 0, GrainSegmentationModifier::tr("Misorientation (degrees)"), false, DataTable::XProperty);
+		PropertyAccess<FloatType> mergeSizeArray = _logMergeSize = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, 0, GrainSegmentationModifier::tr("Merge size"), false, DataTable::YProperty);
 
 		// Generate output data plot points from dendrogram data.
 		FloatType* mergeDistanceIter = mergeDistanceArray.begin();

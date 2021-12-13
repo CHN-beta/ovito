@@ -298,12 +298,6 @@ public:
 	/// Returns the simulation cell data.
 	const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
 
-	// Returns the merge distances for the scatter plot
-	const PropertyPtr& mergeDistance() const { return _mergeDistance; }
-
-	// Returns the merge sizes for the scatter plot
-	const PropertyPtr& mergeSize() const { return _mergeSize; }
-
 	// Returns the log merge distances for the scatter plot
 	const PropertyPtr& logMergeDistance() const { return _logMergeDistance; }
 
@@ -414,12 +408,6 @@ private:
 
 	/// Used to detect changes in the input dataset that invalidate cached computation results.
 	ParticleOrderingFingerprint _inputFingerprint;
-
-	// The merge distances
-	PropertyPtr _mergeDistance;
-
-	// The merge sizes
-	PropertyPtr _mergeSize;
 
 	// The log merge distances
 	PropertyPtr _logMergeDistance;
