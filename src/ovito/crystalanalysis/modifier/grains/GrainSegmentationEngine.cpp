@@ -364,6 +364,9 @@ bool GrainSegmentationEngine1::minimum_spanning_tree_clustering(
 ******************************************************************************/
 bool GrainSegmentationEngine1::determineMergeSequence()
 {
+	// The graph used for the Node Pair Sampling methods
+	Graph graph(_numParticles);
+
 	// Build graph.
 	if(_algorithmType == GrainSegmentationModifier::GraphClusteringAutomatic || _algorithmType == GrainSegmentationModifier::GraphClusteringManual) {
 
@@ -525,23 +528,6 @@ void GrainSegmentationEngine2::perform()
 	}
 
 	const std::vector<GrainSegmentationEngine1::DendrogramNode>& dendrogram = _engine1->_dendrogram;
-
-#if 0
-	// Refine the graph partitions
-	if(_engine1->_algorithmType == GrainSegmentationModifier::GraphClusteringAutomatic) {
-		auto graph = _engine1->graph;
-		FloatType gamma = 1 / mergingThreshold;	 // resolution parameter
-
-		for(auto node = dendrogram.crbegin(); node != dendrogram.crend(); ++node) {
-			graph.reinstate_edge(node->a, node->b);
-			//printf("%e %e\n", node->distance, graph.wnode[node->a] * graph.wnode[node->b] / graph.adj[node->a][node->b]);
-
-			if (std::log(node->distance) < mergingThreshold) {
-				// test all options for reassignment
-			}
-		}
-	}
-#endif
 
 	ConstPropertyAccess<Quaternion> orientationsArray(_engine1->orientations());
 	std::vector<Quaternion> meanOrientation(orientationsArray.cbegin(), orientationsArray.cend());

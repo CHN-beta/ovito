@@ -33,6 +33,7 @@
 #include "DisjointSet.h"
 #include "GrainSegmentationModifier.h"
 
+
 namespace Ovito { namespace CrystalAnalysis {
 
 /*
@@ -44,9 +45,12 @@ public:
 	class Graph
 	{
 	public:
-		size_t next = 0;
-		std::map<size_t, FloatType> wnode;
+		std::vector<FloatType> wnode;
 		std::map<size_t, std::map<size_t, FloatType>> adj;
+
+        Graph(size_t num_nodes) {
+            wnode.resize(num_nodes);
+        }
 
 		size_t num_nodes() const {
 			return adj.size();
@@ -69,8 +73,7 @@ public:
 				if(v == a)
 					throw Exception("Graph has self loops");
 
-				OVITO_ASSERT(wnode.find(v) != wnode.end());
-				FloatType d = wnode.find(v)->second / weight;
+				FloatType d = wnode[v] / weight;
 				OVITO_ASSERT(!std::isnan(d));
 
 				if (d < dmin) {
@@ -82,15 +85,13 @@ public:
 				}
 			}
 
-			OVITO_ASSERT(wnode.find(a) != wnode.end());
-			FloatType check = dmin * wnode.find(a)->second;
+			FloatType check = dmin * wnode[a];
 			OVITO_ASSERT(!std::isnan(check));
 
-			return std::make_tuple(dmin * wnode.find(a)->second, vmin);
+			return std::make_tuple(dmin * wnode[a], vmin);
 		}
 
 		void add_node(size_t u) {
-			next = u + 1;
 			wnode[u] = 0;
 		}
 
@@ -438,9 +439,6 @@ private:
 
 	/// The adaptively computed merge threshold.
 	FloatType _suggestedMergingThreshold = 0;
-
-	// The graph used for the Node Pair Sampling methods
-	Graph graph;
 
 	friend class GrainSegmentationEngine2;
 };
