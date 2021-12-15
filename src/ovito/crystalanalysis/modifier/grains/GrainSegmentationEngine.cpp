@@ -365,7 +365,7 @@ bool GrainSegmentationEngine1::minimum_spanning_tree_clustering(
 bool GrainSegmentationEngine1::determineMergeSequence()
 {
 	// The graph used for the Node Pair Sampling methods
-	Graph graph(_numParticles);
+	Graph graph(_numParticles, neighborBonds().size());
 
 	// Build graph.
 	if(_algorithmType == GrainSegmentationModifier::GraphClusteringAutomatic || _algorithmType == GrainSegmentationModifier::GraphClusteringManual) {
