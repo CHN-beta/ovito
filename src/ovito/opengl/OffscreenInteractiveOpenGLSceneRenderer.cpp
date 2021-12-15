@@ -41,7 +41,7 @@ OffscreenInteractiveOpenGLSceneRenderer::OffscreenInteractiveOpenGLSceneRenderer
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect)
+void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
 	OVITO_ASSERT(vp);
 
@@ -127,16 +127,16 @@ void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(TimePoint time, const V
 		setPrimaryFramebuffer(_framebufferObjectGLES);
 	}
 
-	OpenGLSceneRenderer::beginFrame(time, params, vp, viewportRect);
+	OpenGLSceneRenderer::beginFrame(time, params, vp, viewportRect, frameBuffer);
 }
 
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool OffscreenInteractiveOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation)
+bool OffscreenInteractiveOpenGLSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOperation operation)
 {
 	// Let the base class do the main rendering work.
-	if(!OpenGLSceneRenderer::renderFrame(frameBuffer, viewportRect, std::move(operation)))
+	if(!OpenGLSceneRenderer::renderFrame(viewportRect, std::move(operation)))
 		return false;
 
 	// Clear OpenGL error state, so we start fresh for the glReadPixels() call below.
@@ -182,7 +182,7 @@ bool OffscreenInteractiveOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuff
 /******************************************************************************
 * This method is called after renderFrame() has been called.
 ******************************************************************************/
-void OffscreenInteractiveOpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect)
+void OffscreenInteractiveOpenGLSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect)
 {
 	if(_framebufferObject) {
 		_framebufferObject.reset();
@@ -200,7 +200,7 @@ void OffscreenInteractiveOpenGLSceneRenderer::endFrame(bool renderingSuccessful,
 		_framebufferTexturesGLES[0] = _framebufferTexturesGLES[1] = 0;
 	}
 	setPrimaryFramebuffer(0);
-	OpenGLSceneRenderer::endFrame(renderingSuccessful, frameBuffer, viewportRect);
+	OpenGLSceneRenderer::endFrame(renderingSuccessful, viewportRect);
 
 	// Reactivate old GL context.
 	if(_oldSurface && _oldContext) {

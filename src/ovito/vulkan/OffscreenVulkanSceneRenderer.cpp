@@ -264,7 +264,7 @@ bool OffscreenVulkanSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect)
+void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
 	// This method must be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == context()->thread());
@@ -321,13 +321,13 @@ void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 	QRect shiftedViewportRect = viewportRect;
 	shiftedViewportRect.moveTo(0,0);
 
-	VulkanSceneRenderer::beginFrame(time, params, vp, shiftedViewportRect);
+	VulkanSceneRenderer::beginFrame(time, params, vp, shiftedViewportRect, frameBuffer);
 }
 
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool OffscreenVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation)
+bool OffscreenVulkanSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOperation operation)
 {
 	// This method must be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == context()->thread());
@@ -338,7 +338,7 @@ bool OffscreenVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const Q
 	shiftedViewportRect.moveTo(0,0);
 
 	// Let the base class do the main rendering work.
-	if(!VulkanSceneRenderer::renderFrame(frameBuffer, shiftedViewportRect, std::move(operation)))
+	if(!VulkanSceneRenderer::renderFrame(shiftedViewportRect, std::move(operation)))
 		return false;
 
 	return true;
@@ -347,7 +347,7 @@ bool OffscreenVulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const Q
 /******************************************************************************
 * This method is called after renderFrame() has been called.
 ******************************************************************************/
-void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect)
+void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect)
 {
 	// This method must be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == context()->thread());
@@ -469,16 +469,17 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 		QImage scaledImage = frameGrabTargetImage.scaled(originalSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
 		// Transfer acquired image to the output frame buffer.
-		if(!frameBuffer->image().isNull()) {
+		OVITO_ASSERT(frameBuffer());
+		if(!frameBuffer()->image().isNull()) {
 			// If the existing framebuffer is not empty, perform proper alpha blending.
-			QPainter painter(&frameBuffer->image());
+			QPainter painter(&frameBuffer()->image());
 			painter.drawImage(viewportRect, scaledImage, QRect(0, 0, viewportRect.width(), viewportRect.height()));
 		}
 		else {
 			// If the existing framebuffer is empty, no need to perform blending.
-			frameBuffer->image() = scaledImage;
+			frameBuffer()->image() = scaledImage;
 		}
-		frameBuffer->update(viewportRect);
+		frameBuffer()->update(viewportRect);
 	}
 
 	// Tell the Vulkan resource manager that we are done rendering the frame.
@@ -496,7 +497,7 @@ void OffscreenVulkanSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 	QRect shiftedViewportRect = viewportRect;
 	shiftedViewportRect.moveTo(0,0);
 
-	VulkanSceneRenderer::endFrame(renderingSuccessful, frameBuffer, shiftedViewportRect);
+	VulkanSceneRenderer::endFrame(renderingSuccessful, shiftedViewportRect);
 }
 
 /******************************************************************************

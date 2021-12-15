@@ -119,7 +119,7 @@ bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void OffscreenOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect)
+void OffscreenOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
 	// Make GL context current.
 	if(!_offscreenContext || !_offscreenContext->makeCurrent(_offscreenSurface))
@@ -134,34 +134,43 @@ void OffscreenOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 	QRect shiftedViewportRect = viewportRect;
 	shiftedViewportRect.moveTo(0,0);
 
-	OpenGLSceneRenderer::beginFrame(time, params, vp, shiftedViewportRect);
+	OpenGLSceneRenderer::beginFrame(time, params, vp, shiftedViewportRect, frameBuffer);
 }
 
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool OffscreenOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation)
+bool OffscreenOpenGLSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOperation operation)
 {
-	OVITO_ASSERT(frameBuffer != nullptr);
-
 	// Always render into the upper left corner of the OpenGL framebuffer.
 	// That's because the OpenGL framebuffer may be smaller than the target OVITO framebuffer.
 	QRect shiftedViewportRect = viewportRect;
 	shiftedViewportRect.moveTo(0,0);
 
 	// Let the base class do the main rendering work.
-	if(!OpenGLSceneRenderer::renderFrame(frameBuffer, shiftedViewportRect, std::move(operation)))
-		return false;
+	return OpenGLSceneRenderer::renderFrame(shiftedViewportRect, std::move(operation));
+}
 
-	return true;
+/******************************************************************************
+* Renders the overlays/underlays of the viewport into the framebuffer.
+******************************************************************************/
+bool OffscreenOpenGLSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation)
+{
+	// Always render into the upper left corner of the OpenGL framebuffer.
+	// That's because the OpenGL framebuffer may be smaller than the target OVITO framebuffer.
+	QRect shiftedViewportRect = physicalViewportRect;
+	shiftedViewportRect.moveTo(0,0);
+
+	// Delegate rendering work to base class.
+	return OpenGLSceneRenderer::renderOverlays(underlays, logicalViewportRect, shiftedViewportRect, std::move(operation));
 }
 
 /******************************************************************************
 * This method is called after renderFrame() has been called.
 ******************************************************************************/
-void OffscreenOpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect)
+void OffscreenOpenGLSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect)
 {
-	if(renderingSuccessful && frameBuffer) {
+	if(renderingSuccessful && frameBuffer()) {
 
 		// Flush the contents to the FBO before extracting image.
 		glcontext()->swapBuffers(_offscreenSurface);
@@ -175,14 +184,14 @@ void OffscreenOpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 		QImage scaledImage = renderedImage.scaled(originalSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
 		// Transfer OpenGL image to the output frame buffer.
-		if(!frameBuffer->image().isNull()) {
-			QPainter painter(&frameBuffer->image());
+		if(!frameBuffer()->image().isNull()) {
+			QPainter painter(&frameBuffer()->image());
 			painter.drawImage(viewportRect, scaledImage, QRect(0, scaledImage.height() - viewportRect.height(), viewportRect.width(), viewportRect.height()));
 		}
 		else {
-			frameBuffer->image() = scaledImage;
+			frameBuffer()->image() = scaledImage;
 		}
-		frameBuffer->update(viewportRect);
+		frameBuffer()->update(viewportRect);
 	}
 
 	// Tell the resource manager that we are done rendering the frame.
@@ -198,7 +207,7 @@ void OffscreenOpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffe
 	QRect shiftedViewportRect = viewportRect;
 	shiftedViewportRect.moveTo(0,0);
 
-	OpenGLSceneRenderer::endFrame(renderingSuccessful, frameBuffer, shiftedViewportRect);
+	OpenGLSceneRenderer::endFrame(renderingSuccessful, shiftedViewportRect);
 }
 
 /******************************************************************************

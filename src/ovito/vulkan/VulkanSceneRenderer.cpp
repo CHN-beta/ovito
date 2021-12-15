@@ -156,12 +156,12 @@ void VulkanSceneRenderer::initResources()
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void VulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect)
+void VulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
 	// Convert viewport rect from logical device coordinates to Vulkan framebuffer coordinates.
 	QRect vulkanViewportRect(viewportRect.x() * antialiasingLevel(), viewportRect.y() * antialiasingLevel(), viewportRect.width() * antialiasingLevel(), viewportRect.height() * antialiasingLevel());
 
-	SceneRenderer::beginFrame(time, params, vp, vulkanViewportRect);
+	SceneRenderer::beginFrame(time, params, vp, vulkanViewportRect, frameBuffer);
 
 	// This method may only be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == context()->thread());
@@ -194,7 +194,7 @@ void VulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool VulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation)
+bool VulkanSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOperation operation)
 {
 	// Render the 3D scene objects.
 	if(renderScene(operation.subOperation())) {
@@ -223,6 +223,18 @@ bool VulkanSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& vie
     }
 
 	return !operation.isCanceled();
+}
+
+/******************************************************************************
+* Renders the overlays/underlays of the viewport into the framebuffer.
+******************************************************************************/
+bool VulkanSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation)
+{
+	// Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
+	QRect vulkanViewportRect(physicalViewportRect.x() * antialiasingLevel(), physicalViewportRect.y() * antialiasingLevel(), physicalViewportRect.width() * antialiasingLevel(), physicalViewportRect.height() * antialiasingLevel());
+
+	// Delegate rendering work to base class.
+	return SceneRenderer::renderOverlays(underlays, logicalViewportRect, vulkanViewportRect, std::move(operation));
 }
 
 /******************************************************************************

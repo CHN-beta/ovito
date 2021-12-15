@@ -51,18 +51,8 @@ public:
 	/// \brief Constructor.
 	Q_INVOKABLE CoordinateTripodOverlay(DataSet* dataset);
 
-	/// This method asks the overlay to paint its contents over the rendered image.
-	virtual void render(const Viewport* viewport, TimePoint time, FrameBuffer* frameBuffer, const QRect& viewportRect, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, SynchronousOperation operation) override {
-		QPainter painter(&frameBuffer->image());
-		painter.setViewport(viewportRect);
-		painter.setWindow(0, 0, viewportRect.width(), viewportRect.height());
-		renderImplementation(painter, projParams);
-	}
-
-	/// This method asks the overlay to paint its contents over the given interactive viewport.
-	virtual void renderInteractive(const Viewport* viewport, TimePoint time, QPainter& painter, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, SynchronousOperation operation) override {
-		renderImplementation(painter, projParams);
-	}
+	/// Lets the overlay paint its contents into the framebuffer.
+	virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation) override;
 
 	/// Moves the position of the overlay in the viewport by the given amount,
 	/// which is specified as a fraction of the viewport render size.
@@ -72,9 +62,6 @@ public:
 	}
 
 private:
-
-	/// This method paints the overlay contents onto the given canvas.
-	void renderImplementation(QPainter& painter, const ViewProjectionParameters& projParams);
 
 	/// Paints a single arrow in flat style.
 	FloatType paintFlatArrow(QPainter& painter, const Vector2& dir2d, FloatType arrowSize, FloatType lineWidth, FloatType tripodSize, QPointF origin);

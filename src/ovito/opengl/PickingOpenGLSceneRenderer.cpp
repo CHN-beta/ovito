@@ -42,13 +42,13 @@ PickingOpenGLSceneRenderer::PickingOpenGLSceneRenderer(DataSet* dataset) : Offsc
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool PickingOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation)
+bool PickingOpenGLSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOperation operation)
 {
 	// Clear previous object records.
 	reset();
 
 	// Let the base class do the main rendering work.
-	if(!OffscreenInteractiveOpenGLSceneRenderer::renderFrame(frameBuffer, viewportRect, std::move(operation)))
+	if(!OffscreenInteractiveOpenGLSceneRenderer::renderFrame(viewportRect, std::move(operation)))
 		return false;
 
 	if(framebufferObject()) {
@@ -125,11 +125,11 @@ bool PickingOpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRe
 /******************************************************************************
 * This method is called after renderFrame() has been called.
 ******************************************************************************/
-void PickingOpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect)
+void PickingOpenGLSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect)
 {
 	endPickObject();
 
-	OffscreenInteractiveOpenGLSceneRenderer::endFrame(renderingSuccessful, frameBuffer, viewportRect);
+	OffscreenInteractiveOpenGLSceneRenderer::endFrame(renderingSuccessful, viewportRect);
 }
 
 /******************************************************************************

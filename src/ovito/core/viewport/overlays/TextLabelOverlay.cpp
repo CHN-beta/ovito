@@ -76,16 +76,33 @@ TextLabelOverlay::TextLabelOverlay(DataSet* dataset) : ViewportOverlay(dataset),
 }
 
 /******************************************************************************
+* Lets the overlay paint its contents into the framebuffer.
+******************************************************************************/
+void TextLabelOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation)
+{
+	if(renderer->isInteractive()) {
+		const PipelineFlowState& flowState = sourceNode() ? sourceNode()->evaluatePipelineSynchronous(true) : PipelineFlowState();
+		renderImplementation(renderer, physicalViewportRect, flowState);
+	}
+	else {
+		if(sourceNode()) {
+			PipelineEvaluationFuture pipelineEvaluation = sourceNode()->evaluatePipeline(PipelineEvaluationRequest(operation.initializationHints(), renderer->time()));
+			if(!operation.waitForFuture(pipelineEvaluation))
+				return;
+			renderImplementation(renderer, physicalViewportRect, pipelineEvaluation.result());
+		}
+		else {
+			renderImplementation(renderer, physicalViewportRect, {});
+		}
+	}
+}
+
+/******************************************************************************
 * This method paints the overlay contents onto the given canvas.
 ******************************************************************************/
-void TextLabelOverlay::renderImplementation(QPainter& painter, const PipelineFlowState& flowState)
+void TextLabelOverlay::renderImplementation(SceneRenderer* renderer, const QRect& viewportRect, const PipelineFlowState& flowState)
 {
-	const QRect& windowRect = painter.window();
-	FloatType fontSize = this->fontSize() * windowRect.height();
-	if(fontSize <= 0) return;
-
-	FloatType margin = fontSize;
-
+	// Resolve the label text.
 	QString textString = labelText();
 
 	// Resolve global attributes referenced by placeholders in the text string.
@@ -109,18 +126,44 @@ void TextLabelOverlay::renderImplementation(QPainter& painter, const PipelineFlo
 			textString.replace(QStringLiteral("[") + a.key() + QStringLiteral("]"), valueString);
 		}
 	}
+	if(textString.isEmpty())
+		return;
 
-	QRectF textRect(margin, margin, windowRect.width() - margin*2, windowRect.height() - margin*2);
-	QPointF origin(offsetX() * windowRect.width(), -offsetY() * windowRect.height());
-	textRect.translate(origin);
+	// Prepare the text rendering primitive.
+	TextPrimitive textPrimitive;
+	textPrimitive.setColor(textColor());
+	if(outlineEnabled()) textPrimitive.setOutlineColor(outlineColor());
+	textPrimitive.setAlignment(alignment());
+	textPrimitive.setText(std::move(textString));
 
-	painter.setRenderHint(QPainter::Antialiasing);
-	painter.setRenderHint(QPainter::TextAntialiasing);
-
+	// Resolve the font used by the label.
+	FloatType fontSize = this->fontSize() * viewportRect.height();
+	if(fontSize <= 0) return;
 	QFont font = this->font();
-	font.setPointSizeF(fontSize);
-	painter.setFont(font);
-	drawTextOutlined(painter, textRect, alignment(), textString, textColor(), outlineEnabled(), outlineColor());
+	font.setPointSizeF(fontSize / renderer->devicePixelRatio()); // Font size if always in logical coordinates.
+	textPrimitive.setFont(std::move(font));
+
+	// Add an inset to the framebuffer rect.
+	int margins = (int)fontSize;
+	QRectF marginRect = viewportRect.marginsRemoved(QMargins(margins, margins, margins, margins));
+
+	// Determine alignment of the text box in the framebuffer rect.
+	Point2 pos;
+
+	if(alignment() & Qt::AlignRight) pos.x() = marginRect.left() + marginRect.width();	
+	else if(alignment() & Qt::AlignHCenter) pos.x() = marginRect.left() + marginRect.width() / 2.0;
+	else pos.x() = marginRect.left();
+
+	if(alignment() & Qt::AlignBottom) pos.y() = marginRect.top() + marginRect.height();	
+	else if(alignment() & Qt::AlignVCenter) pos.y() = marginRect.top() + marginRect.height() / 2.0;
+	else pos.y() = marginRect.top();
+
+	// Compute final positions.
+	textPrimitive.setPositionWindow(pos + Vector2(offsetX() * viewportRect.width(), -offsetY() * viewportRect.height()));
+
+	// Paint the image into the output framebuffer.
+	renderer->setDepthTestEnabled(false);
+	renderer->renderText(textPrimitive);
 }
 
 }	// End of namespace

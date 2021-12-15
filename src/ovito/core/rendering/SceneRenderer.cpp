@@ -97,18 +97,6 @@ Box3 SceneRenderer::computeSceneBoundingBox(TimePoint time, const ViewProjection
 			// Include other visual content that is only visible in the interactive viewports.
 			if(isInteractive())
 				renderInteractiveContent();
-
-			// Include three-dimensional content from viewport layers in the bounding box.
-			if(vp && (!isInteractive() || vp->renderPreviewMode())) {
-				for(ViewportOverlay* layer : vp->underlays()) {
-					if(layer->isEnabled())
-						layer->render3D(vp, time, this, operation.subOperation());
-				}
-				for(ViewportOverlay* layer : vp->overlays()) {
-					if(layer->isEnabled())
-						layer->render3D(vp, time, this, operation.subOperation());
-				}
-			}
 		}
 
 		_isBoundingBoxPass = false;
@@ -145,12 +133,13 @@ void SceneRenderer::endRender()
 * Sets the view projection parameters, the animation frame to render,
 * and the viewport being rendered.
 ******************************************************************************/
-void SceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect) 
+void SceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) 
 {
 	_time = time;
 	setProjParams(params);
 	_viewport = vp;
 	_viewportRect = viewportRect;
+	_frameBuffer = frameBuffer;
 	_modelWorldTM.setIdentity();
 	_modelViewTM = projParams().viewMatrix;
 }
@@ -294,6 +283,24 @@ void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSc
 	if(isOnStack) {
 		dataObjectPath.pop_back();
 	}
+}
+
+/******************************************************************************
+* Renders the overlays/underlays of the viewport into the framebuffer.
+******************************************************************************/
+bool SceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation)
+{
+	OVITO_ASSERT(!isPicking());
+	OVITO_ASSERT(viewport());
+
+	for(ViewportOverlay* layer : (underlays ? viewport()->underlays() : viewport()->overlays())) {
+		if(layer->isEnabled()) {
+			layer->render(this, logicalViewportRect, physicalViewportRect, operation.subOperation());
+			if(operation.isCanceled())
+				return false;
+		}
+	}
+	return !operation.isCanceled();
 }
 
 /******************************************************************************
@@ -643,6 +650,24 @@ void TextPrimitive::setPositionViewport(const SceneRenderer* renderer, const Poi
 	QSize windowSize = renderer->viewportRect().size();
 	Point2 pwin((pos.x() + 1.0) * windowSize.width() / 2.0, (-pos.y() + 1.0) * windowSize.height() / 2.0);
 	setPositionWindow(pwin);
+}
+
+/******************************************************************************
+* Computes the bounding rectangle of the text to be rendered.
+******************************************************************************/
+QRectF TextPrimitive::queryBounds(SceneRenderer* renderer) const
+{
+	QRectF textBounds;
+	if(!useTightBox()) {
+		textBounds = QFontMetricsF(font()).boundingRect(text());
+	}
+	else {
+		QPainterPath textPath;
+		textPath.addText(0, 0, font(), text());
+		textBounds = textPath.boundingRect();
+	}
+	qreal devicePixelRatio = renderer->devicePixelRatio();
+	return QRectF(textBounds.left() * devicePixelRatio, textBounds.top() * devicePixelRatio, textBounds.width() * devicePixelRatio, textBounds.height() * devicePixelRatio);
 }
 
 /******************************************************************************

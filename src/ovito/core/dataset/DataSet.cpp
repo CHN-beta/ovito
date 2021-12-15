@@ -645,39 +645,31 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 
 			// Render one frame.
 			try {
+				renderer->beginFrame(renderTime, projParams, viewport, destinationRect, frameBuffer);
+
 				// Render viewport "underlays".
-				for(ViewportOverlay* layer : viewport->underlays()) {
-					if(layer->isEnabled()) {
-						layer->render(viewport, renderTime, frameBuffer, destinationRect, projParams, settings, operation.subOperation());
-						if(operation.isCanceled()) {
-							renderer->endFrame(false, nullptr, destinationRect);
-							return false;
-						}
-						frameBuffer->update();
-					}
+				if(!renderer->renderOverlays(true, destinationRect, destinationRect, operation.subOperation())) {
+					renderer->endFrame(false, destinationRect);
+					return false;
 				}
 
 				// Let the scene renderer do its work.
-				renderer->beginFrame(renderTime, projParams, viewport, destinationRect);
-				if(!renderer->renderFrame(frameBuffer, destinationRect, operation.subOperation())) {
-					renderer->endFrame(false, frameBuffer, destinationRect);
+				if(!renderer->renderFrame(destinationRect, operation.subOperation())) {
+					renderer->endFrame(false, destinationRect);
 					return false;
 				}
-				renderer->endFrame(true, frameBuffer, destinationRect);
+
+				// Render viewport "overlays" on top.
+				if(!renderer->renderOverlays(false, destinationRect, destinationRect, operation.subOperation())) {
+					renderer->endFrame(false, destinationRect);
+					return false;
+				}
+
+				renderer->endFrame(true, destinationRect);
 			}
 			catch(...) {
-				renderer->endFrame(false, nullptr, destinationRect);
+				renderer->endFrame(false, destinationRect);
 				throw;
-			}
-
-			// Render viewport "overlays" on top.
-			for(ViewportOverlay* layer : viewport->overlays()) {
-				if(layer->isEnabled()) {
-					layer->render(viewport, renderTime, frameBuffer, destinationRect, projParams, settings, operation.subOperation());
-					if(operation.isCanceled())
-						return false;
-					frameBuffer->update();
-				}
 			}
 		}
 

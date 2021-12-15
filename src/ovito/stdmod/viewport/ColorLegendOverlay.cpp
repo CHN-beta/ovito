@@ -140,9 +140,9 @@ void ColorLegendOverlay::initializeObject(ObjectInitializationHints hints)
 }
 
 /******************************************************************************
-* This method paints the overlay contents onto the given canvas.
+* Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
-void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter, const ViewProjectionParameters& projParams, bool isInteractive, SynchronousOperation operation)
+void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation)
 {
 	DataOORef<const PropertyObject> typedProperty;
 
@@ -156,8 +156,8 @@ void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter,
 		dataset()->sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
 
 			// Evaulate pipeline and obtain output data collection.
-			if(!isInteractive) {
-				PipelineEvaluationFuture pipelineEvaluation = pipeline->evaluatePipeline(PipelineEvaluationRequest(operation.initializationHints(), time));
+			if(!renderer->isInteractive()) {
+				PipelineEvaluationFuture pipelineEvaluation = pipeline->evaluatePipeline(PipelineEvaluationRequest(operation.initializationHints(), renderer->time()));
 				if(!operation.waitForFuture(pipelineEvaluation))
 					return false;
 				// Look up the typed property.
@@ -217,8 +217,7 @@ void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter,
 	}
 
 	// Calculate position and size of color legend rectangle.
-	const QRect& windowRect = painter.window();
-	FloatType legendSize = this->legendSize() * windowRect.height();
+	FloatType legendSize = this->legendSize() * physicalViewportRect.height();
 	if(legendSize <= 0) return;
 
 	FloatType colorBarWidth = legendSize;
@@ -227,21 +226,17 @@ void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter,
 	if(vertical)
 		std::swap(colorBarWidth, colorBarHeight);
 
-	QPointF origin(offsetX() * windowRect.width(), -offsetY() * windowRect.height());
-	FloatType hmargin = FloatType(0.01) * windowRect.width();
-	FloatType vmargin = FloatType(0.01) * windowRect.height();
+	QPointF origin(offsetX() * physicalViewportRect.width() + physicalViewportRect.left(), -offsetY() * physicalViewportRect.height() + physicalViewportRect.top());
+	FloatType hmargin = FloatType(0.01) * physicalViewportRect.width();
+	FloatType vmargin = FloatType(0.01) * physicalViewportRect.height();
 
 	if(alignment() & Qt::AlignLeft) origin.rx() += hmargin;
-	else if(alignment() & Qt::AlignRight) origin.rx() += windowRect.width() - hmargin - colorBarWidth;
-	else if(alignment() & Qt::AlignHCenter) origin.rx() += FloatType(0.5) * windowRect.width() - FloatType(0.5) * colorBarWidth;
+	else if(alignment() & Qt::AlignRight) origin.rx() += physicalViewportRect.width() - hmargin - colorBarWidth;
+	else if(alignment() & Qt::AlignHCenter) origin.rx() += FloatType(0.5) * physicalViewportRect.width() - FloatType(0.5) * colorBarWidth;
 
 	if(alignment() & Qt::AlignTop) origin.ry() += vmargin;
-	else if(alignment() & Qt::AlignBottom) origin.ry() += windowRect.height() - vmargin - colorBarHeight;
-	else if(alignment() & Qt::AlignVCenter) origin.ry() += FloatType(0.5) * windowRect.height() - FloatType(0.5) * colorBarHeight;
-
-	painter.setRenderHint(QPainter::Antialiasing);
-	painter.setRenderHint(QPainter::TextAntialiasing);
-	painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
+	else if(alignment() & Qt::AlignBottom) origin.ry() += physicalViewportRect.height() - vmargin - colorBarHeight;
+	else if(alignment() & Qt::AlignVCenter) origin.ry() += FloatType(0.5) * physicalViewportRect.height() - FloatType(0.5) * colorBarHeight;
 
 	QRectF colorBarRect(origin, QSizeF(colorBarWidth, colorBarHeight));
 
@@ -257,8 +252,8 @@ void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter,
 			endValue = std::numeric_limits<FloatType>::quiet_NaN();
 			if(ModifierApplication* modApp = modifier()->someModifierApplication()) {
 				QVariant minValue, maxValue;
-				PipelineEvaluationRequest request(operation.initializationHints(), time);
-				if(!isInteractive) {
+				PipelineEvaluationRequest request(operation.initializationHints(), renderer->time());
+				if(!renderer->isInteractive()) {
 					SharedFuture<PipelineFlowState> stateFuture = modApp->evaluate(request);
 					if(!operation.waitForFuture(stateFuture))
 						return;
@@ -278,40 +273,70 @@ void ColorLegendOverlay::renderImplementation(TimePoint time, QPainter& painter,
 			}
 		}
 
-		drawContinuousColorMap(time, painter, colorBarRect, legendSize, isInteractive, PseudoColorMapping(startValue, endValue, modifier()->colorGradient()), modifier()->sourceProperty().nameWithComponent());
+		drawContinuousColorMap(renderer, colorBarRect, legendSize, PseudoColorMapping(startValue, endValue, modifier()->colorGradient()), modifier()->sourceProperty().nameWithComponent());
 	}
 	else if(colorMapping()) {
-		drawContinuousColorMap(time, painter, colorBarRect, legendSize, isInteractive, colorMapping()->pseudoColorMapping(), colorMapping()->sourceProperty().nameWithComponent());
+		drawContinuousColorMap(renderer, colorBarRect, legendSize, colorMapping()->pseudoColorMapping(), colorMapping()->sourceProperty().nameWithComponent());
 	}
 	else if(typedProperty) {
-		drawDiscreteColorMap(painter, colorBarRect, legendSize, typedProperty);
+		drawDiscreteColorMap(renderer, colorBarRect, legendSize, typedProperty);
 	}
 }
 
 /******************************************************************************
 * Draws the color legend for a Color Coding modifier.
 ******************************************************************************/
-void ColorLegendOverlay::drawContinuousColorMap(TimePoint time, QPainter& painter, const QRectF& colorBarRect, FloatType legendSize, bool isInteractive, const PseudoColorMapping& mapping, const QString& propertyName)
+void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping, const QString& propertyName)
 {
 	if(!mapping.gradient())
 		return;
 
-	// Create the color scale image.
-	int imageSize = 256;
-	QImage image((orientation() == Qt::Vertical) ? 1 : imageSize, (orientation() == Qt::Vertical) ? imageSize : 1, QImage::Format_RGB32);
-	for(int i = 0; i < imageSize; i++) {
-		FloatType t = (FloatType)i / (FloatType)(imageSize - 1);
-		Color color = mapping.gradient()->valueToColor((orientation() == Qt::Vertical) ? (FloatType(1) - t) : t);
-		image.setPixel((orientation() == Qt::Vertical) ? 0 : i, (orientation() == Qt::Vertical) ? i : 0, QColor(color).rgb());
-	}
-	painter.drawImage(colorBarRect, image);
+	// Look up the image primitive for the color bar in the cache.
+	auto& [imagePrimitive, offset] = dataset()->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
+		RendererResourceKey<struct ColorBarImageCache, OORef<ColorCodingGradient>, FloatType, int, bool, Color, QSizeF>{ 
+			mapping.gradient(),
+			renderer->devicePixelRatio(),
+			orientation(),
+			borderEnabled(),
+			borderColor(),
+			colorBarRect.size()
+		});
 
-	if(borderEnabled()) {
-		qreal borderWidth = 2.0 / painter.combinedTransform().m11();
-		painter.setPen(QPen(QBrush(borderColor()), borderWidth, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
-		painter.setBrush({});
-		painter.drawRect(colorBarRect);
+	// Render the color bar into an image texture.
+	if(imagePrimitive.image().isNull()) {
+
+		// Allocate the image buffer.
+		QSize gradientSize = colorBarRect.size().toSize();
+		int borderWidth = borderEnabled() ? (int)std::ceil(2.0 * renderer->devicePixelRatio()) : 0;		
+		QImage textureImage(gradientSize.width() + 2*borderWidth, gradientSize.height() + 2*borderWidth, QImage::Format_ARGB32_Premultiplied);
+		if(borderEnabled())
+			textureImage.fill((QColor)borderColor());
+
+		// Create the color gradient image.
+		if(orientation() == Qt::Vertical) {
+			for(int y = 0; y < gradientSize.height(); y++) {
+				FloatType t = (FloatType)y / (FloatType)std::max(1, gradientSize.height() - 1);
+				unsigned int color = QColor(mapping.gradient()->valueToColor(1.0 - t)).rgb();
+				for(int x = 0; x < gradientSize.width(); x++) {
+					textureImage.setPixel(x + borderWidth, y + borderWidth, color);
+				}
+			}
+		}
+		else {
+			for(int x = 0; x < gradientSize.width(); x++) {
+				FloatType t = (FloatType)x / (FloatType)std::max(1, gradientSize.width() - 1);
+				unsigned int color = QColor(mapping.gradient()->valueToColor(t)).rgb();
+				for(int y = 0; y < gradientSize.height(); y++) {
+					textureImage.setPixel(x + borderWidth, y + borderWidth, color);
+				}
+			}
+		}
+		imagePrimitive.setImage(std::move(textureImage));
+		offset = QPointF(-borderWidth,-borderWidth);
 	}
+	QPoint alignedPos = (colorBarRect.topLeft() + offset).toPoint();
+	imagePrimitive.setRectWindow(QRect(alignedPos, imagePrimitive.image().size()));
+	renderer->renderImage(imagePrimitive);
 
 	qreal fontSize = legendSize * std::max(FloatType(0), this->fontSize());
 	if(fontSize == 0) return;
@@ -334,195 +359,245 @@ void ColorLegendOverlay::drawContinuousColorMap(TimePoint time, QPainter& painte
 	else
 		titleLabel = title();
 
-	font.setPointSizeF(fontSize);
-	painter.setFont(font);
+	font.setPointSizeF(fontSize / renderer->devicePixelRatio()); // Font size if always in logical units.
 
 	qreal textMargin = 0.2 * legendSize / std::max(FloatType(0.01), aspectRatio());
 
 	// Move the text path to the correct location based on color bar direction and position
-	int titleFlags = Qt::AlignBottom | Qt::TextDontClip;
-	QRectF titleRect = colorBarRect;
-	titleRect.setBottom(titleRect.top() - QFontMetricsF(font).descent());
+	int titleFlags = Qt::AlignBottom;
+	QPointF titlePos;
 	if(orientation() != Qt::Vertical || (alignment() & Qt::AlignHCenter)) {
 		titleFlags |= Qt::AlignHCenter;
-		titleRect.translate(0, -0.5 * textMargin);
+		titlePos.rx() = colorBarRect.left() + 0.5 * colorBarRect.width();
+		titlePos.ry() = colorBarRect.top() - 0.5 * textMargin;
 	}
 	else {
 		if(alignment() & Qt::AlignLeft) {
 			titleFlags |= Qt::AlignLeft;
-			titleRect.translate(0, -textMargin);
+			titlePos.rx() = colorBarRect.left();
 		}
 		else if(alignment() & Qt::AlignRight) {
 			titleFlags |= Qt::AlignRight;
-			titleRect.translate(0, -textMargin);
+			titlePos.rx() = colorBarRect.right();
 		}
 		else {
 			titleFlags |= Qt::AlignHCenter;
+			titlePos.rx() = colorBarRect.left() + 0.5 * colorBarRect.width();
 		}
+		titlePos.ry() = colorBarRect.top() - textMargin;
 	}
 
-	drawTextOutlined(painter, titleRect, titleFlags, titleLabel, textColor(), outlineEnabled(), outlineColor());
+	// Render title string.
+	TextPrimitive textPrimitive;
+	textPrimitive.setFont(font);
+	textPrimitive.setText(titleLabel);
+	textPrimitive.setColor(textColor());
+	if(outlineEnabled()) textPrimitive.setOutlineColor(outlineColor());
+	textPrimitive.setAlignment(titleFlags);
+	textPrimitive.setPositionWindow(titlePos);
+	renderer->renderText(textPrimitive);
 
-	font.setPointSizeF(fontSize * 0.8);
-	painter.setFont(font);
+	// Render limit labels.
+	font.setPointSizeF(fontSize * 0.8 / renderer->devicePixelRatio()); // Font size if always in logical units.
+	textPrimitive.setFont(font);
 
-	int topFlags = Qt::TextDontClip;
-	int bottomFlags = Qt::TextDontClip;
-	QRectF topRect = colorBarRect;
-	QRectF bottomRect = colorBarRect;
+	int topFlags = 0;
+	int bottomFlags = 0;
+	QPointF topPos;
+	QPointF bottomPos;
 
 	if(orientation() != Qt::Vertical) {
-		bottomFlags |= Qt::AlignRight | Qt::AlignVCenter;
-		topFlags |= Qt::AlignLeft | Qt::AlignVCenter;
-		bottomRect.setRight(bottomRect.left() - textMargin);
-		topRect.setLeft(topRect.right() + textMargin);
+		bottomFlags = Qt::AlignRight | Qt::AlignVCenter;
+		topFlags = Qt::AlignLeft | Qt::AlignVCenter;
+		bottomPos = QPointF(colorBarRect.left() - textMargin, colorBarRect.top() + 0.5 * colorBarRect.height());
+		topPos = QPointF(colorBarRect.right() + textMargin, colorBarRect.top() + 0.5 * colorBarRect.height());
 	}
-	else {		
+	else {
 		if((alignment() & Qt::AlignLeft) || (alignment() & Qt::AlignHCenter)) {
-			bottomFlags |= Qt::AlignLeft | Qt::AlignBottom;
-			topFlags |= Qt::AlignLeft | Qt::AlignTop;
-			topRect.setLeft(topRect.right() + textMargin);
-			bottomRect.setLeft(bottomRect.right() + textMargin);
+			bottomFlags = Qt::AlignLeft | Qt::AlignBottom;
+			topFlags = Qt::AlignLeft | Qt::AlignTop;
+			bottomPos = QPointF(colorBarRect.right() + textMargin, colorBarRect.bottom());
+			topPos = QPointF(colorBarRect.right() + textMargin, colorBarRect.top());
 		}
 		else if(alignment() & Qt::AlignRight) {
-			bottomFlags |= Qt::AlignRight | Qt::AlignBottom;
-			topFlags |= Qt::AlignRight | Qt::AlignTop;
-			topRect.setRight(topRect.left() - textMargin);
-			bottomRect.setRight(bottomRect.left() - textMargin);
+			bottomFlags = Qt::AlignRight | Qt::AlignBottom;
+			topFlags = Qt::AlignRight | Qt::AlignTop;
+			bottomPos = QPointF(colorBarRect.left() - textMargin, colorBarRect.bottom());
+			topPos = QPointF(colorBarRect.left() - textMargin, colorBarRect.top());
 		}
 	}
 
-	drawTextOutlined(painter, topRect, topFlags, topLabel, textColor(), outlineEnabled(), outlineColor());
-	drawTextOutlined(painter, bottomRect, bottomFlags, bottomLabel, textColor(), outlineEnabled(), outlineColor());	
+	textPrimitive.setUseTightBox(true);
+	textPrimitive.setText(topLabel);
+	textPrimitive.setAlignment(topFlags);
+	textPrimitive.setPositionWindow(topPos);
+	renderer->renderText(textPrimitive);
+
+	textPrimitive.setText(bottomLabel);
+	textPrimitive.setAlignment(bottomFlags);
+	textPrimitive.setPositionWindow(bottomPos);
+	renderer->renderText(textPrimitive);
 }
 
 /******************************************************************************
 * Draws the color legend for a typed property.
 ******************************************************************************/
-void ColorLegendOverlay:: drawDiscreteColorMap(QPainter& painter, const QRectF& colorBarRect, FloatType legendSize, const PropertyObject* property)
+void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRectF& colorBarRect, FloatType legendSize, const PropertyObject* property)
 {
-	// Count the number of element types that are enabled.
-	int numTypes = boost::count_if(property->elementTypes(), [](const ElementType* type) { return type && type->enabled(); });
+	// Compile the list of type colors.
+	std::vector<Color> typeColors;
+	for(const ElementType* type : property->elementTypes()) {
+		if(type && type->enabled())
+			typeColors.push_back(type->color());
+	}
 
-	qreal borderWidth = 2.0 / painter.combinedTransform().m11();
-	if(borderEnabled())
-		painter.setPen(QPen(QBrush(borderColor()), borderWidth, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
-	else
-		painter.setPen({});
+	// Look up the image primitive for the color bar in the cache.
+	auto& [imagePrimitive, offset] = dataset()->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
+		RendererResourceKey<struct TypeColorsImageCache, std::vector<Color>, FloatType, int, bool, Color, QSizeF>{ 
+			typeColors,
+			renderer->devicePixelRatio(),
+			orientation(),
+			borderEnabled(),
+			borderColor(),
+			colorBarRect.size()
+		});
 
-	if(numTypes != 0) {
-		QRectF rect = colorBarRect;
-		if(orientation() == Qt::Vertical)
-			rect.setHeight(rect.height() / numTypes);
-		else
-			rect.setWidth(rect.width() / numTypes);
+	// Render the color fields into an image texture.
+	if(imagePrimitive.image().isNull()) {
 
-		for(const ElementType* type : property->elementTypes()) {
-			if(type && type->enabled()) {
-				painter.setBrush(QBrush(type->color()));
-				painter.drawRect(rect);
-				if(orientation() == Qt::Vertical)
-					rect.moveTop(rect.bottom());
-				else
-					rect.moveLeft(rect.right());
+		// Allocate the image buffer.
+		QSize gradientSize = colorBarRect.size().toSize();
+		int borderWidth = borderEnabled() ? (int)std::ceil(2.0 * renderer->devicePixelRatio()) : 0;		
+		QImage textureImage(gradientSize.width() + 2*borderWidth, gradientSize.height() + 2*borderWidth, QImage::Format_ARGB32_Premultiplied);
+		if(borderEnabled())
+			textureImage.fill((QColor)borderColor());
+
+		// Create the color gradient image.
+		if(!typeColors.empty()) {
+			QPainter painter(&textureImage);
+			if(orientation() == Qt::Vertical) {
+				int effectiveSize = gradientSize.height() - borderWidth * (typeColors.size() - 1);
+				for(size_t i = 0; i < typeColors.size(); i++) {
+					QRect rect(borderWidth, borderWidth + (i * effectiveSize / typeColors.size()) + i * borderWidth, gradientSize.width(), 0);
+					rect.setBottom(borderWidth + ((i+1) * effectiveSize / typeColors.size()) + i * borderWidth - 1);
+					painter.fillRect(rect, QColor(typeColors[i]));
+				}
+			}
+			else {
+				int effectiveSize = gradientSize.width() - borderWidth * (typeColors.size() - 1);
+				for(size_t i = 0; i < typeColors.size(); i++) {
+					QRect rect(borderWidth + (i * effectiveSize / typeColors.size()) + i * borderWidth, borderWidth, 0, gradientSize.height());
+					rect.setRight(borderWidth + ((i+1) * effectiveSize / typeColors.size()) + i * borderWidth - 1);
+					painter.fillRect(rect, QColor(typeColors[i]));
+				}
 			}
 		}
+		imagePrimitive.setImage(std::move(textureImage));
+		offset = QPointF(-borderWidth,-borderWidth);
 	}
-	else {
-		painter.setBrush({});
-		painter.drawRect(colorBarRect);
-	}
+	QPoint alignedPos = (colorBarRect.topLeft() + offset).toPoint();
+	imagePrimitive.setRectWindow(QRect(alignedPos, imagePrimitive.image().size()));
+	renderer->renderImage(imagePrimitive);
+
+	// Count the number of element types that are enabled.
+	int numTypes = typeColors.size();
 
 	qreal fontSize = legendSize * std::max(FloatType(0), this->fontSize());
 	if(fontSize == 0) return;
 	QFont font = this->font();
-	font.setPointSizeF(fontSize);
+	font.setPointSizeF(fontSize / renderer->devicePixelRatio()); // Font size if always in logical units.
 
-	QString titleLabel;
+	TextPrimitive textPrimitive;
 	if(title().isEmpty())
-		titleLabel = property->objectTitle();
+		textPrimitive.setText(property->objectTitle());
 	else
-		titleLabel = title();
-
-	painter.setFont(font);
+		textPrimitive.setText(title());
+	textPrimitive.setFont(font);
 
 	qreal textMargin = 0.2 * legendSize / std::max(FloatType(0.01), aspectRatio());
 
 	// Move the text path to the correct location based on color bar direction and position
-	int titleFlags = Qt::AlignBottom | Qt::TextDontClip;
-	QRectF titleRect = colorBarRect;
-	if(orientation() != Qt::Vertical || (alignment() & Qt::AlignHCenter)) {
-		titleFlags |= Qt::AlignHCenter;
-		titleRect.translate(0, -0.5 * textMargin);
-	}
+	int titleFlags = 0;
+	QPointF titlePos;
 	if(orientation() == Qt::Vertical) {
-		titleRect.setBottom(titleRect.top() - QFontMetricsF(font).descent());
 		if(alignment() & Qt::AlignLeft) {
-			titleFlags |= Qt::AlignLeft | Qt::AlignBottom;
-			titleRect.translate(0, -textMargin);
+			titleFlags = Qt::AlignLeft | Qt::AlignBottom;
+			titlePos.rx() = colorBarRect.left();
+			titlePos.ry() = colorBarRect.top() - textMargin;
 		}
 		else if(alignment() & Qt::AlignRight) {
-			titleFlags |= Qt::AlignRight | Qt::AlignBottom;
-			titleRect.translate(0, -textMargin);
+			titleFlags = Qt::AlignRight | Qt::AlignBottom;
+			titlePos.rx() = colorBarRect.right();
+			titlePos.ry() = colorBarRect.top() - textMargin;
 		}
 		else {
-			titleFlags |= Qt::AlignHCenter | Qt::AlignBottom;
+			titleFlags = Qt::AlignHCenter | Qt::AlignBottom;
+			titlePos.rx() = colorBarRect.left() + 0.5 * colorBarRect.width();
+			titlePos.ry() = colorBarRect.top() - textMargin;
 		}
 	}
 	else {
 		if((alignment() & Qt::AlignTop) || (alignment() & Qt::AlignVCenter)) {
-			titleFlags |= Qt::AlignHCenter | Qt::AlignBottom;
-			titleRect.setBottom(titleRect.top() - QFontMetricsF(font).descent() - textMargin);
+			titleFlags = Qt::AlignHCenter | Qt::AlignBottom;
+			titlePos.rx() = colorBarRect.left() + 0.5 * colorBarRect.width();
+			titlePos.ry() = colorBarRect.top() - textMargin;
 		}
 		else {
-			titleFlags |= Qt::AlignHCenter | Qt::AlignTop;
-			titleRect.setTop(titleRect.bottom() + textMargin);
+			titleFlags = Qt::AlignHCenter | Qt::AlignTop;
+			titlePos.rx() = colorBarRect.left() + 0.5 * colorBarRect.width();
+			titlePos.ry() = colorBarRect.bottom() + 0.5 * textMargin;
 		}
 	}
 
-	drawTextOutlined(painter, titleRect, titleFlags, titleLabel, textColor(), outlineEnabled(), outlineColor());	
+	textPrimitive.setColor(textColor());
+	if(outlineEnabled()) textPrimitive.setOutlineColor(outlineColor());
+	textPrimitive.setAlignment(titleFlags);
+	textPrimitive.setPositionWindow(titlePos);
+	renderer->renderText(textPrimitive);
 
 	// Draw type name labels.
 	if(numTypes == 0)
 		return;
 
-	int labelFlags = Qt::TextDontClip;
-	QRectF labelRect = colorBarRect;
+	int labelFlags = 0;
+	QPointF labelPos;
 
 	if(orientation() == Qt::Vertical) {
 		if((alignment() & Qt::AlignLeft) || (alignment() & Qt::AlignHCenter)) {
 			labelFlags |= Qt::AlignLeft | Qt::AlignVCenter;
-			labelRect.setLeft(labelRect.right() + textMargin);
+			labelPos.setX(colorBarRect.right() + textMargin);
 		}
 		else {
 			labelFlags |= Qt::AlignRight | Qt::AlignVCenter;
-			labelRect.setRight(labelRect.left() - textMargin);
+			labelPos.setX(colorBarRect.left() - textMargin);
 		}
-		labelRect.setHeight(labelRect.height() / numTypes);
+		labelPos.setY(colorBarRect.top() + 0.5 * colorBarRect.height() / numTypes);
 	}
 	else {
 		if((alignment() & Qt::AlignTop) || (alignment() & Qt::AlignVCenter)) {
 			labelFlags |= Qt::AlignHCenter | Qt::AlignTop;
-			labelRect.setTop(labelRect.bottom() + textMargin);
+			labelPos.setY(colorBarRect.bottom() + 0.5 * textMargin);
 		}
 		else {
 			labelFlags |= Qt::AlignHCenter | Qt::AlignBottom;
-			labelRect.setBottom(labelRect.top() - textMargin - QFontMetricsF(font).descent());
+			labelPos.setY(colorBarRect.top() - textMargin);
 		}
-		labelRect.setWidth(labelRect.width() / numTypes);
+		labelPos.setX(colorBarRect.left() + 0.5 * colorBarRect.width() / numTypes);
 	}
 
 	for(const ElementType* type : property->elementTypes()) {
 		if(!type || !type->enabled()) 
 			continue;
 
-		const QString& typeLabelString = type->objectTitle();
-		drawTextOutlined(painter, labelRect, labelFlags, typeLabelString, textColor(), outlineEnabled(), outlineColor());			
+		textPrimitive.setText(type->objectTitle());
+		textPrimitive.setAlignment(labelFlags);
+		textPrimitive.setPositionWindow(labelPos);
+		renderer->renderText(textPrimitive);
 
 		if(orientation() == Qt::Vertical)
-			labelRect.moveTop(labelRect.bottom());
+			labelPos.ry() += colorBarRect.height() / numTypes;
 		else
-			labelRect.moveLeft(labelRect.right());
+			labelPos.rx() += colorBarRect.width() / numTypes;
 	}
 }
 

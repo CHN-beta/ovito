@@ -112,6 +112,9 @@ public:
 	/// This may be NULL.
 	Viewport* viewport() const { return _viewport; }
 
+	/// Returns the framebuffer we are rendering into (is null for interactive renderers).
+	FrameBuffer* frameBuffer() const { return _frameBuffer; }
+
 	/// Returns the rectangular region of the framebuffer we are rendering into (in device coordinates).
 	const QRect& viewportRect() const { return _viewportRect; }
 
@@ -126,14 +129,18 @@ public:
 
 	/// Sets the view projection parameters, the animation frame to render,
 	/// and the viewport being rendered.
-	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect);
+	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer);
 
 	/// Renders the current animation frame.
 	/// Returns false if the operation has been canceled by the user.
-	virtual bool renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation) = 0;
+	virtual bool renderFrame(const QRect& viewportRect, SynchronousOperation operation) = 0;
+
+	/// Renders the overlays/underlays of the viewport into the framebuffer.
+	/// Returns false if the operation has been canceled by the user.
+	virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation);
 
 	/// This method is called after renderFrame() has been called.
-	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect) {}
+	virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) {}
 
 	/// Changes the current local-to-world transformation matrix.
 	void setWorldTransform(const AffineTransformation& tm) {
@@ -276,6 +283,9 @@ private:
 
 	/// The viewport whose contents are currently being rendered.
 	Viewport* _viewport = nullptr;
+
+	/// The framebuffer we are rendering into (is null for interactive renderers).
+	FrameBuffer* _frameBuffer = nullptr;
 
 	/// The view projection parameters.
 	ViewProjectionParameters _projParams;

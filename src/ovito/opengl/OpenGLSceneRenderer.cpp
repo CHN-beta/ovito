@@ -171,12 +171,12 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect)
+void OpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
 	// Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
 	QRect openGLViewportRect(viewportRect.x() * antialiasingLevel(), viewportRect.y() * antialiasingLevel(), viewportRect.width() * antialiasingLevel(), viewportRect.height() * antialiasingLevel());
 
-	SceneRenderer::beginFrame(time, params, vp, openGLViewportRect);
+	SceneRenderer::beginFrame(time, params, vp, openGLViewportRect, frameBuffer);
 
 	if(Application::instance()->headlessMode())
 		throwRendererException(tr("Cannot use OpenGL renderer in headless mode."));
@@ -303,7 +303,7 @@ void OpenGLSceneRenderer::initializeGLState()
 /******************************************************************************
 * This method is called after renderFrame() has been called.
 ******************************************************************************/
-void OpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect)
+void OpenGLSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect)
 {
 	if(QOpenGLContext::currentContext()) {
 	    initializeOpenGLFunctions();
@@ -321,13 +321,13 @@ void OpenGLSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameB
 	// Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
 	QRect openGLViewportRect(viewportRect.x() * antialiasingLevel(), viewportRect.y() * antialiasingLevel(), viewportRect.width() * antialiasingLevel(), viewportRect.height() * antialiasingLevel());
 
-	SceneRenderer::endFrame(renderingSuccessful, frameBuffer, openGLViewportRect);
+	SceneRenderer::endFrame(renderingSuccessful, openGLViewportRect);
 }
 
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation)
+bool OpenGLSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOperation operation)
 {
 	OVITO_ASSERT(_glcontext == QOpenGLContext::currentContext());
     OVITO_REPORT_OPENGL_ERRORS(this);
@@ -347,6 +347,18 @@ bool OpenGLSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& vie
 	}
 
 	return !operation.isCanceled();
+}
+
+/******************************************************************************
+* Renders the overlays/underlays of the viewport into the framebuffer.
+******************************************************************************/
+bool OpenGLSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation)
+{
+	// Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
+	QRect openGLViewportRect(physicalViewportRect.x() * antialiasingLevel(), physicalViewportRect.y() * antialiasingLevel(), physicalViewportRect.width() * antialiasingLevel(), physicalViewportRect.height() * antialiasingLevel());
+
+	// Delegate rendering work to base class.
+	return SceneRenderer::renderOverlays(underlays, logicalViewportRect, openGLViewportRect, std::move(operation));
 }
 
 /******************************************************************************

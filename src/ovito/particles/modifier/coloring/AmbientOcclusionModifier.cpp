@@ -177,7 +177,12 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 				projParams.inverseProjectionMatrix = projParams.projectionMatrix.inverse();
 				projParams.validityInterval = TimeInterval::infinite();
 
-				_renderer->beginFrame(0, projParams, nullptr, frameBufferRect);
+				// Discard the existing image in the frame buffer so that
+				// OffscreenOpenGLSceneRenderer::endFrame() can just return the unmodified
+				// frame buffer contents.
+				frameBuffer.image() = QImage();
+
+				_renderer->beginFrame(0, projParams, nullptr, frameBufferRect, &frameBuffer);
 				_renderer->setWorldTransform(AffineTransformation::Identity());
 				try {
 					// Create particle buffer.
@@ -190,19 +195,16 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 					_renderer->renderParticles(particleBuffer);
 				}
 				catch(...) {
-					_renderer->endFrame(false, nullptr, frameBufferRect);
+					_renderer->endFrame(false, frameBufferRect);
 					throw;
 				}
-				// Discard the existing image in the frame buffer so that
-				// OffscreenOpenGLSceneRenderer::endFrame() can just return the unmodified
-				// frame buffer contents.
-				frameBuffer.image() = QImage();
 
 				// Retrieve the frame buffer contents.
-				_renderer->endFrame(true, &frameBuffer, frameBufferRect);
+				_renderer->endFrame(true, frameBufferRect);
 
 				// Extract brightness values from rendered image.
 				const QImage& image = frameBuffer.image();
+				OVITO_ASSERT(!image.isNull());
 				DataBufferAccess<FloatType> brightnessValues(brightness());
 				for(int y = 0; y < _resolution; y++) {
 					const QRgb* pixel = reinterpret_cast<const QRgb*>(image.scanLine(y));

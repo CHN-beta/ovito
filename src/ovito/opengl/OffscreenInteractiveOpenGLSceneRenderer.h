@@ -41,13 +41,13 @@ public:
 	explicit OffscreenInteractiveOpenGLSceneRenderer(DataSet* dataset);
 
 	/// This method is called just before renderFrame() is called.
-	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect) override;
+	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
 	/// Renders the current animation frame.
-	virtual bool renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation) override;
+	virtual bool renderFrame(const QRect& viewportRect, SynchronousOperation operation) override;
 
 	/// This method is called after renderFrame() has been called.
-	virtual void endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect) override;
+	virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
 
 protected:
 

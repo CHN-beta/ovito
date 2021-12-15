@@ -87,33 +87,39 @@ bool StandardSceneRenderer::startRender(DataSet* dataset, RenderSettings* settin
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void StandardSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect)
+void StandardSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
-	SceneRenderer::beginFrame(time, params, vp, viewportRect);
+	SceneRenderer::beginFrame(time, params, vp, viewportRect, frameBuffer);
 
 	// Call implementation class.
-	_internalRenderer->beginFrame(time, params, vp, viewportRect);
+	_internalRenderer->beginFrame(time, params, vp, viewportRect, frameBuffer);
 }
 
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool StandardSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation)
+bool StandardSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOperation operation)
 {
 	// Delegate rendering work to implementation class.
-	if(!_internalRenderer->renderFrame(frameBuffer, viewportRect, std::move(operation)))
-		return false;
+	return _internalRenderer->renderFrame(viewportRect, std::move(operation));
+}
 
-	return true;
+/******************************************************************************
+* Renders the overlays/underlays of the viewport into the framebuffer.
+******************************************************************************/
+bool StandardSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation)
+{
+	// Delegate rendering work to implementation class.
+	return _internalRenderer->renderOverlays(underlays, logicalViewportRect, physicalViewportRect, std::move(operation));
 }
 
 /******************************************************************************
 * This method is called after renderFrame() has been called.
 ******************************************************************************/
-void StandardSceneRenderer::endFrame(bool renderingSuccessful, FrameBuffer* frameBuffer, const QRect& viewportRect)
+void StandardSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect)
 {
 	// Call implementation class.
-	_internalRenderer->endFrame(renderingSuccessful, frameBuffer, viewportRect);
+	_internalRenderer->endFrame(renderingSuccessful, viewportRect);
 }
 
 /******************************************************************************

@@ -23,6 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/rendering/RenderSettings.h>
+#include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "CoordinateTripodOverlay.h"
 
@@ -89,12 +90,11 @@ CoordinateTripodOverlay::CoordinateTripodOverlay(DataSet* dataset) : ViewportOve
 }
 
 /******************************************************************************
-* This method paints the overlay contents onto the given canvas.
+* Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
-void CoordinateTripodOverlay::renderImplementation(QPainter& painter, const ViewProjectionParameters& projParams)
+void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation)
 {
-	const QRect& windowRect = painter.window();
-	FloatType tripodSize = this->tripodSize() * windowRect.height();
+	FloatType tripodSize = this->tripodSize() * physicalViewportRect.height();
 	if(tripodSize <= 0) return;
 
 	FloatType lineWidth = this->lineWidth() * tripodSize;
@@ -102,23 +102,23 @@ void CoordinateTripodOverlay::renderImplementation(QPainter& painter, const View
 
 	FloatType arrowSize = FloatType(0.17);
 
-	QPointF origin(offsetX() * windowRect.width(), -offsetY() * windowRect.height());
+	QPointF origin(offsetX() * physicalViewportRect.width() + physicalViewportRect.left(), -offsetY() * physicalViewportRect.height() + physicalViewportRect.top());
 	FloatType margin = tripodSize + lineWidth;
 
 	if(alignment() & Qt::AlignLeft) origin.rx() += margin;
-	else if(alignment() & Qt::AlignRight) origin.rx() += windowRect.width() - margin;
-	else if(alignment() & Qt::AlignHCenter) origin.rx() += FloatType(0.5) * windowRect.width();
+	else if(alignment() & Qt::AlignRight) origin.rx() += physicalViewportRect.width() - margin;
+	else if(alignment() & Qt::AlignHCenter) origin.rx() += FloatType(0.5) * physicalViewportRect.width();
 
 	if(alignment() & Qt::AlignTop) origin.ry() += margin;
-	else if(alignment() & Qt::AlignBottom) origin.ry() += windowRect.height() - margin;
-	else if(alignment() & Qt::AlignVCenter) origin.ry() += FloatType(0.5) * windowRect.height();
+	else if(alignment() & Qt::AlignBottom) origin.ry() += physicalViewportRect.height() - margin;
+	else if(alignment() & Qt::AlignVCenter) origin.ry() += FloatType(0.5) * physicalViewportRect.height();
 
 	// Project axes to screen.
 	Vector3 axisDirs[4] = {
-			projParams.viewMatrix * axis1Dir(),
-			projParams.viewMatrix * axis2Dir(),
-			projParams.viewMatrix * axis3Dir(),
-			projParams.viewMatrix * axis4Dir()
+			renderer->projParams().viewMatrix * axis1Dir(),
+			renderer->projParams().viewMatrix * axis2Dir(),
+			renderer->projParams().viewMatrix * axis3Dir(),
+			renderer->projParams().viewMatrix * axis4Dir()
 	};
 
 	// Get axis colors.
@@ -147,48 +147,114 @@ void CoordinateTripodOverlay::renderImplementation(QPainter& painter, const View
 	};
 	QFont font = this->font();
 	qreal fontSize = tripodSize * std::max(0.0, (double)this->fontSize());
-	if(fontSize != 0) {
-		font.setPointSizeF(fontSize);
-		painter.setFont(font);
-	}
+	if(fontSize != 0)
+		font.setPointSizeF(fontSize / renderer->devicePixelRatio()); // Font size if always in logical units.
 
-	painter.setRenderHint(QPainter::Antialiasing);
-	painter.setRenderHint(QPainter::TextAntialiasing);
+	auto renderSolidJoint = [&]() {
+	    // Look up the image primitive for the axis arrow in the cache.
+		auto& [imagePrimitive, offset] = dataset()->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
+			RendererResourceKey<struct SolidJointImageCache, Matrix3, FloatType>{ 
+				renderer->projParams().viewMatrix.linear(),
+				lineWidth
+			});
+
+		// Render joint.
+		if(imagePrimitive.image().isNull()) {
+			// Compute bounding box of joint.
+			FloatType margin = sqrt(3.0) * lineWidth;
+			QRectF imageRect = QRectF(-margin, -margin, 2*margin, 2*margin);
+
+			// Convert bounding box to physical units.
+			QRect pixelBounds = imageRect.toAlignedRect();
+
+			// Draw the joint into an image buffer, which will be cached.
+			QImage textureImage(pixelBounds.width(), pixelBounds.height(), QImage::Format_ARGB32_Premultiplied);
+			textureImage.fill(0);
+			QPainter painter(&textureImage);
+			painter.setRenderHint(QPainter::Antialiasing);
+			painter.setWindow(pixelBounds);
+			paintSolidJoint(painter, QPointF(0,0), renderer->projParams().viewMatrix, lineWidth);
+			offset = imageRect.topLeft();
+			imagePrimitive.setImage(std::move(textureImage));
+		}
+
+		// Render the prepared image buffer into the output framebuffer.
+		QPoint alignedPos = (origin + offset).toPoint();
+		imagePrimitive.setRectWindow(QRect(alignedPos, imagePrimitive.image().size()));
+		renderer->renderImage(imagePrimitive);
+	};
 
 	// Render axis arrows.
 	FloatType lastZ = -1;
 	for(int axis : orderedAxes) {
 
 		if(tripodStyle() == SolidArrows && lastZ < 0 && axisDirs[axis].z() >= 0) {
-			paintSolidJoint(painter, origin, projParams.viewMatrix, lineWidth);
+			renderSolidJoint();
 		}
 		lastZ = axisDirs[axis].z();
 
-		QBrush brush(axisColors[axis]);
-		QPen pen(axisColors[axis]);
-		pen.setWidthF(lineWidth);
-		pen.setJoinStyle(Qt::MiterJoin);
-		pen.setCapStyle(Qt::RoundCap);
-		painter.setPen(pen);
-		painter.setBrush(brush);
 		Vector3 dir3d = tripodSize * axisDirs[axis];
 		dir3d.y() = -dir3d.y();
 		Vector2 dir2d(dir3d.x(), dir3d.y());
-		FloatType labelMargin = lineWidth * 1.5;
+		FloatType labelMargin = lineWidth * 2.5;
+
+	    // Look up the image primitive for the axis arrow in the cache.
+		auto& [imagePrimitive, offset, addedMargin] = dataset()->visCache().get<std::tuple<ImagePrimitive, QPointF, FloatType>>(
+			RendererResourceKey<struct ArrowAxisImageCache, TripodStyle, Vector3, FloatType, Color>{ 
+				tripodStyle(),
+				dir3d,
+				lineWidth,
+				axisColors[axis]
+			});
 
 		// Render axis arrow.
-		if(tripodStyle() == FlatArrows) {
-			labelMargin += paintFlatArrow(painter, dir2d, arrowSize, lineWidth, tripodSize, origin);
+		if(imagePrimitive.image().isNull()) {
+			// Compute bounding box of arrow.
+			QRectF imageRect = QRectF(0, 0, dir2d.x(), dir2d.y()).normalized();
+			FloatType margin = std::max(lineWidth, (tripodStyle() == FlatArrows) ? (arrowSize * tripodSize) : 0.0);
+			imageRect.adjust(-margin, -margin, margin, margin);
+
+			// Convert bounding box to physical units.
+			QRect pixelBounds = imageRect.toAlignedRect();
+
+			// Draw the arrow into an image buffer, which will be cached.
+			QImage textureImage(pixelBounds.width(), pixelBounds.height(), QImage::Format_ARGB32_Premultiplied);
+			textureImage.fill(0);
+			QPainter painter(&textureImage);
+			painter.setRenderHint(QPainter::Antialiasing);
+			painter.setWindow(pixelBounds);
+			QBrush brush(axisColors[axis]);
+			QPen pen(axisColors[axis]);
+			pen.setWidthF(lineWidth);
+			pen.setJoinStyle(Qt::MiterJoin);
+			pen.setCapStyle(Qt::RoundCap);
+			painter.setPen(pen);
+			painter.setBrush(brush);
+			if(tripodStyle() == FlatArrows)
+				addedMargin = paintFlatArrow(painter, dir2d, arrowSize, lineWidth, tripodSize, QPointF(0,0));
+			else if(tripodStyle() == SolidArrows)
+				addedMargin += paintSolidArrow(painter, dir2d, dir3d, arrowSize, lineWidth, tripodSize, QPointF(0,0));
+			offset = imageRect.topLeft();
+			imagePrimitive.setImage(std::move(textureImage));
 		}
-		else if(tripodStyle() == SolidArrows) {
-			labelMargin += paintSolidArrow(painter, dir2d, dir3d, arrowSize, lineWidth, tripodSize, origin);
-		}
+
+		// Render the prepared image buffer into the output framebuffer.
+		labelMargin += addedMargin;
+		QPoint alignedPos = (origin + offset).toPoint();
+		imagePrimitive.setRectWindow(QRect(alignedPos, imagePrimitive.image().size()));
+		renderer->renderImage(imagePrimitive);
 
 		// Render axis label.
 		if(fontSize != 0 && !labels[axis].isEmpty()) {
-			QPainterPath textPath;
-			textPath.addText(0, 0, painter.font(), labels[axis]);
-			QRectF textRect = textPath.boundingRect();
+			TextPrimitive textPrimitive;
+			textPrimitive.setText(labels[axis]);
+			textPrimitive.setFont(font);
+			textPrimitive.setColor(axisColors[axis]);
+			if(outlineEnabled()) textPrimitive.setOutlineColor(outlineColor());
+			textPrimitive.setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+			textPrimitive.setUseTightBox(true);
+
+			QRectF textRect = textPrimitive.queryBounds(renderer);
 			textRect.moveTopLeft(QPointF(-textRect.width() / 2, -textRect.height() / 2));
 			textRect.translate(origin + QPointF(dir2d.x(), dir2d.y()));
 			if(dir2d.isZero() && orderedAxes.size() >= 2) {
@@ -209,12 +275,13 @@ void CoordinateTripodOverlay::renderImplementation(QPainter& painter, const View
 				dir2d_normalized.resize(labelMargin);
 				textRect.translate(dir2d_normalized.x(), dir2d_normalized.y());
 			}
-			drawTextOutlined(painter, textRect, Qt::AlignHCenter | Qt::AlignVCenter | Qt::TextDontClip, labels[axis], axisColors[axis], outlineEnabled(), outlineColor());
+			textPrimitive.setPositionWindow(Point2(textRect.center().x(), textRect.center().y()));
+			renderer->renderText(textPrimitive);
 		}
 	}
 
 	if(tripodStyle() == SolidArrows && lastZ < 0) {
-		paintSolidJoint(painter, origin, projParams.viewMatrix, lineWidth);
+		renderSolidJoint();
 	}
 }
 
@@ -282,7 +349,7 @@ FloatType CoordinateTripodOverlay::paintSolidArrow(QPainter& painter, const Vect
 		transform.rotateRadians(std::atan2(dir2d.y(), dir2d.x()));
 		painter.setWorldTransform(transform, true);
 		QPen pen = painter.pen();
-		painter.setPen(QPen(Qt::black, 0.3));
+		painter.setPen(QPen(Qt::black, 0.5));
 		painter.drawPath(capPth);
 		QBrush brush = painter.brush();
 		QLinearGradient gradient(0, -lineWidth, 0, lineWidth);
@@ -316,9 +383,7 @@ void CoordinateTripodOverlay::paintSolidJoint(QPainter& painter, QPointF origin,
 		viewTM.column(2)
 	};
 
-	QPen pen = painter.pen();
-	QBrush brush = painter.brush();
-	painter.setPen(QPen(Qt::black, 0.2));
+	painter.setPen(QPen(Qt::black, 0.4));
 
 	QPointF vertices[4];
 	for(int side = 0; side < 3; side++) {
@@ -339,8 +404,6 @@ void CoordinateTripodOverlay::paintSolidJoint(QPainter& painter, QPointF origin,
 		vertices[3].ry() -= (flip * dirs[side].y() + dirs[(side+1)%3].y() - dirs[(side+2)%3].y()) * scaling;
 		painter.drawPolygon(vertices, 4);
 	}
-	painter.setPen(pen);
-	painter.setBrush(brush);
 }
 
 }	// End of namespace

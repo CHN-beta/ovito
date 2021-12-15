@@ -34,49 +34,73 @@ void VulkanSceneRenderer::renderTextImplementation(const TextPrimitive& primitiv
 		return;
 	
     // The look-up key for the image primtive cache.
-	ImagePrimitive& cachedImagePrimitive = context()->lookup<ImagePrimitive>(
-		RendererResourceKey<struct TextImageCache, QString, ColorA, ColorA, QString>{ 
+	auto& [imagePrimitive, offset] = context()->lookup<std::tuple<ImagePrimitive, QPointF>>(
+		RendererResourceKey<struct TextImageCache, QString, ColorA, ColorA, ColorA, FloatType, qreal, QString, bool, int>{ 
 			primitive.text(), 
 			primitive.color(), 
 			primitive.backgroundColor(), 
-			primitive.font().key() }, 
-		currentResourceFrame());
+			primitive.outlineColor(),
+			primitive.outlineWidth(),
+			this->devicePixelRatio(),
+			primitive.font().key(),
+			primitive.useTightBox(),
+			primitive.alignment()
+		}, currentResourceFrame());
 
-	if(cachedImagePrimitive.image().isNull()) {
+	if(imagePrimitive.image().isNull()) {
 
-		// Measure text size.
-		QRect rect;
+		// Measure text size in device pixel units.
+		QRectF bounds = primitive.queryBounds(this);
+
+		// Add margin for the outline.
 		qreal devicePixelRatio = this->devicePixelRatio();
-		{
-			QImage textureImage(1, 1, QImage::Format_RGB32);
-			textureImage.setDevicePixelRatio(devicePixelRatio);
-			QPainter painter(&textureImage);
-			painter.setFont(primitive.font());
-			rect = painter.boundingRect(QRect(), Qt::AlignLeft | Qt::AlignTop, primitive.text());
-		}
+		qreal outlineWidth = std::max(0.0, (primitive.outlineColor().a() > 0.0) ? (qreal)primitive.outlineWidth() : 0.0) * devicePixelRatio;
+
+		// Convert to physical units.
+		QRect pixelBounds = bounds.adjusted(-outlineWidth, -outlineWidth, outlineWidth, outlineWidth).toAlignedRect();
 
 		// Generate texture image.
-		QImage textureImage((rect.width() * devicePixelRatio)+1, (rect.height() * devicePixelRatio)+1, QImage::Format_ARGB32_Premultiplied);
+		QImage textureImage(pixelBounds.width(), pixelBounds.height(), QImage::Format_ARGB32_Premultiplied);
 		textureImage.setDevicePixelRatio(devicePixelRatio);
 		textureImage.fill((QColor)primitive.backgroundColor());
 		{
 			QPainter painter(&textureImage);
+			painter.setRenderHint(QPainter::Antialiasing);
+			painter.setRenderHint(QPainter::TextAntialiasing);
 			painter.setFont(primitive.font());
+
+			QPointF textOffset(outlineWidth, outlineWidth);
+			textOffset.rx() -= bounds.left();
+			textOffset.ry() -= bounds.top();
+			textOffset.rx() /= devicePixelRatio;
+			textOffset.ry() /= devicePixelRatio;
+
+			if(outlineWidth != 0) {
+				QPainterPath textPath;
+				textPath.addText(textOffset, primitive.font(), primitive.text());
+				painter.setPen(QPen(QBrush(primitive.outlineColor()), primitive.outlineWidth()));
+				painter.drawPath(textPath);
+			}
+
 			painter.setPen((QColor)primitive.color());
-			painter.drawText(rect, Qt::AlignLeft | Qt::AlignTop, primitive.text());
+			painter.drawText(textOffset, primitive.text());
 		}
 
-		cachedImagePrimitive.setImage(std::move(textureImage));
+		imagePrimitive.setImage(std::move(textureImage));
+		if(!primitive.useTightBox())
+			offset = QPointF(bounds.left() - outlineWidth, -outlineWidth);
+		else
+			offset = QPointF(-outlineWidth, -outlineWidth);
+
+		if(primitive.alignment() & Qt::AlignRight) offset.rx() += -bounds.width();
+		else if(primitive.alignment() & Qt::AlignHCenter) offset.rx() += -bounds.width() / 2;
+		if(primitive.alignment() & Qt::AlignBottom) offset.ry() += -bounds.height();
+		else if(primitive.alignment() & Qt::AlignVCenter) offset.ry() += -bounds.height() / 2;
 	}
 
-	Point2 alignedPos = primitive.position();
-	Vector2 size = Vector2(cachedImagePrimitive.image().width(), cachedImagePrimitive.image().height()) * (FloatType)antialiasingLevel();
-	if(primitive.alignment() & Qt::AlignRight) alignedPos.x() += -size.x();
-	else if(primitive.alignment() & Qt::AlignHCenter) alignedPos.x() += -size.x() / 2;
-	if(primitive.alignment() & Qt::AlignBottom) alignedPos.y() += -size.y();
-	else if(primitive.alignment() & Qt::AlignVCenter) alignedPos.y() += -size.y() / 2;
-	cachedImagePrimitive.setRectWindow(Box2(alignedPos, alignedPos + size));
-	renderImage(cachedImagePrimitive);
+	QPoint alignedPos = (QPointF(primitive.position().x(), primitive.position().y()) + offset).toPoint();
+	imagePrimitive.setRectWindow(QRect(alignedPos, imagePrimitive.image().size()));
+	renderImage(imagePrimitive);
 }
 
 }	// End of namespace

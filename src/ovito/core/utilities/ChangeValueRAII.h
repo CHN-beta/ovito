@@ -24,42 +24,32 @@
 
 
 #include <ovito/core/Core.h>
-#include "PrimitiveBase.h"
 
 namespace Ovito {
 
 /**
- * \brief A 2d image to be rendered by a SceneRenderer implementation.
+ * Utility class, which temporarily replaces the value of a variable and makes
+ * sure that the old value gets restored afterwards.
  */
-class OVITO_CORE_EXPORT ImagePrimitive : public PrimitiveBase
+template<typename T>
+class ChangeValueRAII
 {
 public:
 
-	/// \brief Sets the mage to be rendered.
-	void setImage(const QImage& image) { _image = image; }
+	/// Constructor.
+	explicit ChangeValueRAII(T& storage, T&& newValue) : _storage(storage), _oldValue(std::exchange(storage, std::move(newValue))) {}
 
-	/// \brief Returns the image stored in the buffer.
-	const QImage& image() const { return _image; }
+	/// Destructor.
+	~ChangeValueRAII() { _storage = std::move(_oldValue); }
 
-	/// \brief Sets the destination rectangle for rendering the image in window coordinates.
-	void setRectWindow(const Box2& rect) { _windowRect = rect; }
-
-	/// \brief Sets the destination rectangle for rendering the image in window coordinates.
-	void setRectWindow(const QRectF& rect) { _windowRect.minc = Point2(rect.left(), rect.top()); _windowRect.maxc = Point2(rect.right(), rect.bottom()); }
-
-	/// \brief Sets the destination rectangle for rendering the image in viewport coordinates.
-	void setRectViewport(const SceneRenderer* renderer, const Box2& rect);
-
-	/// \brief Returns the destination rectangle in window coordinates.
-	const Box2& windowRect() const { return _windowRect; }
+	/// No copying.
+	ChangeValueRAII(const ChangeValueRAII& other) = delete;
+	ChangeValueRAII& operator=(const ChangeValueRAII& other) = delete;
 
 private:
 
-	/// The image to be rendered.
-	QImage _image;
-
-	/// The destination rectangle in window coordinates.
-	Box2 _windowRect;
+	T& _storage;
+	T _oldValue;
 };
 
 }	// End of namespace

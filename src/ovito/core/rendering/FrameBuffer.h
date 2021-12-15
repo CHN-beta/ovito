@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -154,17 +154,23 @@ public:
 	/// This method must be called each time the contents of the frame buffer have been modified.
 	/// Fires the contentReset() signal.
 	void update() {
-		contentReset();
+		Q_EMIT contentReset();
 	}
 
 	/// This method must be called each time the contents of the frame buffer have been modified.
 	/// Fires the contentChanged() signal.
 	void update(const QRect& changedRegion) {
-		contentChanged(changedRegion);
+		Q_EMIT contentChanged(changedRegion);
 	}
 
 	/// Removes unnecessary pixels along the outer edges of the image.
 	void autoCrop();
+
+	/// Renders an image primitive directly into the framebuffer.
+	void renderImagePrimitive(const ImagePrimitive& primitive, bool update = true);
+
+	/// Renders a text primitive directly into the framebuffer.
+	void renderTextPrimitive(const TextPrimitive& primitive, bool update = true);
 
 Q_SIGNALS:
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,6 +22,8 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/FrameBuffer.h>
+#include <ovito/core/rendering/ImagePrimitive.h>
+#include <ovito/core/rendering/TextPrimitive.h>
 #ifdef OVITO_VIDEO_OUTPUT_SUPPORT
 	#include <ovito/core/utilities/io/video/VideoEncoder.h>
 #endif
@@ -116,6 +118,78 @@ LoadStream& operator>>(LoadStream& stream, ImageInfo& i)
 void FrameBuffer::clear(const ColorA& color)
 {
 	_image.fill(color);
+}
+
+/******************************************************************************
+* Renders an image primitive directly into the framebuffer.
+******************************************************************************/
+void FrameBuffer::renderImagePrimitive(const ImagePrimitive& primitive, bool update)
+{
+	if(primitive.image().isNull())
+		return;
+
+	QPainter painter(&image());
+	QRect rect(primitive.windowRect().minc.x(), primitive.windowRect().minc.y(), primitive.windowRect().width(), primitive.windowRect().height());
+	painter.drawImage(rect, primitive.image());
+
+	if(update)
+		this->update(rect);
+}
+
+/******************************************************************************
+* Renders a text primitive directly into the framebuffer.
+******************************************************************************/
+void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, bool update)
+{
+	if(primitive.text().isEmpty())
+		return;
+
+	QPainter painter(&image());
+	painter.setRenderHint(QPainter::Antialiasing);
+	painter.setRenderHint(QPainter::TextAntialiasing);
+	painter.setFont(primitive.font());
+
+	QRectF textBounds;
+	if(!primitive.useTightBox()) {
+		textBounds = QFontMetricsF(primitive.font()).boundingRect(primitive.text());
+	}
+	else {
+		QPainterPath textPath;
+		textPath.addText(0, 0, primitive.font(), primitive.text());
+		textBounds = textPath.boundingRect();
+	}
+
+	QPointF offset(-textBounds.left(), -textBounds.top());
+	if(primitive.alignment() & Qt::AlignLeft) offset.rx() += primitive.position().x();
+	else if(primitive.alignment() & Qt::AlignRight) offset.rx() += primitive.position().x() - textBounds.width();
+	else if(primitive.alignment() & Qt::AlignHCenter) offset.rx() += primitive.position().x() - textBounds.width() / 2.0;
+	
+	if(primitive.alignment() & Qt::AlignTop) offset.ry() += primitive.position().y();
+	else if(primitive.alignment() & Qt::AlignBottom) offset.ry() += primitive.position().y() - textBounds.height();
+	else if(primitive.alignment() & Qt::AlignVCenter) offset.ry() += primitive.position().y() - textBounds.height() / 2.0;
+
+	qreal outlineWidth = std::max(0.0, (primitive.outlineColor().a() > 0.0) ? (qreal)primitive.outlineWidth() : 0.0);
+
+	QRectF updateRect(textBounds.left() + offset.x(), textBounds.top() + offset.y(), textBounds.width(), textBounds.height());
+	if(outlineWidth != 0) {
+		updateRect.adjust(-outlineWidth, -outlineWidth, outlineWidth, outlineWidth);
+	}
+	if(primitive.backgroundColor().a() > 0) {
+		painter.fillRect(updateRect, (QColor)primitive.backgroundColor());
+	}
+
+	if(outlineWidth != 0) {
+		QPainterPath textPath;
+		textPath.addText(offset, primitive.font(), primitive.text());
+		painter.setPen(QPen(QBrush(primitive.outlineColor()), outlineWidth));
+		painter.drawPath(textPath);
+	}
+
+	painter.setPen((QColor)primitive.color());
+	painter.drawText(offset, primitive.text());
+
+	if(update)
+		this->update(updateRect.toAlignedRect());
 }
 
 /******************************************************************************

@@ -281,9 +281,6 @@ protected:
 	/// matches the true visible area.
 	void adjustProjectionForRenderFrame(ViewProjectionParameters& params);
 
-	/// Renders the viewport overlays to an image buffer.
-	void renderLayers(SceneRenderer* renderer, TimePoint time, RenderSettings* renderSettings, const QRect& vpRect, const Box3& boundingBox, const OORefVector<ViewportOverlay>& layers, SynchronousOperation& operation);
-
 	/// Determines this viewport's area in the rendered output image. 
 	QRect renderViewportRect() const;
 

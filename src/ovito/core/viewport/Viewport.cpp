@@ -579,13 +579,22 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 			adjustProjectionForRenderFrame(_projParams);
 
 		// Set up the viewport renderer.
-		renderer->beginFrame(time, _projParams, this, vpRect);
+		renderer->beginFrame(time, _projParams, this, vpRect, nullptr);
 
 		// Render viewport "underlays".
 		if(renderPreviewMode() && !renderer->isPicking()) {
 			if(boost::algorithm::any_of(underlays(), [](ViewportOverlay* layer) { return layer->isEnabled(); })) {
-				// Let layers paint into QImage buffer, which will then be copied into the OpenGL frame buffer.
-				renderLayers(renderer, time, renderSettings, vpRect, boundingBox, underlays(), renderOperation);
+				QRect renderViewportRect = this->renderViewportRect();
+				if(!renderViewportRect.isEmpty()) {
+					Box2 renderFrameBox = renderFrameRect();
+					QRect renderFrameRect(
+							(renderFrameBox.minc.x() + 1) * vpRect.width() / 2,
+							(renderFrameBox.minc.y() + 1) * vpRect.height() / 2,
+							renderFrameBox.width() * vpRect.width() / 2,
+							renderFrameBox.height() * vpRect.height() / 2);
+					renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), boundingBox));
+					renderer->renderOverlays(true, renderViewportRect, renderFrameRect, renderOperation.subOperation());
+				}
 			}
 		}
 
@@ -593,13 +602,22 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 		renderer->setProjParams(_projParams);
 
 		// Call the viewport renderer to render the scene objects.
-		renderer->renderFrame(nullptr, vpRect, renderOperation.subOperation());
+		renderer->renderFrame(vpRect, renderOperation.subOperation());
 
 		// Render viewport "overlays".
 		if(renderPreviewMode() && !renderer->isPicking()) {
 			if(boost::algorithm::any_of(overlays(), [](ViewportOverlay* layer) { return layer->isEnabled(); })) {
-				// Let overlays paint into QImage buffer, which will then be copied over the OpenGL frame buffer.
-				renderLayers(renderer, time, renderSettings, vpRect, boundingBox, overlays(), renderOperation);
+				QRect renderViewportRect = this->renderViewportRect();
+				if(!renderViewportRect.isEmpty()) {
+					Box2 renderFrameBox = renderFrameRect();
+					QRect renderFrameRect(
+							(renderFrameBox.minc.x() + 1) * vpRect.width() / 2,
+							(renderFrameBox.minc.y() + 1) * vpRect.height() / 2,
+							renderFrameBox.width() * vpRect.width() / 2,
+							renderFrameBox.height() * vpRect.height() / 2);
+					renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), boundingBox));
+					renderer->renderOverlays(false, renderViewportRect, renderFrameRect, renderOperation.subOperation());
+				}
 			}
 		}
 
@@ -609,7 +627,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 		}
 
 		// Finish rendering.
-		renderer->endFrame(true, nullptr, vpRect);
+		renderer->endFrame(true, vpRect);
 		renderer->endRender();
 
 		// Discard unused vis element resources.
@@ -622,50 +640,6 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 		_isRendering = false;
 		throw;
 	}
-}
-
-/******************************************************************************
-* Renders the viewport layers to an image buffer.
-******************************************************************************/
-void Viewport::renderLayers(SceneRenderer* renderer, TimePoint time, RenderSettings* renderSettings, const QRect& vpRect, const Box3& boundingBox, const OORefVector<ViewportOverlay>& layers, SynchronousOperation& operation)
-{
-	// Let layers paint into QImage buffer, which will then be painted into the framebuffer.
-	QImage paintBuffer(vpRect.size(), QImage::Format_ARGB32_Premultiplied);
-	paintBuffer.fill(0);
-	Box2 renderFrameBox = renderFrameRect();
-	QRect renderFrameRect(
-			(renderFrameBox.minc.x() + 1) * paintBuffer.width() / 2,
-			(renderFrameBox.minc.y() + 1) * paintBuffer.height() / 2,
-			renderFrameBox.width() * paintBuffer.width() / 2,
-			renderFrameBox.height() * paintBuffer.height() / 2);
-
-	QRect renderViewportRect = this->renderViewportRect();
-	if(!renderViewportRect.isEmpty()) {
-		ViewProjectionParameters renderProjParams = computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), boundingBox);
-		for(ViewportOverlay* layer : layers) {
-			if(layer->isEnabled()) {
-				QPainter painter(&paintBuffer);
-				painter.setWindow(QRect(0, 0, renderViewportRect.width(), renderViewportRect.height()));
-				painter.setViewport(renderFrameRect);
-				painter.setRenderHint(QPainter::Antialiasing);
-				layer->renderInteractive(this, time, painter, renderProjParams, renderSettings, operation.subOperation());
-			}
-		}
-	}
-	renderer->setDepthTestEnabled(false);
-
-	// Look up cached image primitive from a previous rendering pass of this viewport.
-	using CacheKey = RendererResourceKey<struct ViewportLayerCache, Viewport*, OORefVector<ViewportOverlay>>;
-	ImagePrimitive& primitive = dataset()->visCache().get<ImagePrimitive>(CacheKey(this, layers));
-
-	// Only assign the QImage when the pixel data is actually different, because the renderer will
-	// cache the texture derived from the QImage.
-	if(primitive.image() != paintBuffer)
-		primitive.setImage(paintBuffer);
-
-	primitive.setRectViewport(renderer, Box2({-1,-1}, {1,1}));
-	renderer->renderImage(primitive);
-	renderer->setDepthTestEnabled(true);
 }
 
 /******************************************************************************

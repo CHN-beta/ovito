@@ -53,6 +53,18 @@ public:
 	/// \brief Returns the text background color.
 	const ColorA& backgroundColor() const { return _backgroundColor; }
 
+	/// \brief Sets the text outline color.
+	void setOutlineColor(const ColorA& color) { _outlineColor = color; }
+
+	/// \brief Returns the text outline color.
+	const ColorA& outlineColor() const { return _outlineColor; }
+
+	/// \brief Sets the width of the text outline.
+	void setOutlineWidth(FloatType width) { _outlineWidth = width; }
+
+	/// \brief Returns the width of the text outline.
+	FloatType outlineWidth() const { return _outlineWidth; }
+
 	/// Sets the text font.
 	void setFont(const QFont& font) { _font = font; }
 
@@ -68,11 +80,23 @@ public:
 	/// \brief Sets the text position in window coordinates.
 	void setPositionWindow(const Point2& pos) { _position = pos; }
 
+	/// \brief Sets the text position in window coordinates.
+	void setPositionWindow(const QPointF& pos) { _position = Point2(pos.x(), pos.y()); }
+
 	/// \brief Sets the text position in viewport coordinates.
 	void setPositionViewport(const SceneRenderer* renderer, const Point2& pos);
 
 	/// \brief Returns the text position in window coordinates.
 	const Point2& position() const { return _position; }
+
+	/// Returns whether the tight bounding box of the text is used for alignment.
+	bool useTightBox() const { return _tightBox; }
+
+	/// Sets whether the tight bounding box of the text is used for alignment.
+	void setUseTightBox(bool use) { _tightBox = use; }
+
+	/// Computes the bounding rectangle of the text to be rendered.
+	QRectF queryBounds(SceneRenderer* renderer) const;
 
 private:
 
@@ -85,6 +109,12 @@ private:
 	/// The text background color.
 	ColorA _backgroundColor{0,0,0,0};
 
+	/// The text outline color (no outline is rendered if alpha=0).
+	ColorA _outlineColor{0,0,0,0};
+
+	/// The width of the text outline.
+	FloatType _outlineWidth{3.0};
+
 	/// The text font.
 	QFont _font;
 
@@ -93,6 +123,9 @@ private:
 
 	/// The alignment of the text.
 	int _alignment = Qt::AlignLeft | Qt::AlignTop;
+
+	/// Use the tight bounding box of the text for alignment.
+	bool _tightBox = false;
 };
 
 }	// End of namespace

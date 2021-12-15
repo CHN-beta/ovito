@@ -48,18 +48,8 @@ public:
 	/// user-defined default values from the application's settings store (GUI only).
 	virtual void initializeObject(ObjectInitializationHints hints) override;	
 
-	/// This method asks the overlay to paint its contents over the rendered image.
-	virtual void render(const Viewport* viewport, TimePoint time, FrameBuffer* frameBuffer, const QRect& viewportRect, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, SynchronousOperation operation) override {
-		QPainter painter(&frameBuffer->image());
-		painter.setViewport(viewportRect);
-		painter.setWindow(0, 0, viewportRect.width(), viewportRect.height());
-		renderImplementation(time, painter, projParams, false, std::move(operation));
-	}
-
-	/// This method asks the overlay to paint its contents over the given interactive viewport.
-	virtual void renderInteractive(const Viewport* viewport, TimePoint time, QPainter& painter, const ViewProjectionParameters& projParams, const RenderSettings* renderSettings, SynchronousOperation operation) override {
-		renderImplementation(time, painter, projParams, true, std::move(operation));
-	}
+	/// Lets the overlay paint its contents into the framebuffer.
+	virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation) override;
 
 	/// Moves the position of the overlay in the viewport by the given amount,
 	/// which is specified as a fraction of the viewport render size.
@@ -74,14 +64,11 @@ public:
 
 private:
 
-	/// This method paints the overlay contents onto the given canvas.
-	void renderImplementation(TimePoint time, QPainter& painter, const ViewProjectionParameters& projParams, bool isInteractive, SynchronousOperation operation);
-
 	/// Draws the color legend for a Color Coding modifier.
-	void drawContinuousColorMap(TimePoint time, QPainter& painter, const QRectF& colorBarRect, FloatType legendSize, bool isInteractive, const PseudoColorMapping& mapping, const QString& propertyName);
+	void drawContinuousColorMap(SceneRenderer* renderer, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping, const QString& propertyName);
 
 	/// Draws the color legend for a typed property.
-	void drawDiscreteColorMap(QPainter& painter, const QRectF& colorBarRect, FloatType legendSize, const PropertyObject* property);
+	void drawDiscreteColorMap(SceneRenderer* renderer, const QRectF& colorBarRect, FloatType legendSize, const PropertyObject* property);
 
 	/// The corner of the viewport where the color legend is displayed.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, alignment, setAlignment, PROPERTY_FIELD_MEMORIZE);

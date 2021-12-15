@@ -40,7 +40,7 @@ ViewportOverlay::ViewportOverlay(DataSet* dataset) : ActiveObject(dataset),
 /******************************************************************************
 * Paints a text string with an optional outline.
 ******************************************************************************/
-void ViewportOverlay::drawTextOutlined(QPainter& painter, const QRectF& rect, int flags, const QString& text, const Color& textColor, bool drawOutline, const Color& outlineColor)
+void ViewportOverlay::drawTextOutlined(QPainter& painter, const QRectF& rect, int flags, const QString& text, const Color& textColor, bool drawOutline, const Color& outlineColor, qreal outlineWidth)
 {
 	QPainterPath textPath;
 	textPath.addText(0, 0, painter.font(), text);
@@ -54,8 +54,6 @@ void ViewportOverlay::drawTextOutlined(QPainter& painter, const QRectF& rect, in
 	else if(flags & Qt::AlignVCenter) textPath.translate(0, rect.top() + rect.height()/2.0 + textBounds.height()/2.0);
 
 	if(drawOutline) {
-		// Always render the outline pen 3 pixels wide, irrespective of frame buffer resolution.
-		qreal outlineWidth = 3.0 / painter.combinedTransform().m11();
 		painter.setPen(QPen(QBrush(outlineColor), outlineWidth));
 		painter.drawPath(textPath);
 	}

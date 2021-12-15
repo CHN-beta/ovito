@@ -146,7 +146,7 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
 			_orientationTripodLabels[axis].setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 		}
 
-		Point3 p = Point3::Origin() + viewport()->projectionParams().viewMatrix.column(axis).resized(1.2);
+		Point3 p = Point3::Origin() + viewport()->projectionParams().viewMatrix.column(axis).resized(1.23);
 		Point3 ndcPoint = projParams.projectionMatrix * p;
 		_orientationTripodLabels[axis].setPositionViewport(renderer, {ndcPoint.x(), ndcPoint.y()});
 		renderer->renderText(_orientationTripodLabels[axis]);
@@ -215,13 +215,17 @@ QRectF ViewportWindowInterface::renderViewportTitle(SceneRenderer* renderer, boo
 		textColor = Vector3(1,1,1) - (Vector3)textColor;
 	primitive.setColor(textColor);
 
-	QFontMetricsF metrics(primitive.font());
 	Point2 pos = Point2(2, 2) * renderer->devicePixelRatio();
 	primitive.setPositionWindow(pos);
 	renderer->renderText(primitive);
 
 	// Compute the area covered by the caption text.
-	return QRectF(0, 0, std::max(metrics.horizontalAdvance(primitive.text()), 30.0) + pos.x(), metrics.height() + pos.y());
+	QRectF textBounds = primitive.queryBounds(renderer);
+	textBounds.moveTo(QPointF(2,2));
+	textBounds.setWidth(std::max(textBounds.width() / renderer->devicePixelRatio(), 30.0));
+	textBounds.setHeight(textBounds.height() / renderer->devicePixelRatio());
+	textBounds.adjust(-2, -2, 2, 2);
+	return textBounds;
 }
 
 }	// End of namespace

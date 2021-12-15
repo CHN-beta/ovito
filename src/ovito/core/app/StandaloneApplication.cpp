@@ -60,6 +60,9 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 #endif
 		arguments << std::move(arg);
 	}
+#ifdef OVITO_DEBUG
+//	arguments << QStringLiteral("C:/Users/astuk/temp/test.ovito");
+#endif
 
 	// Because they may collide with our own options, we should ignore script arguments though.
 	QStringList filteredArguments;
