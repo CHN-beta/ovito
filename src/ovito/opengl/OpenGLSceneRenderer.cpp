@@ -387,7 +387,7 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
 		// Create additional offscreen OpenGL framebuffer.
 		if(!_oitFramebuffer || !_oitFramebuffer->isValid() || _oitFramebuffer->size() != viewportRect().size()) {
 			QOpenGLFramebufferObjectFormat framebufferFormat;
-			framebufferFormat.setAttachment(QOpenGLFramebufferObject::Depth);
+			framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
 			framebufferFormat.setInternalTextureFormat(GL_RGBA16F);
 			_oitFramebuffer = std::make_unique<QOpenGLFramebufferObject>(viewportRect().size(), framebufferFormat);
 			_oitFramebuffer->addColorAttachment(_oitFramebuffer->size(), GL_R16F);
@@ -511,6 +511,7 @@ const char* OpenGLSceneRenderer::openglErrorString(GLenum errorCode)
 	case 0x0504 /*GL_STACK_UNDERFLOW*/: return "GL_STACK_UNDERFLOW - This command would cause a stack underflow.";
 	case GL_OUT_OF_MEMORY: return "GL_OUT_OF_MEMORY - There is not enough memory left to execute the command.";
 	case 0x8031 /*GL_TABLE_TOO_LARGE*/: return "GL_TABLE_TOO_LARGE - The specified table exceeds the implementation's maximum supported table size.";
+	case 0x0506 /*GL_INVALID_FRAMEBUFFER_OPERATION*/: return "GL_INVALID_FRAMEBUFFER_OPERATION - The read and draw framebuffers are not framebuffer complete.";
 	default: return "Unknown OpenGL error code.";
 	}
 }
@@ -695,8 +696,11 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 	// Pick GLSL language version based on current OpenGL version.
 	if(!isGLES) {
 		// Inject GLSL version directive into shader source. 
-		// Note: Use GLSL 1.50 when running on a OpenGL 3.2+ platform.
-		if(shaderType == QOpenGLShader::Geometry || _glversion >= QT_VERSION_CHECK(3, 2, 0)) {
+		if(_glversion >= QT_VERSION_CHECK(3, 3, 0)) {
+			shaderSource.append("#version 330\n");
+			glslVersion = QT_VERSION_CHECK(3, 3, 0);
+		}
+		else if(shaderType == QOpenGLShader::Geometry || _glversion >= QT_VERSION_CHECK(3, 2, 0)) {
 			shaderSource.append("#version 150\n");
 			glslVersion = QT_VERSION_CHECK(1, 5, 0);
 		}

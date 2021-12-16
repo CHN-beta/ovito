@@ -50,9 +50,9 @@ Qt3DSceneRenderer::~Qt3DSceneRenderer()
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
-void Qt3DSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect)
+void Qt3DSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
-	SceneRenderer::beginFrame(time, params, vp, viewportRect);
+	SceneRenderer::beginFrame(time, params, vp, viewportRect, frameBuffer);
 
     // Enable depth tests by default.
     setDepthTestEnabled(true);
@@ -61,7 +61,7 @@ void Qt3DSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameter
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool Qt3DSceneRenderer::renderFrame(FrameBuffer* frameBuffer, const QRect& viewportRect, SynchronousOperation operation)
+bool Qt3DSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOperation operation)
 {
 	// Render the 3D scene objects.
 	if(renderScene(operation.subOperation())) {
