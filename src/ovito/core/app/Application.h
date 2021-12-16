@@ -114,14 +114,14 @@ public:
 	/// \brief Returns type of context in which the program's actions are currently performed.
 	/// \note It is only safe to call this method from the main thread.
 	ExecutionContext executionContext() const {
-		OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
+		OVITO_ASSERT(QThread::currentThread() == this->thread());
 		return _executionContext;
 	}
 
 	/// Notifies the application that script execution has started or stopped.
 	/// This is an internal method that should only be called by script engines.
 	void switchExecutionContext(ExecutionContext context) {
-		OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
+		OVITO_ASSERT(QThread::currentThread() == this->thread());
 		_executionContext = context;
 	}
 

@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -116,12 +116,12 @@ INSTALL(CODE "
 	# Include the Python interpreter executable in the IGNORE_ITEM list.
 	SET(IGNORE_ITEM_LIST \"Python\")
 
-	# Collect the filenames of the Shiboken2 and PySide2 libraries.
+	# Collect the filenames of the Shiboken and PySide libraries.
 	# These shared objects need to be preserved by adding them to the IGNORE_ITEM list of FIXUP_BUNDLE(). 
-	FILE(GLOB PYSIDE_DYNLIBS \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/Python.framework/Versions/*.*/lib/python*/site-packages/PySide2/*.dylib\")
-	FILE(GLOB PYSIDE_SOLIBS \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/Python.framework/Versions/*.*/lib/python*/site-packages/PySide2/*.so\")
-	FILE(GLOB SHIBOKEN_DYNLIBS \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/Python.framework/Versions/*.*/lib/python*/site-packages/shiboken2/*.dylib\")
-	FILE(GLOB SHIBOKEN_SOLIBS \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/Python.framework/Versions/*.*/lib/python*/site-packages/shiboken2/*.so\")
+	FILE(GLOB PYSIDE_DYNLIBS \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/Python.framework/Versions/*.*/lib/python*/site-packages/PySide*/*.dylib\")
+	FILE(GLOB PYSIDE_SOLIBS \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/Python.framework/Versions/*.*/lib/python*/site-packages/PySide*/*.so\")
+	FILE(GLOB SHIBOKEN_DYNLIBS \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/Python.framework/Versions/*.*/lib/python*/site-packages/shiboken*/*.dylib\")
+	FILE(GLOB SHIBOKEN_SOLIBS \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/Python.framework/Versions/*.*/lib/python*/site-packages/shiboken*/*.so\")
 	FOREACH(lib \${PYSIDE_DYNLIBS} \${PYSIDE_SOLIBS} \${SHIBOKEN_DYNLIBS} \${SHIBOKEN_SOLIBS})
 		GET_FILENAME_COMPONENT(lib_filename \"\${lib}\" NAME)
 		LIST(APPEND IGNORE_ITEM_LIST \"\${lib_filename}\")

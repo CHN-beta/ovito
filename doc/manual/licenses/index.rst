@@ -107,6 +107,10 @@ Third-party software
     - LGPL v3
     - :ref:`Info <appendix.license.pyside2.instructions>`
 
+  * - `PySide6 <https://pypi.org/project/PySide6/>`__
+    - LGPL v3
+    - 
+
   * - `Numpy <https://www.numpy.org/>`__
     - :ref:`license <appendix.license.numpy>`
     - 

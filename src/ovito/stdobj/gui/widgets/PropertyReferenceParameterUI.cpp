@@ -137,7 +137,7 @@ PropertyReference PropertyReferenceParameterUI::getPropertyReference()
 	if(editObject()) {
 		if(isQtPropertyUI()) {
 			QVariant val = editObject()->property(propertyName());
-			OVITO_ASSERT_MSG(val.isValid() && val.canConvert<PropertyReference>(), "PropertyReferenceParameterUI::updateUI()", QString("The object class %1 does not define a property with the name %2 of type PropertyReference.").arg(editObject()->metaObject()->className(), QString(propertyName())).toLocal8Bit().constData());
+			OVITO_ASSERT_MSG(val.isValid() && val.canConvert<PropertyReference>(), "PropertyReferenceParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 of type PropertyReference.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
 			if(!val.isValid() || !val.canConvert<PropertyReference>()) {
 				editObject()->throwException(tr("The object class %1 does not define a property with the name %2 that can be cast to a PropertyReference.").arg(editObject()->metaObject()->className(), QString(propertyName())));
 			}
@@ -145,7 +145,7 @@ PropertyReference PropertyReferenceParameterUI::getPropertyReference()
 		}
 		else if(isPropertyFieldUI()) {
 			QVariant val = editObject()->getPropertyFieldValue(propertyField());
-			OVITO_ASSERT_MSG(val.isValid() && val.canConvert<PropertyReference>(), "PropertyReferenceParameterUI::updateUI()", QString("The property field of object class %1 is not of type PropertyReference.").arg(editObject()->metaObject()->className()).toLocal8Bit().constData());
+			OVITO_ASSERT_MSG(val.isValid() && val.canConvert<PropertyReference>(), "PropertyReferenceParameterUI::updateUI()", qPrintable(QString("The property field of object class %1 is not of type PropertyReference.").arg(editObject()->metaObject()->className())));
 			return val.value<PropertyReference>();
 		}
 	}
@@ -282,7 +282,7 @@ void PropertyReferenceParameterUI::updatePropertyValue()
 					return;
 
 				if(!editObject()->setProperty(propertyName(), QVariant::fromValue(pref))) {
-					OVITO_ASSERT_MSG(false, "PropertyReferenceParameterUI::updatePropertyValue()", QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className()).toLocal8Bit().constData());
+					OVITO_ASSERT_MSG(false, "PropertyReferenceParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
 				}
 			}
 			else if(isPropertyFieldUI()) {

@@ -91,7 +91,7 @@ void CustomParameterUI::updateUI()
 		}
 		else if(isPropertyFieldUI()) {
 			val = editObject()->getPropertyFieldValue(propertyField());
-			OVITO_ASSERT_MSG(val.isValid(), "CustomParameterUI::updateUI()", QString("The object class %1 does not define a property with the name %2.").arg(editObject()->metaObject()->className(), QString(propertyName())).toLocal8Bit().constData());
+			OVITO_ASSERT_MSG(val.isValid(), "CustomParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
 		}
 		else return;
 

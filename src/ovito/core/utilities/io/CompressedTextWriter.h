@@ -92,7 +92,7 @@ public:
 	}
 
 	/// Writes a Qt string string to the text-based output file.
-	CompressedTextWriter& operator<<(const QString& s) { return *this << s.toLocal8Bit().constData(); }
+	CompressedTextWriter& operator<<(const QString& s) { return *this << qPrintable(s); }
 
 	/// Returns the current output precision for floating-point numbers.
 	unsigned int floatPrecision() const { return _floatPrecision; }

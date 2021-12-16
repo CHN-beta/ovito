@@ -69,7 +69,7 @@ bool AMBERNetCDFExporter::openOutputFile(const QString& filePath, int numberOfFr
 	outputFile().setFileName(filePath);
 
 	// Open the input file for writing.
-	NCERR(nc_create(filePath.toLocal8Bit().constData(), NC_64BIT_DATA, &_ncid));
+	NCERR(nc_create(qUtf8Printable(filePath), NC_64BIT_DATA, &_ncid));
 
 	// Define dimensions.
 	NCERR(nc_def_dim(_ncid, NC_FRAME_STR, NC_UNLIMITED, &_frame_dim));
@@ -183,9 +183,9 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
 			if(entry.key() == NC_TIME_STR || entry.key() == QStringLiteral("SourceFrame"))
 				continue;
 			else if(getQVariantTypeId(entry.value()) == QMetaType::Double || getQVariantTypeId(entry.value()) == QMetaType::Float)
-				NCERR(nc_def_var(_ncid, entry.key().toUtf8().constData(), NC_DOUBLE, 1, &_frame_dim, &var));
+				NCERR(nc_def_var(_ncid, qUtf8Printable(entry.key()), NC_DOUBLE, 1, &_frame_dim, &var));
 			else if(entry.value().canConvert<int>())
-				NCERR(nc_def_var(_ncid, entry.key().toUtf8().constData(), NC_INT, 1, &_frame_dim, &var));
+				NCERR(nc_def_var(_ncid, qUtf8Printable(entry.key()), NC_INT, 1, &_frame_dim, &var));
 			else
 				continue;
 			_attributes_vars.insert(entry.key(), var);

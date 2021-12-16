@@ -53,7 +53,7 @@ bool DislocImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 
 	// Check if we can open the input file for reading.
 	int ncid;
-	int err = nc_open(filename.toLocal8Bit().constData(), NC_NOWRITE, &ncid);
+	int err = nc_open(qUtf8Printable(filename), NC_NOWRITE, &ncid);
 	if(err == NC_NOERR) {
 
 		// Make sure we have the right file conventions.

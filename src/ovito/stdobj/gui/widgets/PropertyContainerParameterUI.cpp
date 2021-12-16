@@ -79,7 +79,7 @@ void PropertyContainerParameterUI::updateUI()
 
 		// Get the current property class.
 		QVariant val = editObject()->getPropertyFieldValue(propertyField());
-		OVITO_ASSERT_MSG(val.isValid() && val.canConvert<PropertyContainerReference>(), "PropertyContainerParameterUI::updateUI()", QString("The property field of object class %1 is not of type <PropertyContainerClassPtr> or <PropertyContainerReference>.").arg(editObject()->metaObject()->className()).toLocal8Bit().constData());
+		OVITO_ASSERT_MSG(val.isValid() && val.canConvert<PropertyContainerReference>(), "PropertyContainerParameterUI::updateUI()", qPrintable(QString("The property field of object class %1 is not of type <PropertyContainerClassPtr> or <PropertyContainerReference>.").arg(editObject()->metaObject()->className())));
 		PropertyContainerReference selectedPropertyContainer = val.value<PropertyContainerReference>();
 
 		// Update list of property containers available in the pipeline.

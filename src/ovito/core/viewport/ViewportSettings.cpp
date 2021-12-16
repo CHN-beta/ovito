@@ -168,7 +168,7 @@ void ViewportSettings::load(QSettings& store)
 	for(const QString& key : store.childKeys()) {
 		QColor c = store.value(key).value<QColor>();
 		bool ok;
-		int index = colorEnum.keyToValue(key.toUtf8().constData(), &ok);
+		int index = colorEnum.keyToValue(qUtf8Printable(key), &ok);
 		if(ok && index >= 0 && index < NUMBER_OF_COLORS && c.isValid()) {
 			_viewportColors[index] = Color(c);
 		}
