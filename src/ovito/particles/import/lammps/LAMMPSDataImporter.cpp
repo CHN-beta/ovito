@@ -1118,6 +1118,8 @@ ParticleInputColumnMapping LAMMPSDataImporter::createColumnMapping(LAMMPSAtomSty
 		break;
 	case AtomStyle_Unknown:
 		break;
+	default:
+		OVITO_ASSERT(false);
 	}
 	if(columnMapping.size() + 3 == dataColumnCount) {
 		columnMapping.emplace_back(&ParticlesObject::OOClass(), ParticlesObject::PeriodicImageProperty, 0);

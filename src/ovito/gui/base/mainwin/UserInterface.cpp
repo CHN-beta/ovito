@@ -65,9 +65,9 @@ QString UserInterface::generateSystemReport()
 	lsbOutput.replace('\n', ' ');
 	stream << "LSB output: " << lsbOutput << "\n";
 #endif
-	stream << "Processor architecture: " << (QT_POINTER_SIZE*8) << "-bit" << "\n";
+	stream << "Processor architecture: " << QSysInfo::currentCpuArchitecture() << "\n";
 	stream << "Floating-point type: " << (sizeof(FloatType)*8) << "-bit" << "\n";
-	stream << "Qt framework version: " << QT_VERSION_STR << "\n";
+	stream << "Qt version: " << QT_VERSION_STR << " (" << QSysInfo::buildCpuArchitecture() << ")\n";
 #ifdef OVITO_DISABLE_THREADING
 	stream << "Multi-threading: disabled\n";
 #endif

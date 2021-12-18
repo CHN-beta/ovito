@@ -6368,7 +6368,7 @@ namespace GEO {
 #include <stdio.h>
 #include <new>
 
-#ifdef GEO_OS_APPLE
+#if defined(GEO_OS_APPLE) && !defined(__aarch64__)
 #include <mach-o/dyld.h>
 #include <xmmintrin.h>
 #endif
@@ -6709,11 +6709,13 @@ namespace GEO {
         bool os_enable_FPE(bool flag) {
 #ifdef GEO_OS_APPLE
            unsigned int excepts = 0
+#if !defined(__aarch64__)
                 // | _MM_MASK_INEXACT   // inexact result
                    | _MM_MASK_DIV_ZERO  // division by zero
                    | _MM_MASK_UNDERFLOW // result not representable due to underflow
                    | _MM_MASK_OVERFLOW  // result not representable due to overflow
                    | _MM_MASK_INVALID   // invalid operation
+#endif
                    ;
             // _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~excepts);
             geo_argused(flag);
@@ -6778,6 +6780,7 @@ namespace GEO {
             char buff[PATH_MAX];
 #ifdef GEO_OS_APPLE
             uint32_t len=PATH_MAX;
+#if !defined(__aarch64__)
             if (_NSGetExecutablePath(buff, &len) == 0) {
                 std::string filename(buff);
                 size_t pos = std::string::npos;
@@ -6786,6 +6789,7 @@ namespace GEO {
                 }
                 return filename;
             }
+#endif
             return std::string("");
 #else
             ssize_t len = ::readlink("/proc/self/exe", buff, sizeof(buff)-1);
