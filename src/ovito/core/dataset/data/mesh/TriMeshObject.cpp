@@ -50,6 +50,32 @@ void TriMeshObject::initializeObject(ObjectInitializationHints hints)
 }
 
 /******************************************************************************
+* Creates a copy of a topology structure.
+******************************************************************************/
+OORef<RefTarget> TriMeshObject::clone(bool deepCopy, CloneHelper& cloneHelper) const
+{
+	// Let the base class create an instance of this class.
+	OORef<TriMeshObject> clone = static_object_cast<TriMeshObject>(DataObject::clone(deepCopy, cloneHelper));
+
+	// Copy internal data.
+	clone->_boundingBox = _boundingBox;
+	clone->_vertices = _vertices;
+	clone->_hasVertexColors = _hasVertexColors;
+	clone->_vertexColors = _vertexColors;
+	clone->_hasVertexPseudoColors = _hasVertexPseudoColors;
+	clone->_vertexPseudoColors = _vertexPseudoColors;
+	clone->_hasFaceColors = _hasFaceColors;
+	clone->_faceColors = _faceColors;
+	clone->_hasFacePseudoColors = _hasFacePseudoColors;
+	clone->_facePseudoColors = _facePseudoColors;
+	clone->_faces = _faces;
+	clone->_hasNormals = _hasNormals;
+	clone->_normals = _normals;
+
+	return clone;
+}
+
+/******************************************************************************
 * Clears all vertices and faces.
 ******************************************************************************/
 void TriMeshObject::clear()
@@ -656,6 +682,32 @@ void TriMeshObject::createIcosphere(int resolution)
 		}
 		_faces = std::move(newFaces);
 	}
+}
+
+/******************************************************************************
+* Determines whether the mesh forms a closed manifold, i.e. each triangle has 
+* three adjacent triangles with correct orientation.
+******************************************************************************/
+bool TriMeshObject::isClosed() const
+{
+	// All face edges (pairs of vertex indices):
+	std::set<std::pair<int,int>> edges;
+	for(const TriMeshFace& face : faces()) {
+		for(size_t e = 0; e < 3; e++) {
+			int v1 = face.vertex(e);
+			int v2 = face.vertex((e+1) % 3);
+			if(edges.insert(std::make_pair(v1, v2)).second == false)
+				return false; // Two half-edges connecting the same vertices v1 and v2.
+		}
+	}
+
+	// Check if each edge has an opposite partner.
+	for(auto [v1,v2] : edges) {
+		if(edges.find(std::make_pair(v2,v1)) == edges.end())
+			return false;
+	}
+
+	return true;
 }
 
 }	// End of namespace

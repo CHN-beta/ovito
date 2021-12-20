@@ -608,7 +608,16 @@ public:
 	/// resulting vertices/faces of the mesh. 
 	void createIcosphere(int resolution);
 
+	/************************************* Information *************************************/
+
+	/// Determines whether the mesh forms a closed manifold, i.e. each triangle has three adjacent 
+	/// triangles with correct orientation.
+	bool isClosed() const;
+
 protected:
+
+	/// Creates a copy of this object.
+	virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const override;
 
 	/// Saves the class' contents to the given stream.
 	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;

@@ -170,20 +170,25 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, SynchronousOperation ope
 	}
 	if(!state)
 		throwException(tr("The loaded geometry file does not provide any valid mesh data."));
-	TriMeshObject* meshObj = state.expectMutableObject<TriMeshObject>();
-
-	// Show sharp edges of the mesh.
-	meshObj->determineEdgeVisibility();
+	DataOORef<TriMeshObject> meshObj = DataOORef<TriMeshObject>::makeCopy(state.expectObject<TriMeshObject>());
 
 	// We requested creating the TriMeshObject without a visual element.
 	OVITO_ASSERT(meshObj->visElements().empty());
 
+	// Show sharp edges of the mesh.
+	meshObj->determineEdgeVisibility();
+
 	// Turn on undo recording again. The final shape assignment should be recorded on the undo stack.
 	noUndo.reset();
-	setShapeMesh(meshObj);
+	setShapeMesh(std::move(meshObj));
 
 	// Also switch the particle type's visualization shape to mesh-based.
 	setShape(ParticlesVis::Mesh);
+
+	// Determine whether the mesh is a closed manifold. 
+	// If not, we should turn off back-face culling.
+	if(shapeMesh() && !shapeMesh()->isClosed())
+		setShapeBackfaceCullingEnabled(false);
 
     return !operation.isCanceled();
 }
