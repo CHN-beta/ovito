@@ -20,13 +20,26 @@
 #
 #######################################################################################
 
+# Determine the main Qt installation directory, which contains the Qt plugin libraries to be shipped with OVITO.
+IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
+	FIND_PACKAGE(${OVITO_QT_MAJOR_VERSION} ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
+	SET(_qt_source_dir "${_qt_import_prefix}")
+	GET_FILENAME_COMPONENT(_qt_source_dir "${_qt_source_dir}" PATH)
+	GET_FILENAME_COMPONENT(_qt_source_dir "${_qt_source_dir}" PATH)
+	GET_FILENAME_COMPONENT(_qt_source_dir "${_qt_source_dir}" PATH)	
+	SET(_qtplugins_source_dir "${_qt_source_dir}/plugins")
+	SET(QT_LIBRARY_DIRS "${_qt_source_dir}/lib")
+ELSE()
+	SET(_qt_source_dir "${_qt5Core_install_prefix}")
+	SET(_qtplugins_source_dir "${_qt_source_dir}/plugins")
+ENDIF()
+
 # Install needed Qt plugins by copying directories from the Qt installation
-SET(_qtplugins_source_dir "${_qt5Core_install_prefix}/plugins")
 SET(_qtplugins_dest_dir "${MACOSX_BUNDLE_NAME}.app/Contents/PlugIns")
 INSTALL(DIRECTORY "${_qtplugins_source_dir}/imageformats" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
 INSTALL(DIRECTORY "${_qtplugins_source_dir}/platforms" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
 INSTALL(DIRECTORY "${_qtplugins_source_dir}/iconengines" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
-IF(NOT Qt5Core_VERSION VERSION_LESS "5.12")
+IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6" OR NOT Qt5Core_VERSION VERSION_LESS "5.12")
 	INSTALL(DIRECTORY "${_qtplugins_source_dir}/styles" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
 ENDIF()
 
@@ -132,8 +145,8 @@ INSTALL(CODE "
 	INCLUDE(BundleUtilities)
 	FIXUP_BUNDLE(\"\${APPS}\" \"\${BUNDLE_LIBS}\" \"\${DIRS}\" IGNORE_ITEM \${IGNORE_ITEM_LIST})
 
-	# Fix the rpath information of the PySide2/Shiboken2 libraries.
-	SET(QT_LIB_INSTALL_PATH \"${_qt5Core_install_prefix}/lib\")
+	# Fix the rpath information of the PySide/Shiboken libraries.
+	SET(QT_LIB_INSTALL_PATH \"${_qt_source_dir}/lib\")
 	FOREACH(lib \${PYSIDE_DYNLIBS} \${PYSIDE_SOLIBS} \${SHIBOKEN_DYNLIBS} \${SHIBOKEN_SOLIBS})
 		MESSAGE(\"Adding rpath to \${lib}\")
 		EXECUTE_PROCESS(COMMAND install_name_tool -add_rpath \"@loader_path/\" -add_rpath \"@executable_path/../Frameworks/\" \"\${lib}\" RESULT_VARIABLE install_name_tool_result)

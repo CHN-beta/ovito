@@ -109,7 +109,7 @@ Third-party software
 
   * - `PySide6 <https://pypi.org/project/PySide6/>`__
     - LGPL v3
-    - 
+    - :ref:`Info <appendix.license.pyside6.instructions>`
 
   * - `Numpy <https://www.numpy.org/>`__
     - :ref:`license <appendix.license.numpy>`
@@ -193,5 +193,6 @@ Third-party software
   ffmpeg.instructions
   pegtl
   PySide2.instructions
+  PySide6.instructions
   xdrfile
   vma
