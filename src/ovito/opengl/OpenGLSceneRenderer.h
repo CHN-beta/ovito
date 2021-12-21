@@ -243,9 +243,6 @@ private:
 	/// Renders a 2d pixel image into the output framebuffer.
 	void renderImageImplementation(const ImagePrimitive& primitive);
 
-	/// Renders a text string into the output framebuffer.
-	void renderTextImplementation(const TextPrimitive& primitive);
-
 	/// Returns whether the renderer is using a two-pass OIT method.
 	bool orderIndependentTransparency() const { return _orderIndependentTransparency; }
 

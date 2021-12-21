@@ -95,8 +95,14 @@ public:
 	/// Sets whether the tight bounding box of the text is used for alignment.
 	void setUseTightBox(bool use) { _tightBox = use; }
 
+	/// Returns the type of text string (plain or rich text).
+	Qt::TextFormat textFormat() const { return _textFormat; }
+
+	/// Sets the type of text string (plain or rich text).
+	void setTextFormat(Qt::TextFormat format) { _textFormat = format; }
+
 	/// Computes the bounding rectangle of the text to be rendered.
-	QRectF queryBounds(SceneRenderer* renderer) const;
+	QRectF queryBounds(const SceneRenderer* renderer, Qt::TextFormat textFormatHint = Qt::AutoText) const;
 
 private:
 
@@ -126,6 +132,9 @@ private:
 
 	/// Use the tight bounding box of the text for alignment.
 	bool _tightBox = false;
+
+	/// The type of text string (plain or rich text).
+	Qt::TextFormat _textFormat = Qt::PlainText;
 };
 
 }	// End of namespace

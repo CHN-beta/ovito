@@ -354,7 +354,7 @@ void VulkanSceneRenderer::renderImage(const ImagePrimitive& primitive)
 void VulkanSceneRenderer::renderText(const TextPrimitive& primitive)
 {
     OVITO_ASSERT(!isBoundingBoxPass());
-	renderTextImplementation(primitive);
+    renderTextDefaultImplementation(primitive);
 }
 
 /******************************************************************************

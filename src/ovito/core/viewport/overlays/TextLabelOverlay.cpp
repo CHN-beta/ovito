@@ -135,6 +135,7 @@ void TextLabelOverlay::renderImplementation(SceneRenderer* renderer, const QRect
 	if(outlineEnabled()) textPrimitive.setOutlineColor(outlineColor());
 	textPrimitive.setAlignment(alignment());
 	textPrimitive.setText(std::move(textString));
+	textPrimitive.setTextFormat(Qt::AutoText);
 
 	// Resolve the font used by the label.
 	FloatType fontSize = this->fontSize() * viewportRect.height();

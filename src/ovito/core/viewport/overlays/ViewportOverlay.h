@@ -53,9 +53,6 @@ public:
 	/// The default method implementation does nothing.
 	virtual void moveLayerInViewport(const Vector2& delta) {}
 
-	/// Paints a text string with an optional outline.
-	static void drawTextOutlined(QPainter& painter, const QRectF& rect, int flags, const QString& text, const Color& textColor, bool drawOutline, const Color& outlineColor, qreal outlineWidth);
-
 private:
 
 	/// Option for rendering the overlay contents behind the three-dimensional content.

@@ -25,7 +25,6 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
 	SOURCES
 		OpenGLLinePrimitive.cpp
 		OpenGLParticlePrimitive.cpp
-		OpenGLTextPrimitive.cpp
 		OpenGLImagePrimitive.cpp
 		OpenGLCylinderPrimitive.cpp
 		OpenGLMeshPrimitive.cpp

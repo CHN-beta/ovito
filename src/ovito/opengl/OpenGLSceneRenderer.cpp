@@ -582,7 +582,7 @@ void OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
 ******************************************************************************/
 void OpenGLSceneRenderer::renderText(const TextPrimitive& primitive)
 {
-	renderTextImplementation(primitive);
+	renderTextDefaultImplementation(primitive, glcontext()->isOpenGLES() ? QImage::Format_ARGB32 : QImage::Format_ARGB32_Premultiplied);
 }
 
 /******************************************************************************

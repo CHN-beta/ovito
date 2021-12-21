@@ -181,9 +181,6 @@ private:
 	/// Creates the Vulkan resources needed by this renderer.
 	void initResources();
 
-	/// Renders a text label using an image primitive.
-	void renderTextImplementation(const TextPrimitive& primitive);
-
 	/// Renders a set of cylinders or arrow glyphs.
 	void renderCylindersImplementation(const CylinderPrimitive& primitive);
 

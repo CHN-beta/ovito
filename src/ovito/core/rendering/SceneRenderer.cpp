@@ -35,6 +35,11 @@
 #include <ovito/core/viewport/ViewportGizmo.h>
 #include <ovito/core/app/Application.h>
 
+#include <QTextDocument>
+#include <QTextFrame> 
+#include <QTextFrameFormat> 
+#include <QAbstractTextDocumentLayout> 
+
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SceneRenderer);
@@ -655,19 +660,158 @@ void TextPrimitive::setPositionViewport(const SceneRenderer* renderer, const Poi
 /******************************************************************************
 * Computes the bounding rectangle of the text to be rendered.
 ******************************************************************************/
-QRectF TextPrimitive::queryBounds(SceneRenderer* renderer) const
+QRectF TextPrimitive::queryBounds(const SceneRenderer* renderer, Qt::TextFormat textFormatHint) const
 {
 	QRectF textBounds;
-	if(!useTightBox()) {
-		textBounds = QFontMetricsF(font()).boundingRect(text());
+	Qt::TextFormat resolvedTextFormat = textFormat();
+	if(resolvedTextFormat == Qt::AutoText) {
+		if(textFormatHint != Qt::AutoText) resolvedTextFormat = textFormatHint;
+		else resolvedTextFormat = Qt::mightBeRichText(text()) ? Qt::RichText : Qt::PlainText;
+	}
+	if(resolvedTextFormat != Qt::RichText) {
+		if(!useTightBox()) {
+			textBounds = QFontMetricsF(font()).boundingRect(text());
+		}
+		else {
+			QPainterPath textPath;
+			textPath.addText(0, 0, font(), text());
+			textBounds = textPath.boundingRect();
+		}
 	}
 	else {
-		QPainterPath textPath;
-		textPath.addText(0, 0, font(), text());
-		textBounds = textPath.boundingRect();
+		QTextDocument doc;
+		doc.setUndoRedoEnabled(false);
+		doc.setHtml(text());
+		doc.setDefaultFont(font());
+		doc.setDocumentMargin(0);
+		QTextOption opt = doc.defaultTextOption();
+		opt.setAlignment(Qt::Alignment(alignment()));
+		doc.setDefaultTextOption(opt);
+		textBounds = QRectF(QPointF(0,0), doc.size());
 	}
 	qreal devicePixelRatio = renderer->devicePixelRatio();
 	return QRectF(textBounds.left() * devicePixelRatio, textBounds.top() * devicePixelRatio, textBounds.width() * devicePixelRatio, textBounds.height() * devicePixelRatio);
+}
+
+/******************************************************************************
+* Renders a text primitive by means of a cached image primitive.
+******************************************************************************/
+void SceneRenderer::renderTextDefaultImplementation(const TextPrimitive& primitive, QImage::Format preferredImageFormat)
+{
+	if(primitive.text().isEmpty() || isPicking())
+		return;
+	
+    // Look up the image primitive for the text label in the cache.
+	auto& [imagePrimitive, offset] = dataset()->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
+		RendererResourceKey<struct TextImageCache, QString, ColorA, ColorA, ColorA, FloatType, qreal, QString, bool, int, Qt::TextFormat>{ 
+			primitive.text(), 
+			primitive.color(), 
+			primitive.backgroundColor(), 
+			primitive.outlineColor(),
+			primitive.outlineWidth(),
+			this->devicePixelRatio(),
+			primitive.font().key(),
+			primitive.useTightBox(),
+			primitive.alignment(),
+			primitive.textFormat()
+		});
+
+	if(imagePrimitive.image().isNull()) {
+
+		// Determine whether the text primitive uses rich text formatting or not.
+		Qt::TextFormat resolvedTextFormat = primitive.textFormat();
+		if(resolvedTextFormat == Qt::AutoText)
+			resolvedTextFormat = Qt::mightBeRichText(primitive.text()) ? Qt::RichText : Qt::PlainText;
+
+		// Measure text size in device pixel units.
+		QRectF bounds = primitive.queryBounds(this, resolvedTextFormat);
+
+		// Add margin for the outline.
+		qreal devicePixelRatio = this->devicePixelRatio();
+		qreal outlineWidth = std::max(0.0, (primitive.outlineColor().a() > 0.0) ? (qreal)primitive.outlineWidth() : 0.0) * devicePixelRatio;
+
+		// Convert to physical units.
+		QRect pixelBounds = bounds.adjusted(-outlineWidth, -outlineWidth, outlineWidth, outlineWidth).toAlignedRect();
+
+		// Generate texture image.
+		QImage textureImage(pixelBounds.width(), pixelBounds.height(), preferredImageFormat);
+		textureImage.setDevicePixelRatio(devicePixelRatio);
+		textureImage.fill((QColor)primitive.backgroundColor());
+//		textureImage.fill(QColor(255,0,0,100));
+		{
+			QPainter painter(&textureImage);
+			painter.setRenderHint(QPainter::Antialiasing);
+			painter.setRenderHint(QPainter::TextAntialiasing);
+
+			QPointF textOffset(outlineWidth, outlineWidth);
+			textOffset.rx() -= bounds.left();
+			textOffset.ry() -= bounds.top();
+			textOffset.rx() /= devicePixelRatio;
+			textOffset.ry() /= devicePixelRatio;
+
+			if(resolvedTextFormat != Qt::RichText) {
+				painter.setFont(primitive.font());
+
+				if(outlineWidth != 0) {
+					QPainterPath textPath;
+					textPath.addText(textOffset, primitive.font(), primitive.text());
+					painter.setPen(QPen(QBrush(primitive.outlineColor()), primitive.outlineWidth()));
+					painter.drawPath(textPath);
+				}
+
+				painter.setPen((QColor)primitive.color());
+				painter.drawText(textOffset, primitive.text());
+			}
+			else {
+				QTextDocument doc;
+				doc.setUndoRedoEnabled(false);
+				doc.setDefaultFont(primitive.font());
+				doc.setHtml(primitive.text());
+				// Remove document margin.
+				doc.setDocumentMargin(0);
+				// Specify document alignment.
+				QTextOption opt = doc.defaultTextOption();
+				opt.setAlignment(Qt::Alignment(primitive.alignment()));
+				doc.setDefaultTextOption(opt);
+				doc.setTextWidth(bounds.width() / devicePixelRatio);
+				// When rendering outlined text is requested, apply the outlined text style to the entire document.
+				if(outlineWidth != 0) {
+					QTextCursor cursor(&doc);
+					cursor.select(QTextCursor::Document);
+					QTextCharFormat charFormat;
+					charFormat.setTextOutline(QPen(QBrush(primitive.outlineColor()), primitive.outlineWidth()));
+					doc.setUndoRedoEnabled(true);
+					cursor.mergeCharFormat(charFormat);
+				}
+				QAbstractTextDocumentLayout::PaintContext ctx;
+				// Specify default text color:
+				ctx.palette.setColor(QPalette::Text, (QColor)primitive.color());
+				painter.translate(textOffset);
+		        doc.documentLayout()->draw(&painter, ctx);
+				// When rendering outlined text, paint the text again on top without the outline 
+				// in order to make the outline only go outward, not inward into the letters.
+				if(outlineWidth != 0) {
+					doc.undo();
+			        doc.documentLayout()->draw(&painter, ctx);
+				}
+			}
+		}
+
+		imagePrimitive.setImage(std::move(textureImage));
+		if(!primitive.useTightBox())
+			offset = QPointF(bounds.left() - outlineWidth, -outlineWidth);
+		else
+			offset = QPointF(-outlineWidth, -outlineWidth);
+
+		if(primitive.alignment() & Qt::AlignRight) offset.rx() += -bounds.width();
+		else if(primitive.alignment() & Qt::AlignHCenter) offset.rx() += -bounds.width() / 2;
+		if(primitive.alignment() & Qt::AlignBottom) offset.ry() += -bounds.height();
+		else if(primitive.alignment() & Qt::AlignVCenter) offset.ry() += -bounds.height() / 2;
+	}
+
+	QPoint alignedPos = (QPointF(primitive.position().x(), primitive.position().y()) + offset).toPoint();
+	imagePrimitive.setRectWindow(QRect(alignedPos, imagePrimitive.image().size()));
+	renderImage(imagePrimitive);
 }
 
 /******************************************************************************

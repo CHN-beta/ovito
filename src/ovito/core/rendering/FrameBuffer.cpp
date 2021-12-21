@@ -28,6 +28,11 @@
 	#include <ovito/core/utilities/io/video/VideoEncoder.h>
 #endif
 
+#include <QTextDocument>
+#include <QTextFrame> 
+#include <QTextFrameFormat> 
+#include <QAbstractTextDocumentLayout> 
+
 namespace Ovito {
 
 #define IMAGE_FORMAT_FILE_FORMAT_VERSION		1
@@ -144,19 +149,37 @@ void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, bool updat
 	if(primitive.text().isEmpty())
 		return;
 
+	// Determine whether the text primitive uses rich text formatting or not.
+	Qt::TextFormat resolvedTextFormat = primitive.textFormat();
+	if(resolvedTextFormat == Qt::AutoText)
+		resolvedTextFormat = Qt::mightBeRichText(primitive.text()) ? Qt::RichText : Qt::PlainText;
+
 	QPainter painter(&image());
 	painter.setRenderHint(QPainter::Antialiasing);
 	painter.setRenderHint(QPainter::TextAntialiasing);
 	painter.setFont(primitive.font());
 
 	QRectF textBounds;
-	if(!primitive.useTightBox()) {
-		textBounds = QFontMetricsF(primitive.font()).boundingRect(primitive.text());
+	if(resolvedTextFormat != Qt::RichText) {
+		if(!primitive.useTightBox()) {
+			textBounds = QFontMetricsF(primitive.font()).boundingRect(primitive.text());
+		}
+		else {
+			QPainterPath textPath;
+			textPath.addText(0, 0, primitive.font(), primitive.text());
+			textBounds = textPath.boundingRect();
+		}
 	}
 	else {
-		QPainterPath textPath;
-		textPath.addText(0, 0, primitive.font(), primitive.text());
-		textBounds = textPath.boundingRect();
+		QTextDocument doc;
+		doc.setUndoRedoEnabled(false);
+		doc.setHtml(primitive.text());
+		doc.setDefaultFont(primitive.font());
+		doc.setDocumentMargin(0);
+		QTextOption opt = doc.defaultTextOption();
+		opt.setAlignment(Qt::Alignment(primitive.alignment()));
+		doc.setDefaultTextOption(opt);
+		textBounds = QRectF(QPointF(0,0), doc.size());		
 	}
 
 	QPointF offset(-textBounds.left(), -textBounds.top());
@@ -178,15 +201,50 @@ void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, bool updat
 		painter.fillRect(updateRect, (QColor)primitive.backgroundColor());
 	}
 
-	if(outlineWidth != 0) {
-		QPainterPath textPath;
-		textPath.addText(offset, primitive.font(), primitive.text());
-		painter.setPen(QPen(QBrush(primitive.outlineColor()), outlineWidth));
-		painter.drawPath(textPath);
-	}
+	if(resolvedTextFormat != Qt::RichText) {
+		if(outlineWidth != 0) {
+			QPainterPath textPath;
+			textPath.addText(offset, primitive.font(), primitive.text());
+			painter.setPen(QPen(QBrush(primitive.outlineColor()), outlineWidth));
+			painter.drawPath(textPath);
+		}
 
-	painter.setPen((QColor)primitive.color());
-	painter.drawText(offset, primitive.text());
+		painter.setPen((QColor)primitive.color());
+		painter.drawText(offset, primitive.text());
+	}
+	else {
+		QTextDocument doc;
+		doc.setUndoRedoEnabled(false);
+		doc.setDefaultFont(primitive.font());
+		doc.setHtml(primitive.text());
+		// Remove document margin.
+		doc.setDocumentMargin(0);
+		// Specify document alignment.
+		QTextOption opt = doc.defaultTextOption();
+		opt.setAlignment(Qt::Alignment(primitive.alignment()));
+		doc.setDefaultTextOption(opt);
+		doc.setTextWidth(textBounds.width());
+		// When rendering outlined text is requested, apply the outlined text style to the entire document.
+		if(outlineWidth != 0) {
+			QTextCursor cursor(&doc);
+			cursor.select(QTextCursor::Document);
+			QTextCharFormat charFormat;
+			charFormat.setTextOutline(QPen(QBrush(primitive.outlineColor()), primitive.outlineWidth()));
+			doc.setUndoRedoEnabled(true);
+			cursor.mergeCharFormat(charFormat);
+		}
+		QAbstractTextDocumentLayout::PaintContext ctx;
+		// Specify default text color:
+		ctx.palette.setColor(QPalette::Text, (QColor)primitive.color());
+		painter.translate(offset);
+		doc.documentLayout()->draw(&painter, ctx);
+		// When rendering outlined text, paint the text again on top without the outline 
+		// in order to make the outline only go outward, not inward into the letters.
+		if(outlineWidth != 0) {
+			doc.undo();
+			doc.documentLayout()->draw(&painter, ctx);
+		}		
+	}
 
 	if(update)
 		this->update(updateRect.toAlignedRect());

@@ -270,6 +270,9 @@ protected:
 	/// Renders the construction grid in a viewport.
 	void renderGrid();
 
+	/// Renders a text primitive by means of a cached image primitive.
+	void renderTextDefaultImplementation(const TextPrimitive& primitive, QImage::Format preferredImageFormat = QImage::Format_ARGB32_Premultiplied);
+
 private:
 
 	/// Renders a data object and all its sub-objects.

@@ -37,27 +37,4 @@ ViewportOverlay::ViewportOverlay(DataSet* dataset) : ActiveObject(dataset),
 {
 }
 
-/******************************************************************************
-* Paints a text string with an optional outline.
-******************************************************************************/
-void ViewportOverlay::drawTextOutlined(QPainter& painter, const QRectF& rect, int flags, const QString& text, const Color& textColor, bool drawOutline, const Color& outlineColor, qreal outlineWidth)
-{
-	QPainterPath textPath;
-	textPath.addText(0, 0, painter.font(), text);
-	QRectF textBounds = textPath.boundingRect();
-
-	if(flags & Qt::AlignLeft) textPath.translate(rect.left(), 0);
-	else if(flags & Qt::AlignRight) textPath.translate(rect.right() - textBounds.width(), 0);
-	else if(flags & Qt::AlignHCenter) textPath.translate(rect.left() + rect.width()/2.0 - textBounds.width()/2.0, 0);
-	if(flags & Qt::AlignTop) textPath.translate(0, rect.top() + textBounds.height());
-	else if(flags & Qt::AlignBottom) textPath.translate(0, rect.bottom());
-	else if(flags & Qt::AlignVCenter) textPath.translate(0, rect.top() + rect.height()/2.0 + textBounds.height()/2.0);
-
-	if(drawOutline) {
-		painter.setPen(QPen(QBrush(outlineColor), outlineWidth));
-		painter.drawPath(textPath);
-	}
-	painter.fillPath(textPath, QBrush(textColor));
-}
-
 }	// End of namespace

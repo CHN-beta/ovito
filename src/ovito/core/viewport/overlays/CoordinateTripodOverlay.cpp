@@ -253,6 +253,7 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
 			if(outlineEnabled()) textPrimitive.setOutlineColor(outlineColor());
 			textPrimitive.setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 			textPrimitive.setUseTightBox(true);
+			textPrimitive.setTextFormat(Qt::AutoText);
 
 			QRectF textRect = textPrimitive.queryBounds(renderer);
 			textRect.moveTopLeft(QPointF(-textRect.width() / 2, -textRect.height() / 2));
