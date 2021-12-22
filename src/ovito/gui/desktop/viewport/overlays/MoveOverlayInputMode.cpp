@@ -43,6 +43,15 @@ MoveOverlayInputMode::MoveOverlayInputMode(PropertiesEditor* editor) :
 }
 
 /******************************************************************************
+* Called when the viewport input handler becomes the current one. 
+******************************************************************************/
+void MoveOverlayInputMode::activated(bool temporary)
+{
+	ViewportInputMode::activated(temporary);
+	inputManager()->gui()->showStatusBarMessage(tr("Click and drag the mouse in the viewport to move the overlay. Right-click to cancel."));
+}
+
+/******************************************************************************
 * This is called by the system after the input handler is
 * no longer the active handler.
 ******************************************************************************/
@@ -53,6 +62,7 @@ void MoveOverlayInputMode::deactivated(bool temporary)
 		viewport()->dataset()->undoStack().endCompoundOperation(false);
 		_viewport = nullptr;
 	}
+	inputManager()->gui()->clearStatusBarMessage();
 	ViewportInputMode::deactivated(temporary);
 }
 

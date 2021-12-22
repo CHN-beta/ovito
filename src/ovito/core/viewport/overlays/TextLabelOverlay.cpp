@@ -28,6 +28,7 @@
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/SharedFuture.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/app/Application.h>
 #include "TextLabelOverlay.h"
 
 namespace Ovito {
@@ -63,7 +64,8 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(TextLabelOverlay, fontSize, FloatParameterU
 ******************************************************************************/
 TextLabelOverlay::TextLabelOverlay(DataSet* dataset) : ViewportOverlay(dataset),
 		_alignment(Qt::AlignLeft | Qt::AlignTop),
-		_offsetX(0), _offsetY(0),
+		_offsetX(0), 
+		_offsetY(0),
 		_fontSize(0.02),
 		_labelText(tr("Text label")),
 		_textColor(0,0,0.5),
@@ -73,6 +75,19 @@ TextLabelOverlay::TextLabelOverlay(DataSet* dataset) : ViewportOverlay(dataset),
 {
 	// Automatically connect to the currently selected pipeline.
 	setSourceNode(dynamic_object_cast<PipelineSceneNode>(dataset->selection()->firstNode()));
+}
+
+/******************************************************************************
+* Is called when the value of a property of this object has changed.
+******************************************************************************/
+void TextLabelOverlay::propertyChanged(const PropertyFieldDescriptor* field)
+{
+	if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
+		// Automatically reset offset to zero when user changes the alignment of the overlay in the viewport.
+		setOffsetX(0);
+		setOffsetY(0);
+	}
+	ViewportOverlay::propertyChanged(field);
 }
 
 /******************************************************************************

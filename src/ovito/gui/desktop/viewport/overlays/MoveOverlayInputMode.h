@@ -41,8 +41,10 @@ public:
 	/// Constructor.
 	MoveOverlayInputMode(PropertiesEditor* editor);
 
-	/// \brief This is called by the system after the input handler is
-	///        no longer the active handler.
+	/// Called when the viewport input handler becomes the current one. 
+	virtual void activated(bool temporary) override;
+
+	/// Called when the viewport input handler no longer is the current one. 
 	virtual void deactivated(bool temporary) override;
 
 	/// Handles the mouse down events for a Viewport.

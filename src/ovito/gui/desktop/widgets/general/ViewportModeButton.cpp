@@ -29,10 +29,11 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ViewportModeButton::ViewportModeButton(ViewportModeAction* action, QWidget* parent) : QPushButton(action->text(), parent)
+ViewportModeButton::ViewportModeButton(ViewportModeAction* action, QWidget* parent) : QPushButton(action->icon(), action->text(), parent)
 {
 	setCheckable(true);
 	setChecked(action->isChecked());
+	setToolTip(action->toolTip());
 
 #ifndef Q_OS_MACOS
 	if(action->highlightColor().isValid())

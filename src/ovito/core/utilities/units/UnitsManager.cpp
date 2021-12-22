@@ -168,9 +168,9 @@ FloatType TimeParameterUnit::stepSize(FloatType currentValue, bool upDirection)
 {
 	if(!_animSettings) return 0;
 	if(upDirection)
-		return ceil((currentValue + FloatType(1)) / _animSettings->ticksPerFrame()) * _animSettings->ticksPerFrame() - currentValue;
+		return std::ceil((currentValue + FloatType(1)) / _animSettings->ticksPerFrame()) * _animSettings->ticksPerFrame() - currentValue;
 	else
-		return currentValue - floor((currentValue - FloatType(1)) / _animSettings->ticksPerFrame()) * _animSettings->ticksPerFrame();
+		return currentValue - std::floor((currentValue - FloatType(1)) / _animSettings->ticksPerFrame()) * _animSettings->ticksPerFrame();
 }
 
 /******************************************************************************
@@ -180,7 +180,7 @@ FloatType TimeParameterUnit::stepSize(FloatType currentValue, bool upDirection)
 FloatType TimeParameterUnit::roundValue(FloatType value)
 {
 	if(!_animSettings) return value;
-	return floor(value / _animSettings->ticksPerFrame() + FloatType(0.5)) * _animSettings->ticksPerFrame();
+	return std::round(value / _animSettings->ticksPerFrame()) * _animSettings->ticksPerFrame();
 }
 
 /******************************************************************************

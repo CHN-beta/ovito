@@ -55,12 +55,85 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
 	QWidget* rollout = createRollout(tr("Text label"), rolloutParams, "manual:viewport_layers.text_label");
 
     // Create the rollout contents.
-	QGridLayout* layout = new QGridLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
-	layout->setColumnStretch(1, 3);
-	layout->setColumnStretch(2, 1);
+	QVBoxLayout* parentLayout = new QVBoxLayout(rollout);
+	parentLayout->setContentsMargins(4,4,4,4);
+	parentLayout->setSpacing(4);
+
+	// Label text.
+	parentLayout->addWidget(new QLabel(tr("Text:")));
+	StringParameterUI* labelTextPUI = new StringParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::labelText));
+	_textEdit = new AutocompleteTextEdit();
+	labelTextPUI->setTextBox(_textEdit);
+	parentLayout->addWidget(labelTextPUI->textBox());
+
+	QGroupBox* positionBox = new QGroupBox(tr("Positioning"));
+	QGridLayout* positionLayout = new QGridLayout(positionBox);
+	positionLayout->setContentsMargins(4,4,4,4);
+	positionLayout->setColumnStretch(1, 1);
+	positionLayout->setColumnStretch(2, 1);
+	positionLayout->setSpacing(2);
+	positionLayout->setHorizontalSpacing(4);
+	parentLayout->addWidget(positionBox);
+
+	VariantComboBoxParameterUI* alignmentPUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::alignment));
+	positionLayout->addWidget(new QLabel(tr("Alignment:")), 0, 0);
+	positionLayout->addWidget(alignmentPUI->comboBox(), 0, 1, 1, 2);
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_top_left.svg"), tr("Top left"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignLeft)));
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_top.svg"), tr("Top"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignHCenter)));
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_top_right.svg"), tr("Top right"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignRight)));
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_right.svg"), tr("Right"), QVariant::fromValue((int)(Qt::AlignVCenter | Qt::AlignRight)));
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_bottom_right.svg"), tr("Bottom right"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignRight)));
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_bottom.svg"), tr("Bottom"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignHCenter)));
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_bottom_left.svg"), tr("Bottom left"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignLeft)));
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_left.svg"), tr("Left"), QVariant::fromValue((int)(Qt::AlignVCenter | Qt::AlignLeft)));
+
+	FloatParameterUI* offsetXPUI = new FloatParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::offsetX));
+	positionLayout->addWidget(new QLabel(tr("XY offset:")), 1, 0);
+	positionLayout->addLayout(offsetXPUI->createFieldLayout(), 1, 1);
+	FloatParameterUI* offsetYPUI = new FloatParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::offsetY));
+	positionLayout->addLayout(offsetYPUI->createFieldLayout(), 1, 2);
+
+	ViewportInputMode* moveOverlayMode = new MoveOverlayInputMode(this);
+	connect(this, &QObject::destroyed, moveOverlayMode, &ViewportInputMode::removeMode);
+	ViewportModeAction* moveOverlayAction = new ViewportModeAction(mainWindow(), tr("Move"), this, moveOverlayMode);
+	moveOverlayAction->setIcon(QIcon(":/guibase/actions/edit/mode_move.bw.svg"));
+	moveOverlayAction->setToolTip(tr("Reposition the label in the viewport using the mouse"));
+	positionLayout->addWidget(new ViewportModeButton(moveOverlayAction), 2, 1, 1, 2, Qt::AlignRight | Qt::AlignTop);
+
+	QGroupBox* styleBox = new QGroupBox(tr("Style"));
+	QGridLayout* styleLayout = new QGridLayout(styleBox);
+	styleLayout->setContentsMargins(4,4,4,4);
+	styleLayout->setColumnStretch(1, 1);
+	styleLayout->setSpacing(2);
+	styleLayout->setHorizontalSpacing(4);
+	parentLayout->addWidget(styleBox);
+
 	int row = 0;
+	FloatParameterUI* fontSizePUI = new FloatParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::fontSize));
+	styleLayout->addWidget(new QLabel(tr("Font size:")), row, 0);
+	styleLayout->addLayout(fontSizePUI->createFieldLayout(), row++, 1);
+
+	// Text color.
+	ColorParameterUI* textColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::textColor));
+	styleLayout->addWidget(new QLabel(tr("Color:")), row, 0);
+	styleLayout->addWidget(textColorPUI->colorPicker(), row++, 1);
+
+	BooleanParameterUI* outlineEnabledPUI = new BooleanParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::outlineEnabled));
+	styleLayout->addWidget(outlineEnabledPUI->checkBox(), row, 0);
+	outlineEnabledPUI->checkBox()->setText(tr("Outline:"));
+
+	ColorParameterUI* outlineColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::outlineColor));
+	styleLayout->addWidget(outlineColorPUI->colorPicker(), row++, 1);
+
+	FontParameterUI* labelFontPUI = new FontParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::font));
+	styleLayout->addWidget(labelFontPUI->label(), row, 0);
+	styleLayout->addWidget(labelFontPUI->fontPicker(), row++, 1);
+
+	QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "manual:viewport_layers.text_label");
+    QGridLayout* variablesLayout = new QGridLayout(variablesRollout);
+	variablesLayout->setContentsMargins(4,4,4,4);
+	variablesLayout->setSpacing(4);
+	variablesLayout->setColumnStretch(1, 1);
 
 	_nodeComboBox = new PopupUpdateComboBox();
 	connect(_nodeComboBox, &PopupUpdateComboBox::dropDownActivated, this, &TextLabelOverlayEditor::updateSourcesList); 
@@ -85,70 +158,17 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
 			// resetUIFunction:
 			{});
 	connect(_nodeComboBox, QOverload<int>::of(&QComboBox::activated), sourcePUI, &CustomParameterUI::updatePropertyValue);
-	layout->addWidget(new QLabel(tr("Data source:")), row, 0);
-	layout->addWidget(sourcePUI->widget(), row++, 1, 1, 2);
-
-	// Label text.
-	StringParameterUI* labelTextPUI = new StringParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::labelText));
-	layout->addWidget(new QLabel(tr("Text:")), row, 0);
-	_textEdit = new AutocompleteTextEdit();
-	labelTextPUI->setTextBox(_textEdit);
-	layout->addWidget(labelTextPUI->textBox(), row++, 1, 1, 2);
+	variablesLayout->addWidget(new QLabel(tr("Source pipeline:")), 0, 0, 1, 2);
+	variablesLayout->addWidget(sourcePUI->widget(), 1, 0, 1, 2);
 
 	StringParameterUI* valueFormatStringPUI = new StringParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::valueFormatString));
-	layout->addWidget(new QLabel(tr("Value format string:")), row, 0);
-	layout->addWidget(valueFormatStringPUI->textBox(), row++, 1, 1, 2);
+	variablesLayout->addWidget(new QLabel(tr("Value format string:")), 2, 0);
+	variablesLayout->addWidget(valueFormatStringPUI->textBox(), 2, 1);
 
-	VariantComboBoxParameterUI* alignmentPUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::alignment));
-	layout->addWidget(new QLabel(tr("Position:")), row, 0);
-	layout->addWidget(alignmentPUI->comboBox(), row++, 1);
-	alignmentPUI->comboBox()->addItem(tr("Top"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignHCenter)));
-	alignmentPUI->comboBox()->addItem(tr("Top left"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignLeft)));
-	alignmentPUI->comboBox()->addItem(tr("Top right"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignRight)));
-	alignmentPUI->comboBox()->addItem(tr("Bottom"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignHCenter)));
-	alignmentPUI->comboBox()->addItem(tr("Bottom left"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignLeft)));
-	alignmentPUI->comboBox()->addItem(tr("Bottom right"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignRight)));
-	alignmentPUI->comboBox()->addItem(tr("Left"), QVariant::fromValue((int)(Qt::AlignVCenter | Qt::AlignLeft)));
-	alignmentPUI->comboBox()->addItem(tr("Right"), QVariant::fromValue((int)(Qt::AlignVCenter | Qt::AlignRight)));
-
-	FloatParameterUI* offsetXPUI = new FloatParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::offsetX));
-	layout->addWidget(offsetXPUI->label(), row, 0);
-	layout->addLayout(offsetXPUI->createFieldLayout(), row++, 1, 1, 2);
-
-	FloatParameterUI* offsetYPUI = new FloatParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::offsetY));
-	layout->addWidget(offsetYPUI->label(), row, 0);
-	layout->addLayout(offsetYPUI->createFieldLayout(), row++, 1, 1, 2);
-
-	ViewportInputMode* moveOverlayMode = new MoveOverlayInputMode(this);
-	connect(this, &QObject::destroyed, moveOverlayMode, &ViewportInputMode::removeMode);
-	ViewportModeAction* moveOverlayAction = new ViewportModeAction(mainWindow(), tr("Move using mouse"), this, moveOverlayMode);
-	layout->addWidget(new ViewportModeButton(moveOverlayAction), row++, 1, 1, 2);
-
-	FloatParameterUI* fontSizePUI = new FloatParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::fontSize));
-	layout->addWidget(new QLabel(tr("Text size/color:")), row, 0);
-	layout->addLayout(fontSizePUI->createFieldLayout(), row, 1);
-
-	// Text color.
-	ColorParameterUI* textColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::textColor));
-	layout->addWidget(textColorPUI->colorPicker(), row++, 2);
-
-	BooleanParameterUI* outlineEnabledPUI = new BooleanParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::outlineEnabled));
-	layout->addWidget(outlineEnabledPUI->checkBox(), row, 1);
-
-	ColorParameterUI* outlineColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::outlineColor));
-	layout->addWidget(outlineColorPUI->colorPicker(), row++, 2);
-
-	FontParameterUI* labelFontPUI = new FontParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::font));
-	layout->addWidget(labelFontPUI->label(), row, 0);
-	layout->addWidget(labelFontPUI->fontPicker(), row++, 1, 1, 2);
-
-	QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "manual:viewport_layers.text_label");
-    QVBoxLayout* variablesLayout = new QVBoxLayout(variablesRollout);
-    variablesLayout->setContentsMargins(4,4,4,4);
     _attributeNamesList = new QLabel();
     _attributeNamesList->setWordWrap(true);
     _attributeNamesList->setTextInteractionFlags(Qt::TextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard));
-	variablesLayout->addWidget(_attributeNamesList);
+	variablesLayout->addWidget(_attributeNamesList, 3, 0, 1, 2);
 
 	// Update input variables list if another overlay is loaded into the editor.
 	connect(this, &TextLabelOverlayEditor::contentsReplaced, this, &TextLabelOverlayEditor::updateEditorFields);

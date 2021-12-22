@@ -105,6 +105,14 @@
 	<file>actions/overlays/overlay_move_up.bw.svg</file>
 	<file>actions/overlays/overlay_move_down.bw.svg</file>
 	<file>actions/overlays/layer_action_icon.svg</file>
+	<file>actions/overlays/alignment_bottom_left.svg</file>
+	<file>actions/overlays/alignment_bottom_right.svg</file>
+	<file>actions/overlays/alignment_top_left.svg</file>
+	<file>actions/overlays/alignment_top_right.svg</file>
+	<file>actions/overlays/alignment_left.svg</file>
+	<file>actions/overlays/alignment_right.svg</file>
+	<file>actions/overlays/alignment_top.svg</file>
+	<file>actions/overlays/alignment_bottom.svg</file>
 
 	<file>actions/rendering/render_active_viewport.bw.svg</file>
 

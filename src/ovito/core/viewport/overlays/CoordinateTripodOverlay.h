@@ -57,8 +57,9 @@ public:
 	/// Moves the position of the overlay in the viewport by the given amount,
 	/// which is specified as a fraction of the viewport render size.
 	virtual void moveLayerInViewport(const Vector2& delta) override {
-		setOffsetX(offsetX() + delta.x());
-		setOffsetY(offsetY() + delta.y());
+		auto roundPercent = [](FloatType f) { return std::round(f * 1e4) / 1e4; };
+		setOffsetX(roundPercent(offsetX() + delta.x()));
+		setOffsetY(roundPercent(offsetY() + delta.y()));
 	}
 
 private:
