@@ -359,7 +359,12 @@ void InputColumnReader::assignTypeNamesFromSeparateColumns()
 			if(const ElementType* type = record.property->elementType(record.lastTypeId)) {
 				QLatin1String name(record.typeName.first, record.typeName.second);
 				if(type->name() != name) {
-					record.property->makeMutable(type)->setName(name);
+					ElementType* elementType = record.property->makeMutable(type);
+					elementType->setName(name);
+
+					// Log in type name assigned by the file reader as default value for the element type.
+					// This is needed for the Python code generator to detect manual changes subsequently made by the user.
+					elementType->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name)});					
 				}
 			}
 		}
@@ -378,7 +383,7 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 	if(!prec.property || !prec.data) return;
 
 	if(elementIndex >= prec.count)
-		throw Exception(tr("Too many data lines in input file. Expected only %1 lines.").arg(prec.count));
+		_container->throwException(tr("Too many data lines in input file. Expected only %1 lines.").arg(prec.count));
 
 	if(prec.dataType == PropertyObject::Float) {
 		if(!parseFloatType(token, token_end, *reinterpret_cast<FloatType*>(prec.data + elementIndex * prec.stride)))
@@ -416,6 +421,11 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 					elementType->setName(typeName);
 					elementType->setNumericId(prec.property->generateUniqueElementTypeId());
 					elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec.property), _initializationHints);
+
+					// Log in type name assigned by the file reader as default value for the element type.
+					// This is needed for the Python code generator to detect manual changes subsequently made by the user.
+					elementType->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name)});
+										
 					d = elementType->numericId();
 					prec.property->addElementType(std::move(elementType));
 				}
@@ -427,7 +437,7 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 	else if(prec.dataType == PropertyObject::Int64) {
 		qlonglong& d = *reinterpret_cast<qlonglong*>(prec.data + elementIndex * prec.stride);
 		if(!parseInt64(token, token_end, d))
-			throw Exception(tr("Invalid 64-bit integer value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
+			_container->throwException(tr("Invalid 64-bit integer value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
 	}
 }
 
