@@ -72,7 +72,7 @@ IF(OVITO_BUILD_APP)
 		COMMAND "${CMAKE_COMMAND}" -E make_directory "${OVITO_SHARE_DIRECTORY}/doc/manual/html"
 		# Run Sphinx command to generate HTML files:
 		COMMAND "${CMAKE_COMMAND}" -E env "OVITO_PYDOC_INTERSPHINX_LOCATION=${OVITO_PYDOC_INTERSPHINX_LOCATION}" 
-			"${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/sphinx-build.py"  # Run the sphinx-build.py script throigh the system's Python interpreter
+			"${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/sphinx-build.py"  # Run the sphinx-build.py script through the system's Python interpreter
 			"."                                           # Sphinx source directory 
 			"${OVITO_SHARE_DIRECTORY}/doc/manual/html/"   # Destination directory
 			-a -E                                         # Always write all output files. Don’t use a saved environment. 

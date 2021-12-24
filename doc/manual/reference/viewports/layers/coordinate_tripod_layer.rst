@@ -1,7 +1,7 @@
 .. _viewport_layers.coordinate_tripod:
 
-Coordinate tripod viewport layer
---------------------------------
+Coordinate tripod layer
+-----------------------
 
 .. image:: /images/viewport_layers/coordinate_tripod_overlay_panel.*
   :width: 30%

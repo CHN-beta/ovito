@@ -1,4 +1,4 @@
-.. _appendix.license.pyside2.instructions:
+.. _appendix.license.pyside6.instructions:
 
 Build instructions for PySide6
 ------------------------------

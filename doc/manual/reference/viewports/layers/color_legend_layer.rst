@@ -1,7 +1,7 @@
 .. _viewport_layers.color_legend:
 
-Color legend viewport layer
----------------------------
+Color legend layer
+------------------
 
 .. image:: /images/viewport_layers/color_legend_overlay_panel.*
    :width: 30%
