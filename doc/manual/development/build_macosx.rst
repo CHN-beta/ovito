@@ -11,7 +11,7 @@ Apple's clang C++ compiler shipping with Xcode. It's easiest to use `MacPorts <h
 
 After setting up MacPorts, run::
 
-  sudo port install netcdf pzlib libssh boost cmake docbook-xml doxygen libxslt yasm
+  sudo port install netcdf pzlib libssh boost cmake yasm
 
 from the terminal to install the required dependencies of OVITO.
 

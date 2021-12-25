@@ -31,24 +31,10 @@ IF(OVITO_BUILD_APP)
 	FILE(MAKE_DIRECTORY "${OVITO_SHARE_DIRECTORY}/doc/manual")
 	FILE(MAKE_DIRECTORY "${OVITO_SHARE_DIRECTORY}/doc/manual/html")
 
-	# Locate the XSLT processor program, which transforms Docbook documents into the output format.
-	# NOTE: This program is only needed to generate the legacy documentation files (before release 3.5.0).
-	FIND_PROGRAM(XSLT_PROCESSOR "xsltproc" DOC "Path to the XSLT processor program for building the Docbook-based documentation.")
-	IF(XSLT_PROCESSOR)
-		# This CMake target generates the user manual as a set of static HTML pages which get shipped with
-		# the Ovito installation packages and which can be accessed from the Help menu of the application.
-		ADD_CUSTOM_TARGET(documentation_docbook
-						COMMAND ${CMAKE_COMMAND} "-E" copy_directory "../images/" "${OVITO_SHARE_DIRECTORY}/doc/manual/docbook/images/"
-						COMMAND ${CMAKE_COMMAND} "-E" copy "manual.css" "${OVITO_SHARE_DIRECTORY}/doc/manual/docbook/"
-						COMMAND ${XSLT_PROCESSOR} "--xinclude" --nonet --stringparam base.dir "${OVITO_SHARE_DIRECTORY}/doc/manual/docbook/" html-customization-layer.xsl Manual.docbook
-						WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/docbook"
-						COMMENT "Generating user documentation")
-	ENDIf()
-
 	# Locate a Python interpreter.
-	# Note: Sphinx 3.x requires at least Python 3.5.
+	# Note: Sphinx 4.x requires at least Python 3.6.
 	IF(CMAKE_VERSION VERSION_LESS 3.12)
-		FIND_PACKAGE(PythonInterp 3.5 REQUIRED)
+		FIND_PACKAGE(PythonInterp 3.6 REQUIRED)
 		SET(Python3_EXECUTABLE "${PYTHON_EXECUTABLE}")
 	ELSE()
 		FIND_PACKAGE(Python3 REQUIRED COMPONENTS Interpreter)
