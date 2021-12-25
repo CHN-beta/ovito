@@ -23,7 +23,6 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesVis.h>
 #include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/DataSet.h>

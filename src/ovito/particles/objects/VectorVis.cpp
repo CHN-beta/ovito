@@ -22,7 +22,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/dataset/DataSet.h>

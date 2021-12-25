@@ -23,7 +23,6 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "PropertyObject.h"
-#include "PropertyAccess.h"
 
 namespace Ovito::StdObj {
 
@@ -232,7 +231,7 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguo
 		typeIds.insert(t->numericId());
 
 	// Add ID values that occur in the property array but which have not been defined as a type.
-	for(int t : ConstPropertyAccess<int>(this))
+	for(int t : ConstDataBufferAccess<int>(this))
 		typeIds.insert(t);
 
 	// Build the mappings between old and new IDs.
@@ -306,7 +305,7 @@ void PropertyObject::sortElementTypesByName()
 	}
 
 	// Remap type IDs.
-	for(int& t : PropertyAccess<int>(this)) {
+	for(int& t : DataBufferAccess<int>(this)) {
 		OVITO_ASSERT(t >= 1 && t < mapping.size());
 		t = mapping[t];
 	}

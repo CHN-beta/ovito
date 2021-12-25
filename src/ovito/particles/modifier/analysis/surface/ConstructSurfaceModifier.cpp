@@ -28,7 +28,6 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/grid/modifier/MarchingCubes.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/units/UnitsManager.h>

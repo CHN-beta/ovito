@@ -24,7 +24,6 @@
 #include <ovito/particles/objects/ParticlesVis.h>
 #include <ovito/particles/objects/BondType.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>

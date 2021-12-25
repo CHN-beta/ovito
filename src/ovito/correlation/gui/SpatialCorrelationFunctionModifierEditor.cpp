@@ -24,7 +24,6 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/correlation/SpatialCorrelationFunctionModifier.h>
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>

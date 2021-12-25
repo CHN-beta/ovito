@@ -24,7 +24,6 @@
 #include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/viewport/Viewport.h>

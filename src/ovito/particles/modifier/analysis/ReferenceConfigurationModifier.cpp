@@ -22,7 +22,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>

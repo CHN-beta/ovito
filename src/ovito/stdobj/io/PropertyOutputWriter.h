@@ -25,7 +25,6 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>

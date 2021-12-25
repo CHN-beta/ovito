@@ -23,7 +23,6 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include "LAMMPSDumpExporter.h"
 
 namespace Ovito::Particles {

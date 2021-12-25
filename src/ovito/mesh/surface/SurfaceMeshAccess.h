@@ -30,7 +30,6 @@
 #include <ovito/mesh/surface/SurfaceMeshRegions.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/properties/PropertyContainerAccess.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/data/DataObjectAccess.h>

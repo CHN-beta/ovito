@@ -28,7 +28,6 @@
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyContainerClass.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 
 namespace Ovito::StdObj {
 

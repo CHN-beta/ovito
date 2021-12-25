@@ -26,7 +26,6 @@
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/stdobj/io/PropertyOutputWriter.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/app/Application.h>
 #include "LAMMPSDataExporter.h"
 

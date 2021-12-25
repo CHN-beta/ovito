@@ -23,7 +23,6 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/modifier/dxa/DislocationAnalysisModifier.h>
 #include <ovito/particles/gui/modifier/analysis/StructureListParameterUI.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanGroupBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>

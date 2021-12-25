@@ -27,7 +27,6 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
 #include <ovito/core/dataset/pipeline/AsynchronousDelegatingModifier.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifierApplication.h>

@@ -22,7 +22,6 @@
 
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/core/dataset/data/mesh/TriMeshObject.h>

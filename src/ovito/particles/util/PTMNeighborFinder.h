@@ -24,8 +24,8 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/particles/modifier/analysis/ptm/PTMAlgorithm.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 
 namespace Ovito::Particles {
 

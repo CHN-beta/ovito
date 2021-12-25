@@ -23,7 +23,6 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/table/DataTable.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>

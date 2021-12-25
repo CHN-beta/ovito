@@ -24,7 +24,6 @@
 #include <ovito/stdobj/properties/ElementType.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "PropertyContainer.h"
-#include "PropertyAccess.h"
 
 #include <boost/range/algorithm_ext/is_sorted.hpp>
 
@@ -332,7 +331,7 @@ std::vector<size_t> PropertyContainer::sortById()
 #endif	
 	if(!getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
 		return {};
-	ConstPropertyAccess<qlonglong> ids = getProperty(PropertyObject::GenericIdentifierProperty);
+	ConstDataBufferAccess<qlonglong> ids = getProperty(PropertyObject::GenericIdentifierProperty);
 	if(!ids) 
 		return {};
 
@@ -354,7 +353,7 @@ std::vector<size_t> PropertyContainer::sortById()
 		prop->reorderElements(permutation);
 	}
 
-	OVITO_ASSERT(boost::range::is_sorted(ConstPropertyAccess<qlonglong>(getProperty(PropertyObject::GenericIdentifierProperty)).crange()));
+	OVITO_ASSERT(boost::range::is_sorted(ConstDataBufferAccess<qlonglong>(getProperty(PropertyObject::GenericIdentifierProperty)).crange()));
 
 	return invertedPermutation;
 }

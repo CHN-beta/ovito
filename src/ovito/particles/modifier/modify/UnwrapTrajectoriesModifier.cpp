@@ -24,7 +24,6 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/BondsObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/Application.h>
 #include "UnwrapTrajectoriesModifier.h"

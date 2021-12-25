@@ -24,7 +24,6 @@
 #include <ovito/particles/util/NearestNeighborFinder.h>
 #include <ovito/particles/objects/BondsObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>

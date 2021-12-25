@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,9 +39,7 @@ class OVITO_CORE_EXPORT AnimationKey : public RefTarget
 public:
 
 	/// Constructor.
-	AnimationKey(DataSet* dataset, TimePoint time = 0) : RefTarget(dataset), _time(time) {
-
-	}
+	AnimationKey(DataSet* dataset, TimePoint time = 0) : RefTarget(dataset), _time(time) {}
 
 	/// Returns the value of this animation key as a QVariant.
 	virtual QVariant valueQVariant() const = 0;

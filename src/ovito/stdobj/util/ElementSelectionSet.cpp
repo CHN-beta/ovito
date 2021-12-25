@@ -23,7 +23,6 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include "ElementSelectionSet.h"
@@ -126,13 +125,13 @@ void ElementSelectionSet::resetSelection(const PropertyContainer* container)
 	OVITO_ASSERT(container != nullptr);
 
 	// Take a snapshot of the current selection state.
-	if(ConstPropertyAccess<int> selectionProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
+	if(ConstDataBufferAccess<int> selectionProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
 
 		// Make a backup of the old snapshot so it may be restored.
 		dataset()->undoStack().pushIfRecording<ReplaceSelectionOperation>(this);
 
 		// Obtain access to the unique identifiers of the data elements (if present).
-		ConstPropertyAccess<qlonglong> identifierProperty;
+		ConstDataBufferAccess<qlonglong> identifierProperty;
 		if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
 			identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
 		OVITO_ASSERT(!identifierProperty || selectionProperty.size() == identifierProperty.size());
@@ -195,7 +194,7 @@ void ElementSelectionSet::setSelection(const PropertyContainer* container, const
 	dataset()->undoStack().pushIfRecording<ReplaceSelectionOperation>(this);
 
 	// Obtain access to the unique identifiers of the data elements (if present).
-	ConstPropertyAccess<qlonglong> identifierProperty;
+	ConstDataBufferAccess<qlonglong> identifierProperty;
 	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
 		identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
 	OVITO_ASSERT(!identifierProperty || selection.size() == identifierProperty.size());
@@ -249,7 +248,7 @@ void ElementSelectionSet::toggleElement(const PropertyContainer* container, size
 		return;
 
 	// Obtain access to the unique identifiers of the data elements (if present).
-	ConstPropertyAccess<qlonglong> identifierProperty;
+	ConstDataBufferAccess<qlonglong> identifierProperty;
 	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
 		identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
 
@@ -302,7 +301,7 @@ void ElementSelectionSet::selectAll(const PropertyContainer* container)
 	dataset()->undoStack().pushIfRecording<ReplaceSelectionOperation>(this);
 
 	// Obtain access to the unique identifiers of the data elements (if present).
-	ConstPropertyAccess<qlonglong> identifierProperty;
+	ConstDataBufferAccess<qlonglong> identifierProperty;
 	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
 		identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
 
@@ -329,7 +328,7 @@ void ElementSelectionSet::invertSelection(const PropertyContainer* container)
 	dataset()->undoStack().pushIfRecording<ReplaceSelectionOperation>(this);
 
 	// Obtain access to the unique identifiers of the data elements (if present).
-	ConstPropertyAccess<qlonglong> identifierProperty;
+	ConstDataBufferAccess<qlonglong> identifierProperty;
 	if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
 		identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
 
@@ -352,7 +351,7 @@ void ElementSelectionSet::invertSelection(const PropertyContainer* container)
 /******************************************************************************
 * Copies the stored selection set into the given output selection property.
 ******************************************************************************/
-PipelineStatus ElementSelectionSet::applySelection(PropertyAccess<int> outputSelectionProperty, ConstPropertyAccess<qlonglong> identifierProperty)
+PipelineStatus ElementSelectionSet::applySelection(DataBufferAccess<int> outputSelectionProperty, ConstDataBufferAccess<qlonglong> identifierProperty)
 {
 	size_t nselected = 0;
 	if(!identifierProperty || !useIdentifiers()) {

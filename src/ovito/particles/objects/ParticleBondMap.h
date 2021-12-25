@@ -25,7 +25,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/BondsObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 
 #include <boost/iterator/iterator_facade.hpp>
 #include <utility>

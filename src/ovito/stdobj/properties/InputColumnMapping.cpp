@@ -22,7 +22,6 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include "InputColumnMapping.h"
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include "ParticleExpressionEvaluator.h"
 
@@ -69,9 +68,9 @@ void BondExpressionEvaluator::initialize(const QStringList& expressions, const P
 			_topologyArray = bonds->getProperty(BondsObject::TopologyProperty);
 
 			// Define computed variable 'BondLength', which yields the length of the bonds.
-			if(ConstPropertyAccessAndRef<Point3> positions = particles->getProperty(ParticlesObject::PositionProperty)) {
-				if(ConstPropertyAccessAndRef<ParticleIndexPair> topology = bonds->getProperty(BondsObject::TopologyProperty)) {
-					ConstPropertyAccessAndRef<Vector3I> periodicImages = bonds->getProperty(BondsObject::PeriodicImageProperty);
+			if(ConstDataBufferAccessAndRef<Point3> positions = particles->getProperty(ParticlesObject::PositionProperty)) {
+				if(ConstDataBufferAccessAndRef<ParticleIndexPair> topology = bonds->getProperty(BondsObject::TopologyProperty)) {
+					ConstDataBufferAccessAndRef<Vector3I> periodicImages = bonds->getProperty(BondsObject::PeriodicImageProperty);
 					DataOORef<const SimulationCellObject> simCell = state.getObject<SimulationCellObject>();
 
 					registerComputedVariable("BondLength", [positions=std::move(positions),topology=std::move(topology),periodicImages=std::move(periodicImages),simCell=std::move(simCell)](size_t bondIndex) -> double {

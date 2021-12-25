@@ -275,16 +275,12 @@ public:
 
 	/// Sets the result value of the promise to the return value of the given function.
 	template<typename FC>
-	std::enable_if_t<Ovito::detail::is_void_continuation_func<FC,std::tuple<>>::value> setResultsWith(FC&& func)
+	void setResultsWith(FC&& func)
 	{
-		std::forward<FC>(func)();
-	}
-
-	/// Sets the result value of the promise to the return value of the given function.
-	template<typename FC>
-	std::enable_if_t<!Ovito::detail::is_void_continuation_func<FC,std::tuple<>>::value> setResultsWith(FC&& func)
-	{
-		setResultsDirect(std::forward<FC>(func)());
+		if constexpr(Ovito::detail::is_void_continuation_func<FC,std::tuple<>>::value)
+			std::forward<FC>(func)();
+		else
+			setResultsDirect(std::forward<FC>(func)());
 	}
 
 	/// Requests this Promise to reset itself to the null state as soon as the task has reached the 'finished' state.

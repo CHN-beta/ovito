@@ -24,7 +24,6 @@
 #include <ovito/particles/util/NearestNeighborFinder.h>
 #include <ovito/particles/modifier/analysis/cna/CommonNeighborAnalysisModifier.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "IdentifyDiamondModifier.h"

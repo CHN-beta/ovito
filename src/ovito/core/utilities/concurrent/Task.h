@@ -209,22 +209,19 @@ public:
     }
 
     /// Accessor function for the internal results storage.
-    /// This overload is used for tasks with a non-empty results tuple.
     template<typename tuple_type>
-    std::enable_if_t<std::tuple_size<tuple_type>::value != 0, tuple_type> takeResults() {
-        OVITO_ASSERT(_resultsTuple != nullptr);
+    tuple_type takeResults() {
+        if constexpr(std::tuple_size<tuple_type>::value != 0) {
+            OVITO_ASSERT(_resultsTuple != nullptr);
 #ifdef OVITO_DEBUG
-        OVITO_ASSERT((bool)_resultSet);
-        _resultSet = false;
+            OVITO_ASSERT((bool)_resultSet);
+            _resultSet = false;
 #endif
-        return std::move(*static_cast<tuple_type*>(_resultsTuple));
-    }
-
-    /// Accessor function for the internal results storage.
-    /// This overload is used for tasks with an empty results tuple (returning void).
-    template<typename tuple_type>
-    std::enable_if_t<std::tuple_size<tuple_type>::value == 0, tuple_type> takeResults() {
-        return {};
+            return std::move(*static_cast<tuple_type*>(_resultsTuple));
+        }
+        else {
+            return {};
+        }
     }
 
 #ifdef OVITO_DEBUG

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -594,10 +594,10 @@ protected:
  * If TableMode is set to false, the data elements can only be access as a whole and the number of components must
  * be a compile-time constant.
  */
-template<typename T, bool TableMode = false>
-class ConstDataBufferAccess : public std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, const DataBuffer*>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, const DataBuffer*>>
+template<typename T, bool TableMode = false, typename DataBufferClass = DataBuffer>
+class ConstDataBufferAccess : public std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, const DataBufferClass*>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, const DataBufferClass*>>
 {
-	using ParentType = std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, const DataBuffer*>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, const DataBuffer*>>;
+	using ParentType = std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, const DataBufferClass*>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, const DataBufferClass*>>;
 
 public:
 
@@ -605,26 +605,26 @@ public:
 	ConstDataBufferAccess() = default;
 
 	/// Constructs a read-only accessor for the data in a DataBuffer.
-	ConstDataBufferAccess(const DataBuffer* buffer) 
+	ConstDataBufferAccess(const DataBufferClass* buffer) 
 		: ParentType(buffer) {}
 
 	/// Constructs a read-only accessor for the data in a DataBuffer.
-	ConstDataBufferAccess(const ConstDataBufferPtr& buffer)
-		: ParentType(buffer) {}
+	ConstDataBufferAccess(const DataOORef<const DataBufferClass>& buffer)
+		: ParentType(buffer.get()) {}
 
 	/// Constructs a read-only accessor for the data in a DataBuffer.
-	ConstDataBufferAccess(const DataBufferPtr& buffer)
-		: ParentType(buffer) {}
+	ConstDataBufferAccess(const DataOORef<DataBufferClass>& buffer)
+		: ParentType(buffer.get()) {}
 };
 
 /**
  * Helper class that provides read access to the data elements in a DataBuffer
  *        and which keeps a strong reference to the DataBuffer.
  */
-template<typename T, bool TableMode = false>
-class ConstDataBufferAccessAndRef : public std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, ConstDataBufferPtr>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, ConstDataBufferPtr>>
+template<typename T, bool TableMode = false, typename DataBufferClass = DataBuffer>
+class ConstDataBufferAccessAndRef : public std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, DataOORef<const DataBufferClass>>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, DataOORef<const DataBufferClass>>>
 {
-	using ParentType = std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, ConstDataBufferPtr>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, ConstDataBufferPtr>>;
+	using ParentType = std::conditional_t<TableMode, Ovito::detail::ReadOnlyDataBufferAccessBaseTable<T, DataOORef<const DataBufferClass>>, Ovito::detail::ReadOnlyDataBufferAccessBase<T, DataOORef<const DataBufferClass>>>;
 
 public:
 
@@ -632,16 +632,16 @@ public:
 	ConstDataBufferAccessAndRef() = default;
 
 	/// Constructs a read-only accessor for the data in a DataBuffer.
-	ConstDataBufferAccessAndRef(ConstDataBufferPtr buffer)
+	ConstDataBufferAccessAndRef(DataOORef<const DataBufferClass> buffer)
 		: ParentType(std::move(buffer)) {}
 
 	/// Constructs a read-only accessor for the data in a DataBuffer.
-	ConstDataBufferAccessAndRef(DataBufferPtr buffer)
+	ConstDataBufferAccessAndRef(DataOORef<DataBufferClass> buffer)
 		: ParentType(std::move(buffer)) {}
 
 	/// Constructs a read-only accessor for the data in a DataBuffer.
-	ConstDataBufferAccessAndRef(const DataBuffer* buffer)
-		: ParentType(ConstDataBufferPtr(buffer)) {}
+	ConstDataBufferAccessAndRef(const DataBufferClass* buffer)
+		: ParentType(DataOORef<const DataBufferClass>(buffer)) {}
 };
 
 /**
@@ -656,10 +656,10 @@ public:
  * method will be automatically called when the DataBufferAccess object goes out of scope to inform the system about
  * a modification of the stored property values.
  */
-template<typename T, bool TableMode = false>
-class DataBufferAccess : public std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataBuffer*>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataBuffer*>>
+template<typename T, bool TableMode = false, typename DataBufferClass = DataBuffer>
+class DataBufferAccess : public std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataBufferClass*>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataBufferClass*>>
 {
-	using ParentType = std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataBuffer*>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataBuffer*>>;
+	using ParentType = std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataBufferClass*>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataBufferClass*>>;
 
 public:
 
@@ -667,12 +667,12 @@ public:
 	DataBufferAccess() = default;
 
 	/// Constructs a read/write accessor for the data in a DataBuffer.
-	DataBufferAccess(const DataBufferPtr& buffer) 
-		: ParentType(buffer.get()) {}
+	DataBufferAccess(DataBufferClass* buffer) 
+		: ParentType(buffer) {}
 
 	/// Constructs a read/write accessor for the data in a DataBuffer.
-	DataBufferAccess(DataBuffer* buffer) 
-		: ParentType(buffer) {}
+	DataBufferAccess(const DataOORef<DataBufferClass>& buffer) 
+		: ParentType(buffer.get()) {}
 
 	/// Forbid copy construction.
 	DataBufferAccess(const DataBufferAccess& other) = delete;
@@ -691,10 +691,10 @@ public:
  * Helper class that provides read/write access to the data elements in a DataBuffer object
  *        and which keeps a strong reference to the DataBuffer.
  */
-template<typename T, bool TableMode = false>
-class DataBufferAccessAndRef : public std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataBufferPtr>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataBufferPtr>>
+template<typename T, bool TableMode = false, typename DataBufferClass = DataBuffer>
+class DataBufferAccessAndRef : public std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataOORef<DataBufferClass>>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataOORef<DataBufferClass>>>
 {
-	using ParentType = std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataBufferPtr>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataBufferPtr>>;
+	using ParentType = std::conditional_t<TableMode, Ovito::detail::ReadWriteDataBufferAccessBaseTable<T, DataOORef<DataBufferClass>>, Ovito::detail::ReadWriteDataBufferAccessBase<T, DataOORef<DataBufferClass>>>;
 
 public:
 
@@ -702,7 +702,7 @@ public:
 	DataBufferAccessAndRef() = default;
 
 	/// Constructs a read/write accessor for the data in a DataBuffer.
-	DataBufferAccessAndRef(DataBufferPtr buffer) 
+	DataBufferAccessAndRef(DataOORef<DataBufferClass> buffer) 
 		: ParentType(std::move(buffer)) {}
 
 	/// Forbid copy construction.

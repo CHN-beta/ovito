@@ -24,7 +24,6 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleBondMap.h>
 #include <ovito/core/dataset/DataSet.h>

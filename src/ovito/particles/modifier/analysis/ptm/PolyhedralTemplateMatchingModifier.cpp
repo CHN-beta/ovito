@@ -23,7 +23,6 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/NearestNeighborFinder.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>

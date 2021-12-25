@@ -25,7 +25,6 @@
 
 
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 

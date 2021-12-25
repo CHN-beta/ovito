@@ -25,7 +25,6 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include "ScatterPlotModifier.h"
 

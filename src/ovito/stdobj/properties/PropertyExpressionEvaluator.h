@@ -25,7 +25,7 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 
 #include <muparser/muParser.h>

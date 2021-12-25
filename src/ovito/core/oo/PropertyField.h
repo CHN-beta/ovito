@@ -80,72 +80,69 @@ protected:
 /**
  * \brief Stores a non-animatable property of a RefTarget derived class, which is not serializable.
  */
-template<typename property_data_type>
+template<typename property_data_type, int flags>
 class RuntimePropertyField : public PropertyFieldBase
 {
 public:
 	using property_type = property_data_type;
+	static constexpr int property_field_flags = flags;
 
 	// Pick the QVariant data type used to wrap the property type.
 	// If the property type is an enum, then use 'int'.
 	// If the property is 'Color', then use 'QColor'.
 	// Otherwise just use the property type.
-	using qvariant_type = std::conditional_t<std::is_enum<property_data_type>::value, int,
-		std::conditional_t<std::is_same<property_data_type, Color>::value, QColor, property_data_type>>;
+	using qvariant_type = std::conditional_t<std::is_enum_v<property_data_type>, int,
+		std::conditional_t<std::is_same_v<property_data_type, Color>, QColor, property_data_type>>;
 
 	// For enum types, the QVariant data type must always be set to 'int'.
-	static_assert(!std::is_enum<property_type>::value || std::is_same<qvariant_type, int>::value, "QVariant data type must be 'int' for enum property types.");
+	static_assert(!std::is_enum_v<property_type> || std::is_same_v<qvariant_type, int>, "QVariant data type must be 'int' for enum property types.");
 	// For color properties, the QVariant data type must always be set to 'QColor'.
-	static_assert(!std::is_same<property_type, Color>::value || std::is_same<qvariant_type, QColor>::value, "QVariant data type must be 'QColor' for color property types.");
+	static_assert(!std::is_same_v<property_type, Color> || std::is_same_v<qvariant_type, QColor>, "QVariant data type must be 'QColor' for color property types.");
 
 	/// Forwarding constructor.
 	template<class... Args>
-	explicit RuntimePropertyField(Args&&... args) : PropertyFieldBase(), _value(std::forward<Args>(args)...) {}
+	explicit RuntimePropertyField(Args&&... args) : _value(std::forward<Args>(args)...) {}
 
 	/// Changes the value of the property. Handles undo and sends a notification message.
 	template<typename T>
 	void set(RefMaker* owner, const PropertyFieldDescriptor* descriptor, T&& newValue) {
 		OVITO_ASSERT(owner != nullptr);
-		if(isEqualToCurrentValue(get(), newValue)) return;
-		if(isUndoRecordingActive(owner, descriptor))
-			pushUndoRecord(owner, std::make_unique<PropertyChangeOperation>(owner, *this, descriptor));
+		if constexpr(boost::has_equal_to<property_type, std::decay_t<T>>::value) {
+			if(get() == newValue) return;
+		}
+		if constexpr(!(flags & PROPERTY_FIELD_NO_UNDO)) {
+			if(isUndoRecordingActive(owner, descriptor))
+				pushUndoRecord(owner, std::make_unique<PropertyChangeOperation>(owner, *this, descriptor));
+		}
 		mutableValue() = std::forward<T>(newValue);
 		valueChangedInternal(owner, descriptor);
 	}
 
 	/// Changes the value of the property. Handles undo and sends a notification message.
-	template<typename T = qvariant_type>
-	std::enable_if_t<QMetaTypeId2<T>::Defined>
-	setQVariant(RefMaker* owner, const PropertyFieldDescriptor* descriptor, const QVariant& newValue) {
-		if(newValue.canConvert<qvariant_type>()) {
-			set(owner, descriptor, static_cast<property_type>(newValue.value<qvariant_type>()));
+	void setQVariant(RefMaker* owner, const PropertyFieldDescriptor* descriptor, const QVariant& newValue) {
+		if constexpr(QMetaTypeId2<qvariant_type>::Defined) {
+			if(newValue.canConvert<qvariant_type>()) {
+				set(owner, descriptor, static_cast<property_type>(newValue.value<qvariant_type>()));
+			}
+			else {
+				OVITO_ASSERT_MSG(false, "PropertyField::setQVariant()", qPrintable(QStringLiteral("The assigned QVariant value of type %1 cannot be converted to the data type %2 of the property field.").arg(newValue.typeName()).arg(getQtTypeName<qvariant_type>())));
+			}
 		}
 		else {
-			OVITO_ASSERT_MSG(false, "PropertyField::setQVariant()", qPrintable(QString("The assigned QVariant value of type %1 cannot be converted to the data type %2 of the property field.").arg(newValue.typeName()).arg(getQtTypeName<qvariant_type>())));
+			OVITO_ASSERT_MSG(false, "RuntimePropertyField::setQVariant()", "The data type of the property field does not support conversion to/from QVariant.");
 		}
 	}
 
-	/// Changes the value of the property. Handles undo and sends a notification message.
-	template<typename T = qvariant_type>
-	std::enable_if_t<!QMetaTypeId2<T>::Defined>
-	setQVariant(RefMaker* owner, const PropertyFieldDescriptor* descriptor, const QVariant& newValue) {
-		OVITO_ASSERT_MSG(false, "RuntimePropertyField::setQVariant()", "The data type of the property field does not support conversion to/from QVariant.");
-	}
-
 	/// Returns the internal value stored in this property field as a QVariant.
-	template<typename T = qvariant_type>
-	std::enable_if_t<QMetaTypeId2<T>::Defined, QVariant>
-	getQVariant() const {
-		return QVariant::fromValue<qvariant_type>(static_cast<qvariant_type>(this->get()));
-	}
-
-	/// Returns the internal value stored in this property field as a QVariant.
-	template<typename T = qvariant_type>
-	std::enable_if_t<!QMetaTypeId2<T>::Defined, QVariant>
-	getQVariant() const {
-		OVITO_ASSERT_MSG(false, "RuntimePropertyField::getQVariant()", "The data type of the property field does not support conversion to/from QVariant.");
-		return {};
-	}
+	QVariant getQVariant() const {
+		if constexpr(QMetaTypeId2<qvariant_type>::Defined) {
+			return QVariant::fromValue<qvariant_type>(static_cast<qvariant_type>(this->get()));
+		}
+		else {
+			OVITO_ASSERT_MSG(false, "RuntimePropertyField::getQVariant()", "The data type of the property field does not support conversion to/from QVariant.");
+			return {};
+		}
+	}	
 
 	/// Returns the internal value stored in this property field.
 	inline const property_type& get() const { return _value; }
@@ -166,16 +163,6 @@ private:
 		if(descriptor->extraChangeEventType() != 0)
 			generateTargetChangedEvent(owner, descriptor, static_cast<ReferenceEvent::Type>(descriptor->extraChangeEventType()));
 	}
-
-	/// Helper function that tests if the new value is equal to the current value of the property field.
-	template<typename T = property_type>
-	static inline std::enable_if_t<boost::has_equal_to<const T&>::value, bool>
-	isEqualToCurrentValue(const T& oldValue, const T& newValue) { return oldValue == newValue; }
-
-	/// Fallback of the helper function above, which is used if the property field's data type has no comparison operator.
-	template<typename T = property_type>
-	static inline std::enable_if_t<!boost::has_equal_to<const T&>::value, bool>
-	isEqualToCurrentValue(const T& oldValue, const T& newValue) { return false; }
 
 	/// This undo class records a change to the property value.
 	class PropertyChangeOperation : public PropertyFieldOperation
@@ -210,64 +197,66 @@ private:
 /**
  * \brief Stores a non-animatable property of a RefTarget derived class.
  */
-template<typename property_data_type>
-class PropertyField : public RuntimePropertyField<property_data_type>
+template<typename property_data_type, int flags>
+class PropertyField : public RuntimePropertyField<property_data_type, flags>
 {
+private:
+
+	using base_class = RuntimePropertyField<property_data_type, flags>;
+
 public:
 
 	using property_type = property_data_type;
 
-	/// Constructor.
-	using RuntimePropertyField<property_data_type>::RuntimePropertyField;
+	/// Inherit constructor.
+	using base_class::base_class;
 
 	/// Saves the property's value to a stream.
 	inline void saveToStream(SaveStream& stream) const {
-		stream << this->get();
+		if constexpr(std::is_same_v<property_data_type, size_t>)
+			stream.writeSizeT(this->get());
+		else
+			stream << this->get();
 	}
 
 	/// Loads the property's value from a stream.
 	inline void loadFromStream(LoadStream& stream) {
-		stream >> this->mutableValue();
+		if constexpr(std::is_same_v<property_data_type, size_t>)
+			stream.readSizeT(this->mutableValue());
+		else
+			stream >> this->mutableValue();
 	}
 };
-
-// Template specialization for size_t property fields.
-template<>
-inline void PropertyField<size_t>::saveToStream(SaveStream& stream) const {
-	stream.writeSizeT(this->get());
-}
-
-// Template specialization for size_t property fields.
-template<>
-inline void PropertyField<size_t>::loadFromStream(LoadStream& stream) {
-	stream.readSizeT(this->mutableValue());
-}
 
 /**
  * \brief Stores a snapshot of another parameter's value.
  */
 template<typename property_data_type>
-class ShadowPropertyField : public PropertyField<property_data_type>
+class ShadowPropertyField : public PropertyField<property_data_type, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE>
 {
+private:
+
+	using base_class = PropertyField<property_data_type, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE>;
+
 public:
 
 	using property_type = property_data_type;
 
-	/// Constructor.
-	using PropertyField<property_data_type>::PropertyField;
+	/// Inherit constructor.
+	using base_class::base_class;
 
 	/// Saves the property's value to a stream.
 	inline void saveToStream(SaveStream& stream) const {
 		stream << _hasSnapshot;
 		if(_hasSnapshot)
-			PropertyField<property_data_type>::saveToStream(stream);
+			base_class::saveToStream(stream);
 	}
 
 	/// Loads the property's value from a stream.
 	inline void loadFromStream(LoadStream& stream) {
 		stream >> _hasSnapshot;
 		if(_hasSnapshot)
-			PropertyField<property_data_type>::loadFromStream(stream);
+			base_class::loadFromStream(stream);
 	}
 
 	/// Returns whether this shadow field currently stores a valid value. 

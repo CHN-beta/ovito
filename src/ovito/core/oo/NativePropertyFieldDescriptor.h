@@ -231,23 +231,22 @@ public:
 /// Adds a property field to a class definition.
 /// The first parameter specifies the data type of the property field.
 /// The second parameter determines the name of the property field. It must be unique within the current class.
-#define DECLARE_PROPERTY_FIELD_FLAGS(type, name, flags) \
+#define DECLARE_PROPERTY_FIELD_FLAGS(type, fieldname, flags) \
 	private: \
-		static Ovito::NativePropertyFieldDescriptor name##__propdescr_instance; \
+		static Ovito::NativePropertyFieldDescriptor fieldname##__propdescr_instance; \
 	public: \
-		enum { __##name##_flags = flags }; \
-		static inline Ovito::NativePropertyFieldDescriptor* PROPERTY_FIELD(name) { \
-			return &name##__propdescr_instance; \
+		static inline Ovito::NativePropertyFieldDescriptor* PROPERTY_FIELD(fieldname) { \
+			return &fieldname##__propdescr_instance; \
 		} \
-		Ovito::PropertyField<type> _##name; \
-		const type& name() const { return _##name; } \
+		Ovito::PropertyField<type, flags> _##fieldname; \
+		inline const type& fieldname() const { return _##fieldname; } \
 	private:
 
 #define DEFINE_PROPERTY_FIELD(classname, fieldname) \
 	Ovito::NativePropertyFieldDescriptor classname::fieldname##__propdescr_instance( \
 			const_cast<classname::OOMetaClass*>(&classname::OOClass()), \
 			#fieldname, \
-			static_cast<Ovito::PropertyFieldFlags>(classname::__##fieldname##_flags), \
+			static_cast<Ovito::PropertyFieldFlags>(decltype(classname::_##fieldname)::property_field_flags), \
 			[](Ovito::RefMaker* obj, const Ovito::RefMaker* other) { \
 				static_cast<classname*>(obj)->_##fieldname.set(obj, PROPERTY_FIELD(classname::fieldname), static_cast<const classname*>(other)->_##fieldname.get()); \
 			}, \
@@ -268,24 +267,24 @@ public:
 /// Adds a property field to a class definition.
 /// The first parameter specifies the data type of the property field.
 /// The second parameter determines the name of the property field. It must be unique within the current class.
-#define DECLARE_PROPERTY_FIELD(type, name) \
-	DECLARE_PROPERTY_FIELD_FLAGS(type, name, PROPERTY_FIELD_NO_FLAGS)
+#define DECLARE_PROPERTY_FIELD(type, fieldname) \
+	DECLARE_PROPERTY_FIELD_FLAGS(type, fieldname, Ovito::PROPERTY_FIELD_NO_FLAGS)
 
 /// Adds a settable property field to a class definition.
 /// The first parameter specifies the data type of the property field.
 /// The second parameter determines the name of the property field. It must be unique within the current class.
 /// The third parameter is the name of the setter method to be created for this property field.
-#define DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(type, name, setterName, flags) \
+#define DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(type, fieldname, setterName, flags) \
 	public: \
-		void setterName(const type& value) { _##name.set(this, PROPERTY_FIELD(name), value); } \
-		DECLARE_PROPERTY_FIELD_FLAGS(type, name, flags)
+		void setterName(const type& value) { _##fieldname.set(this, PROPERTY_FIELD(fieldname), value); } \
+		DECLARE_PROPERTY_FIELD_FLAGS(type, fieldname, flags)
 
 /// Adds a settable property field to a class definition.
 /// The first parameter specifies the data type of the property field.
 /// The second parameter determines the name of the property field. It must be unique within the current class.
 /// The third parameter is the name of the setter method to be created for this property field.
-#define DECLARE_MODIFIABLE_PROPERTY_FIELD(type, name, setterName) \
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(type, name, setterName, PROPERTY_FIELD_NO_FLAGS)
+#define DECLARE_MODIFIABLE_PROPERTY_FIELD(type, fieldname, setterName) \
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(type, fieldname, setterName, Ovito::PROPERTY_FIELD_NO_FLAGS)
 
 /***************** Runtime property fields *******************/
 
@@ -293,25 +292,24 @@ public:
 /// The first parameter specifies the data type of the property field.
 /// The second parameter determines the name of the property field. It must be unique within the current class.
 /// The third parameter is the name of the setter method to be created for this property field.
-#define DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(type, name, setterName, flags) \
+#define DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(type, fieldname, setterName, flags) \
 	private: \
-		static Ovito::NativePropertyFieldDescriptor name##__propdescr_instance; \
+		static Ovito::NativePropertyFieldDescriptor fieldname##__propdescr_instance; \
 	public: \
-		enum { __##name##_flags = flags }; \
-		static inline Ovito::NativePropertyFieldDescriptor* PROPERTY_FIELD(name) { \
-			return &name##__propdescr_instance; \
+		static inline Ovito::NativePropertyFieldDescriptor* PROPERTY_FIELD(fieldname) { \
+			return &fieldname##__propdescr_instance; \
 		} \
-		Ovito::RuntimePropertyField<type> _##name; \
-		const type& name() const { return _##name; } \
-		void setterName(const type& value) { _##name.set(this, PROPERTY_FIELD(name), value); } \
-		void setterName(type&& value) { _##name.set(this, PROPERTY_FIELD(name), std::move(value)); } \
+		Ovito::RuntimePropertyField<type, flags> _##fieldname; \
+		const type& fieldname() const { return _##fieldname; } \
+		void setterName(const type& value) { _##fieldname.set(this, PROPERTY_FIELD(fieldname), value); } \
+		void setterName(type&& value) { _##fieldname.set(this, PROPERTY_FIELD(fieldname), std::move(value)); } \
 	private:
 
 #define DEFINE_RUNTIME_PROPERTY_FIELD(classname, fieldname) \
 	Ovito::NativePropertyFieldDescriptor classname::fieldname##__propdescr_instance( \
 			const_cast<classname::OOMetaClass*>(&classname::OOClass()), \
 			#fieldname, \
-			static_cast<Ovito::PropertyFieldFlags>(classname::__##fieldname##_flags), \
+			static_cast<Ovito::PropertyFieldFlags>(decltype(classname::_##fieldname)::property_field_flags), \
 			[](Ovito::RefMaker* obj, const Ovito::RefMaker* other) { \
 				static_cast<classname*>(obj)->_##fieldname.set(obj, PROPERTY_FIELD(classname::fieldname), static_cast<const classname*>(other)->_##fieldname.get()); \
 			}, \
@@ -329,9 +327,8 @@ public:
 /// The first parameter specifies the data type of the property field.
 /// The second parameter determines the name of the property field. It must be unique within the current class.
 /// The third parameter is the name of the setter method to be created for this property field.
-#define DECLARE_RUNTIME_PROPERTY_FIELD(type, name, setterName) \
-	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(type, name, setterName, PROPERTY_FIELD_NO_FLAGS)
-
+#define DECLARE_RUNTIME_PROPERTY_FIELD(type, fieldname, setterName) \
+	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(type, fieldname, setterName, Ovito::PROPERTY_FIELD_NO_FLAGS)
 
 /***************** Shadow property fields *******************/
 
@@ -341,21 +338,21 @@ public:
 		
 /// Adds the capability to take a snapshot to an existing property field of a class.
 /// A shadow property field is created by this macro, which holds a copy of the original property field value.
-#define DECLARE_SHADOW_PROPERTY_FIELD(name) \
+#define DECLARE_SHADOW_PROPERTY_FIELD(fieldname) \
 	private: \
-		static Ovito::NativePropertyFieldDescriptor name##__shadow__propdescr_instance; \
+		static Ovito::NativePropertyFieldDescriptor fieldname##__shadow__propdescr_instance; \
 	public: \
-		static inline Ovito::NativePropertyFieldDescriptor* SHADOW_PROPERTY_FIELD(name) { \
-			return &name##__shadow__propdescr_instance; \
+		static inline Ovito::NativePropertyFieldDescriptor* SHADOW_PROPERTY_FIELD(fieldname) { \
+			return &fieldname##__shadow__propdescr_instance; \
 		} \
-		Ovito::ShadowPropertyField<decltype(_##name)::property_type> _##name##__shadow; \
+		Ovito::ShadowPropertyField<decltype(_##fieldname)::property_type> _##fieldname##__shadow; \
 	private:
 
 #define DEFINE_SHADOW_PROPERTY_FIELD(classname, fieldname) \
 	Ovito::NativePropertyFieldDescriptor classname::fieldname##__shadow__propdescr_instance( \
 			const_cast<classname::OOMetaClass*>(&classname::OOClass()), \
 			#fieldname "__shadow", \
-			static_cast<Ovito::PropertyFieldFlags>(Ovito::PROPERTY_FIELD_NO_UNDO | Ovito::PROPERTY_FIELD_NO_CHANGE_MESSAGE), \
+			static_cast<Ovito::PropertyFieldFlags>(decltype(classname::_##fieldname##__shadow)::property_field_flags), \
 			[](Ovito::RefMaker* obj, const Ovito::RefMaker* other) { \
 				if(static_cast<const classname*>(other)->_##fieldname##__shadow.hasSnapshot()) \
 					static_cast<classname*>(obj)->_##fieldname##__shadow.takeSnapshot(static_cast<const classname*>(other)->_##fieldname##__shadow.get()); \

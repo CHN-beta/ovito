@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/grid/Grid.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/app/Application.h>
 #include "VTKVoxelGridExporter.h"
 

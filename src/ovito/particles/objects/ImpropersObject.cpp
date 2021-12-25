@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include "ImpropersObject.h"
 
 namespace Ovito::Particles {

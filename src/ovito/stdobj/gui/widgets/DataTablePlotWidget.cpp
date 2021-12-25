@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdobj/gui/StdObjGui.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include "DataTablePlotWidget.h"
 
 #include <qwt/qwt_plot.h>

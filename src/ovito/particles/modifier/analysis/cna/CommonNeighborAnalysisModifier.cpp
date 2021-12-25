@@ -27,7 +27,6 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleBondMap.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>

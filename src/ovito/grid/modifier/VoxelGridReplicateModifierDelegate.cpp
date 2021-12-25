@@ -23,7 +23,6 @@
 #include <ovito/grid/Grid.h>
 #include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "VoxelGridReplicateModifierDelegate.h"
 
@@ -98,7 +97,7 @@ PipelineStatus VoxelGridReplicateModifierDelegate::apply(const ModifierEvaluatio
 			for(PropertyObject* property : newVoxelGrid->makePropertiesMutable()) {
 				// First, copy the original property data to a temporary buffer so that
 				// it doesn't get destroyed while we are rewriting it to the replicated property array.
-				PropertyAccess<void,true> array(property);
+				DataBufferAccess<void,true> array(property);
 				size_t stride = array.stride();
 				uint8_t* dst = array.data();
 				std::vector<uint8_t> buffer(dst, dst + stride * existingVoxelGrid->elementCount());

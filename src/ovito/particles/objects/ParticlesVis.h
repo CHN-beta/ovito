@@ -26,7 +26,6 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
 #include <ovito/core/dataset/data/DataVis.h>

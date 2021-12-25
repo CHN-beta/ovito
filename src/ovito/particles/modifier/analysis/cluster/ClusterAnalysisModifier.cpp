@@ -25,7 +25,6 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/ParticleBondMap.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>

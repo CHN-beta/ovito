@@ -24,7 +24,6 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/BondsObject.h>
 #include <ovito/particles/objects/BondsVis.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/oo/CloneHelper.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>

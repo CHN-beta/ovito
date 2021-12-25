@@ -23,7 +23,6 @@
 #include <ovito/mesh/Mesh.h>
 #include <ovito/mesh/util/CapPolygonTessellator.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
 #include <ovito/core/dataset/data/mesh/TriMeshObject.h>

@@ -26,7 +26,6 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/app/Application.h>
 #include "SelectTypeModifier.h"
 

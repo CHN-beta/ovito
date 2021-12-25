@@ -24,7 +24,6 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/objects/BondsObject.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>

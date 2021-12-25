@@ -22,7 +22,6 @@
 
 #include <ovito/grid/Grid.h>
 #include <ovito/grid/objects/VoxelGrid.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
 #include <ovito/core/dataset/DataSet.h>

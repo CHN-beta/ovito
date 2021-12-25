@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include "DataTable.h"
 
 namespace Ovito::StdObj {

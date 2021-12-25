@@ -24,7 +24,6 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/import/gsd/GSDFile.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include "GSDExporter.h"
 
 namespace Ovito::Particles {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,8 +24,8 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/particles/util/NearestNeighborFinder.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <3rdparty/ptm/ptm_functions.h>
 #include <3rdparty/ptm/ptm_initialize_data.h>
 

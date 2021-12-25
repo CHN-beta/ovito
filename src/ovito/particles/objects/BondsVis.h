@@ -27,7 +27,6 @@
 #include <ovito/particles/objects/BondsObject.h>
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>

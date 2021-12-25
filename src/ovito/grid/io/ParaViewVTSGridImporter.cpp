@@ -23,7 +23,6 @@
 #include <ovito/grid/Grid.h>
 #include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/grid/objects/VoxelGridVis.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include <ovito/mesh/io/ParaViewVTPMeshImporter.h>
 #include "ParaViewVTSGridImporter.h"
 

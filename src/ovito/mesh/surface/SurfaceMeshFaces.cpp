@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include "SurfaceMeshFaces.h"
 #include "SurfaceMeshVis.h"
 

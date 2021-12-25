@@ -23,7 +23,6 @@
 #include <ovito/mesh/Mesh.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshAccess.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include "SurfaceMeshDeleteSelectedModifierDelegate.h"
 
 namespace Ovito::Mesh {

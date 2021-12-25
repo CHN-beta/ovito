@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/properties/PropertyAccess.h>
 #include "DihedralsObject.h"
 
 namespace Ovito::Particles {
