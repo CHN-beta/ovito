@@ -14,7 +14,7 @@ additional information (e.g. a scale bar or a data plot).
 The :guilabel:`Edit script` button opens a code editor, where you enter the code for the user-defined ``render()`` function.
 This function will be invoked by OVITO each time the viewport is repainted or
 whenever an image or movie frame is being rendered. The :py:class:`args <ovito.vis.PythonViewportOverlay.Arguments>` function parameter 
-gives access to a `QPainter <https://doc.qt.io/qtforpython-5/PySide2/QtGui/QPainter.html>`__ object,
+gives access to a `QPainter <https://doc.qt.io/qtforpython/PySide6/QtGui/QPainter.html>`__ object,
 which allows issuing arbitrary drawing commands to paint over the three-dimensional objects rendered by OVITO.
 
 Any Python exceptions that raised during script execution are displayed in the output area below.
