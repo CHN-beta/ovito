@@ -184,10 +184,14 @@ FUNCTION(deploy_qt_framework_files)
 
 		# Install Qt plugins.
 		INSTALL(DIRECTORY "${QtBinaryPath}/../plugins/platforms" DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/plugins_qt/")
-		INSTALL(DIRECTORY "${QtBinaryPath}/../plugins/bearer" DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/plugins_qt/")
 		INSTALL(DIRECTORY "${QtBinaryPath}/../plugins/imageformats" DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/plugins_qt/" PATTERN "libqsvg.so" EXCLUDE)
 		INSTALL(DIRECTORY "${QtBinaryPath}/../plugins/iconengines" DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/plugins_qt/")
 		INSTALL(DIRECTORY "${QtBinaryPath}/../plugins/xcbglintegrations" DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/plugins_qt/")
+		IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
+			INSTALL(DIRECTORY "${QtBinaryPath}/../plugins/platformthemes" DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/plugins_qt/")
+		ELSE()
+			INSTALL(DIRECTORY "${QtBinaryPath}/../plugins/bearer" DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/plugins_qt/")
+		ENDIF()
 		# The XcbQpa library is required by the Qt Gui module.
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/lib${OVITO_QT_MAJOR_VERSION}XcbQpa.so" "./lib")
 
