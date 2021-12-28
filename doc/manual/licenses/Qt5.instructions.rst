@@ -1,7 +1,7 @@
-.. _appendix.license.qt.instructions:
+.. _appendix.license.qt5.instructions:
 
-Build instructions for Qt
--------------------------
+Build instructions for Qt5
+--------------------------
 
 OVITO Basic and OVITO Pro program package include a binary version of the Qt libraries licensed under the GNU Lesser General Public License (LGPLv3).
 In accordance with the requirements of this license, this section gives instructions on how to obtain or rebuild compatible versions of these binaries from source.

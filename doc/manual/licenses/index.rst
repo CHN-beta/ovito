@@ -31,9 +31,13 @@ Third-party software
     - :ref:`license <appendix.license.ovito_legacy>`
     - 
 
-  * - `Qt <https://www.qt.io/developers/>`__
+  * - `Qt5 <https://www.qt.io/developers/>`__
     - LGPL v3
-    - :ref:`Info <appendix.license.qt.instructions>`
+    - :ref:`Info <appendix.license.qt5.instructions>`
+
+  * - `Qt6 <https://www.qt.io/developers/>`__
+    - LGPL v3
+    - :ref:`Info <appendix.license.qt6.instructions>`
 
   * - `Qwt <https://sourceforge.net/projects/qwt/>`__
     - :ref:`license <appendix.license.qwt>`
@@ -173,7 +177,8 @@ Third-party software
   ovito_legacy
   GPL
   FDL
-  Qt.instructions
+  Qt5.instructions
+  Qt6.instructions
   tachyon
   muparser
   netcdf
