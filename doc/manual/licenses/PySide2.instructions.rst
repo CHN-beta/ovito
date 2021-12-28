@@ -17,7 +17,7 @@ Linux
 
 OVITO Pro for Linux ships with a copy of the PySide2 module that has been built from the original sources provided by
 the Qt Company, following the standard procedure described `here <https://wiki.qt.io/Qt_for_Python_GettingStarted/X11>`__.
-PySide2 v5.15 has been compiled against Qt 5.15.2 (see :ref:`here <appendix.license.qt.instructions>`) and a build of the standard `CPython <https://www.python.org>`__ 3.9 interpreter::
+PySide2 v5.15 has been compiled against Qt 5.15.2 (see :ref:`here <appendix.license.qt5.instructions>`) and a build of the standard `CPython <https://www.python.org>`__ 3.9 interpreter::
 
   # Build platform: CentOS 6.9
   # Compiler: g++ 7.1 (CentOS devtoolset-7)
