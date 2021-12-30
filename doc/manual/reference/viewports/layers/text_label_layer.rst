@@ -13,12 +13,14 @@ of :ref:`global attributes <usage.global_attributes>` dynamically computed in OV
 This makes it possible to include dynamic data such as the current simulation time, the number of atoms,
 or numeric results in rendered images or movies.
 
+.. _viewport_layers.text_label.text_formatting:
+
 HTML text formatting
 """"""""""""""""""""
 
-You can include HTML markup elements and Cascading Style Sheet (CSS) attributes to format parts of the text.
+You can include HTML markup elements and Cascading Style Sheet (CSS) attributes in the text to format individual words and characters.
 OVITO supports a subset of the HTML standard, which is `documented here <https://doc.qt.io/qt-6/richtext-html-subset.html>`__.
-The following table gives a few examples:
+The following table gives a few examples of HTML markup elements:
 
 .. |br| raw:: html
 
@@ -28,36 +30,39 @@ The following table gives a few examples:
 
    <span style="text-decoration: underline">underlined</span>
 
+.. role:: raw-html(raw)
+   :format: html
+
 .. list-table::
   :widths: 50 50
   :header-rows: 1
 
-  * - Input markup text
+  * - Markup text
     - Formatted output
-  * - nm<sup>3</sup>
+  * - nm\ :raw-html:`<font color="green"><b>`\ <sup>\ :raw-html:`</b></font>`\ 3\ :raw-html:`<font color="green"><b>`\ </sup>\ :raw-html:`</b></font>`
     - nm\ :sup:`3`  
-  * - e<sub>z</sub>
+  * - e\ :raw-html:`<font color="green"><b>`\ <sub>\ :raw-html:`</b></font>`\ z\ :raw-html:`<font color="green"><b>`\ </sub>\ :raw-html:`</b></font>`
     - e\ :sub:`z`  
-  * - First line<br>Second line
+  * - First line\ :raw-html:`<font color="green"><b>`\ <br>\ :raw-html:`</b></font>`\ Second line
     - First line |br| Second line
-  * - Some <i>italic</i> text
+  * - Some :raw-html:`<font color="green"><b>`\ <i>\ :raw-html:`</b></font>`\ italic\ :raw-html:`<font color="green"><b>`\ </i>\ :raw-html:`</b></font>` text
     - Some *italic* text
-  * - Some <span style="text-decoration: underline">\ underlined</span> text
+  * - Some :raw-html:`<font color="green"><b>`\ <span style="text-decoration: underline">\ :raw-html:`</b></font>`\ underlined\ :raw-html:`<font color="green"><b>`\ </span>\ :raw-html:`</b></font>` text
     - Some |underlined| text
 
-Attribute values
-""""""""""""""""
+Including computed values in the text
+"""""""""""""""""""""""""""""""""""""
 
-The text label gets a list of :ref:`global attributes <usage.global_attributes>` from the 
-selected data pipeline. Attributes are named variables containing numeric or other values 
-dynamically computed by the pipeline. You can incorporate attribute values in the label text 
-by inserting placeholders of the form `[attribute_name]` into the text field.
+The text label has access to the list of :ref:`global attributes <usage.global_attributes>` provided by the 
+selected pipeline. Attributes are variables containing numeric values or text strings 
+loaded from the simulation file or dynamically computed by modifiers in the data pipeline. 
+You can incorporate attribute values in the label's text by inserting placeholders of the form ``[attribute_name]``.
 
-When a placeholder in the text references an attribute with a numeric value, the value 
-gets formatted according to a format specification string. You have the choice between decimal notation (``%f``), exponential notation (``%e``)
-and an automatic mode (``%g``). Furthermore, the format string allows you to control the output precision, i.e. the number of decimal places that
+Whenever a placeholder references an attribute with a numeric value, the floating-point value 
+gets formatted according to the specified :guilabel:`Value format string`. You have the choice between decimal notation (``%f``), exponential notation (``%e``)
+and an automatic mode (``%g``). Furthermore, the format string gives you control of the output precision, i.e. the number of decimal places that
 appear after the decimal point. Use ``%.2f``, for example, to always show two digits after the decimal point. 
-The format string must follow the standard convention of the `printf() <https://en.cppreference.com/w/cpp/io/c/fprintf>`__ C function.
+The format string must follow the standard convention of the `printf() C function <https://en.cppreference.com/w/cpp/io/c/fprintf>`__.
 
 Defining new attributes
 """""""""""""""""""""""

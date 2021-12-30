@@ -59,59 +59,65 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
 	QWidget* rollout = createRollout(tr("Color legend"), rolloutParams, "manual:viewport_layers.color_legend");
 
     // Create the rollout contents.
-	QGridLayout* layout = new QGridLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
-	layout->setColumnStretch(1, 1);
-	int row = 0;
+	QVBoxLayout* parentLayout = new QVBoxLayout(rollout);
+	parentLayout->setContentsMargins(4,4,4,4);
+	parentLayout->setSpacing(4);
+
+	QGroupBox* sourceBox = new QGroupBox(tr("Color legend source:"));
+	parentLayout->addWidget(sourceBox);
+	QVBoxLayout* sourceLayout = new QVBoxLayout(sourceBox);
+	sourceLayout->setContentsMargins(4,4,4,4);
 
 	_sourcesComboBox = new PopupUpdateComboBox();
 	connect(this, &PropertiesEditor::contentsChanged, this, &ColorLegendOverlayEditor::updateSourcesList);
 	connect(_sourcesComboBox, &PopupUpdateComboBox::dropDownActivated, this, &ColorLegendOverlayEditor::updateSourcesList);
 	connect(_sourcesComboBox, QOverload<int>::of(&QComboBox::activated), this, &ColorLegendOverlayEditor::colorSourceSelected);
-	layout->addWidget(new QLabel(tr("Color source:")), row, 0);
-	layout->addWidget(_sourcesComboBox, row++, 1);
+	sourceLayout->addWidget(_sourcesComboBox, 1);
 
-	QGroupBox* positionBox = new QGroupBox(tr("Position"));
-	layout->addWidget(positionBox, row++, 0, 1, 2);
-	QGridLayout* sublayout = new QGridLayout(positionBox);
-	sublayout->setContentsMargins(4,4,4,4);
-	sublayout->setSpacing(4);
-	sublayout->setColumnStretch(1, 1);
+	QGroupBox* positionBox = new QGroupBox(tr("Positioning"));
+	parentLayout->addWidget(positionBox);
+	QGridLayout* positionLayout = new QGridLayout(positionBox);
+	positionLayout->setContentsMargins(4,4,4,4);
+	positionLayout->setColumnStretch(1, 1);
+	positionLayout->setColumnStretch(2, 1);
+	positionLayout->setSpacing(4);
+	positionLayout->setHorizontalSpacing(4);
 	int subrow = 0;
 
 	VariantComboBoxParameterUI* alignmentPUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::alignment));
-	sublayout->addWidget(alignmentPUI->comboBox(), subrow, 0);
-	alignmentPUI->comboBox()->addItem(tr("Top"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignHCenter)));
-	alignmentPUI->comboBox()->addItem(tr("Top left"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignLeft)));
-	alignmentPUI->comboBox()->addItem(tr("Top right"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignRight)));
-	alignmentPUI->comboBox()->addItem(tr("Bottom"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignHCenter)));
-	alignmentPUI->comboBox()->addItem(tr("Bottom left"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignLeft)));
-	alignmentPUI->comboBox()->addItem(tr("Bottom right"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignRight)));
-	alignmentPUI->comboBox()->addItem(tr("Left"), QVariant::fromValue((int)(Qt::AlignVCenter | Qt::AlignLeft)));
-	alignmentPUI->comboBox()->addItem(tr("Right"), QVariant::fromValue((int)(Qt::AlignVCenter | Qt::AlignRight)));
+	positionLayout->addWidget(new QLabel(tr("Alignment:")), subrow, 0);
+	positionLayout->addWidget(alignmentPUI->comboBox(), subrow++, 1, 1, 2);
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_top_left.svg"), tr("Top left"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignLeft)));
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_top.svg"), tr("Top"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignHCenter)));
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_top_right.svg"), tr("Top right"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignRight)));
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_right.svg"), tr("Right"), QVariant::fromValue((int)(Qt::AlignVCenter | Qt::AlignRight)));
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_bottom_right.svg"), tr("Bottom right"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignRight)));
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_bottom.svg"), tr("Bottom"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignHCenter)));
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_bottom_left.svg"), tr("Bottom left"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignLeft)));
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_left.svg"), tr("Left"), QVariant::fromValue((int)(Qt::AlignVCenter | Qt::AlignLeft)));
 
 	VariantComboBoxParameterUI* orientationPUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::orientation));
-	sublayout->addWidget(orientationPUI->comboBox(), subrow++, 1);
+	positionLayout->addWidget(new QLabel(tr("Orientation:")), subrow, 0);
+	positionLayout->addWidget(orientationPUI->comboBox(), subrow++, 1, 1, 2);
 	orientationPUI->comboBox()->addItem(tr("Vertical"), QVariant::fromValue((int)Qt::Vertical));
 	orientationPUI->comboBox()->addItem(tr("Horizontal"), QVariant::fromValue((int)Qt::Horizontal));
 
 	FloatParameterUI* offsetXPUI = new FloatParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::offsetX));
-	sublayout->addWidget(offsetXPUI->label(), subrow, 0);
-	sublayout->addLayout(offsetXPUI->createFieldLayout(), subrow++, 1);
-
+	positionLayout->addWidget(new QLabel(tr("XY offset:")), subrow, 0);
+	positionLayout->addLayout(offsetXPUI->createFieldLayout(), subrow, 1);
 	FloatParameterUI* offsetYPUI = new FloatParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::offsetY));
-	sublayout->addWidget(offsetYPUI->label(), subrow, 0);
-	sublayout->addLayout(offsetYPUI->createFieldLayout(), subrow++, 1);
+	positionLayout->addLayout(offsetYPUI->createFieldLayout(), subrow++, 2);
 
 	ViewportInputMode* moveOverlayMode = new MoveOverlayInputMode(this);
 	connect(this, &QObject::destroyed, moveOverlayMode, &ViewportInputMode::removeMode);
-	ViewportModeAction* moveOverlayAction = new ViewportModeAction(mainWindow(), tr("Move using mouse"), this, moveOverlayMode);
-	sublayout->addWidget(new ViewportModeButton(moveOverlayAction), subrow++, 0, 1, 2);
+	ViewportModeAction* moveOverlayAction = new ViewportModeAction(mainWindow(), tr("Move"), this, moveOverlayMode);
+	moveOverlayAction->setIcon(QIcon(":/guibase/actions/edit/mode_move.bw.svg"));
+	moveOverlayAction->setToolTip(tr("Reposition the label in the viewport using the mouse"));
+	positionLayout->addWidget(new ViewportModeButton(moveOverlayAction), subrow, 1, 1, 2, Qt::AlignRight | Qt::AlignTop);
 
 	QGroupBox* sizeBox = new QGroupBox(tr("Size and border"));
-	layout->addWidget(sizeBox, row++, 0, 1, 2);
-	sublayout = new QGridLayout(sizeBox);
+	parentLayout->addWidget(sizeBox);
+	QGridLayout* sublayout = new QGridLayout(sizeBox);
 	sublayout->setContentsMargins(4,4,4,4);
 	sublayout->setSpacing(4);
 	sublayout->setColumnStretch(1, 1);
@@ -132,8 +138,8 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
 	ColorParameterUI* borderColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::borderColor));
 	sublayout->addWidget(borderColorPUI->colorPicker(), subrow++, 1);
 
-	QGroupBox* labelBox = new QGroupBox(tr("Labels"));
-	layout->addWidget(labelBox, row++, 0, 1, 2);
+	QGroupBox* labelBox = new QGroupBox(tr("Text labels"));
+	parentLayout->addWidget(labelBox);
 	sublayout = new QGridLayout(labelBox);
 	sublayout->setContentsMargins(4,4,4,4);
 	sublayout->setSpacing(4);

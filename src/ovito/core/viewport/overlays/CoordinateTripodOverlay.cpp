@@ -25,6 +25,7 @@
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/app/Application.h>
 #include "CoordinateTripodOverlay.h"
 
 namespace Ovito {
@@ -57,10 +58,10 @@ DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, tripodStyle);
 DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, outlineColor);
 DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, outlineEnabled);
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, alignment, "Position");
-SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, tripodSize, "Size factor");
+SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, tripodSize, "Overall size");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, lineWidth, "Line width");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, font, "Font");
-SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, fontSize, "Label size");
+SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, fontSize, "Text size");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, offsetX, "Offset X");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, offsetY, "Offset Y");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, tripodStyle, "Style");
@@ -87,6 +88,19 @@ CoordinateTripodOverlay::CoordinateTripodOverlay(DataSet* dataset) : ViewportOve
 		_outlineColor(1,1,1),
 		_outlineEnabled(false)
 {
+}
+
+/******************************************************************************
+* Is called when the value of a property of this object has changed.
+******************************************************************************/
+void CoordinateTripodOverlay::propertyChanged(const PropertyFieldDescriptor* field)
+{
+	if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
+		// Automatically reset offset to zero when user changes the alignment of the overlay in the viewport.
+		setOffsetX(0);
+		setOffsetY(0);
+	}
+	ViewportOverlay::propertyChanged(field);
 }
 
 /******************************************************************************

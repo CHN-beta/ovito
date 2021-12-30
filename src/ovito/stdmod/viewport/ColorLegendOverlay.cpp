@@ -55,7 +55,7 @@ DEFINE_PROPERTY_FIELD(ColorLegendOverlay, borderEnabled);
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, borderColor);
 SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, alignment, "Position");
 SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, orientation, "Orientation");
-SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, legendSize, "Size factor");
+SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, legendSize, "Overall size");
 SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, font, "Font");
 SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, fontSize, "Font size");
 SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, offsetX, "Offset X");
@@ -63,7 +63,7 @@ SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, offsetY, "Offset Y");
 SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, aspectRatio, "Aspect ratio");
 SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, textColor, "Font color");
 SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, outlineColor, "Outline color");
-SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, outlineEnabled, "Enable outline");
+SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, outlineEnabled, "Text outline");
 SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, title, "Title");
 SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, label1, "Label 1");
 SET_PROPERTY_FIELD_LABEL(ColorLegendOverlay, label2, "Label 2");
@@ -111,6 +111,19 @@ ColorLegendOverlay::ColorLegendOverlay(DataSet* dataset) : ViewportOverlay(datas
 		}
 		return true;
 	});
+}
+
+/******************************************************************************
+* Is called when the value of a property of this object has changed.
+******************************************************************************/
+void ColorLegendOverlay::propertyChanged(const PropertyFieldDescriptor* field)
+{
+	if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
+		// Automatically reset offset to zero when user changes the alignment of the overlay in the viewport.
+		setOffsetX(0);
+		setOffsetY(0);
+	}
+	ViewportOverlay::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -395,6 +408,7 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
 	if(outlineEnabled()) textPrimitive.setOutlineColor(outlineColor());
 	textPrimitive.setAlignment(titleFlags);
 	textPrimitive.setPositionWindow(titlePos);
+	textPrimitive.setTextFormat(Qt::AutoText);
 	renderer->renderText(textPrimitive);
 
 	// Render limit labels.
@@ -553,6 +567,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRe
 	if(outlineEnabled()) textPrimitive.setOutlineColor(outlineColor());
 	textPrimitive.setAlignment(titleFlags);
 	textPrimitive.setPositionWindow(titlePos);
+	textPrimitive.setTextFormat(Qt::AutoText);
 	renderer->renderText(textPrimitive);
 
 	// Draw type name labels.

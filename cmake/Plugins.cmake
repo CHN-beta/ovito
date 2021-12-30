@@ -23,11 +23,19 @@
 # This macro creates an OVITO plugin module.
 MACRO(OVITO_STANDARD_PLUGIN target_name)
 
-    # Parse macro parameters
+    # Parse macro arguments.
     SET(options GUI_PLUGIN HAS_NO_EXPORTS)
-    SET(oneValueArgs)
     SET(multiValueArgs SOURCES LIB_DEPENDENCIES PRIVATE_LIB_DEPENDENCIES PLUGIN_DEPENDENCIES OPTIONAL_PLUGIN_DEPENDENCIES PRECOMPILED_HEADERS)
-    CMAKE_PARSE_ARGUMENTS(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+    CMAKE_PARSE_ARGUMENTS(ARG 
+		"${options}" # options
+		""  # one-value keywords
+		"${multiValueArgs}" # multi-value keywords
+		${ARGN}) # strings to parse
+
+	# Validate argument values.
+	IF(ARG_UNPARSED_ARGUMENTS)
+		MESSAGE(FATAL_ERROR "Bad macro arguments: ${ARG_UNPARSED_ARGUMENTS}")
+	ENDIF()
 	SET(plugin_sources ${ARG_SOURCES})
 	SET(lib_dependencies ${ARG_LIB_DEPENDENCIES})
 	SET(private_lib_dependencies ${ARG_PRIVATE_LIB_DEPENDENCIES})

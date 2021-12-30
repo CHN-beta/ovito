@@ -59,6 +59,11 @@ public:
 		setOffsetY(roundPercent(offsetY() + delta.y()));
 	}
 
+protected:
+
+	/// Is called when the value of a property of this object has changed.
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+
 public:
 
 	Q_PROPERTY(Ovito::StdMod::ColorCodingModifier* modifier READ modifier WRITE setModifier)

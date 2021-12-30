@@ -51,69 +51,87 @@ void CoordinateTripodOverlayEditor::createUI(const RolloutInsertionParameters& r
 	QWidget* rollout = createRollout(tr("Coordinate tripod"), rolloutParams, "manual:viewport_layers.coordinate_tripod");
 
     // Create the rollout contents.
-	QGridLayout* layout = new QGridLayout(rollout);
-	layout->setContentsMargins(4,4,4,4);
-	layout->setSpacing(4);
-	layout->setColumnStretch(1, 1);
-	int row = 0;
+	QVBoxLayout* parentLayout = new QVBoxLayout(rollout);
+	parentLayout->setContentsMargins(4,4,4,4);
+	parentLayout->setSpacing(4);
+
+	QGroupBox* positionBox = new QGroupBox(tr("Positioning"));
+	QGridLayout* positionLayout = new QGridLayout(positionBox);
+	positionLayout->setContentsMargins(4,4,4,4);
+	positionLayout->setColumnStretch(1, 1);
+	positionLayout->setColumnStretch(2, 1);
+	positionLayout->setSpacing(2);
+	positionLayout->setHorizontalSpacing(4);
+	parentLayout->addWidget(positionBox);
 
 	VariantComboBoxParameterUI* alignmentPUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::alignment));
-	layout->addWidget(new QLabel(tr("Position:")), row, 0);
-	layout->addWidget(alignmentPUI->comboBox(), row++, 1);
-	alignmentPUI->comboBox()->addItem(tr("Top left"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignLeft)));
-	alignmentPUI->comboBox()->addItem(tr("Top right"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignRight)));
-	alignmentPUI->comboBox()->addItem(tr("Bottom left"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignLeft)));
-	alignmentPUI->comboBox()->addItem(tr("Bottom right"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignRight)));
+	positionLayout->addWidget(new QLabel(tr("Alignment:")), 0, 0);
+	positionLayout->addWidget(alignmentPUI->comboBox(), 0, 1, 1, 2);
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_top_left.svg"), tr("Top left"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignLeft)));
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_top_right.svg"), tr("Top right"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignRight)));
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_bottom_right.svg"), tr("Bottom right"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignRight)));
+	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_bottom_left.svg"), tr("Bottom left"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignLeft)));
 
 	FloatParameterUI* offsetXPUI = new FloatParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::offsetX));
-	layout->addWidget(offsetXPUI->label(), row, 0);
-	layout->addLayout(offsetXPUI->createFieldLayout(), row++, 1);
-
+	positionLayout->addWidget(new QLabel(tr("XY offset:")), 1, 0);
+	positionLayout->addLayout(offsetXPUI->createFieldLayout(), 1, 1);
 	FloatParameterUI* offsetYPUI = new FloatParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::offsetY));
-	layout->addWidget(offsetYPUI->label(), row, 0);
-	layout->addLayout(offsetYPUI->createFieldLayout(), row++, 1);
+	positionLayout->addLayout(offsetYPUI->createFieldLayout(), 1, 2);
 
 	ViewportInputMode* moveOverlayMode = new MoveOverlayInputMode(this);
 	connect(this, &QObject::destroyed, moveOverlayMode, &ViewportInputMode::removeMode);
-	ViewportModeAction* moveOverlayAction = new ViewportModeAction(mainWindow(), tr("Move using mouse"), this, moveOverlayMode);
-	layout->addWidget(new ViewportModeButton(moveOverlayAction), row++, 1);
+	ViewportModeAction* moveOverlayAction = new ViewportModeAction(mainWindow(), tr("Move"), this, moveOverlayMode);
+	moveOverlayAction->setIcon(QIcon(":/guibase/actions/edit/mode_move.bw.svg"));
+	moveOverlayAction->setToolTip(tr("Reposition the axes tripod in the viewport using the mouse"));
+	positionLayout->addWidget(new ViewportModeButton(moveOverlayAction), 2, 1, 1, 2, Qt::AlignRight | Qt::AlignTop);
+
+	QGroupBox* styleBox = new QGroupBox(tr("Style"));
+	QGridLayout* styleLayout = new QGridLayout(styleBox);
+	styleLayout->setContentsMargins(4,4,4,4);
+	styleLayout->setColumnStretch(1, 1);
+	styleLayout->setSpacing(2);
+	styleLayout->setHorizontalSpacing(6);
+	parentLayout->addWidget(styleBox);
+
+	int row = 0;
 
 	FloatParameterUI* sizePUI = new FloatParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::tripodSize));
-	layout->addWidget(sizePUI->label(), row, 0);
-	layout->addLayout(sizePUI->createFieldLayout(), row++, 1);
+	styleLayout->addWidget(sizePUI->label(), row, 0);
+	styleLayout->addLayout(sizePUI->createFieldLayout(), row++, 1);
 
 	FloatParameterUI* lineWidthPUI = new FloatParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::lineWidth));
-	layout->addWidget(lineWidthPUI->label(), row, 0);
-	layout->addLayout(lineWidthPUI->createFieldLayout(), row++, 1);
+	styleLayout->addWidget(lineWidthPUI->label(), row, 0);
+	styleLayout->addLayout(lineWidthPUI->createFieldLayout(), row++, 1);
 
 	FloatParameterUI* fontSizePUI = new FloatParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::fontSize));
-	layout->addWidget(fontSizePUI->label(), row, 0);
-	layout->addLayout(fontSizePUI->createFieldLayout(), row++, 1);
+	styleLayout->addWidget(fontSizePUI->label(), row, 0);
+	styleLayout->addLayout(fontSizePUI->createFieldLayout(), row++, 1);
 
 	BooleanParameterUI* outlineEnabledPUI = new BooleanParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::outlineEnabled));
-	layout->addWidget(outlineEnabledPUI->checkBox(), row, 0);
-	outlineEnabledPUI->checkBox()->setText(tr("Outline color:"));
+	styleLayout->addWidget(outlineEnabledPUI->checkBox(), row, 0);
+	outlineEnabledPUI->checkBox()->setText(tr("Text outline:"));
 
 	ColorParameterUI* outlineColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::outlineColor));
-	layout->addWidget(outlineColorPUI->colorPicker(), row++, 1);
+	styleLayout->addWidget(outlineColorPUI->colorPicker(), row++, 1);
 
 	FontParameterUI* labelFontPUI = new FontParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::font));
-	layout->addWidget(labelFontPUI->label(), row, 0);
-	layout->addWidget(labelFontPUI->fontPicker(), row++, 1);
+	styleLayout->addWidget(labelFontPUI->label(), row, 0);
+	styleLayout->addWidget(labelFontPUI->fontPicker(), row++, 1);
 
+	styleLayout->setRowMinimumHeight(row++, 8);
 	IntegerRadioButtonParameterUI* tripodStyleUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::tripodStyle));
-	layout->addWidget(new QLabel(tr("Style:")), row, 0);
+	styleLayout->addWidget(new QLabel(tr("Axis style:")), row, 0);
 	QHBoxLayout* hlayout = new QHBoxLayout();
 	hlayout->setContentsMargins(0,0,0,0);
 	hlayout->addWidget(tripodStyleUI->addRadioButton(CoordinateTripodOverlay::FlatArrows, tr("Flat")));
 	hlayout->addWidget(tripodStyleUI->addRadioButton(CoordinateTripodOverlay::SolidArrows, tr("Solid")));
-	layout->addLayout(hlayout, row++, 1);
+	styleLayout->addLayout(hlayout, row++, 1);
 
 	// Create a second rollout.
 	rollout = createRollout(tr("Coordinate axes"), rolloutParams);
 
     // Create the rollout contents.
-	layout = new QGridLayout(rollout);
+	QGridLayout* layout = new QGridLayout(rollout);
 	layout->setContentsMargins(4,4,4,4);
 	layout->setSpacing(4);
 	layout->setColumnStretch(1, 1);
@@ -143,7 +161,7 @@ void CoordinateTripodOverlayEditor::createUI(const RolloutInsertionParameters& r
 	sublayout->addWidget(axisColorPUI->colorPicker(), 1, 1, 1, 2);
 
 	// Axis direction.
-	sublayout->addWidget(new QLabel(tr("Direction:")), 2, 0, 1, 3);
+	sublayout->addWidget(new QLabel(tr("Cartesian direction:")), 2, 0, 1, 3);
 	for(int dim = 0; dim < 3; dim++) {
 		Vector3ParameterUI* axisDirPUI = new Vector3ParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::axis1Dir), dim);
 		sublayout->addLayout(axisDirPUI->createFieldLayout(), 3, dim, 1, 1);
@@ -168,7 +186,7 @@ void CoordinateTripodOverlayEditor::createUI(const RolloutInsertionParameters& r
 	sublayout->addWidget(axisColorPUI->colorPicker(), 1, 1, 1, 2);
 
 	// Axis direction.
-	sublayout->addWidget(new QLabel(tr("Direction:")), 2, 0, 1, 3);
+	sublayout->addWidget(new QLabel(tr("Cartesian direction:")), 2, 0, 1, 3);
 	for(int dim = 0; dim < 3; dim++) {
 		Vector3ParameterUI* axisDirPUI = new Vector3ParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::axis2Dir), dim);
 		sublayout->addLayout(axisDirPUI->createFieldLayout(), 3, dim, 1, 1);
@@ -193,7 +211,7 @@ void CoordinateTripodOverlayEditor::createUI(const RolloutInsertionParameters& r
 	sublayout->addWidget(axisColorPUI->colorPicker(), 1, 1, 1, 2);
 
 	// Axis direction.
-	sublayout->addWidget(new QLabel(tr("Direction:")), 2, 0, 1, 3);
+	sublayout->addWidget(new QLabel(tr("Cartesian direction:")), 2, 0, 1, 3);
 	for(int dim = 0; dim < 3; dim++) {
 		Vector3ParameterUI* axisDirPUI = new Vector3ParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::axis3Dir), dim);
 		sublayout->addLayout(axisDirPUI->createFieldLayout(), 3, dim, 1, 1);
@@ -218,7 +236,7 @@ void CoordinateTripodOverlayEditor::createUI(const RolloutInsertionParameters& r
 	sublayout->addWidget(axisColorPUI->colorPicker(), 1, 1, 1, 2);
 
 	// Axis direction.
-	sublayout->addWidget(new QLabel(tr("Direction:")), 2, 0, 1, 3);
+	sublayout->addWidget(new QLabel(tr("Cartesian direction:")), 2, 0, 1, 3);
 	for(int dim = 0; dim < 3; dim++) {
 		Vector3ParameterUI* axisDirPUI = new Vector3ParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::axis4Dir), dim);
 		sublayout->addLayout(axisDirPUI->createFieldLayout(), 3, dim, 1, 1);
