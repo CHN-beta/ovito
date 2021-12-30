@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,6 +22,9 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/AnglesObject.h>
+#include <ovito/particles/objects/DihedralsObject.h>
+#include <ovito/particles/objects/ImpropersObject.h>
 #include <ovito/particles/import/gsd/GSDFile.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include "GSDExporter.h"
@@ -240,7 +243,9 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
         if(operation.isCanceled()) return false;
     }
 
-    // See if there any bonds to be exported.
+    std::vector<size_t> reverseOrdering;
+
+    // Export bonds (optional).
 	if(const BondsObject* bonds = particles->bonds()) {
         bonds->verifyIntegrity();
     	ConstPropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds->expectProperty(BondsObject::TopologyProperty);
@@ -253,9 +258,11 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
         if(operation.isCanceled()) return false;
 
         // Build reverse mapping of particle indices.
-        std::vector<size_t> reverseOrdering(ordering.size());
-        for(size_t i = 0; i < ordering.size(); i++)
-            reverseOrdering[ordering[i]] = i;
+        if(reverseOrdering.empty()) {
+            reverseOrdering.resize(ordering.size());
+            for(size_t i = 0; i < ordering.size(); i++)
+                reverseOrdering[ordering[i]] = i;
+        }
 
         // Output topology array.
         std::vector<std::array<uint32_t,2>> bondsBuffer(bondTopologyProperty.size());
@@ -298,6 +305,208 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
 
             // Output typeid array.
             _gsdFile->writeChunk<uint32_t>("bonds/typeid", typeIds->size(), 1, ConstPropertyAccess<int>(typeIds).cbegin());
+            if(operation.isCanceled()) return false;
+        }
+    }
+
+    // Export angles (optional).
+	if(const AnglesObject* angles = particles->angles()) {
+        angles->verifyIntegrity();
+    	ConstPropertyAccess<ParticleIndexTriplet> topologyProperty = angles->expectProperty(AnglesObject::TopologyProperty);
+
+        // Output number of angles.
+        if(angles->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
+            throwException(tr("Number of angles exceeds maximum number supported by the GSD/HOOMD format."));
+        uint32_t anglesCount = angles->elementCount();
+        _gsdFile->writeChunk<uint32_t>("angles/N", 1, 1, &anglesCount);
+        if(operation.isCanceled()) return false;
+
+        // Build reverse mapping of particle indices.
+        if(reverseOrdering.empty()) {
+            reverseOrdering.resize(ordering.size());
+            for(size_t i = 0; i < ordering.size(); i++)
+                reverseOrdering[ordering[i]] = i;
+        }
+
+        // Output topology array.
+        std::vector<std::array<uint32_t,3>> anglesBuffer(topologyProperty.size());
+        for(size_t i = 0; i < topologyProperty.size(); i++) {
+            size_t a = topologyProperty[i][0];
+            size_t b = topologyProperty[i][1];
+            size_t c = topologyProperty[i][2];
+            if(a >= reverseOrdering.size() || b >= reverseOrdering.size() || c >= reverseOrdering.size())
+                throwException(tr("GSD/HOOMD file export error: Particle indices in angle topology array are out of range."));
+            anglesBuffer[i][0] = reverseOrdering[a];
+            anglesBuffer[i][1] = reverseOrdering[b];
+            anglesBuffer[i][2] = reverseOrdering[c];
+        }
+        _gsdFile->writeChunk<uint32_t>("angles/group", anglesBuffer.size(), 3, anglesBuffer.data());
+        if(operation.isCanceled()) return false;
+
+        // Output angle types.
+        if(const PropertyObject* typeProperty = angles->getProperty(AnglesObject::TypeProperty)) {
+
+            // GSD/HOOMD requires angle types to form a contiguous range starting at base index 0.
+            std::map<int,int> idMapping;
+            ConstPropertyPtr typeIds;
+            std::tie(idMapping, typeIds) = typeProperty->generateContiguousTypeIdMapping(0);
+
+            // Build list of type names.
+            std::vector<QByteArray> typeNames(idMapping.size());
+            int maxStringLength = 0;
+            for(size_t i = 0; i < typeNames.size(); i++) {
+                OVITO_ASSERT(idMapping.find(i) != idMapping.end());
+                if(const ElementType* ptype = typeProperty->elementType(idMapping[i]))
+                    typeNames[i] = ptype->name().toUtf8();
+                if(typeNames[i].size() == 0 && i < 26)
+                    typeNames[i] = QByteArray(1, 'A' + (char)i);
+                maxStringLength = qMax(maxStringLength, typeNames[i].size());
+            }
+            maxStringLength++; // Include terminating null character.
+            std::vector<int8_t> typeNameBuffer(maxStringLength * typeNames.size(), 0);
+            for(size_t i = 0; i < typeNames.size(); i++) {
+                std::copy(typeNames[i].cbegin(), typeNames[i].cend(), typeNameBuffer.begin() + (i * maxStringLength));
+            }
+            _gsdFile->writeChunk<int8_t>("angles/types", typeNames.size(), maxStringLength, typeNameBuffer.data());
+
+            // Output typeid array.
+            _gsdFile->writeChunk<uint32_t>("angles/typeid", typeIds->size(), 1, ConstPropertyAccess<int>(typeIds).cbegin());
+            if(operation.isCanceled()) return false;
+        }
+    }
+
+    // Export dihedrals (optional).
+	if(const DihedralsObject* dihedrals = particles->dihedrals()) {
+        dihedrals->verifyIntegrity();
+    	ConstPropertyAccess<ParticleIndexQuadruplet> topologyProperty = dihedrals->expectProperty(DihedralsObject::TopologyProperty);
+
+        // Output number of dihedrals.
+        if(dihedrals->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
+            throwException(tr("Number of dihedrals exceeds maximum number supported by the GSD/HOOMD format."));
+        uint32_t dihedralsCount = dihedrals->elementCount();
+        _gsdFile->writeChunk<uint32_t>("dihedrals/N", 1, 1, &dihedralsCount);
+        if(operation.isCanceled()) return false;
+
+        // Build reverse mapping of particle indices.
+        if(reverseOrdering.empty()) {
+            reverseOrdering.resize(ordering.size());
+            for(size_t i = 0; i < ordering.size(); i++)
+                reverseOrdering[ordering[i]] = i;
+        }
+
+        // Output topology array.
+        std::vector<std::array<uint32_t,4>> dihedralsBuffer(topologyProperty.size());
+        for(size_t i = 0; i < topologyProperty.size(); i++) {
+            size_t a = topologyProperty[i][0];
+            size_t b = topologyProperty[i][1];
+            size_t c = topologyProperty[i][2];
+            size_t d = topologyProperty[i][3];
+            if(a >= reverseOrdering.size() || b >= reverseOrdering.size() || c >= reverseOrdering.size() || d >= reverseOrdering.size())
+                throwException(tr("GSD/HOOMD file export error: Particle indices in dihedral topology array are out of range."));
+            dihedralsBuffer[i][0] = reverseOrdering[a];
+            dihedralsBuffer[i][1] = reverseOrdering[b];
+            dihedralsBuffer[i][2] = reverseOrdering[c];
+            dihedralsBuffer[i][3] = reverseOrdering[d];
+        }
+        _gsdFile->writeChunk<uint32_t>("dihedrals/group", dihedralsBuffer.size(), 4, dihedralsBuffer.data());
+        if(operation.isCanceled()) return false;
+
+        // Output dihedral types.
+        if(const PropertyObject* typeProperty = dihedrals->getProperty(DihedralsObject::TypeProperty)) {
+
+            // GSD/HOOMD requires dihedral types to form a contiguous range starting at base index 0.
+            std::map<int,int> idMapping;
+            ConstPropertyPtr typeIds;
+            std::tie(idMapping, typeIds) = typeProperty->generateContiguousTypeIdMapping(0);
+
+            // Build list of type names.
+            std::vector<QByteArray> typeNames(idMapping.size());
+            int maxStringLength = 0;
+            for(size_t i = 0; i < typeNames.size(); i++) {
+                OVITO_ASSERT(idMapping.find(i) != idMapping.end());
+                if(const ElementType* ptype = typeProperty->elementType(idMapping[i]))
+                    typeNames[i] = ptype->name().toUtf8();
+                if(typeNames[i].size() == 0 && i < 26)
+                    typeNames[i] = QByteArray(1, 'A' + (char)i);
+                maxStringLength = qMax(maxStringLength, typeNames[i].size());
+            }
+            maxStringLength++; // Include terminating null character.
+            std::vector<int8_t> typeNameBuffer(maxStringLength * typeNames.size(), 0);
+            for(size_t i = 0; i < typeNames.size(); i++) {
+                std::copy(typeNames[i].cbegin(), typeNames[i].cend(), typeNameBuffer.begin() + (i * maxStringLength));
+            }
+            _gsdFile->writeChunk<int8_t>("dihedrals/types", typeNames.size(), maxStringLength, typeNameBuffer.data());
+
+            // Output typeid array.
+            _gsdFile->writeChunk<uint32_t>("dihedrals/typeid", typeIds->size(), 1, ConstPropertyAccess<int>(typeIds).cbegin());
+            if(operation.isCanceled()) return false;
+        }
+    }
+
+    // Export impropers (optional).
+	if(const ImpropersObject* impropers = particles->impropers()) {
+        impropers->verifyIntegrity();
+    	ConstPropertyAccess<ParticleIndexQuadruplet> topologyProperty = impropers->expectProperty(ImpropersObject::TopologyProperty);
+
+        // Output number of impropers.
+        if(impropers->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
+            throwException(tr("Number of impropers exceeds maximum number supported by the GSD/HOOMD format."));
+        uint32_t impropersCount = impropers->elementCount();
+        _gsdFile->writeChunk<uint32_t>("impropers/N", 1, 1, &impropersCount);
+        if(operation.isCanceled()) return false;
+
+        // Build reverse mapping of particle indices.
+        if(reverseOrdering.empty()) {
+            reverseOrdering.resize(ordering.size());
+            for(size_t i = 0; i < ordering.size(); i++)
+                reverseOrdering[ordering[i]] = i;
+        }
+
+        // Output topology array.
+        std::vector<std::array<uint32_t,4>> impropersBuffer(topologyProperty.size());
+        for(size_t i = 0; i < topologyProperty.size(); i++) {
+            size_t a = topologyProperty[i][0];
+            size_t b = topologyProperty[i][1];
+            size_t c = topologyProperty[i][2];
+            size_t d = topologyProperty[i][3];
+            if(a >= reverseOrdering.size() || b >= reverseOrdering.size() || c >= reverseOrdering.size() || d >= reverseOrdering.size())
+                throwException(tr("GSD/HOOMD file export error: Particle indices in improper topology array are out of range."));
+            impropersBuffer[i][0] = reverseOrdering[a];
+            impropersBuffer[i][1] = reverseOrdering[b];
+            impropersBuffer[i][2] = reverseOrdering[c];
+            impropersBuffer[i][3] = reverseOrdering[d];
+        }
+        _gsdFile->writeChunk<uint32_t>("impropers/group", impropersBuffer.size(), 4, impropersBuffer.data());
+        if(operation.isCanceled()) return false;
+
+        // Output improper types.
+        if(const PropertyObject* typeProperty = impropers->getProperty(ImpropersObject::TypeProperty)) {
+
+            // GSD/HOOMD requires improper types to form a contiguous range starting at base index 0.
+            std::map<int,int> idMapping;
+            ConstPropertyPtr typeIds;
+            std::tie(idMapping, typeIds) = typeProperty->generateContiguousTypeIdMapping(0);
+
+            // Build list of type names.
+            std::vector<QByteArray> typeNames(idMapping.size());
+            int maxStringLength = 0;
+            for(size_t i = 0; i < typeNames.size(); i++) {
+                OVITO_ASSERT(idMapping.find(i) != idMapping.end());
+                if(const ElementType* ptype = typeProperty->elementType(idMapping[i]))
+                    typeNames[i] = ptype->name().toUtf8();
+                if(typeNames[i].size() == 0 && i < 26)
+                    typeNames[i] = QByteArray(1, 'A' + (char)i);
+                maxStringLength = qMax(maxStringLength, typeNames[i].size());
+            }
+            maxStringLength++; // Include terminating null character.
+            std::vector<int8_t> typeNameBuffer(maxStringLength * typeNames.size(), 0);
+            for(size_t i = 0; i < typeNames.size(); i++) {
+                std::copy(typeNames[i].cbegin(), typeNames[i].cend(), typeNameBuffer.begin() + (i * maxStringLength));
+            }
+            _gsdFile->writeChunk<int8_t>("impropers/types", typeNames.size(), maxStringLength, typeNameBuffer.data());
+
+            // Output typeid array.
+            _gsdFile->writeChunk<uint32_t>("impropers/typeid", typeIds->size(), 1, ConstPropertyAccess<int>(typeIds).cbegin());
             if(operation.isCanceled()) return false;
         }
     }

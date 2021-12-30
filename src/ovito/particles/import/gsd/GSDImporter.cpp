@@ -255,12 +255,12 @@ void GSDImporter::FrameLoader::loadFile()
 		chunkName = gsd.findMatchingChunkName("log/", chunkName);
 	}
 
-	// Parse number of bonds.
+	// Parse bonds.
 	uint32_t numBonds = gsd.readOptionalScalar<uint32_t>("bonds/N", frameNumber, 0);
 	setBondCount(numBonds);
 	if(numBonds != 0) {
-		// Read bond list.
-		std::vector<int> bondList(numBonds * 2);
+		// Read bonds list.
+		std::vector<uint32_t> bondList(numBonds * 2);
 		gsd.readIntArray("bonds/group", frameNumber, bondList.data(), numBonds, 2);
 		if(isCanceled()) return;
 
@@ -268,10 +268,10 @@ void GSDImporter::FrameLoader::loadFile()
 		PropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds()->createProperty(BondsObject::TopologyProperty, false, initializationHints());
 		auto bondTopoPtr = bondList.cbegin();
 		for(ParticleIndexPair& bond : bondTopologyProperty) {
-			if(*bondTopoPtr >= (qlonglong)numParticles)
+			if(*bondTopoPtr >= (uint32_t)numParticles)
 				throw Exception(tr("Nonexistent atom tag in bond list in GSD file."));
 			bond[0] = *bondTopoPtr++;
-			if(*bondTopoPtr >= (qlonglong)numParticles)
+			if(*bondTopoPtr >= (uint32_t)numParticles)
 				throw Exception(tr("Nonexistent atom tag in bond list in GSD file."));
 			bond[1] = *bondTopoPtr++;
 		}
@@ -279,7 +279,7 @@ void GSDImporter::FrameLoader::loadFile()
 		generateBondPeriodicImageProperty();
 		if(isCanceled()) return;
 
-		// Read bond types.
+		// Read types.
 		if(gsd.hasChunk("bonds/types", frameNumber)) {
 
 			// Parse list of bond type names.
@@ -302,7 +302,7 @@ void GSDImporter::FrameLoader::loadFile()
 			if(isCanceled()) return;
 		}
 
-		// Read any user-defined bond properties.
+		// Read any user-defined properties.
 		const char* chunkName = gsd.findMatchingChunkName("log/bonds/", nullptr);
 		while(chunkName) {
 			if(isCanceled()) return;
@@ -311,9 +311,177 @@ void GSDImporter::FrameLoader::loadFile()
 		}
 	}
 
+	// Parse angles.
+	uint32_t numAngles = gsd.readOptionalScalar<uint32_t>("angles/N", frameNumber, 0);
+	setAngleCount(numAngles);
+	if(numAngles != 0) {
+		// Read angles list.
+		std::vector<uint32_t> groupList(numAngles * 3);
+		gsd.readIntArray("angles/group", frameNumber, groupList.data(), numAngles, 3);
+		if(isCanceled()) return;
+
+		// Convert to OVITO format.
+		PropertyAccess<ParticleIndexTriplet> topologyProperty = angles()->createProperty(AnglesObject::TopologyProperty, false, initializationHints());
+		auto topoPtr = groupList.cbegin();
+		for(ParticleIndexTriplet& angle : topologyProperty) {
+			for(qlonglong& idx : angle) {
+				if(*topoPtr >= (uint32_t)numParticles)
+					throw Exception(tr("Nonexistent atom tag in angles list in GSD file."));
+				idx = *topoPtr++;
+			}
+		}
+		topologyProperty.reset();
+		if(isCanceled()) return;
+
+		// Read types.
+		if(gsd.hasChunk("angles/types", frameNumber)) {
+
+			// Parse list of type names.
+			QByteArrayList typeNames = gsd.readStringTable("angles/types", frameNumber);
+			if(typeNames.empty())
+				typeNames.push_back(QByteArrayLiteral("A"));
+
+			// Create element types.
+			PropertyAccess<int> typeProperty = angles()->createProperty(AnglesObject::TypeProperty, false, initializationHints());
+			for(int i = 0; i < typeNames.size(); i++)
+				addNumericType(AnglesObject::OOClass(), typeProperty.buffer(), i, QString::fromUtf8(typeNames[i]));
+
+			// Read element types.
+			if(gsd.hasChunk("angles/typeid", frameNumber)) {
+				gsd.readIntArray("angles/typeid", frameNumber, typeProperty.begin(), numAngles);
+			}
+			else {
+				typeProperty.take()->fill<int>(0);
+			}
+			if(isCanceled()) return;
+		}
+
+		// Read any user-defined properties.
+		const char* chunkName = gsd.findMatchingChunkName("log/angles/", nullptr);
+		while(chunkName) {
+			if(isCanceled()) return;
+			readOptionalProperty(gsd, chunkName, frameNumber, AnglesObject::UserProperty, angles(), nullptr, 0);
+			chunkName = gsd.findMatchingChunkName("log/angles/", chunkName);
+		}
+	}
+
+	// Parse dihedrals.
+	uint32_t numDihedrals = gsd.readOptionalScalar<uint32_t>("dihedrals/N", frameNumber, 0);
+	setDihedralCount(numDihedrals);
+	if(numDihedrals != 0) {
+		// Read dihedrals list.
+		std::vector<uint32_t> groupList(numDihedrals * 4);
+		gsd.readIntArray("dihedrals/group", frameNumber, groupList.data(), numDihedrals, 4);
+		if(isCanceled()) return;
+
+		// Convert to OVITO format.
+		PropertyAccess<ParticleIndexQuadruplet> topologyProperty = dihedrals()->createProperty(DihedralsObject::TopologyProperty, false, initializationHints());
+		auto topoPtr = groupList.cbegin();
+		for(ParticleIndexQuadruplet& dihedral : topologyProperty) {
+			for(qlonglong& idx : dihedral) {
+				if(*topoPtr >= (uint32_t)numParticles)
+					throw Exception(tr("Nonexistent atom tag in dihedrals list in GSD file."));
+				idx = *topoPtr++;
+			}
+		}
+		topologyProperty.reset();
+		if(isCanceled()) return;
+
+		// Read types.
+		if(gsd.hasChunk("dihedrals/types", frameNumber)) {
+
+			// Parse list of type names.
+			QByteArrayList typeNames = gsd.readStringTable("dihedrals/types", frameNumber);
+			if(typeNames.empty())
+				typeNames.push_back(QByteArrayLiteral("A"));
+
+			// Create element types.
+			PropertyAccess<int> typeProperty = dihedrals()->createProperty(DihedralsObject::TypeProperty, false, initializationHints());
+			for(int i = 0; i < typeNames.size(); i++)
+				addNumericType(DihedralsObject::OOClass(), typeProperty.buffer(), i, QString::fromUtf8(typeNames[i]));
+
+			// Read element types.
+			if(gsd.hasChunk("dihedrals/typeid", frameNumber)) {
+				gsd.readIntArray("dihedrals/typeid", frameNumber, typeProperty.begin(), numDihedrals);
+			}
+			else {
+				typeProperty.take()->fill<int>(0);
+			}
+			if(isCanceled()) return;
+		}
+
+		// Read any user-defined properties.
+		const char* chunkName = gsd.findMatchingChunkName("log/dihedrals/", nullptr);
+		while(chunkName) {
+			if(isCanceled()) return;
+			readOptionalProperty(gsd, chunkName, frameNumber, DihedralsObject::UserProperty, dihedrals(), nullptr, 0);
+			chunkName = gsd.findMatchingChunkName("log/dihedrals/", chunkName);
+		}
+	}
+
+	// Parse impropers.
+	uint32_t numImpropers = gsd.readOptionalScalar<uint32_t>("impropers/N", frameNumber, 0);
+	setImproperCount(numImpropers);
+	if(numImpropers != 0) {
+		// Read impropers list.
+		std::vector<uint32_t> groupList(numImpropers * 4);
+		gsd.readIntArray("impropers/group", frameNumber, groupList.data(), numImpropers, 4);
+		if(isCanceled()) return;
+
+		// Convert to OVITO format.
+		PropertyAccess<ParticleIndexQuadruplet> topologyProperty = impropers()->createProperty(ImpropersObject::TopologyProperty, false, initializationHints());
+		auto topoPtr = groupList.cbegin();
+		for(ParticleIndexQuadruplet& improper : topologyProperty) {
+			for(qlonglong& idx : improper) {
+				if(*topoPtr >= (uint32_t)numParticles)
+					throw Exception(tr("Nonexistent atom tag in impropers list in GSD file."));
+				idx = *topoPtr++;
+			}
+		}
+		topologyProperty.reset();
+		if(isCanceled()) return;
+
+		// Read types.
+		if(gsd.hasChunk("impropers/types", frameNumber)) {
+
+			// Parse list of type names.
+			QByteArrayList typeNames = gsd.readStringTable("impropers/types", frameNumber);
+			if(typeNames.empty())
+				typeNames.push_back(QByteArrayLiteral("A"));
+
+			// Create element types.
+			PropertyAccess<int> typeProperty = impropers()->createProperty(ImpropersObject::TypeProperty, false, initializationHints());
+			for(int i = 0; i < typeNames.size(); i++)
+				addNumericType(ImpropersObject::OOClass(), typeProperty.buffer(), i, QString::fromUtf8(typeNames[i]));
+
+			// Read element types.
+			if(gsd.hasChunk("impropers/typeid", frameNumber)) {
+				gsd.readIntArray("impropers/typeid", frameNumber, typeProperty.begin(), numImpropers);
+			}
+			else {
+				typeProperty.take()->fill<int>(0);
+			}
+			if(isCanceled()) return;
+		}
+
+		// Read any user-defined properties.
+		const char* chunkName = gsd.findMatchingChunkName("log/impropers/", nullptr);
+		while(chunkName) {
+			if(isCanceled()) return;
+			readOptionalProperty(gsd, chunkName, frameNumber, ImpropersObject::UserProperty, impropers(), nullptr, 0);
+			chunkName = gsd.findMatchingChunkName("log/impropers/", chunkName);
+		}
+	}	
+
 	QString statusString = tr("Number of particles: %1").arg(numParticles);
 	if(numBonds != 0)
 		statusString += tr("\nNumber of bonds: %1").arg(numBonds);
+	if(numAngles != 0)
+		statusString += tr("\nNumber of angles: %1").arg(numAngles);
+	if(numDihedrals != 0)
+		statusString += tr("\nNumber of dihedrals: %1").arg(numDihedrals);
+	if(numImpropers != 0)
+		statusString += tr("\nNumber of impropers: %1").arg(numImpropers);
 	state().setStatus(statusString);
 
 	// Call base implementation to finalize the loaded particle data.

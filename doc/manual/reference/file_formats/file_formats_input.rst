@@ -86,7 +86,7 @@ OVITO can read the following file formats:
   * - GSD/HOOMD 
     - Binary molecular dynamics format written by the `HOOMD-blue <https://glotzerlab.engin.umich.edu/hoomd-blue/>`__ code. 
       See `GSD (General Simulation Data) format <https://gsd.readthedocs.io>`__.  
-    - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`
+    - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, angles, dihedrals, impropers
 
   * - CASTEP       
     - File format used by the `CASTEP <http://www.castep.org>`__ *ab initio* code. OVITO can read the |castep formats|_.
