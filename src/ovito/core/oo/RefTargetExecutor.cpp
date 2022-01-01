@@ -87,7 +87,7 @@ void RefTargetExecutor::Work::operator()(bool defer)
 {
     OVITO_ASSERT(_event);
 
-    if(defer || (!QCoreApplication::closingDown() && QThread::currentThread() != QCoreApplication::instance()->thread())) {
+    if(defer || (QCoreApplication::instance() && !QCoreApplication::closingDown() && QThread::currentThread() != QCoreApplication::instance()->thread())) {
         // Schedule work for later execution in the main thread.
         QCoreApplication::postEvent(Application::instance(), _event.release());
     }

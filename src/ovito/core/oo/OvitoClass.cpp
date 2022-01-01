@@ -120,7 +120,7 @@ OORef<OvitoObject> OvitoClass::createInstance() const
 	if(plugin()) {
 		OVITO_CHECK_POINTER(plugin());
 		if(!plugin()->isLoaded()) {
-			OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
+			OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 			// Load plugin first.
 			try {
 				plugin()->loadPlugin();
@@ -149,7 +149,7 @@ OORef<RefTarget> OvitoClass::createInstance(DataSet* dataset, ObjectInitializati
 	if(plugin()) {
 		OVITO_CHECK_POINTER(plugin());
 		if(!plugin()->isLoaded()) {
-			OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
+			OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 			// Load plugin first.
 			try {
 				plugin()->loadPlugin();

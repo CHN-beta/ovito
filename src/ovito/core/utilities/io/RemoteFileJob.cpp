@@ -55,6 +55,8 @@ constexpr int MaximumNumberOfSimultaneousJobs = 2;
 RemoteFileJob::RemoteFileJob(QUrl url, PromiseBase& promise) :
 		_url(std::move(url)), _promise(promise)
 {
+	OVITO_ASSERT(QCoreApplication::instance() != nullptr);
+
 	// Run all event handlers of this class in the main thread.
 	moveToThread(QCoreApplication::instance()->thread());
 

@@ -36,6 +36,7 @@ SshConnection::SshConnection(const SshConnectionParameters& serverInfo, QObject*
     connect(this, &SshConnection::stateChanged, this, &SshConnection::processStateGuard, Qt::QueuedConnection);
 
     // Ensure that connections are always properly closed.
+    OVITO_ASSERT(QCoreApplication::instance() != nullptr);
     connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, &SshConnection::disconnectFromHost);
 }
 

@@ -55,6 +55,10 @@ OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, ViewportInputManager* i
 	// Create the object picking renderer.
 	_pickingRenderer = new PickingOpenGLSceneRenderer(viewport()->dataset());
 	_pickingRenderer->setInteractive(true);
+
+	// Make sure the viewport window releases its resources before the application shuts down, e.g.
+	// due to a Python script error.
+	connect(QCoreApplication::instance(), &QObject::destroyed, this, [this]() { releaseResources(); });
 }
 
 /******************************************************************************

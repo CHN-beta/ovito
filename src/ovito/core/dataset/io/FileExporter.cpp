@@ -305,7 +305,7 @@ bool FileExporter::exportFrame(int frameNumber, TimePoint time, const QString& f
 void FileExporter::activateCLocale()
 {
 	// The setlocale() function is not thread-safe and should only be called from the main thread.
-	if(QThread::currentThread() == QCoreApplication::instance()->thread())
+	if(QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread())
 		std::setlocale(LC_ALL, "C");
 }
 

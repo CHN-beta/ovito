@@ -351,25 +351,56 @@ bool TaskManager::waitForTaskUIThread(const TaskPtr& task, const TaskPtr& depend
 bool TaskManager::waitForTaskNonUIThread(const TaskPtr& task, const TaskPtr& dependentTask)
 {
 	// This method is only called when running in a background worker thread.
-	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() != QCoreApplication::instance()->thread());
+	OVITO_ASSERT(QCoreApplication::instance() && QThread::currentThread() != QCoreApplication::instance()->thread());
 
-	// Create local task watchers.
-	TaskWatcher watcher;
-	TaskWatcher dependentWatcher;
+#if 0
+	if(QCoreApplication::instance()) {
+#endif
 
-	// Start a local event loop and wait for the task to generate a signal when it finishes.
-	QEventLoop eventLoop;
-	connect(&watcher, &TaskWatcher::finished, &eventLoop, &QEventLoop::quit);
+		// Create local task watchers.
+		TaskWatcher watcher;
+		TaskWatcher dependentWatcher;
 
-	// Stop the event loop when the dependent task gets canceled.
-	if(dependentTask) {
-		connect(&dependentWatcher, &TaskWatcher::canceled, &eventLoop, &QEventLoop::quit);
-		dependentWatcher.watch(dependentTask);
+		// Start a local event loop and wait for the task to generate a signal when it finishes.
+		QEventLoop eventLoop;
+		connect(&watcher, &TaskWatcher::finished, &eventLoop, &QEventLoop::quit);
+
+		// Stop the event loop when the dependent task gets canceled.
+		if(dependentTask) {
+			connect(&dependentWatcher, &TaskWatcher::canceled, &eventLoop, &QEventLoop::quit);
+			dependentWatcher.watch(dependentTask);
+		}
+
+		// Start waiting phase.
+		watcher.watch(task);
+		eventLoop.exec();
+#if 0
 	}
+	else {
 
-	// Start waiting phase.
-	watcher.watch(task);
-	eventLoop.exec();
+		std::condition_variable cv;
+		std::mutex mutex;
+		bool finished = false;
+
+		task->finally(Ovito::detail::InlineExecutor(), false, [&](const TaskPtr& task) {
+			mutex.lock();
+			finished = true;
+			mutex.unlock();
+			cv.notify_all();
+		});
+		if(dependentTask) {
+			dependentTask->finally(Ovito::detail::InlineExecutor(), false, [&](const TaskPtr& task) {
+				mutex.lock();
+				finished = true;
+				mutex.unlock();
+				cv.notify_all();
+			});
+		}
+
+		std::unique_lock<std::mutex> lock(mutex);
+		cv.wait(lock, [&]() { return finished; });
+	}
+#endif
 
 	return true;
 }

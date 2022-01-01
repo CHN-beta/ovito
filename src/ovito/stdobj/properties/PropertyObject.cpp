@@ -191,7 +191,7 @@ bool PropertyObject::equals(const PropertyObject& other) const
 ******************************************************************************/
 void PropertyObject::makeWritableFromPython()
 {
-	OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
+	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 
 	if(!isSafeToModify())
 		throwException(tr("Modifying the data values stored in this property is not allowed, because the Property object currently is shared by more than one PropertyContainer or DataCollection. "
@@ -207,7 +207,7 @@ void PropertyObject::makeWritableFromPython()
 ******************************************************************************/
 void PropertyObject::makeReadOnlyFromPython()
 {
-	OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
+	OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 
 	OVITO_ASSERT(_isWritableFromPython > 0);
 	_isWritableFromPython--;

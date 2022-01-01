@@ -79,7 +79,7 @@ private:
 		/// Destructor.
 		virtual ~WorkEvent() {
 			// Qt events should only be destroyed in the main thread.
-			OVITO_ASSERT(QCoreApplication::closingDown() || QThread::currentThread() == QCoreApplication::instance()->thread());
+			OVITO_ASSERT(!QCoreApplication::instance() || QCoreApplication::closingDown() || QThread::currentThread() == QCoreApplication::instance()->thread());
 			if(!needToCancelWork()) {
 				/// Activate the original execution context under which the work was submitted.
 				activateExecutionContext();

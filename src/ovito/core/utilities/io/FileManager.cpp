@@ -201,7 +201,7 @@ QUrl FileManager::urlFromUserInput(const QString& path)
 ******************************************************************************/
 SshConnection* FileManager::acquireSshConnection(const SshConnectionParameters& sshParams)
 {
-    OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
+    OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 
     // Check in-use connections:
     for(SshConnection* connection : _acquiredConnections) {
@@ -240,7 +240,7 @@ SshConnection* FileManager::acquireSshConnection(const SshConnectionParameters& 
 ******************************************************************************/
 void FileManager::releaseSshConnection(SshConnection* connection)
 {
-    OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
+    OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 
     bool wasAquired = _acquiredConnections.removeOne(connection);
     OVITO_ASSERT(wasAquired);

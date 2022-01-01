@@ -62,7 +62,7 @@ void OffscreenOpenGLSceneRenderer::createOffscreenSurface()
 		_offscreenSurface->setFormat(QOpenGLContext::globalShareContext()->format());
 	else
 		_offscreenSurface->setFormat(QSurfaceFormat::defaultFormat());
-	_offscreenSurface->create(); 
+	_offscreenSurface->create();
 }
 
 /******************************************************************************
