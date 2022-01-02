@@ -87,6 +87,7 @@ public:
 	/// This is called by the Viewport class destructor.
 	virtual void destroyViewportWindow() override {
 		deleteLater();
+		ViewportWindowInterface::destroyViewportWindow();
 	}
 
 	/// Renders custom GUI elements in the viewport on top of the scene.

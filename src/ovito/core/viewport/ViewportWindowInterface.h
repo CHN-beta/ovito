@@ -77,7 +77,7 @@ public:
 
 	/// Makes the viewport window delete itself.
 	/// This method is automatically called by the Viewport class destructor.
-	virtual void destroyViewportWindow() = 0;
+	virtual void destroyViewportWindow() { OVITO_ASSERT(_viewport != nullptr); _viewport = nullptr; }
 
 	/// Returns the interactive scene renderer used by the viewport window to render the graphics.
 	virtual SceneRenderer* sceneRenderer() const { return nullptr; }

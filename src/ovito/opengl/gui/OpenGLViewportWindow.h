@@ -78,6 +78,7 @@ public:
 	/// This is called by the Viewport class destructor.
 	virtual void destroyViewportWindow() override {
 		deleteLater();
+		BaseViewportWindow::destroyViewportWindow();
 	}
 
 	/// Sets the mouse cursor shape for the window. 

@@ -74,10 +74,6 @@ public:
 	/// Changes the device pixel ratio of the viewport window's canvas.
 	void setDevicePixelRatio(qreal ratio) { _devicePixelRatio = ratio; }
 
-	/// Lets the viewport window delete itself.
-	/// This is called by the Viewport class destructor.
-	virtual void destroyViewportWindow() override {}
-
 	/// Sets the mouse cursor shape for the window. 
 	virtual void setCursor(const QCursor& cursor) override {}
 

@@ -80,6 +80,7 @@ public:
 	virtual void destroyViewportWindow() override {
 		_widget->deleteLater();
 		this->deleteLater();
+		BaseViewportWindow::destroyViewportWindow();
 	}
 
 	/// Returns the current position of the mouse cursor relative to the viewport window.

@@ -179,13 +179,17 @@ void OpenGLViewportWindow::hideEvent(QHideEvent* event)
 ******************************************************************************/
 void OpenGLViewportWindow::paintGL()
 {
+	_updateRequested = false;
+
+	// Do nothing if windows has been detached from its viewport.
+	if(!viewport() || !viewport()->dataset())
+		return;
+
 	OVITO_ASSERT_MSG(!viewport()->isRendering(), "OpenGLViewportWindow::paintGL()", "Recursive viewport repaint detected.");
 	OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "OpenGLViewportWindow::paintGL()", "Recursive viewport repaint detected.");
 
-	_updateRequested = false;
-
 	// Do not re-enter rendering function of the same viewport.
-	if(!viewport() || viewport()->isRendering())
+	if(viewport()->isRendering())
 		return;
 
 	QSurfaceFormat format = context()->format();
