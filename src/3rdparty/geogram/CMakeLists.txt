@@ -75,10 +75,6 @@ ENDIF()
 # Give our library file a new name to not confuse it with any system versions of the library.
 SET_TARGET_PROPERTIES(geogram PROPERTIES OUTPUT_NAME "ovito_geogram")
 
-# Set visibility of symbols in this shared library to hidden by default, except those exported in the source code.
-SET_TARGET_PROPERTIES(geogram PROPERTIES CXX_VISIBILITY_PRESET "hidden")
-SET_TARGET_PROPERTIES(geogram PROPERTIES VISIBILITY_INLINES_HIDDEN ON)
-
 # Make header files of this library available to dependent targets.
 TARGET_INCLUDE_DIRECTORIES(geogram INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 

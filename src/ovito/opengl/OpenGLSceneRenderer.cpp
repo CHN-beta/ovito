@@ -46,6 +46,16 @@
 	#include <QOpenGLDebugLogger>
 #endif
 
+// Called from Application::initialize() to register the embedded Qt resource files
+// when running a statically linked executable. The Qt documentation says this
+// needs to be placed outside of any C++ namespace.
+static void registerQtResources()
+{
+#ifdef OVITO_BUILD_MONOLITHIC
+	Q_INIT_RESOURCE(opengl);
+#endif
+}
+
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(OpenGLSceneRenderer);
@@ -109,6 +119,8 @@ void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
 ******************************************************************************/
 OpenGLSceneRenderer::OpenGLSceneRenderer(DataSet* dataset) : SceneRenderer(dataset) 
 {
+	registerQtResources();
+
 	// Determine which transparency rendering method has been selected by the user in the 
 	// application settings dialog.
 #ifndef OVITO_DISABLE_QSETTINGS

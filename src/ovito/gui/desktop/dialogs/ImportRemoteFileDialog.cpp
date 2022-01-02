@@ -80,6 +80,9 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(const QVector<const FileImporterC
 
 	_formatSelector->addItem(tr("<Auto-detect format>"));
 	for(const FileImporterClass* importerClass : importerTypes) {
+		// Skip importers that want to remain hidden from the user.
+		if(importerClass->fileFilterDescription().isEmpty())
+			continue;
 		_formatSelector->addItem(importerClass->fileFilterDescription());
 	}
 

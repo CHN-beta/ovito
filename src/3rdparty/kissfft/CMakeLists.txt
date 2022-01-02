@@ -41,10 +41,6 @@ TARGET_COMPILE_DEFINITIONS(kissfft PUBLIC "kiss_fft_scalar=double")
 # Make header files of this library available to dependent targets.
 TARGET_INCLUDE_DIRECTORIES(kissfft INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
-# Set visibility of symbols in this shared library to hidden by default, except those exported in the source code.
-SET_TARGET_PROPERTIES(kissfft PROPERTIES CXX_VISIBILITY_PRESET "hidden")
-SET_TARGET_PROPERTIES(kissfft PROPERTIES VISIBILITY_INLINES_HIDDEN ON)
-
 IF(NOT BUILD_SHARED_LIBS AND OVITO_BUILD_PYPI)
 	# Since we will link this library into the dynamically loaded Python extension module, we need to use the fPIC flag.
 	SET_PROPERTY(TARGET kissfft PROPERTY POSITION_INDEPENDENT_CODE ON)

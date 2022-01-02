@@ -139,7 +139,7 @@ FUNCTION(deploy_qt_framework_files)
 		get_all_target_dependencies(ovito_dependency_libraries Ovito)
 	ENDIF()
 	# When building just the Python bindings, get the dependencies from this target.
-	IF(OVITO_BUILD_MONOLITHIC AND OVITO_BUILD_PYPI)
+	IF(TARGET ovito_bindings)
 		get_all_target_dependencies(ovito_dependency_libraries ovito_bindings)
 	ENDIF()
 

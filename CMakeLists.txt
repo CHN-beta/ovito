@@ -21,31 +21,16 @@
 #######################################################################################
 
 # Make sure we have a recent version of CMake.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.3.0 FATAL_ERROR)
-CMAKE_POLICY(VERSION 3.3.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.12.0 FATAL_ERROR)
+CMAKE_POLICY(VERSION 3.12.0)
 
 # Choose CMake policies.
-CMAKE_POLICY(SET CMP0020 NEW) 	# Automatically link to qtmain.lib on Windows.
-CMAKE_POLICY(SET CMP0042 NEW) 	# Set MACOSX_RPATH target property to TRUE by default.
-CMAKE_POLICY(SET CMP0007 NEW)   # Let LIST command not ignore empty elements.
 IF(NOT CMAKE_VERSION VERSION_LESS "3.17")
 	CMAKE_POLICY(SET CMP0100 NEW)   # Let AUTOMOC and AUTOUIC process .hh files.
 	CMAKE_POLICY(SET CMP0099 NEW)   # Link properties are transitive over private dependency on static libraries.
 ENDIF()
-IF(NOT CMAKE_VERSION VERSION_LESS "3.3")
-	CMAKE_POLICY(SET CMP0063 NEW)   # Honor visibility properties for all target types.
-ENDIF()
-IF(NOT CMAKE_VERSION VERSION_LESS "3.9")
-	CMAKE_POLICY(SET CMP0068 NEW)   # RPATH settings on macOS do not affect install_name.
-ENDIF()
 IF(NOT CMAKE_VERSION VERSION_LESS "3.13")
 	CMAKE_POLICY(SET CMP0079 NEW)   # Allows use of target_link_libraries() with targets defined in other directories.
-ENDIF()
-IF(NOT CMAKE_VERSION VERSION_LESS "3.12")
-	CMAKE_POLICY(SET CMP0074 NEW)   # find_package() uses <PackageName>_ROOT variables.
-ENDIF()
-IF(POLICY CMP0025)
-	CMAKE_POLICY(SET CMP0025 NEW)   # Compiler id for Apple Clang is now "AppleClang".
 ENDIF()
 
 PROJECT(Ovito)
@@ -113,6 +98,20 @@ ENABLE_TESTING()
 # Activate C++17 language standard.
 SET(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Set visibility of symbols in libraries to hidden by default, except those exported in the source code.
+SET(CMAKE_CXX_VISIBILITY_PRESET "hidden")
+SET(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+
+# Enable link time optimization (LTO)
+IF(${CMAKE_BUILD_TYPE} MATCHES Release)
+	INCLUDE(CheckIPOSupported)
+	check_ipo_supported(RESULT result OUTPUT output)
+	IF(result)
+		MESSAGE(STATUS "Using link-time optimization (LTO)")
+		SET(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+	ENDIF()
+ENDIF()
 
 IF(CYGWIN AND CMAKE_COMPILER_IS_GNUCXX)
 	# Linking fails without -O3
@@ -295,7 +294,7 @@ ENDIF()
 INCLUDE(cmake/Prerequisites.cmake)
 
 # Determine the command for running the clang-tidy tool.
-IF(OVITO_RUN_CLANG_TIDY AND NOT CMAKE_VERSION VERSION_LESS "3.6")
+IF(OVITO_RUN_CLANG_TIDY)
 	FIND_PROGRAM(CLANG_TIDY_EXE NAMES "clang-tidy" DOC "Path to clang-tidy executable")
 	SET(OVITO_CLANG_TIDY_CMD "${CLANG_TIDY_EXE}") # List of checks will be read from the .clang-tidy file.
 ENDIF()

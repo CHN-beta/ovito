@@ -33,13 +33,12 @@
 #endif
 
 // Called from Application::initialize() to register the embedded Qt resource files
-// when running a statically linked executable. Following the Qt documentation, this
+// when running a statically linked executable. The Qt documentation says this
 // needs to be placed outside of any C++ namespace.
 static void registerQtResources()
 {
 #ifdef OVITO_BUILD_MONOLITHIC
 	Q_INIT_RESOURCE(core);
-	Q_INIT_RESOURCE(opengl);
 #endif
 }
 

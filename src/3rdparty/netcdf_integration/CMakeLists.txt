@@ -62,10 +62,6 @@ IF((HDF5_FOUND OR OVITO_BUILD_CONDA) AND (TARGET netcdf OR TARGET netCDF::netcdf
 		TARGET_COMPILE_DEFINITIONS(NetCDFIntegration PUBLIC "OVITO_NETCDF_INTEGRATION_EXPORT=")
 	ENDIF()
 
-	# Set visibility of symbols in this shared library to hidden by default, except those exported in the source code.
-	SET_TARGET_PROPERTIES(NetCDFIntegration PROPERTIES CXX_VISIBILITY_PRESET "hidden")
-	SET_TARGET_PROPERTIES(NetCDFIntegration PROPERTIES VISIBILITY_INLINES_HIDDEN ON)
-
 	# Link the NetCDF library
 	IF(TARGET netcdf)
 		TARGET_LINK_LIBRARIES(NetCDFIntegration PUBLIC netcdf)

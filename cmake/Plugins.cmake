@@ -45,7 +45,10 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 
 	# Determine the type of library target to build.
 	SET(plugin_library_type "")
-	IF(BUILD_SHARED_LIBS AND ${ARG_HAS_NO_EXPORTS})
+	IF(OVITO_BUILD_MONOLITHIC)
+		# When building a static executable, create a CMake object library for each plugin.
+		SET(plugin_library_type "OBJECT")
+	ELSEIF(BUILD_SHARED_LIBS AND ${ARG_HAS_NO_EXPORTS})
 		# Define the library as a module if it doesn't export any symbols.
 		SET(plugin_library_type "MODULE")
 	ELSEIF(NOT BUILD_SHARED_LIBS AND EMSCRIPTEN)
@@ -162,10 +165,6 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 	ELSE()
 		TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC "OVITO_${_uppercase_plugin_name}_EXPORT=")
 	ENDIF()
-
-	# Set visibility of symbols in this shared library to hidden by default, except those exported in the source code.
-	SET_TARGET_PROPERTIES(${target_name} PROPERTIES CXX_VISIBILITY_PRESET "hidden")
-	SET_TARGET_PROPERTIES(${target_name} PROPERTIES VISIBILITY_INLINES_HIDDEN ON)
 
 	IF(APPLE)
 		# This is required to avoid error by install_name_tool.
