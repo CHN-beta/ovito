@@ -78,10 +78,6 @@ BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport* vp, ViewportI
 			viewportImplementation = metaType;
 			break;
 		}
-		else if(qstrcmp(metaType->className(), "Ovito::Qt3DViewportWindow") == 0 && settings.value("rendering/selected_graphics_api").toString() == "Qt3D") {
-			viewportImplementation = metaType;
-			break;
-		}
 	}
 
 	if(viewportImplementation)

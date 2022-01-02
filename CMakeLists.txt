@@ -99,7 +99,6 @@ OPTION(OVITO_BUILD_PLUGIN_VOROTOP "Build the VoroTop modifier plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_GALAMOST "Build the GALAMOST I/O plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_OXDNA "Build the oxDNA I/O plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_VULKAN "Build the Vulkan renderer plugin." "OFF")
-OPTION(OVITO_BUILD_PLUGIN_QT3D "Build the Qt3D renderer plugin." "OFF")
 
 # Experimental features:
 OPTION(OVITO_BUILD_PLUGIN_VR "Build the virtual reality plugin (experimental - currently in a non-working state!)." "OFF")

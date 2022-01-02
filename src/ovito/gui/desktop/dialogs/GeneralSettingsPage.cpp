@@ -69,20 +69,15 @@ void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* se
 	_graphicsSystem = new QButtonGroup(page);
 	QRadioButton* openglOption = new QRadioButton(tr("OpenGL"), graphicsGroupBox);
 	QRadioButton* vulkanOption = new QRadioButton(tr("Vulkan"), graphicsGroupBox);
-	QRadioButton* qt3dOption = new QRadioButton(tr("Qt3D"), graphicsGroupBox);
 	layout2->addWidget(openglOption, 0, 1);
 	layout2->addWidget(vulkanOption, 1, 1);
-	layout2->addWidget(qt3dOption, 2, 1);
 	_graphicsSystem->addButton(openglOption, 0);
 	_graphicsSystem->addButton(vulkanOption, 1);
-	_graphicsSystem->addButton(qt3dOption, 2);
 	_vulkanDevices = new QComboBox();
 	layout2->addWidget(_vulkanDevices, 1, 2);
 
 	if(settings.value("rendering/selected_graphics_api").toString() == "Vulkan")
 		vulkanOption->setChecked(true);
-	else if(settings.value("rendering/selected_graphics_api").toString() == "Qt3D")
-		qt3dOption->setChecked(true);
 	else
 		openglOption->setChecked(true);
 
@@ -129,18 +124,8 @@ void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* se
 		_vulkanDevices->addItem(tr("Not available on this platform"));
 	}
 
-	if(OvitoClassPtr rendererClass = PluginManager::instance().findClass("Qt3DRenderer", "Qt3DSceneRenderer")) {
-		qt3dOption->setEnabled(true);
-	}
-	else {
-		qt3dOption->setEnabled(false);
-		qt3dOption->setVisible(false);
-	}
-
 	// Automatically switch back to OpenGL if the currently selected renderer is not available anymore.
 	if(!vulkanOption->isEnabled() && vulkanOption->isChecked())
-		openglOption->setChecked(true);
-	if(!qt3dOption->isEnabled() && qt3dOption->isChecked())
 		openglOption->setChecked(true);
 	_vulkanDevices->setEnabled(vulkanOption->isChecked());
 	connect(vulkanOption, &QAbstractButton::toggled, _vulkanDevices, &QComboBox::setEnabled);
@@ -224,7 +209,6 @@ void GeneralSettingsPage::saveValues(ApplicationSettingsDialog* settingsDialog, 
 	QString oldGraphicsApi = settings.value("rendering/selected_graphics_api").toString();
 	QString newGraphicsApi;
 	if(_graphicsSystem->checkedId() == 1) newGraphicsApi = "Vulkan";
-	else if(_graphicsSystem->checkedId() == 2) newGraphicsApi = "Qt3D";
 	if(newGraphicsApi != oldGraphicsApi) {
 		// Save new API selection in the application settings store.
 		if(!newGraphicsApi.isEmpty())
