@@ -38,12 +38,9 @@ ADD_LIBRARY(muParser
 SET_TARGET_PROPERTIES(muParser PROPERTIES OUTPUT_NAME "ovito_muparser")
 
 # Define macro for symbol export from the shared library.
-IF(BUILD_SHARED_LIBS AND WIN32)
-	TARGET_COMPILE_DEFINITIONS(muParser PRIVATE "MUPARSER_EXPORT=__declspec(dllexport)")
-	TARGET_COMPILE_DEFINITIONS(muParser INTERFACE "MUPARSER_EXPORT=__declspec(dllimport)")
-ELSE()
-	TARGET_COMPILE_DEFINITIONS(muParser PUBLIC "MUPARSER_EXPORT=")
-ENDIF()
+INCLUDE(GenerateExportHeader)
+GENERATE_EXPORT_HEADER(muParser BASE_NAME MUPARSER)
+TARGET_INCLUDE_DIRECTORIES(muParser PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
 
 # Make sure the muParser library gets compiled with the same standard flags as the other OVITO modules, which actively 
 # use the Qt framework. In particular, Qt 6.0 requires UNICODE strings on Windows platform.
@@ -54,12 +51,6 @@ IF(MSVC)
 	TARGET_COMPILE_OPTIONS(muParser PRIVATE "/wd4251")
 	# Do not warn about missing dll-interface of base class of an exported class.
 	TARGET_COMPILE_OPTIONS(muParser PRIVATE "/wd4275")
-ENDIF()
-
-# Set visibility of symbols in this shared library to hidden by default, except those exported in the source code.
-IF(NOT BUILD_SHARED_LIBS)
-	SET_TARGET_PROPERTIES(muParser PROPERTIES CXX_VISIBILITY_PRESET "hidden")
-	SET_TARGET_PROPERTIES(muParser PROPERTIES VISIBILITY_INLINES_HIDDEN ON)
 ENDIF()
 
 # Make header files of this library available to dependent targets.
