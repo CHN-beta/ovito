@@ -38,7 +38,6 @@ OVITO_STANDARD_PLUGIN(StdObjGui
 		widgets/PropertyReferenceParameterUI.cpp
 		widgets/PropertySelectionComboBox.cpp
 		widgets/DataTablePlotWidget.cpp
-		resources/stdobj_gui.qrc
 	PLUGIN_DEPENDENCIES StdObj
 	LIB_DEPENDENCIES Qwt
 	PRECOMPILED_HEADERS StdObjGui.h

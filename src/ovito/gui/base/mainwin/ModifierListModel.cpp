@@ -54,7 +54,7 @@ ModifierAction* ModifierAction::createForClass(ModifierClassPtr clazz)
 	action->setStatusTip(!description.isEmpty() ? std::move(description) : tr("Insert this modifier into the data pipeline."));
 
 	// Give the action an icon.
-	static QIcon icon(":/guibase/actions/modify/modifier_action_icon.svg");
+	static QIcon icon = QIcon::fromTheme("modify_modifier_action_icon");
 	action->setIcon(icon);
 
 	// Modifiers without a category are moved into the "Other" category.
@@ -82,7 +82,7 @@ ModifierAction* ModifierAction::createForTemplate(const QString& templateName)
 	action->setStatusTip(tr("Insert this modifier template into the data pipeline."));
 
 	// Give the action an icon.
-	static QIcon icon(":/guibase/actions/modify/modifier_action_icon.svg");
+	static QIcon icon = QIcon::fromTheme("modify_modifier_action_icon");
 	action->setIcon(icon);
 	
 	return action;
@@ -106,7 +106,7 @@ ModifierAction* ModifierAction::createForScript(const QString& fileName, const Q
 	action->setStatusTip(tr("Insert this Python modifier into the data pipeline."));
 
 	// Give the action an icon.
-	static QIcon icon(":/guibase/actions/modify/modifier_action_icon.svg");
+	static QIcon icon = QIcon::fromTheme("modify_modifier_action_icon");
 	action->setIcon(icon);
 	
 	return action;
@@ -135,6 +135,10 @@ ModifierListModel::ModifierListModel(QObject* parent, UserInterface* gui, Pipeli
 
 	// Update the state of this model's actions whenever the ActionManager requests it.
 	connect(gui->actionManager(), &ActionManager::actionUpdateRequested, this, &ModifierListModel::updateActionState);
+
+	// Initialize UI colors.
+	updateColorPalette(QGuiApplication::palette());
+	connect(qGuiApp, &QGuiApplication::paletteChanged, this, &ModifierListModel::updateColorPalette);
 
 	// Enumerate all built-in modifier classes.
 	for(ModifierClassPtr clazz : PluginManager::instance().metaclassMembers<Modifier>()) {
@@ -248,6 +252,16 @@ ModifierListModel::ModifierListModel(QObject* parent, UserInterface* gui, Pipeli
 	else
 		_categoryFont.setPixelSize(_categoryFont.pixelSize() * 4 / 5);
 #endif
+}
+
+/******************************************************************************
+* Updates the color brushes of the model.
+******************************************************************************/
+void ModifierListModel::updateColorPalette(const QPalette& palette)
+{
+	bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
+	_categoryBackgroundBrush = darkTheme ? palette.mid() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
+	_categoryForegroundBrush = QBrush(darkTheme ? QColor(Qt::blue).lighter() : QColor(Qt::blue));
 }
 
 /******************************************************************************

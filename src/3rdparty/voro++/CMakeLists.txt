@@ -40,6 +40,9 @@ ADD_LIBRARY(VoroPlusPlus
 	src/container_prd.cc
 )
 
+# Simply export all symbols defined by the Voro++ library, because the code doesn't explicitly export certain API symbols.
+SET_TARGET_PROPERTIES(VoroPlusPlus PROPERTIES CXX_VISIBILITY_PRESET "default")
+
 # Give our library file a new name to not confuse it with any system versions of the library.
 SET_TARGET_PROPERTIES(VoroPlusPlus PROPERTIES OUTPUT_NAME "ovito_voro++")
 

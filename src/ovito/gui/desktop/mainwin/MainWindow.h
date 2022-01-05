@@ -116,6 +116,9 @@ public:
 	/// Sets the file path associated with this window and updates the window's title.
 	void setWindowFilePath(const QString& filePath);
 
+	/// Determines whether the application window uses a dark theme.
+	bool darkTheme() const;
+
 	/// Returns the main window in which the given dataset is opened.
 	static MainWindow* fromDataset(DataSet* dataset);
 

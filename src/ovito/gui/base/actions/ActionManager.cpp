@@ -46,61 +46,61 @@ ActionManager::ActionManager(QObject* parent, UserInterface* gui) : QAbstractLis
 	connect(&gui->datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &ActionManager::onSelectionChangeComplete);
 	connect(&gui->datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &ActionManager::onViewportConfigurationReplaced);
 
-	createCommandAction(ACTION_QUIT, tr("Quit"), ":/guibase/actions/file/file_quit.bw.svg", tr("Quit the application."));
-	createCommandAction(ACTION_FILE_OPEN, tr("Load Session State"), ":/guibase/actions/file/file_open.bw.svg", tr("Load a previously saved session from a file."), QKeySequence::Open);
-	createCommandAction(ACTION_FILE_SAVE, tr("Save Session State"), ":/guibase/actions/file/file_save.bw.svg", tr("Save the current program session to a file."), QKeySequence::Save);
-	createCommandAction(ACTION_FILE_SAVEAS, tr("Save Session State As"), ":/guibase/actions/file/file_save_as.bw.svg", tr("Save the current program session to a new file."), QKeySequence::SaveAs);
-	createCommandAction(ACTION_FILE_IMPORT, tr("Load File"), ":/guibase/actions/file/file_import.bw.svg", tr("Import data from a file on this computer."), Qt::Key_I | Qt::CTRL);
-	createCommandAction(ACTION_FILE_REMOTE_IMPORT, tr("Load Remote File"), ":/guibase/actions/file/file_import_remote.bw.svg", tr("Import a file from a remote location."), Qt::Key_I | Qt::CTRL | Qt::SHIFT);
-	createCommandAction(ACTION_FILE_EXPORT, tr("Export File"), ":/guibase/actions/file/file_export.bw.svg", tr("Export data to a file."), Qt::Key_E | Qt::CTRL);
-	createCommandAction(ACTION_FILE_NEW_WINDOW, tr("New Program Window"), ":/guibase/actions/file/new_window.bw.svg", tr("Open another OVITO program window."), QKeySequence::New);
-	createCommandAction(ACTION_HELP_ABOUT, tr("About OVITO"), ":/guibase/actions/file/about.bw.svg", tr("Show information about the software."));
-	createCommandAction(ACTION_HELP_SHOW_ONLINE_HELP, tr("User Manual"), ":/guibase/actions/file/user_manual.bw.svg", tr("Open the user manual."), QKeySequence::HelpContents);
-	createCommandAction(ACTION_HELP_SHOW_SCRIPTING_HELP, tr("Scripting Reference"), ":/guibase/actions/file/scripting_manual.bw.svg", tr("Open the Python API documentation."));
-	createCommandAction(ACTION_HELP_GRAPHICS_SYSINFO, tr("System Information"), ":/guibase/actions/file/opengl_info.bw.svg", tr("Display system and graphics hardware information."));
+	createCommandAction(ACTION_QUIT, tr("Quit"), "file_quit", tr("Quit the application."));
+	createCommandAction(ACTION_FILE_OPEN, tr("Load Session State"), "file_open", tr("Load a previously saved session from a file."), QKeySequence::Open);
+	createCommandAction(ACTION_FILE_SAVE, tr("Save Session State"), "file_save", tr("Save the current program session to a file."), QKeySequence::Save);
+	createCommandAction(ACTION_FILE_SAVEAS, tr("Save Session State As"), "file_save_as", tr("Save the current program session to a new file."), QKeySequence::SaveAs);
+	createCommandAction(ACTION_FILE_IMPORT, tr("Load File"), "file_import", tr("Import data from a file on this computer."), Qt::Key_I | Qt::CTRL);
+	createCommandAction(ACTION_FILE_REMOTE_IMPORT, tr("Load Remote File"), "file_import_remote", tr("Import a file from a remote location."), Qt::Key_I | Qt::CTRL | Qt::SHIFT);
+	createCommandAction(ACTION_FILE_EXPORT, tr("Export File"), "file_export", tr("Export data to a file."), Qt::Key_E | Qt::CTRL);
+	createCommandAction(ACTION_FILE_NEW_WINDOW, tr("New Program Window"), "file_new_window", tr("Open another OVITO program window."), QKeySequence::New);
+	createCommandAction(ACTION_HELP_ABOUT, tr("About OVITO"), "application_about", tr("Show information about this software."));
+	createCommandAction(ACTION_HELP_SHOW_ONLINE_HELP, tr("User Manual"), "help_user_manual", tr("Open the user manual."), QKeySequence::HelpContents);
+	createCommandAction(ACTION_HELP_SHOW_SCRIPTING_HELP, tr("Scripting Reference"), "help_scripting_manual", tr("Open the Python API documentation."));
+	createCommandAction(ACTION_HELP_GRAPHICS_SYSINFO, tr("System Information"), "help_system_info", tr("Display system and graphics hardware information."));
 
-	createCommandAction(ACTION_EDIT_UNDO, tr("Undo"), ":/guibase/actions/edit/edit_undo.bw.svg", tr("Reverse the last action."), QKeySequence::Undo);
-	createCommandAction(ACTION_EDIT_REDO, tr("Redo"), ":/guibase/actions/edit/edit_redo.bw.svg", tr("Restore the previously reversed action."), QKeySequence::Redo);
+	createCommandAction(ACTION_EDIT_UNDO, tr("Undo"), "edit_undo", tr("Reverse the last action."), QKeySequence::Undo);
+	createCommandAction(ACTION_EDIT_REDO, tr("Redo"), "edit_redo", tr("Restore the previously reversed action."), QKeySequence::Redo);
 	createCommandAction(ACTION_EDIT_CLEAR_UNDO_STACK, tr("Clear Undo Stack"), nullptr, tr("Discards all existing undo records."))->setVisible(false);
 
-	createCommandAction(ACTION_NEW_PIPELINE_FILESOURCE, tr("External data file"), ":/guibase/actions/edit/create_pipeline.svg", tr("Creates a new pipeline with an external file as data source."));
-	createCommandAction(ACTION_EDIT_CLONE_PIPELINE, tr("Clone Pipeline..."), ":/guibase/actions/edit/clone_pipeline.bw.svg", tr("Duplicate the current pipeline to show multiple datasets side by side."));
-	createCommandAction(ACTION_EDIT_RENAME_PIPELINE, tr("Rename Pipeline..."), ":/guibase/actions/edit/rename_pipeline.bw.svg", tr("Assign a new name to the selected pipeline."));
-	createCommandAction(ACTION_EDIT_DELETE, tr("Delete Pipeline"), ":/guibase/actions/edit/edit_delete.bw.svg", tr("Delete the selected object from the scene."));
+	createCommandAction(ACTION_NEW_PIPELINE_FILESOURCE, tr("External data file"), "edit_create_pipeline", tr("Creates a new pipeline with an external file as data source."));
+	createCommandAction(ACTION_EDIT_CLONE_PIPELINE, tr("Clone Pipeline..."), "edit_clone_pipeline", tr("Duplicate the current pipeline to show multiple datasets side by side."));
+	createCommandAction(ACTION_EDIT_RENAME_PIPELINE, tr("Rename Pipeline..."), "edit_rename_pipeline", tr("Assign a new name to the selected pipeline."));
+	createCommandAction(ACTION_EDIT_DELETE, tr("Delete Pipeline"), "edit_delete_pipeline", tr("Delete the selected object from the scene."));
 
-	createCommandAction(ACTION_SETTINGS_DIALOG, tr("Application Settings..."), ":/guibase/actions/file/preferences.bw.svg", tr("Open the application settings dialog"), QKeySequence::Preferences);
+	createCommandAction(ACTION_SETTINGS_DIALOG, tr("Application Settings..."), "application_preferences", tr("Open the application settings dialog"), QKeySequence::Preferences);
 
-	createCommandAction(ACTION_RENDER_ACTIVE_VIEWPORT, tr("Render"), ":/guibase/actions/rendering/render_active_viewport.bw.svg", tr("Render an image or animation of the current viewport."));
+	createCommandAction(ACTION_RENDER_ACTIVE_VIEWPORT, tr("Render"), "render_active_viewport", tr("Render an image or animation of the current viewport."));
 
-	createCommandAction(ACTION_VIEWPORT_MAXIMIZE, tr("Maximize Active Viewport"), ":/guibase/actions/viewport/maximize_viewport.bw.svg", tr("Enlarge/reduce the active viewport."))->setCheckable(true);
-	createCommandAction(ACTION_VIEWPORT_ZOOM_SCENE_EXTENTS, tr("Zoom Scene Extents"), ":/guibase/actions/viewport/zoom_scene_extents.bw.svg",
+	createCommandAction(ACTION_VIEWPORT_MAXIMIZE, tr("Maximize Active Viewport"), "viewport_maximize", tr("Enlarge/reduce the active viewport."))->setCheckable(true);
+	createCommandAction(ACTION_VIEWPORT_ZOOM_SCENE_EXTENTS, tr("Zoom Scene Extents"), "viewport_zoom_scene_extents",
 #ifndef Q_OS_MACOS
 		tr("Zoom active viewport to show everything. Use CONTROL key to zoom all viewports at once."));
 #else
 		tr("Zoom active viewport to show everything. Use COMMAND key to zoom all viewports at once."));
 #endif
-	createCommandAction(ACTION_VIEWPORT_ZOOM_SCENE_EXTENTS_ALL, tr("Zoom Scene Extents All"), ":/guibase/actions/viewport/zoom_scene_extents_all.png", tr("Zoom all viewports to show everything."));
-	createCommandAction(ACTION_VIEWPORT_ZOOM_SELECTION_EXTENTS, tr("Zoom Selection Extents"), ":/guibase/actions/viewport/zoom_selection_extents.png", tr("Zoom active viewport to show the selected objects."));
-	createCommandAction(ACTION_VIEWPORT_ZOOM_SELECTION_EXTENTS_ALL, tr("Zoom Selection Extents All"), ":/guibase/actions/viewport/zoom_selection_extents.png", tr("Zoom all viewports to show the selected objects."));
+	createCommandAction(ACTION_VIEWPORT_ZOOM_SCENE_EXTENTS_ALL, tr("Zoom Scene Extents All"), nullptr, tr("Zoom all viewports to show everything."));
+	createCommandAction(ACTION_VIEWPORT_ZOOM_SELECTION_EXTENTS, tr("Zoom Selection Extents"), nullptr, tr("Zoom active viewport to show the selected objects."));
+	createCommandAction(ACTION_VIEWPORT_ZOOM_SELECTION_EXTENTS_ALL, tr("Zoom Selection Extents All"), nullptr, tr("Zoom all viewports to show the selected objects."));
 
 	ViewportInputManager* vpInputManager = gui->viewportInputManager();
-	createViewportModeAction(ACTION_VIEWPORT_ZOOM, vpInputManager->zoomMode(), tr("Zoom"), ":/guibase/actions/viewport/mode_zoom.bw.svg", tr("Activate zoom mode."));
-	createViewportModeAction(ACTION_VIEWPORT_PAN, vpInputManager->panMode(), tr("Pan"), ":/guibase/actions/viewport/mode_pan.bw.svg", tr("Activate pan mode to shift the region visible in the viewports."));
-	createViewportModeAction(ACTION_VIEWPORT_ORBIT, vpInputManager->orbitMode(), tr("Orbit Camera"), ":/guibase/actions/viewport/mode_orbit.bw.svg", tr("Activate orbit mode to rotate the camera around the scene."));
-	createViewportModeAction(ACTION_VIEWPORT_FOV, vpInputManager->fovMode(), tr("Change Field Of View"), ":/guibase/actions/viewport/mode_fov.bw.svg", tr("Activate field of view mode to change the perspective projection."));
-	createViewportModeAction(ACTION_VIEWPORT_PICK_ORBIT_CENTER, vpInputManager->pickOrbitCenterMode(), tr("Set Orbit Center"), ":/guibase/actions/viewport/mode_set_orbit_center.png", tr("Set the center of rotation of the viewport camera."))->setVisible(false);
+	createViewportModeAction(ACTION_VIEWPORT_ZOOM, vpInputManager->zoomMode(), tr("Zoom"), "viewport_mode_zoom", tr("Activate zoom mode."));
+	createViewportModeAction(ACTION_VIEWPORT_PAN, vpInputManager->panMode(), tr("Pan"), "viewport_mode_pan", tr("Activate pan mode to shift the region visible in the viewports."));
+	createViewportModeAction(ACTION_VIEWPORT_ORBIT, vpInputManager->orbitMode(), tr("Orbit Camera"), "viewport_mode_orbit", tr("Activate orbit mode to rotate the camera around the scene."));
+	createViewportModeAction(ACTION_VIEWPORT_FOV, vpInputManager->fovMode(), tr("Change Field Of View"), "viewport_mode_fov", tr("Activate field of view mode to change the perspective projection."));
+	createViewportModeAction(ACTION_VIEWPORT_PICK_ORBIT_CENTER, vpInputManager->pickOrbitCenterMode(), tr("Set Orbit Center"), nullptr, tr("Set the center of rotation of the viewport camera."))->setVisible(false);
 
-	createViewportModeAction(ACTION_SELECTION_MODE, vpInputManager->selectionMode(), tr("Select"), ":/guibase/actions/edit/mode_select.bw.svg", tr("Select objects in the viewports."));
+	createViewportModeAction(ACTION_SELECTION_MODE, vpInputManager->selectionMode(), tr("Select"), "edit_mode_select", tr("Select objects in the viewports."));
 
-	createCommandAction(ACTION_GOTO_START_OF_ANIMATION, tr("Go to Start of Animation"), ":/guibase/actions/animation/goto_animation_start.bw.svg", tr("Jump to first frame of the animation."), Qt::Key_Home);
-	createCommandAction(ACTION_GOTO_END_OF_ANIMATION, tr("Go to End of Animation"), ":/guibase/actions/animation/goto_animation_end.bw.svg", tr("Jump to the last frame of the animation."), Qt::Key_End);
-	createCommandAction(ACTION_GOTO_PREVIOUS_FRAME, tr("Go to Previous Frame"), ":/guibase/actions/animation/goto_previous_frame.bw.svg", tr("Move time slider one animation frame backward."), Qt::Key_Left | Qt::ALT);
-	createCommandAction(ACTION_GOTO_NEXT_FRAME, tr("Go to Next Frame"), ":/guibase/actions/animation/goto_next_frame.bw.svg", tr("Move time slider one animation frame forward."), Qt::Key_Right | Qt::ALT);
-	createCommandAction(ACTION_START_ANIMATION_PLAYBACK, tr("Start Animation Playback"), ":/guibase/actions/animation/play_animation.bw.svg", tr("Start playing the animation in the viewports."));
-	createCommandAction(ACTION_STOP_ANIMATION_PLAYBACK, tr("Stop Animation Playback"), ":/guibase/actions/animation/stop_animation.bw.svg", tr("Stop playing the animation in the viewports."));
-	createCommandAction(ACTION_ANIMATION_SETTINGS, tr("Animation Settings"), ":/guibase/actions/animation/animation_settings.bw.svg", tr("Open the animation settings dialog."));
-	createCommandAction(ACTION_TOGGLE_ANIMATION_PLAYBACK, tr("Play Animation"), ":/guibase/actions/animation/play_animation.bw.svg", tr("Start/stop animation playback. Hold down Shift key to play backwards."), Qt::Key_Space)->setCheckable(true);
-	createCommandAction(ACTION_AUTO_KEY_MODE_TOGGLE, tr("Auto Key Mode"), ":/guibase/actions/animation/animation_mode.bw.svg", tr("Toggle auto-key mode for creating animation keys."))->setCheckable(true);
+	createCommandAction(ACTION_GOTO_START_OF_ANIMATION, tr("Go to Start of Animation"), "animation_goto_start", tr("Jump to first frame of the animation."), Qt::Key_Home);
+	createCommandAction(ACTION_GOTO_END_OF_ANIMATION, tr("Go to End of Animation"), "animation_goto_end", tr("Jump to the last frame of the animation."), Qt::Key_End);
+	createCommandAction(ACTION_GOTO_PREVIOUS_FRAME, tr("Go to Previous Frame"), "animation_goto_previous_frame", tr("Move time slider one animation frame backward."), Qt::Key_Left | Qt::ALT);
+	createCommandAction(ACTION_GOTO_NEXT_FRAME, tr("Go to Next Frame"), "animation_goto_next_frame", tr("Move time slider one animation frame forward."), Qt::Key_Right | Qt::ALT);
+	createCommandAction(ACTION_START_ANIMATION_PLAYBACK, tr("Start Animation Playback"), "animation_play", tr("Start playing the animation in the viewports."));
+	createCommandAction(ACTION_STOP_ANIMATION_PLAYBACK, tr("Stop Animation Playback"), "animation_stop", tr("Stop playing the animation in the viewports."));
+	createCommandAction(ACTION_ANIMATION_SETTINGS, tr("Animation Settings"), "animation_settings", tr("Open the animation settings dialog."));
+	createCommandAction(ACTION_TOGGLE_ANIMATION_PLAYBACK, tr("Play Animation"), "animation_play", tr("Start/stop animation playback. Hold down Shift key to play backwards."), Qt::Key_Space)->setCheckable(true);
+	createCommandAction(ACTION_AUTO_KEY_MODE_TOGGLE, tr("Auto Key Mode"), "animation_auto_key_mode", tr("Toggle auto-key mode for creating animation keys."))->setCheckable(true);
 
 	connect(getAction(ACTION_VIEWPORT_MAXIMIZE), &QAction::triggered, this, &ActionManager::on_ViewportMaximize_triggered);
 	connect(getAction(ACTION_VIEWPORT_ZOOM_SCENE_EXTENTS), &QAction::triggered, this, &ActionManager::on_ViewportZoomSceneExtents_triggered);
@@ -289,7 +289,7 @@ QAction* ActionManager::createCommandAction(const QString& id, const QString& ti
 	if(!shortcut.isEmpty())
 		action->setToolTip(QStringLiteral("%1 [%2]").arg(title).arg(shortcut.toString(QKeySequence::NativeText)));
 	if(iconPath)
-		action->setIcon(QIcon(QString(iconPath)));
+		action->setIcon((iconPath[0] == ':') ? QIcon(iconPath) : QIcon::fromTheme(iconPath));
 	addAction(action);
 	return action;
 }
@@ -307,7 +307,7 @@ QAction* ActionManager::createViewportModeAction(const QString& id, ViewportInpu
 	if(!shortcut.isEmpty())
 		action->setToolTip(QStringLiteral("%1 [%2]").arg(title).arg(shortcut.toString(QKeySequence::NativeText)));
 	if(iconPath)
-		action->setIcon(QIcon(QString(iconPath)));
+		action->setIcon((iconPath[0] == ':') ? QIcon(iconPath) : QIcon::fromTheme(iconPath));
 	addAction(action);
 	return action;
 }

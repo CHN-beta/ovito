@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2019 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -46,6 +46,9 @@ ADD_LIBRARY(PolyhedralTemplateMatching
 	ptm_structure_matcher.cpp
 	ptm_voronoi_cell.cpp
 )
+
+# Simply export all symbols defined by the PTM library, because the code doesn't explicitly export certain API symbols.
+SET_TARGET_PROPERTIES(PolyhedralTemplateMatching PROPERTIES CXX_VISIBILITY_PRESET "default")
 
 # Give our library file a new name to not confuse it with any system versions of the library.
 SET_TARGET_PROPERTIES(PolyhedralTemplateMatching PROPERTIES OUTPUT_NAME "ovito_ptm")

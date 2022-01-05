@@ -53,9 +53,9 @@ QWidget* SurfaceMeshInspectionApplet::createWidget(MainWindow* mainWindow)
 	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; spacing: 0px; }");
 
 	QActionGroup* subobjectActionGroup = new QActionGroup(this);
-	_switchToVerticesAction = subobjectActionGroup->addAction(QIcon(":/mesh/icons/vertices_view.svg"), tr("Vertices"));
-	_switchToFacesAction = subobjectActionGroup->addAction(QIcon(":/mesh/icons/faces_view.svg"), tr("Faces"));
-	_switchToRegionsAction = subobjectActionGroup->addAction(QIcon(":/mesh/icons/regions_view.svg"), tr("Regions"));
+	_switchToVerticesAction = subobjectActionGroup->addAction(QIcon::fromTheme("inspector_view_mesh_vertices"), tr("Vertices"));
+	_switchToFacesAction = subobjectActionGroup->addAction(QIcon::fromTheme("inspector_view_mesh_faces"), tr("Faces"));
+	_switchToRegionsAction = subobjectActionGroup->addAction(QIcon::fromTheme("inspector_view_mesh_regions"), tr("Regions"));
 	toolbar->addAction(_switchToVerticesAction);
 	toolbar->addAction(_switchToFacesAction);
 	toolbar->addAction(_switchToRegionsAction);

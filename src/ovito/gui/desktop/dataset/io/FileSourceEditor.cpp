@@ -63,13 +63,13 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; }");
 	layout->addWidget(toolbar);
 
-	toolbar->addAction(QIcon(":/guibase/actions/file/import_object_changefile.bw.svg"), tr("Pick new file"), this, SLOT(onPickLocalInputFile()));
+	toolbar->addAction(QIcon::fromTheme("file_import_object_changefile"), tr("Pick new file"), this, SLOT(onPickLocalInputFile()));
 #ifdef OVITO_SSH_CLIENT
-	toolbar->addAction(QIcon(":/guibase/actions/file/file_import_remote.bw.svg"), tr("Pick new remote file"), this, SLOT(onPickRemoteInputFile()));
+	toolbar->addAction(QIcon::fromTheme("file_import_remote"), tr("Pick new remote file"), this, SLOT(onPickRemoteInputFile()));
 #endif
-	toolbar->addAction(QIcon(":/guibase/actions/file/import_object_reload.bw.svg"), tr("Reload file"), this, SLOT(onReloadFrame()));
-	toolbar->addAction(QIcon(":/guibase/actions/file/import_object_refresh_animation.bw.svg"), tr("Update trajectory frames"), this, SLOT(onReloadAnimation()));
-	QAction* preloadTrajAction = toolbar->addAction(QIcon(":/guibase/actions/file/cache_pipeline_output.svg"), tr("Load entire trajectory into memory"));
+	toolbar->addAction(QIcon::fromTheme("file_import_object_reload"), tr("Reload file"), this, SLOT(onReloadFrame()));
+	toolbar->addAction(QIcon::fromTheme("file_import_object_refresh_animation"), tr("Update trajectory frames"), this, SLOT(onReloadAnimation()));
+	QAction* preloadTrajAction = toolbar->addAction(QIcon::fromTheme("file_cache_pipeline_output"), tr("Load entire trajectory into memory"));
 	BooleanActionParameterUI* preloadTrajectoryUI = new BooleanActionParameterUI(this, PROPERTY_FIELD(FileSource::pipelineTrajectoryCachingEnabled), preloadTrajAction);
 
 	QGroupBox* sourceBox = new QGroupBox(tr("Data source"), rollout);

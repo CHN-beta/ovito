@@ -53,10 +53,10 @@ FrameBufferWindow::FrameBufferWindow(QWidget* parent) :
 	setCentralWidget(scrollArea);
 
 	QToolBar* toolBar = addToolBar(tr("Frame Buffer"));
-	toolBar->addAction(QIcon(":/gui/framebuffer/save_picture.bw.svg"), tr("Save to file"), this, SLOT(saveImage()));
-	toolBar->addAction(QIcon(":/gui/framebuffer/copy_picture_to_clipboard.bw.svg"), tr("Copy to clipboard"), this, SLOT(copyImageToClipboard()));
+	toolBar->addAction(QIcon::fromTheme("framebuffer_save_picture"), tr("Save to file"), this, SLOT(saveImage()));
+	toolBar->addAction(QIcon::fromTheme("framebuffer_copy_picture_to_clipboard"), tr("Copy to clipboard"), this, SLOT(copyImageToClipboard()));
 	toolBar->addSeparator();
-	toolBar->addAction(QIcon(":/gui/framebuffer/auto_crop.bw.svg"), tr("Auto-crop image"), this, SLOT(autoCrop()));
+	toolBar->addAction(QIcon::fromTheme("framebuffer_auto_crop"), tr("Auto-crop image"), this, SLOT(autoCrop()));
 
 	// Disable context menu in toolbar.
 	setContextMenuPolicy(Qt::NoContextMenu);

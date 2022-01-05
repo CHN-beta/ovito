@@ -158,7 +158,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow* mainWindow, QWidget* parent) : 
 	editToolbar->addAction(_actionManager->getAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP));
 	editToolbar->addAction(_actionManager->getAction(ACTION_PIPELINE_MAKE_INDEPENDENT));
 
-	QAction* manageModifierTemplatesAction = _actionManager->createCommandAction(ACTION_MODIFIER_MANAGE_TEMPLATES, tr("Manage Modifier Templates..."), ":/guibase/actions/modify/modifier_save_preset.bw.svg", tr("Open the dialog that lets you manage the saved modifier templates."));
+	QAction* manageModifierTemplatesAction = _actionManager->createCommandAction(ACTION_MODIFIER_MANAGE_TEMPLATES, tr("Manage Modifier Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved modifier templates."));
 	connect(manageModifierTemplatesAction, &QAction::triggered, [mainWindow]() {
 		ApplicationSettingsDialog dlg(mainWindow, &ModifierTemplatesPage::OOClass());
 		dlg.exec();
@@ -375,7 +375,7 @@ void ModifyCommandPage::showProgramNotice(const QString& htmlPage)
 			.arg(expirationDate.toString(Qt::SystemLocaleShortDate));
 	}
 	else if(currentDate <= expirationDate) {
-		expirationNotice = tr("<h4>Preview build: Expiration date approaching</h4><p style=\"background-color: rgb(230,180,180);\">You are using a preview version of %1, which will expire on %2. "
+		expirationNotice = tr("<h4>Preview build: Expiration date approaching</h4><p style=\"background-color: rgb(230,180,180); color: black;\">You are using a preview version of %1, which will expire on %2. "
 				"The final program release is now available. Please visit our website <a href=\"https://www.ovito.org/\">www.ovito.org</a>. "
 				"<br>This preview release will stop working in %3 days!</p>")
 			.arg(Application::applicationName())
@@ -383,15 +383,15 @@ void ModifyCommandPage::showProgramNotice(const QString& htmlPage)
 			.arg(currentDate.daysTo(expirationDate));
 	}
 	else {
-		expirationNotice = tr("<h4>Preview build</h4><p style=\"background-color: rgb(230,180,180);\">This preview version of %1 has expired on %2 and will no longer work. "
+		expirationNotice = tr("<h4>Preview build</h4><p style=\"background-color: rgb(230,180,180); color: black;\">This preview version of %1 has expired on %2 and will no longer work. "
 				"The final program release is now available, please visit our website <a href=\"https://www.ovito.org/\">www.ovito.org</a>. ")
 			.arg(Application::applicationName())
 			.arg(expirationDate.toString(Qt::SystemLocaleShortDate));
 	}
 	finalText.replace(QStringLiteral("<p>&nbsp;</p>"), expirationNotice);
 #elif defined(OVITO_DEVELOPMENT_BUILD_DATE)
-	QString previewNotice = tr("<h4>Preview version notice</h4><p style=\"background-color: rgb(230,180,180);\">You are using an early development build of %1, which was created on %2.</p> "
-			"<p style=\"background-color: rgb(230,180,180);\">Remember to install the final release of %1 as soon as it becomes available on our website <a href=\"https://www.ovito.org/\">www.ovito.org</a>.</p>")
+	QString previewNotice = tr("<h4>Preview version notice</h4><p style=\"background-color: rgb(230,180,180); color: black;\">You are using an early development build of %1, which was created on %2.</p> "
+			"<p style=\"background-color: rgb(230,180,180); color: black;\">Remember to install the final release of %1 as soon as it becomes available on our website <a href=\"https://www.ovito.org/\">www.ovito.org</a>.</p>")
 		.arg(Application::applicationName())
 		.arg(QStringLiteral(OVITO_DEVELOPMENT_BUILD_DATE));
 	finalText.replace(QStringLiteral("<p>&nbsp;</p>"), previewNotice);

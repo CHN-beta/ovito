@@ -47,7 +47,7 @@ QWidget* BondInspectionApplet::createWidget(MainWindow* mainWindow)
 	_pickingMode = new PickingMode(this);
 	connect(this, &QObject::destroyed, _pickingMode, &ViewportInputMode::removeMode);
 	ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow, tr("Select in viewports"), this, _pickingMode);
-	pickModeAction->setIcon(QIcon(":/particles/icons/select_mode.svg"));
+	pickModeAction->setIcon(QIcon::fromTheme("particles_select_mode"));
 
 	QToolBar* toolbar = new QToolBar();
 	toolbar->setOrientation(Qt::Horizontal);

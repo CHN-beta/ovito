@@ -56,10 +56,10 @@ ClonePipelineDialog::ClonePipelineDialog(PipelineSceneNode* node, QWidget* paren
 	sublayout2->addWidget(displacementToolBar);
 	_displacementDirectionGroup = new QActionGroup(this);
 	_displacementDirectionGroup->setExclusive(true);
-	QAction* displacementNoneAction = displacementToolBar->addAction(QIcon(":/guibase/actions/edit/clone_displace_mode_none.svg"), tr("Do not displace clone"));
-	QAction* displacementXAction = displacementToolBar->addAction(QIcon(":/guibase/actions/edit/clone_displace_mode_x.svg"), tr("Displace clone along X axis"));
-	QAction* displacementYAction = displacementToolBar->addAction(QIcon(":/guibase/actions/edit/clone_displace_mode_y.svg"), tr("Displace clone along Y axis"));
-	QAction* displacementZAction = displacementToolBar->addAction(QIcon(":/guibase/actions/edit/clone_displace_mode_z.svg"), tr("Displace clone along Z axis"));
+	QAction* displacementNoneAction = displacementToolBar->addAction(QIcon::fromTheme("edit_clone_displace_mode_none"), tr("Do not displace clone"));
+	QAction* displacementXAction = displacementToolBar->addAction(QIcon::fromTheme("edit_clone_displace_mode_x"), tr("Displace clone along X axis"));
+	QAction* displacementYAction = displacementToolBar->addAction(QIcon::fromTheme("edit_clone_displace_mode_y"), tr("Displace clone along Y axis"));
+	QAction* displacementZAction = displacementToolBar->addAction(QIcon::fromTheme("edit_clone_displace_mode_z"), tr("Displace clone along Z axis"));
 	sublayout2->addStretch(1);
 	displacementNoneAction->setCheckable(true);
 	displacementXAction->setCheckable(true);
@@ -131,14 +131,14 @@ void ClonePipelineDialog::initializeGraphicsScene()
 		_pipelineItems.push_back(s);
 	}
 
-	QPen borderPen(Qt::black);
+	QPen borderPen(palette().color(QPalette::WindowText));
 	borderPen.setWidth(0);
-	QPen thickBorderPen(Qt::black);
+	QPen thickBorderPen(palette().color(QPalette::WindowText));
 	thickBorderPen.setWidth(2);
 	QBrush nodeBrush(QColor(200, 200, 255));
 	QBrush modifierBrush(QColor(200, 255, 200));
 	QBrush sourceBrush(QColor(200, 200, 200));
-	QBrush modAppBrush(QColor(255, 255, 200));
+	QBrush modAppBrush(palette().color(QPalette::Base).darker());
 	qreal textBoxWidth = 160;
 	qreal textBoxHeight = 25;
 	qreal modAppRadius = 5;
@@ -177,11 +177,12 @@ void ClonePipelineDialog::initializeGraphicsScene()
 	textItem->setParentItem(nodeItem2);
 	textItem->setPos(-textItem->boundingRect().center());
 
-	_pipelineScene.addLine(0, 0, 0, lineHeight/2)->moveBy(0,0);
-	_pipelineScene.addLine(0, 0, 0, lineHeight/2)->moveBy(_pipelineSeparation,0);
-	_joinLine = _pipelineScene.addLine(0, -lineHeight/2, _pipelineSeparation, -lineHeight/2);
+	_pipelineScene.addLine(0, 0, 0, lineHeight/2, borderPen)->moveBy(0,0);
+	_pipelineScene.addLine(0, 0, 0, lineHeight/2, borderPen)->moveBy(_pipelineSeparation,0);
+	_joinLine = _pipelineScene.addLine(0, -lineHeight/2, _pipelineSeparation, -lineHeight/2, borderPen);
 	textItem = _pipelineScene.addSimpleText(tr(" Pipeline branch "), smallFont);
-	QGraphicsRectItem* boxItem = _pipelineScene.addRect(textItem->boundingRect(), borderPen, Qt::white);
+	textItem->setBrush(palette().text());
+	QGraphicsRectItem* boxItem = _pipelineScene.addRect(textItem->boundingRect(), borderPen, palette().base());
 	boxItem->setPos(-textItem->boundingRect().center());
 	boxItem->moveBy(_pipelineSeparation/2, -lineHeight/2);
 	boxItem->setParentItem(_joinLine);
@@ -195,11 +196,11 @@ void ClonePipelineDialog::initializeGraphicsScene()
 		qreal y = line * lineHeight;
 
 		// Create vertical connector lines.
-		s.connector1 = _pipelineScene.addLine(0, -lineHeight/2, 0, s.isModifier() ? lineHeight/2 : 0);
+		s.connector1 = _pipelineScene.addLine(0, -lineHeight/2, 0, s.isModifier() ? lineHeight/2 : 0, borderPen);
 		s.connector1->moveBy(0, y);
-		s.connector2 = _pipelineScene.addLine(0, -lineHeight/2, 0, s.isModifier() ? lineHeight/2 : 0);
+		s.connector2 = _pipelineScene.addLine(0, -lineHeight/2, 0, s.isModifier() ? lineHeight/2 : 0, borderPen);
 		s.connector2->moveBy(_pipelineSeparation, y);
-		s.connector3 = _pipelineScene.addLine(0, -lineHeight/2, 0, s.isModifier() ? lineHeight/2 : 0);
+		s.connector3 = _pipelineScene.addLine(0, -lineHeight/2, 0, s.isModifier() ? lineHeight/2 : 0, borderPen);
 		s.connector3->moveBy(_pipelineSeparation / 2 - objBoxIndent, y);
 
 		// Create a circle for each modifier application:
@@ -212,11 +213,11 @@ void ClonePipelineDialog::initializeGraphicsScene()
 		s.modAppItem3->setParentItem(s.connector3);
 
 		// Create horizontal connector lines.
-		QGraphicsLineItem* horizontalConnector1 = _pipelineScene.addLine(modAppRadius, 0, (_pipelineSeparation - textBoxWidth) / 2, 0);
+		QGraphicsLineItem* horizontalConnector1 = _pipelineScene.addLine(modAppRadius, 0, (_pipelineSeparation - textBoxWidth) / 2, 0, borderPen);
 		horizontalConnector1->setParentItem(s.modAppItem1);
-		QGraphicsLineItem* horizontalConnector2 = _pipelineScene.addLine(-modAppRadius, 0, -(_pipelineSeparation - textBoxWidth) / 2, 0);
+		QGraphicsLineItem* horizontalConnector2 = _pipelineScene.addLine(-modAppRadius, 0, -(_pipelineSeparation - textBoxWidth) / 2, 0, borderPen);
 		horizontalConnector2->setParentItem(s.modAppItem2);
-		QGraphicsLineItem* horizontalConnector3 = _pipelineScene.addLine(modAppRadius, 0, objBoxIndent, 0);
+		QGraphicsLineItem* horizontalConnector3 = _pipelineScene.addLine(modAppRadius, 0, objBoxIndent, 0, borderPen);
 		horizontalConnector3->setParentItem(s.modAppItem3);
 
 		// Create the boxes for the pipeline objects.
@@ -251,6 +252,7 @@ void ClonePipelineDialog::initializeGraphicsScene()
 			"   border-radius: 2px; "
 			"   border: 1px outset #8f8f91; "
 			"   background-color: rgb(220,220,220); "
+			"   color: rgb(0,0,0); "
 			"} "
 			"QToolButton:pressed { "
 			"   border-style: inset; "
@@ -302,6 +304,7 @@ void ClonePipelineDialog::initializeGraphicsScene()
 
 		if(line == 1) {
 			textItem = _pipelineScene.addSimpleText(tr("Cloning mode:"));
+			textItem->setBrush(palette().text());
 			textItem->setPos(-textItem->boundingRect().center() + selectorItem->boundingRect().center());
 			textItem->moveBy(_pipelineSeparation + 40, 0);
 		}

@@ -243,7 +243,7 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 #else
 	switchRendererButton->setToolTip(switchRendererButton->text());
 	switchRendererButton->setText({});
-	switchRendererButton->setIcon(QIcon(":/guibase/actions/file/preferences.bw.svg"));
+	switchRendererButton->setIcon(QIcon::fromTheme("application_preferences"));
 	sublayout->addWidget(switchRendererButton, 1);
 #endif
 

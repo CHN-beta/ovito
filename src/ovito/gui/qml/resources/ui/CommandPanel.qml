@@ -10,15 +10,15 @@ Page {
 		visible: false
 		TabButton {
 			text: qsTr("Pipeline")
-			icon.source: "qrc:/gui/command_panel/tab_modify.bw.svg"
+			icon.name: "command_panel_tab_modify"
 		}
 		TabButton {
 			text: qsTr("Render")
-			icon.source: "qrc:/gui/command_panel/tab_render.bw.svg"
+			icon.name: "command_panel_tab_render"
 		}
 		TabButton {
 			text: qsTr("Layers")
-			icon.source: "qrc:/gui/command_panel/tab_overlays.bw.svg"
+			icon.name: "command_panel_tab_overlays"
 		}
 	}
 

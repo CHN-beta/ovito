@@ -81,6 +81,14 @@ protected:
 	/// Is called when the widgets looses the input focus.
 	virtual void focusOutEvent(QFocusEvent* event) override;
 
+	/// Handles widget state changes.
+	virtual void changeEvent(QEvent* event) override;
+
+private:
+
+	/// Creates the color palettes used by the widget.
+	void updateColorPalettes();
+
 protected Q_SLOTS:
 
 	/// This is called when new animation settings have been loaded.

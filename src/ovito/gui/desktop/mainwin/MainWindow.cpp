@@ -58,6 +58,9 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer), _datasetContainer(t
 	setWindowTitle(_baseWindowTitle);
 	setAttribute(Qt::WA_DeleteOnClose);
 
+	// Activate our icon theme.
+	QIcon::setThemeName(darkTheme() ? "ovito-dark" : "ovito-light");
+
 	// Set up the layout of docking widgets.
 	setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
 	setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
@@ -417,6 +420,10 @@ bool MainWindow::event(QEvent* event)
 		showStatusBarMessage(static_cast<QStatusTipEvent*>(event)->tip());
 		return true;
 	}
+	else if(event->type() == QEvent::ApplicationPaletteChange) {
+		// Switch icon theme.
+		QIcon::setThemeName(darkTheme() ? "ovito-dark" : "ovito-light");
+	}
 	return QMainWindow::event(event);
 }
 
@@ -571,6 +578,22 @@ std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int
 	std::shared_ptr<FrameBuffer> fb = frameBufferWindow()->createFrameBuffer(width, height);
 	frameBufferWindow()->showAndActivateWindow();
 	return fb;
+}
+
+/******************************************************************************
+* Determines whether the application window uses a dark theme.
+******************************************************************************/
+bool MainWindow::darkTheme() const
+{
+#ifdef Q_OS_MACOS
+	auto bg = palette().color(QPalette::Active, QPalette::Window);
+	if(bg.lightness() < 100)
+		return true;
+	
+	return false;
+#else
+	return false;
+#endif	
 }
 
 }	// End of namespace

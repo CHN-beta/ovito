@@ -99,17 +99,17 @@ OverlayCommandPage::OverlayCommandPage(MainWindow* mainWindow, QWidget* parent) 
 #endif
 	subLayout->addWidget(editToolbar);
 
-	_deleteLayerAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_DELETE, tr("Delete Viewport Layer"), ":/guibase/actions/modify/delete_modifier.bw.svg", tr("Remove the selected viewport layer from the stack."));
+	_deleteLayerAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_DELETE, tr("Delete Viewport Layer"), "modify_delete_modifier", tr("Remove the selected viewport layer from the stack."));
 	_deleteLayerAction->setEnabled(false);
 	connect(_deleteLayerAction, &QAction::triggered, this, &OverlayCommandPage::onDeleteLayer);
 	editToolbar->addAction(_deleteLayerAction);
 
 	editToolbar->addSeparator();
 
-	_moveLayerUpAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_MOVE_UP, tr("Move Viewport Layer Up"), ":/guibase/actions/modify/modifier_move_up.bw.svg", tr("Move the selected viewport layer up in the stack."));
+	_moveLayerUpAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_MOVE_UP, tr("Move Viewport Layer Up"), "overlay_move_up", tr("Move the selected viewport layer up in the stack."));
 	connect(_moveLayerUpAction, &QAction::triggered, this, &OverlayCommandPage::onLayerMoveUp);
 	editToolbar->addAction(_moveLayerUpAction);
-	_moveLayerDownAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_MOVE_DOWN, tr("Move Viewport Layer Down"), ":/guibase/actions/modify/modifier_move_down.bw.svg", tr("Move the selected viewport layer down in the stack."));
+	_moveLayerDownAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_MOVE_DOWN, tr("Move Viewport Layer Down"), "overlay_move_down", tr("Move the selected viewport layer down in the stack."));
 	connect(_moveLayerDownAction, &QAction::triggered, this, &OverlayCommandPage::onLayerMoveDown);
 	editToolbar->addAction(_moveLayerDownAction);
 

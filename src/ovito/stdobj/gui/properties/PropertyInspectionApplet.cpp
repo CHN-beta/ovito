@@ -40,7 +40,7 @@ void PropertyInspectionApplet::createBaseWidgets()
 	_filterExpressionEdit = new AutocompleteLineEdit();
 	_filterExpressionEdit->setPlaceholderText(tr("Filter..."));
 	_cleanupHandler.add(_filterExpressionEdit);
-	_resetFilterAction = new QAction(QIcon(":/stdobj/icons/reset_filter.svg"), tr("Reset filter"), this);
+	_resetFilterAction = new QAction(QIcon::fromTheme("inspector_reset_filter"), tr("Reset filter"), this);
 	_cleanupHandler.add(_resetFilterAction);
 	connect(_resetFilterAction, &QAction::triggered, _filterExpressionEdit, &QLineEdit::clear);
 	connect(_resetFilterAction, &QAction::triggered, _filterExpressionEdit, &AutocompleteLineEdit::editingFinished);

@@ -26,7 +26,6 @@ OVITO_STANDARD_PLUGIN(MeshGui
 		surface/SurfaceMeshVisEditor.cpp
 		surface/SurfaceMeshInspectionApplet.cpp
 		io/ParaViewVTMImporterEditor.cpp
-		resources/mesh_gui.qrc
 	PLUGIN_DEPENDENCIES Mesh StdObjGui
 	GUI_PLUGIN
 	HAS_NO_EXPORTS

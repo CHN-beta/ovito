@@ -47,8 +47,8 @@ PipelineListModel::PipelineListModel(DataSetContainer& datasetContainer, ActionM
 	_statusNoneIcon(":/guibase/mainwin/status/status_none.png"),
 	_statusPendingIcon(":/guibase/mainwin/status/status_pending.gif"),
 	_sectionHeaderFont(QGuiApplication::font()),
-	_modifierGroupCollapsed(":/guibase/actions/modify/modifier_group_collapsed.svg"),
-	_modifierGroupExpanded(":/guibase/actions/modify/modifier_group_expanded.svg")
+	_modifierGroupCollapsed(QIcon::fromTheme("modify_modifier_group_collapsed")),
+	_modifierGroupExpanded(QIcon::fromTheme("modify_modifier_group_expanded"))
 {
 	// Create a selection model.
 	_selectionModel = new QItemSelectionModel(this);
@@ -66,23 +66,33 @@ PipelineListModel::PipelineListModel(DataSetContainer& datasetContainer, ActionM
 		_sectionHeaderFont.setPointSize(_sectionHeaderFont.pointSize() * 4 / 5);
 	else
 		_sectionHeaderFont.setPixelSize(_sectionHeaderFont.pixelSize() * 4 / 5);
-	_sectionHeaderBackgroundBrush = QBrush(Qt::lightGray, Qt::Dense4Pattern);
-	_sectionHeaderForegroundBrush = QBrush(Qt::blue);
-	_disabledForegroundBrush = QGuiApplication::palette().brush(QPalette::Disabled, QPalette::Text);
 	_sharedObjectFont.setItalic(true);
+	updateColorPalette(QGuiApplication::palette());
+	connect(qGuiApp, &QGuiApplication::paletteChanged, this, &PipelineListModel::updateColorPalette);
 
 	// Create list item actions.
-	_deleteItemAction = actionManager->createCommandAction(ACTION_MODIFIER_DELETE, tr("Delete Modifier"), ":/guibase/actions/modify/delete_modifier.bw.svg", tr("Delete the selected modifier from the pipeline."));
+	_deleteItemAction = actionManager->createCommandAction(ACTION_MODIFIER_DELETE, tr("Delete Modifier"), "modify_delete_modifier", tr("Delete the selected modifier from the pipeline."));
 	connect(_deleteItemAction, &QAction::triggered, this, &PipelineListModel::deleteSelectedItems);
-	_moveItemUpAction = actionManager->createCommandAction(ACTION_MODIFIER_MOVE_UP, tr("Move Modifier Up"), ":/guibase/actions/modify/modifier_move_up.bw.svg", tr("Move the selected modifier up in the pipeline."));
+	_moveItemUpAction = actionManager->createCommandAction(ACTION_MODIFIER_MOVE_UP, tr("Move Modifier Up"), "modify_modifier_move_up", tr("Move the selected modifier up in the pipeline."));
 	connect(_moveItemUpAction, &QAction::triggered, this, &PipelineListModel::moveModifierUp);
-	_moveItemDownAction = actionManager->createCommandAction(ACTION_MODIFIER_MOVE_DOWN, tr("Move Modifier Down"), ":/guibase/actions/modify/modifier_move_down.bw.svg", tr("Move the selected modifier down in the pipeline."));
+	_moveItemDownAction = actionManager->createCommandAction(ACTION_MODIFIER_MOVE_DOWN, tr("Move Modifier Down"), "modify_modifier_move_down", tr("Move the selected modifier down in the pipeline."));
 	connect(_moveItemDownAction, &QAction::triggered, this, &PipelineListModel::moveModifierDown);
-	_toggleModifierGroupAction = actionManager->createCommandAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP, tr("Group Modifiers"), ":/guibase/actions/modify/modifier_group_create.svg", tr("Creates or dissolves a group of modifiers in the pipeline editor."));
+	_toggleModifierGroupAction = actionManager->createCommandAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP, tr("Group Modifiers"), "modify_modifier_group_create", tr("Creates or dissolves a group of modifiers in the pipeline editor."));
 	_toggleModifierGroupAction->setCheckable(true);
 	connect(_toggleModifierGroupAction, &QAction::triggered, this, &PipelineListModel::toggleModifierGroup);
-	_makeElementIndependentAction = actionManager->createCommandAction(ACTION_PIPELINE_MAKE_INDEPENDENT, tr("Replace With Independent Copy"), ":/guibase/actions/modify/make_element_independent.bw.svg", tr("Duplicate an entry that is shared by multiple pipelines."));
+	_makeElementIndependentAction = actionManager->createCommandAction(ACTION_PIPELINE_MAKE_INDEPENDENT, tr("Replace With Independent Copy"), "modify_make_element_independent", tr("Duplicate an entry that is shared by multiple pipelines."));
 	connect(_makeElementIndependentAction, &QAction::triggered, this, &PipelineListModel::makeElementIndependent);
+}
+
+/******************************************************************************
+* Updates the color brushes of the model.
+******************************************************************************/
+void PipelineListModel::updateColorPalette(const QPalette& palette)
+{
+	bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
+	_sectionHeaderBackgroundBrush = QBrush(palette.color(QPalette::Midlight));
+	_sectionHeaderForegroundBrush = QBrush(darkTheme ? QColor(Qt::blue).lighter() : QColor(Qt::blue));
+	_disabledForegroundBrush = palette.brush(QPalette::Disabled, QPalette::Text);
 }
 
 /******************************************************************************
@@ -571,7 +581,7 @@ QVariant PipelineListModel::data(const QModelIndex& index, int role) const
 		// This role is only used by the QML GUI.
 		if(item->itemType() == PipelineListItem::ModifierGroup) {
 			if(!static_object_cast<ModifierGroup>(item->object())->isCollapsed())
-				return QStringLiteral("qrc:/guibase/actions/modify/modifier_group_expanded.svg");
+				return QStringLiteral("modify_modifier_group_expanded");
 		}
 //		if(item->isObjectActive()) {
 //			const_cast<QMovie&>(_statusPendingIcon).start();
@@ -579,7 +589,7 @@ QVariant PipelineListModel::data(const QModelIndex& index, int role) const
 //		}
 		if(item->itemType() == PipelineListItem::ModifierGroup) {
 			if(item->status().type() == PipelineStatus::Success)
-				return QStringLiteral("qrc:/guibase/actions/modify/modifier_group_collapsed.svg");
+				return QStringLiteral("modify_modifier_group_collapsed");
 		}
 		if(item->isObjectItem()) {
 			switch(item->status().type()) {

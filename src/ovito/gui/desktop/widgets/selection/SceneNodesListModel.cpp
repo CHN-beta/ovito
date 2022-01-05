@@ -36,7 +36,7 @@ namespace Ovito {
 ******************************************************************************/
 SceneNodesListModel::SceneNodesListModel(DataSetContainer& datasetContainer, ActionManager* actionManager, QWidget* parent) : QAbstractListModel(parent),
 	_datasetContainer(datasetContainer),
-	_pipelineSceneNodeIcon(":/guibase/actions/edit/pipeline_icon.svg")
+	_pipelineSceneNodeIcon(QIcon::fromTheme("edit_pipeline_icon"))
 {
 	// React to the dataset being replaced.
 	connect(&datasetContainer, &DataSetContainer::dataSetChanged, this, &SceneNodesListModel::onDataSetChanged);
@@ -54,8 +54,8 @@ SceneNodesListModel::SceneNodesListModel(DataSetContainer& datasetContainer, Act
 	// Font for rendering currently selected scene nodes.
 	_selectedNodeFont.setBold(true);
 
-	_sectionHeaderBackgroundBrush = QBrush(Qt::lightGray, Qt::Dense4Pattern);
-	_sectionHeaderForegroundBrush = QBrush(Qt::blue);
+	updateColorPalette(QGuiApplication::palette());
+	connect(qGuiApp, &QGuiApplication::paletteChanged, this, &SceneNodesListModel::updateColorPalette);
 
 	for(QAction* action : actionManager->actions()) {
 		if(action->objectName().startsWith("NewPipeline."))
@@ -63,6 +63,16 @@ SceneNodesListModel::SceneNodesListModel(DataSetContainer& datasetContainer, Act
 	}
 	_pipelineActions.push_back(nullptr); // Separator
 	_pipelineActions.push_back(actionManager->getAction(ACTION_EDIT_CLONE_PIPELINE));
+}
+
+/******************************************************************************
+* Updates the color brushes of the model.
+******************************************************************************/
+void SceneNodesListModel::updateColorPalette(const QPalette& palette)
+{
+	bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
+	_sectionHeaderBackgroundBrush = darkTheme ? palette.mid() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
+	_sectionHeaderForegroundBrush = QBrush(darkTheme ? QColor(Qt::blue).lighter() : QColor(Qt::blue));
 }
 
 /******************************************************************************

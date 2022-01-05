@@ -42,9 +42,9 @@ CommandPanel::CommandPanel(MainWindow* mainWindow, QWidget* parent) : QWidget(pa
 
 	// Create the tabs.
 	_tabWidget->setDocumentMode(true);
-	_tabWidget->addTab(_modifyPage = new ModifyCommandPage(mainWindow, _tabWidget), QIcon(":/gui/mainwin/command_panel/tab_modify.bw.svg"), QString());
-	_tabWidget->addTab(_renderPage = new RenderCommandPage(mainWindow, _tabWidget), QIcon(":/gui/mainwin/command_panel/tab_render.bw.svg"), QString());
-	_tabWidget->addTab(_overlayPage = new OverlayCommandPage(mainWindow, _tabWidget), QIcon(":/gui/mainwin/command_panel/tab_overlays.bw.svg"), QString());
+	_tabWidget->addTab(_modifyPage = new ModifyCommandPage(mainWindow, _tabWidget), QIcon::fromTheme("command_panel_tab_modify"), QString());
+	_tabWidget->addTab(_renderPage = new RenderCommandPage(mainWindow, _tabWidget), QIcon::fromTheme("command_panel_tab_render"), QString());
+	_tabWidget->addTab(_overlayPage = new OverlayCommandPage(mainWindow, _tabWidget), QIcon::fromTheme("command_panel_tab_overlays"), QString());
 	_tabWidget->setTabToolTip(0, tr("Pipelines"));
 	_tabWidget->setTabToolTip(1, tr("Rendering"));
 	_tabWidget->setTabToolTip(2, tr("Viewport layers"));

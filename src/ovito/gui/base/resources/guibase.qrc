@@ -1,5 +1,226 @@
 <!DOCTYPE RCC><RCC version="1.0">
 
+<qresource prefix="/">
+	<file>icons/ovito-light/index.theme</file>
+
+	<file>icons/ovito-light/actions/file_open.svg</file>
+	<file>icons/ovito-light/actions/file_quit.svg</file>
+	<file>icons/ovito-light/actions/file_save.svg</file>
+	<file>icons/ovito-light/actions/file_save_as.svg</file>
+	<file>icons/ovito-light/actions/file_import.svg</file>
+	<file>icons/ovito-light/actions/file_import_remote.svg</file>
+	<file>icons/ovito-light/actions/file_export.svg</file>
+	<file>icons/ovito-light/actions/file_new_window.svg</file>
+	<file>icons/ovito-light/actions/file_import_object_changefile.svg</file>
+	<file>icons/ovito-light/actions/file_import_object_reload.svg</file>
+	<file>icons/ovito-light/actions/file_import_object_refresh_animation.svg</file>
+	<file>icons/ovito-light/actions/file_cache_pipeline_output.svg</file>
+
+	<file>icons/ovito-light/actions/application_about.svg</file>
+	<file>icons/ovito-light/actions/application_preferences.svg</file>
+
+	<file>icons/ovito-light/actions/help_user_manual.svg</file>
+	<file>icons/ovito-light/actions/help_scripting_manual.svg</file>
+	<file>icons/ovito-light/actions/help_system_info.svg</file>
+
+	<file>icons/ovito-light/actions/edit_undo.svg</file>
+	<file>icons/ovito-light/actions/edit_redo.svg</file>
+	<file>icons/ovito-light/actions/edit_clear.svg</file>
+	<file>icons/ovito-light/actions/edit_copy_to_clipboard.svg</file>
+	<file>icons/ovito-light/actions/edit_delete_pipeline.svg</file>
+	<file>icons/ovito-light/actions/edit_delete_pipeline_disabled.svg</file>
+	<file>icons/ovito-light/actions/edit_create_pipeline.svg</file>
+	<file>icons/ovito-light/actions/edit_clone_pipeline.svg</file>
+	<file>icons/ovito-light/actions/edit_rename_pipeline.svg</file>
+	<file>icons/ovito-light/actions/edit_rename_pipeline_disabled.svg</file>
+	<file>icons/ovito-light/actions/edit_mode_select.svg</file>
+	<file>icons/ovito-light/actions/edit_mode_move.svg</file>
+	<file>icons/ovito-light/actions/edit_mode_rotate.svg</file>
+	<file>icons/ovito-light/actions/edit_clone_displace_mode_none.svg</file>
+	<file>icons/ovito-light/actions/edit_clone_displace_mode_x.svg</file>
+	<file>icons/ovito-light/actions/edit_clone_displace_mode_y.svg</file>
+	<file>icons/ovito-light/actions/edit_clone_displace_mode_z.svg</file>
+	<file>icons/ovito-light/actions/edit_pipeline_menu.svg</file>
+	<file>icons/ovito-light/actions/edit_pipeline_icon.svg</file>
+	<file>icons/ovito-light/actions/edit_in_external_editor.svg</file>
+
+	<file>icons/ovito-light/actions/viewport_maximize.svg</file>
+	<file>icons/ovito-light/actions/viewport_zoom_scene_extents.svg</file>
+	<file>icons/ovito-light/actions/viewport_mode_zoom.svg</file>
+	<file>icons/ovito-light/actions/viewport_mode_pan.svg</file>
+	<file>icons/ovito-light/actions/viewport_mode_orbit.svg</file>
+	<file>icons/ovito-light/actions/viewport_mode_fov.svg</file>
+	<file>icons/ovito-light/actions/viewport_multi_viewports.svg</file>
+
+	<file>icons/ovito-light/actions/render_active_viewport.svg</file>
+
+	<file>icons/ovito-light/actions/animation_goto_start.svg</file>
+	<file>icons/ovito-light/actions/animation_goto_end.svg</file>
+	<file>icons/ovito-light/actions/animation_goto_previous_frame.svg</file>
+	<file>icons/ovito-light/actions/animation_goto_next_frame.svg</file>
+	<file>icons/ovito-light/actions/animation_play.svg</file>
+	<file>icons/ovito-light/actions/animation_stop.svg</file>
+	<file>icons/ovito-light/actions/animation_settings.svg</file>
+	<file>icons/ovito-light/actions/animation_auto_key_mode.svg</file>
+	<file>icons/ovito-light/actions/animation_delete_key.svg</file>
+	<file>icons/ovito-light/actions/animation_add_key.svg</file>
+	<file>icons/ovito-light/actions/animation_named_frames.svg</file>
+
+	<file>icons/ovito-light/actions/modify_delete_modifier.svg</file>
+	<file>icons/ovito-light/actions/modify_modifier_move_up.svg</file>
+	<file>icons/ovito-light/actions/modify_modifier_move_down.svg</file>
+	<file>icons/ovito-light/actions/modify_modifier_save_preset.svg</file>
+	<file>icons/ovito-light/actions/modify_make_element_independent.svg</file>
+	<file>icons/ovito-light/actions/modify_modifier_action_icon.svg</file>
+	<file>icons/ovito-light/actions/modify_modifier_group_create.svg</file>
+	<file>icons/ovito-light/actions/modify_modifier_group_collapsed.svg</file>
+	<file>icons/ovito-light/actions/modify_modifier_group_expanded.svg</file>
+
+	<file>icons/ovito-light/actions/overlay_move_up.svg</file>
+	<file>icons/ovito-light/actions/overlay_move_down.svg</file>
+	<file>icons/ovito-light/actions/overlay_action_icon.svg</file>
+	<file>icons/ovito-light/actions/overlay_alignment_bottom_left.svg</file>
+	<file>icons/ovito-light/actions/overlay_alignment_bottom_right.svg</file>
+	<file>icons/ovito-light/actions/overlay_alignment_top_left.svg</file>
+	<file>icons/ovito-light/actions/overlay_alignment_top_right.svg</file>
+	<file>icons/ovito-light/actions/overlay_alignment_left.svg</file>
+	<file>icons/ovito-light/actions/overlay_alignment_right.svg</file>
+	<file>icons/ovito-light/actions/overlay_alignment_top.svg</file>
+	<file>icons/ovito-light/actions/overlay_alignment_bottom.svg</file>
+
+	<file>icons/ovito-light/actions/framebuffer_save_picture.svg</file>
+	<file>icons/ovito-light/actions/framebuffer_copy_picture_to_clipboard.svg</file>
+	<file>icons/ovito-light/actions/framebuffer_auto_crop.svg</file>
+
+	<file>icons/ovito-light/actions/inspector_view_chart.svg</file>
+	<file>icons/ovito-light/actions/inspector_view_table.svg</file>
+	<file>icons/ovito-light/actions/inspector_reset_filter.svg</file>
+	<file>icons/ovito-light/actions/inspector_view_mesh_faces.svg</file>
+	<file>icons/ovito-light/actions/inspector_view_mesh_vertices.svg</file>
+	<file>icons/ovito-light/actions/inspector_view_mesh_regions.svg</file>
+
+	<file>icons/ovito-light/actions/command_panel_tab_modify.svg</file>
+	<file>icons/ovito-light/actions/command_panel_tab_render.svg</file>
+	<file>icons/ovito-light/actions/command_panel_tab_overlays.svg</file>
+
+	<file>icons/ovito-light/actions/particles_measure_distances.svg</file>
+	<file>icons/ovito-light/actions/particles_select_mode.svg</file>
+	<file>icons/ovito-light/actions/particles_settings_restore.svg</file>
+	<file>icons/ovito-light/actions/particles_highlight_selection_on.svg</file>
+	<file>icons/ovito-light/actions/particles_highlight_selection_off.svg</file>
+
+</qresource>
+
+<qresource prefix="/">
+	<file>icons/ovito-dark/index.theme</file>
+
+	<file>icons/ovito-dark/actions/file_open.svg</file>
+	<file>icons/ovito-dark/actions/file_quit.svg</file>
+	<file>icons/ovito-dark/actions/file_save.svg</file>
+	<file>icons/ovito-dark/actions/file_save_as.svg</file>
+	<file>icons/ovito-dark/actions/file_import.svg</file>
+	<file>icons/ovito-dark/actions/file_import_remote.svg</file>
+	<file>icons/ovito-dark/actions/file_export.svg</file>
+	<file>icons/ovito-dark/actions/file_new_window.svg</file>
+	<file>icons/ovito-dark/actions/file_import_object_changefile.svg</file>
+	<file>icons/ovito-dark/actions/file_import_object_reload.svg</file>
+	<file>icons/ovito-dark/actions/file_import_object_refresh_animation.svg</file>
+	<file>icons/ovito-dark/actions/file_cache_pipeline_output.svg</file>
+
+	<file>icons/ovito-dark/actions/application_about.svg</file>
+	<file>icons/ovito-dark/actions/application_preferences.svg</file>
+
+	<file>icons/ovito-dark/actions/help_user_manual.svg</file>
+	<file>icons/ovito-dark/actions/help_scripting_manual.svg</file>
+	<file>icons/ovito-dark/actions/help_system_info.svg</file>
+
+	<file>icons/ovito-dark/actions/edit_undo.svg</file>
+	<file>icons/ovito-dark/actions/edit_redo.svg</file>
+	<file>icons/ovito-dark/actions/edit_clear.svg</file>
+	<file>icons/ovito-dark/actions/edit_copy_to_clipboard.svg</file>
+	<file>icons/ovito-dark/actions/edit_delete_pipeline.svg</file>
+	<file>icons/ovito-dark/actions/edit_delete_pipeline_disabled.svg</file>
+	<file>icons/ovito-dark/actions/edit_create_pipeline.svg</file>
+	<file>icons/ovito-dark/actions/edit_clone_pipeline.svg</file>
+	<file>icons/ovito-dark/actions/edit_rename_pipeline.svg</file>
+	<file>icons/ovito-dark/actions/edit_rename_pipeline_disabled.svg</file>
+	<file>icons/ovito-dark/actions/edit_mode_select.svg</file>
+	<file>icons/ovito-dark/actions/edit_mode_move.svg</file>
+	<file>icons/ovito-dark/actions/edit_mode_rotate.svg</file>
+	<file>icons/ovito-dark/actions/edit_clone_displace_mode_none.svg</file>
+	<file>icons/ovito-dark/actions/edit_clone_displace_mode_x.svg</file>
+	<file>icons/ovito-dark/actions/edit_clone_displace_mode_y.svg</file>
+	<file>icons/ovito-dark/actions/edit_clone_displace_mode_z.svg</file>
+	<file>icons/ovito-dark/actions/edit_pipeline_menu.svg</file>
+	<file>icons/ovito-dark/actions/edit_pipeline_icon.svg</file>
+	<file>icons/ovito-dark/actions/edit_in_external_editor.svg</file>
+
+	<file>icons/ovito-dark/actions/viewport_maximize.svg</file>
+	<file>icons/ovito-dark/actions/viewport_zoom_scene_extents.svg</file>
+	<file>icons/ovito-dark/actions/viewport_mode_zoom.svg</file>
+	<file>icons/ovito-dark/actions/viewport_mode_pan.svg</file>
+	<file>icons/ovito-dark/actions/viewport_mode_orbit.svg</file>
+	<file>icons/ovito-dark/actions/viewport_mode_fov.svg</file>
+	<file>icons/ovito-dark/actions/viewport_multi_viewports.svg</file>
+
+	<file>icons/ovito-dark/actions/render_active_viewport.svg</file>
+
+	<file>icons/ovito-dark/actions/animation_goto_start.svg</file>
+	<file>icons/ovito-dark/actions/animation_goto_end.svg</file>
+	<file>icons/ovito-dark/actions/animation_goto_previous_frame.svg</file>
+	<file>icons/ovito-dark/actions/animation_goto_next_frame.svg</file>
+	<file>icons/ovito-dark/actions/animation_play.svg</file>
+	<file>icons/ovito-dark/actions/animation_stop.svg</file>
+	<file>icons/ovito-dark/actions/animation_settings.svg</file>
+	<file>icons/ovito-dark/actions/animation_auto_key_mode.svg</file>
+	<file>icons/ovito-dark/actions/animation_delete_key.svg</file>
+	<file>icons/ovito-dark/actions/animation_add_key.svg</file>
+	<file>icons/ovito-dark/actions/animation_named_frames.svg</file>
+
+	<file>icons/ovito-dark/actions/modify_delete_modifier.svg</file>
+	<file>icons/ovito-dark/actions/modify_modifier_move_up.svg</file>
+	<file>icons/ovito-dark/actions/modify_modifier_move_down.svg</file>
+	<file>icons/ovito-dark/actions/modify_modifier_save_preset.svg</file>
+	<file>icons/ovito-dark/actions/modify_make_element_independent.svg</file>
+	<file>icons/ovito-dark/actions/modify_modifier_action_icon.svg</file>
+	<file>icons/ovito-dark/actions/modify_modifier_group_create.svg</file>
+	<file>icons/ovito-dark/actions/modify_modifier_group_collapsed.svg</file>
+	<file>icons/ovito-dark/actions/modify_modifier_group_expanded.svg</file>
+
+	<file>icons/ovito-dark/actions/overlay_move_up.svg</file>
+	<file>icons/ovito-dark/actions/overlay_move_down.svg</file>
+	<file>icons/ovito-dark/actions/overlay_action_icon.svg</file>
+	<file>icons/ovito-dark/actions/overlay_alignment_bottom_left.svg</file>
+	<file>icons/ovito-dark/actions/overlay_alignment_bottom_right.svg</file>
+	<file>icons/ovito-dark/actions/overlay_alignment_top_left.svg</file>
+	<file>icons/ovito-dark/actions/overlay_alignment_top_right.svg</file>
+	<file>icons/ovito-dark/actions/overlay_alignment_left.svg</file>
+	<file>icons/ovito-dark/actions/overlay_alignment_right.svg</file>
+	<file>icons/ovito-dark/actions/overlay_alignment_top.svg</file>
+	<file>icons/ovito-dark/actions/overlay_alignment_bottom.svg</file>
+
+	<file>icons/ovito-dark/actions/framebuffer_save_picture.svg</file>
+	<file>icons/ovito-dark/actions/framebuffer_copy_picture_to_clipboard.svg</file>
+	<file>icons/ovito-dark/actions/framebuffer_auto_crop.svg</file>
+
+	<file>icons/ovito-dark/actions/inspector_view_chart.svg</file>
+	<file>icons/ovito-dark/actions/inspector_view_table.svg</file>
+	<file>icons/ovito-dark/actions/inspector_reset_filter.svg</file>
+	<file>icons/ovito-dark/actions/inspector_view_mesh_faces.svg</file>
+	<file>icons/ovito-dark/actions/inspector_view_mesh_vertices.svg</file>
+	<file>icons/ovito-dark/actions/inspector_view_mesh_regions.svg</file>
+
+	<file>icons/ovito-dark/actions/command_panel_tab_modify.svg</file>
+	<file>icons/ovito-dark/actions/command_panel_tab_render.svg</file>
+	<file>icons/ovito-dark/actions/command_panel_tab_overlays.svg</file>
+
+	<file>icons/ovito-dark/actions/particles_measure_distances.svg</file>
+	<file>icons/ovito-dark/actions/particles_select_mode.svg</file>
+	<file>icons/ovito-dark/actions/particles_settings_restore.svg</file>
+	<file>icons/ovito-dark/actions/particles_highlight_selection_on.svg</file>
+	<file>icons/ovito-dark/actions/particles_highlight_selection_off.svg</file>
+</qresource>
+
 <qresource prefix="/guibase">
 
 	<file>mainwin/window_icon.png</file>
@@ -28,93 +249,6 @@
 	<file>cursor/editing/cursor_mode_move.png</file>
 	<file>cursor/editing/cursor_mode_rotate.png</file>
 	<file>cursor/editing/cursor_mode_scale.png</file>
-
-	<file>actions/edit/edit_undo.bw.svg</file>
-	<file>actions/edit/edit_redo.bw.svg</file>
-	<file>actions/edit/edit_clear.bw.svg</file>
-	<file>actions/edit/edit_delete.bw.svg</file>
-	<file>actions/edit/mode_select.bw.svg</file>
-	<file>actions/edit/mode_move.bw.svg</file>
-	<file>actions/edit/mode_rotate.bw.svg</file>
-	<file>actions/edit/mode_scale.png</file>
-	<file>actions/edit/clone_pipeline.bw.svg</file>
-	<file>actions/edit/clone_displace_mode_none.svg</file>
-	<file>actions/edit/clone_displace_mode_x.svg</file>
-	<file>actions/edit/clone_displace_mode_y.svg</file>
-	<file>actions/edit/clone_displace_mode_z.svg</file>
-	<file>actions/edit/rename_pipeline.bw.svg</file>
-	<file>actions/edit/rename_pipeline.bw.white.svg</file>
-	<file>actions/edit/pipeline_menu.svg</file>
-	<file>actions/edit/pipeline_icon.svg</file>
-	<file>actions/edit/delete_pipeline.svg</file>
-	<file>actions/edit/delete_pipeline.white.svg</file>
-	<file>actions/edit/create_pipeline.svg</file>
-
-	<file>actions/file/file_new.bw.svg</file>
-	<file>actions/file/file_open.bw.svg</file>
-	<file>actions/file/file_quit.bw.svg</file>
-	<file>actions/file/file_save.bw.svg</file>
-	<file>actions/file/file_save_as.bw.svg</file>
-	<file>actions/file/file_import.bw.svg</file>
-	<file>actions/file/file_import_remote.bw.svg</file>
-	<file>actions/file/file_export.bw.svg</file>
-	<file>actions/file/import_object_changefile.bw.svg</file>
-	<file>actions/file/import_object_reload.bw.svg</file>
-	<file>actions/file/import_object_refresh_animation.bw.svg</file>
-	<file>actions/file/preferences.bw.svg</file>
-	<file>actions/file/user_manual.bw.svg</file>
-	<file>actions/file/scripting_manual.bw.svg</file>
-	<file>actions/file/about.bw.svg</file>
-	<file>actions/file/opengl_info.bw.svg</file>
-	<file>actions/file/new_window.bw.svg</file>
-	<file>actions/file/cache_pipeline_output.svg</file>
-
-	<file>actions/viewport/maximize_viewport.bw.svg</file>
-	<file>actions/viewport/mode_orbit.bw.svg</file>
-	<file>actions/viewport/mode_pan.bw.svg</file>
-	<file>actions/viewport/mode_zoom.bw.svg</file>
-	<file>actions/viewport/mode_fov.bw.svg</file>
-	<file>actions/viewport/mode_set_orbit_center.png</file>
-	<file>actions/viewport/zoom_scene_extents.bw.svg</file>
-	<file>actions/viewport/zoom_scene_extents_all.png</file>
-	<file>actions/viewport/zoom_selection_extents.png</file>
-	<file>actions/viewport/multi_viewports.svg</file>
-
-	<file>actions/animation/animation_settings.bw.svg</file>
-	<file>actions/animation/goto_animation_end.bw.svg</file>
-	<file>actions/animation/goto_animation_start.bw.svg</file>
-	<file>actions/animation/goto_next_frame.bw.svg</file>
-	<file>actions/animation/goto_previous_frame.bw.svg</file>
-	<file>actions/animation/play_animation.bw.svg</file>
-	<file>actions/animation/stop_animation.bw.svg</file>
-	<file>actions/animation/animation_mode.bw.svg</file>
-	<file>actions/animation/named_frames.svg</file>
-	<file>actions/animation/add_animation_key.bw.svg</file>
-	<file>actions/animation/delete_animation_key.bw.svg</file>
-
-	<file>actions/modify/delete_modifier.bw.svg</file>
-	<file>actions/modify/modifier_move_up.bw.svg</file>
-	<file>actions/modify/modifier_move_down.bw.svg</file>
-	<file>actions/modify/modifier_save_preset.bw.svg</file>
-	<file>actions/modify/make_element_independent.bw.svg</file>
-	<file>actions/modify/modifier_action_icon.svg</file>
-	<file>actions/modify/modifier_group_create.svg</file>
-	<file>actions/modify/modifier_group_collapsed.svg</file>
-	<file>actions/modify/modifier_group_expanded.svg</file>
-
-	<file>actions/overlays/overlay_move_up.bw.svg</file>
-	<file>actions/overlays/overlay_move_down.bw.svg</file>
-	<file>actions/overlays/layer_action_icon.svg</file>
-	<file>actions/overlays/alignment_bottom_left.svg</file>
-	<file>actions/overlays/alignment_bottom_right.svg</file>
-	<file>actions/overlays/alignment_top_left.svg</file>
-	<file>actions/overlays/alignment_top_right.svg</file>
-	<file>actions/overlays/alignment_left.svg</file>
-	<file>actions/overlays/alignment_right.svg</file>
-	<file>actions/overlays/alignment_top.svg</file>
-	<file>actions/overlays/alignment_bottom.svg</file>
-
-	<file>actions/rendering/render_active_viewport.bw.svg</file>
 
 </qresource>
 

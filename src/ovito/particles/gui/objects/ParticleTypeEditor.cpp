@@ -252,7 +252,7 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
 {
 	QToolButton* presetsMenuButton = new QToolButton();
 	QMenu* presetsMenu = new QMenu(presetsMenuButton);
-	QAction* loadPresetAction = presetsMenu->addAction(QIcon(":/particles/icons/settings_restore.svg"), tr("Reset %1 to default").arg(parameterName));
+	QAction* loadPresetAction = presetsMenu->addAction(QIcon::fromTheme("particles_settings_restore"), tr("Reset %1 to default").arg(parameterName));
 	loadPresetAction->setStatusTip(tr("Reset current %1 back to user-defined or hard-coded default value for this particle type.").arg(parameterName));
 	connect(loadPresetAction, &QAction::triggered, this, [this,parameterName,resetFunc]() {
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
@@ -262,7 +262,7 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
 			});
 		}
 	});
-	QAction* savePresetAction = presetsMenu->addAction(QIcon(":/guibase/actions/file/file_save_as.bw.svg"), tr("Use current %1 as new default").arg(parameterName));
+	QAction* savePresetAction = presetsMenu->addAction(QIcon::fromTheme("file_save_as"), tr("Use current %1 as new default").arg(parameterName));
 	savePresetAction->setStatusTip(tr("Save current %1 as future default value for this particle type.").arg(parameterName));
 	connect(savePresetAction, &QAction::triggered, this, [this,parameterName,setDefaultFunc]() {
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
@@ -272,7 +272,7 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
 		}
 	});
 	presetsMenu->addSeparator();
-	QAction* editPresetAction = presetsMenu->addAction(QIcon(":/guibase/actions/file/preferences.bw.svg"), tr("Edit presets..."));
+	QAction* editPresetAction = presetsMenu->addAction(QIcon::fromTheme("application_preferences"), tr("Edit presets..."));
 	connect(editPresetAction, &QAction::triggered, this, [this]() {
 		ApplicationSettingsDialog dlg(mainWindow(), &ParticleSettingsPage::OOClass());
 		dlg.exec();
@@ -282,7 +282,7 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
 		"QToolButton { padding: 0px; margin: 0px; border: none; background-color: transparent; } "
 		"QToolButton::menu-indicator { image: none; } ");
 	presetsMenuButton->setPopupMode(QToolButton::InstantPopup);
-	presetsMenuButton->setIcon(QIcon(":/guibase/actions/edit/pipeline_menu.svg"));
+	presetsMenuButton->setIcon(QIcon::fromTheme("edit_pipeline_menu"));
 	presetsMenuButton->setMenu(presetsMenu);
 	presetsMenuButton->setEnabled(false);
 	presetsMenuButton->setToolTip(tr("Presets"));

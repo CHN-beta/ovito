@@ -147,6 +147,9 @@ private Q_SLOTS:
 	/// Rebuilds the list of actions for the modifier templates.
 	void refreshModifierTemplates();
 
+	/// Updates the color brushes of the model.
+	void updateColorPalette(const QPalette& palette);
+
 private:
 
 	/// The complete list of modifier actions, sorted alphabetically.
@@ -171,8 +174,8 @@ private:
 	QFont _categoryFont;
 
 	/// Colors used for category header items.
-	QBrush _categoryBackgroundBrush{Qt::lightGray, Qt::Dense4Pattern};
-	QBrush _categoryForegroundBrush{Qt::blue};
+	QBrush _categoryBackgroundBrush;
+	QBrush _categoryForegroundBrush;
 
 	/// Controls the sorting of available modifiers into categories.
 	bool _useCategories = useCategoriesGlobal();

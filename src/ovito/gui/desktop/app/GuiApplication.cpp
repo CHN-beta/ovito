@@ -48,6 +48,9 @@ GuiApplication::GuiApplication()
 {
 	// Register Qt resources.
 	::registerQtResources();
+
+	// Activate our icon theme.
+	QIcon::setFallbackThemeName("ovito-light");
 }
 
 /******************************************************************************

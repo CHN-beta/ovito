@@ -245,6 +245,9 @@ private Q_SLOTS:
 	/// Updates the state of the actions that can be invoked on the currently selected list item.
 	void updateActions();
 
+	/// Updates the color brushes of the model.
+	void updateColorPalette(const QPalette& palette);
+
 private:
 
 	/// Create the pipeline editor entries for the subjects of the given object (and their subobjects).

@@ -38,11 +38,7 @@ using namespace std;
 AnimationTimeSlider::AnimationTimeSlider(MainWindow* mainWindow, QWidget* parent) :
 	QFrame(parent), _mainWindow(mainWindow)
 {
-	_normalPalette = palette();
-	_autoKeyModePalette = _normalPalette;
-	_autoKeyModePalette.setColor(QPalette::Window, QColor(240, 60, 60));
-	_sliderPalette = _normalPalette;
-	_sliderPalette.setColor(QPalette::Button, _sliderPalette.color(QPalette::Button).darker(110));
+	updateColorPalettes();
 
 	setFrameShape(QFrame::NoFrame);
 	setAutoFillBackground(true);
@@ -50,6 +46,32 @@ AnimationTimeSlider::AnimationTimeSlider(MainWindow* mainWindow, QWidget* parent
 	setFocusPolicy(Qt::ClickFocus);
 
 	connect(&mainWindow->datasetContainer(), &DataSetContainer::animationSettingsReplaced, this, &AnimationTimeSlider::onAnimationSettingsReplaced);
+}
+
+/******************************************************************************
+* Creates the color palettes used by the widget.
+******************************************************************************/
+void AnimationTimeSlider::updateColorPalettes()
+{
+	_normalPalette = QGuiApplication::palette();
+	_autoKeyModePalette = QGuiApplication::palette();
+	_autoKeyModePalette.setColor(QPalette::Window, QColor(240, 60, 60));
+	_sliderPalette = QGuiApplication::palette();
+	_sliderPalette.setColor(QPalette::Button, 
+		_mainWindow->darkTheme() ?
+		_sliderPalette.color(QPalette::Button).lighter(150) :
+		_sliderPalette.color(QPalette::Button).darker(110));
+}
+
+/******************************************************************************
+* Handles widget state changes.
+******************************************************************************/
+void AnimationTimeSlider::changeEvent(QEvent* event)
+{
+	if(event->type() == QEvent::PaletteChange) {
+		updateColorPalettes();
+	}
+	QFrame::changeEvent(event);
 }
 
 /******************************************************************************
@@ -107,7 +129,7 @@ void AnimationTimeSlider::paintEvent(QPaintEvent* event)
 		btnOption.state = ((_dragPos >= 0) ? QStyle::State_Sunken : QStyle::State_Raised) | QStyle::State_Enabled;
 		btnOption.palette = _sliderPalette;
 		painter.drawPrimitive(QStyle::PE_PanelButtonCommand, btnOption);
-		btnOption.palette = _normalPalette;
+		btnOption.palette = _animSettings->autoKeyMode() ? _autoKeyModePalette : _normalPalette;
 		painter.drawControl(QStyle::CE_PushButtonLabel, btnOption);
 	}
 }

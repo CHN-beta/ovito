@@ -62,7 +62,7 @@ QWidget* GlobalAttributesInspectionApplet::createWidget(MainWindow* mainWindow)
 	toolbar->setIconSize(QSize(22,22));
 	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; spacing: 0px; }");
 
-	QAction* exportToFileAction = new QAction(QIcon(":/guibase/actions/file/file_save_as.bw.svg"), tr("Export attributes to text file"), this);
+	QAction* exportToFileAction = new QAction(QIcon::fromTheme("file_save_as"), tr("Export attributes to text file"), this);
 	connect(exportToFileAction, &QAction::triggered, this, &GlobalAttributesInspectionApplet::exportToFile);
 	toolbar->addAction(exportToFileAction);
 

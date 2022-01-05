@@ -5,10 +5,6 @@
 	<file>mainwin/command_panel/about_panel.html</file>
 	<file>mainwin/command_panel/about_panel_no_updates.html</file>
 
-	<file>mainwin/command_panel/tab_modify.bw.svg</file>
-	<file>mainwin/command_panel/tab_render.bw.svg</file>
-	<file>mainwin/command_panel/tab_overlays.bw.svg</file>
-	<file>mainwin/command_panel/tab_utilities.bw.svg</file>
 	<file>mainwin/process-stop-16.png</file>
 	<file>mainwin/process-stop-16@2x.png</file>
 	<file>mainwin/process-stop-22.png</file>
@@ -17,13 +13,7 @@
 	<file>mainwin/settings/vertical_axis_y.png</file>
 	<file>mainwin/settings/vertical_axis_z.png</file>
 
-	<file>framebuffer/save_picture.bw.svg</file>
-	<file>framebuffer/copy_picture_to_clipboard.bw.svg</file>
-	<file>framebuffer/auto_crop.bw.svg</file>
-
 	<file>mainwin/inspector/waiting.gif</file>
-	<file>mainwin/inspector/show_chart.svg</file>
-	<file>mainwin/inspector/table_chart.svg</file>
 
 </qresource>
 

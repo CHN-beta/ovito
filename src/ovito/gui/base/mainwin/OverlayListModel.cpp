@@ -44,8 +44,20 @@ OverlayListModel::OverlayListModel(QObject* parent) : QAbstractListModel(parent)
 		_sectionHeaderFont.setPointSize(_sectionHeaderFont.pointSize() * 4 / 5);
 	else
 		_sectionHeaderFont.setPixelSize(_sectionHeaderFont.pixelSize() * 4 / 5);
-	_sectionHeaderBackgroundBrush = QBrush(Qt::lightGray, Qt::Dense4Pattern);
-	_sectionHeaderForegroundBrush = QBrush(Qt::blue);
+
+	updateColorPalette(QGuiApplication::palette());
+	connect(qGuiApp, &QGuiApplication::paletteChanged, this, &OverlayListModel::updateColorPalette);
+}
+
+/******************************************************************************
+* Updates the color brushes of the model.
+******************************************************************************/
+void OverlayListModel::updateColorPalette(const QPalette& palette)
+{
+	bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
+	_sectionHeaderBackgroundBrush = QBrush(palette.color(QPalette::Midlight));
+	_sectionHeaderForegroundBrush = QBrush(darkTheme ? QColor(Qt::blue).lighter() : QColor(Qt::blue));
+	_disabledForegroundBrush = palette.brush(QPalette::Disabled, QPalette::Text);
 }
 
 /******************************************************************************
@@ -215,7 +227,10 @@ QVariant OverlayListModel::data(const QModelIndex& index, int role) const
 		}
 	}
 	else if(role == Qt::ForegroundRole) {
-		if(item->itemType() == OverlayListItem::ViewportHeader || item->itemType() == OverlayListItem::SceneLayer) {
+		if(item->overlay() && item->overlay()->isEnabled() == false) {
+			return _disabledForegroundBrush;
+		}
+		else if(item->itemType() == OverlayListItem::ViewportHeader || item->itemType() == OverlayListItem::SceneLayer) {
 			return _sectionHeaderForegroundBrush;
 		}
 	}

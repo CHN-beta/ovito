@@ -222,13 +222,17 @@ ViewportPickResult OpenGLOffscreenViewportWindow::pick(const QPointF& pos)
 ******************************************************************************/
 void OpenGLOffscreenViewportWindow::renderViewport()
 {
+	_repaintTimer.stop();
+
+	// Do nothing if windows has been detached from its viewport.
+	if(!viewport() || !viewport()->dataset())
+		return;
+
 	OVITO_ASSERT_MSG(!viewport()->isRendering(), "OpenGLOffscreenViewportWindow::renderViewport()", "Recursive viewport repaint detected.");
 	OVITO_ASSERT_MSG(!viewport()->dataset()->viewportConfig()->isRendering(), "OpenGLOffscreenViewportWindow::renderViewport()", "Recursive viewport repaint detected.");
 
-	_repaintTimer.stop();
-
 	// Do not re-enter rendering function of the same viewport.
-	if(!viewport() || viewport()->isRendering())
+	if(viewport()->isRendering())
 		return;
 
 	// Invalidate picking buffer every time the visible contents of the viewport change.

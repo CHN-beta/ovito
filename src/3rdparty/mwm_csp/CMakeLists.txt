@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2019 OVITO GmbH, Germany
+#  Copyright 2021 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -31,6 +31,9 @@ ADD_LIBRARY(MinimumWeightMatchingCentrosymmetry
 	matching.cpp
 	mwm_csp.cpp
 )
+
+# Simply export all symbols defined by the library, because the code doesn't explicitly export certain API symbols.
+SET_TARGET_PROPERTIES(MinimumWeightMatchingCentrosymmetry PROPERTIES CXX_VISIBILITY_PRESET "default")
 
 # Give our library file a new name to not confuse it with any system versions of the library.
 SET_TARGET_PROPERTIES(MinimumWeightMatchingCentrosymmetry PROPERTIES OUTPUT_NAME "ovito_mwm_csp")

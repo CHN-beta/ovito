@@ -49,9 +49,9 @@ QWidget* ParticleInspectionApplet::createWidget(MainWindow* mainWindow)
 	_pickingMode = new PickingMode(this);
 	connect(this, &QObject::destroyed, _pickingMode, &ViewportInputMode::removeMode);
 	ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow, tr("Select in viewports"), this, _pickingMode);
-	pickModeAction->setIcon(QIcon(":/particles/icons/select_mode.svg"));
+	pickModeAction->setIcon(QIcon::fromTheme("particles_select_mode"));
 
-	_measuringModeAction = new QAction(QIcon(":/particles/icons/measure_distances.svg"), tr("Show distances and angles"), this);
+	_measuringModeAction = new QAction(QIcon::fromTheme("particles_measure_distances"), tr("Show distances and angles"), this);
 	_measuringModeAction->setCheckable(true);
 
 	QToolBar* toolbar = new QToolBar();

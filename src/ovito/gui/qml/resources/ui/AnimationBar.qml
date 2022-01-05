@@ -38,7 +38,7 @@ RowLayout {
 		id: animationRow
 		ToolButton {
 			id: jumpToFirstFrameButton
-			icon.source: "qrc:/guibase/actions/animation/goto_animation_start.bw.svg"
+			icon.name: "animation_goto_start"
 			ToolTip.text: qsTr("First animation frame")
 			ToolTip.visible: hovered
 			ToolTip.delay: 500
@@ -48,7 +48,7 @@ RowLayout {
 		}
 		ToolButton {
 			id: jumpToPreviousFrameButton
-			icon.source: "qrc:/guibase/actions/animation/goto_previous_frame.bw.svg"
+			icon.name: "animation_goto_previous_frame"
 			ToolTip.text: qsTr("Previous animation frame")
 			ToolTip.visible: hovered
 			ToolTip.delay: 500
@@ -58,7 +58,7 @@ RowLayout {
 		}
 		ToolButton {
 			id: playAnimationButton
-			icon.source: checked ? "qrc:/guibase/actions/animation/stop_animation.bw.svg" : "qrc:/guibase/actions/animation/play_animation.bw.svg"
+			icon.name: checked ? "animation_stop" : "animation_play"
 			ToolTip.text: checked ? qsTr("Stop animation") : qsTr("Play animation")
 			ToolTip.visible: hovered
 			ToolTip.delay: 500
@@ -70,7 +70,7 @@ RowLayout {
 		}
 		ToolButton {
 			id: jumpToNextFrameButton
-			icon.source: "qrc:/guibase/actions/animation/goto_next_frame.bw.svg"
+			icon.name: "animation_goto_next_frame"
 			ToolTip.text: qsTr("Next animation frame")
 			ToolTip.visible: hovered
 			ToolTip.delay: 500
@@ -80,7 +80,7 @@ RowLayout {
 		}
 		ToolButton {
 			id: jumpToLastFrameButton
-			icon.source: "qrc:/guibase/actions/animation/goto_animation_end.bw.svg"
+			icon.name: "animation_goto_end"
 			ToolTip.text: qsTr("Last animation frame")
 			ToolTip.visible: hovered
 			ToolTip.delay: 500

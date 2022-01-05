@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2021 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ public:
 
 	/// Constructs the widget.
 	AnimationFramesToolButton(DataSetContainer& datasetContainer, QWidget* parent = 0) : QToolButton(parent), _datasetContainer(datasetContainer) {
-		setIcon(QIcon(QString(":/guibase/actions/animation/named_frames.svg")));
+		setIcon(QIcon::fromTheme("animation_named_frames"));
 		setToolTip(tr("Jump to animation frame"));
 		setFocusPolicy(Qt::NoFocus);
 		connect(this, &QToolButton::clicked, this, &AnimationFramesToolButton::onClicked);

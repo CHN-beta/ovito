@@ -102,16 +102,16 @@ void SceneNodeSelectionItemDelegate::paint(QPainter* painter, const QStyleOption
 
 			// Load the icons.
 			if(_deleteIcon.isNull()) {
-				_deleteIcon = QIcon(":/guibase/actions/edit/delete_pipeline.svg");
+				_deleteIcon = QIcon::fromTheme("edit_delete_pipeline");
 #ifndef Q_OS_WIN
-				_deleteIcon.addFile(":/guibase/actions/edit/delete_pipeline.white.svg", QSize(), QIcon::Disabled);
+//				_deleteIcon.addFile(":/guibase/actions/edit/delete_pipeline.white.svg", QSize(), QIcon::Disabled);
 #endif
 				_deleteIcon.setIsMask(true);
 			}
 			if(_renameIcon.isNull()) {
-				_renameIcon = QIcon(":/guibase/actions/edit/rename_pipeline.bw.svg");
+				_renameIcon = QIcon::fromTheme("edit_rename_pipeline");
 #ifndef Q_OS_WIN
-				_renameIcon.addFile(":/guibase/actions/edit/rename_pipeline.bw.white.svg", QSize(), QIcon::Disabled);
+//				_renameIcon.addFile(":/guibase/actions/edit/rename_pipeline.bw.white.svg", QSize(), QIcon::Disabled);
 #endif
 				_renameIcon.setIsMask(true);
 			}
@@ -195,10 +195,12 @@ bool SceneNodeSelectionItemDelegate::eventFilter(QObject* obj, QEvent* event)
 			int maxWidth = view->viewport()->size().width();
 			itemRect.setWidth(qMin(maxWidth, itemRect.width()));
 			if(deleteButtonRect(itemRect).contains(mouseEvent->pos())) {
+				static_cast<QComboBox*>(parent())->hidePopup();
 				Q_EMIT itemDelete(indexUnderMouse.row());
 				return true;
 			}
 			if(renameButtonRect(itemRect).contains(mouseEvent->pos())) {
+				static_cast<QComboBox*>(parent())->hidePopup();
 				Q_EMIT itemRename(indexUnderMouse.row());
 				return true;
 			}

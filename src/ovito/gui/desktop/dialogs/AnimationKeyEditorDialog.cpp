@@ -365,14 +365,14 @@ AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, con
 	QToolBar* toolbar = new QToolBar();
 	toolbar->setOrientation(Qt::Vertical);
 	toolbar->setFloatable(false);
-	_addKeyAction = toolbar->addAction(QIcon(":/guibase/actions/animation/add_animation_key.bw.svg"), tr("Create animation key"));
+	_addKeyAction = toolbar->addAction(QIcon::fromTheme("animation_add_key"), tr("Create animation key"));
 	connect(_addKeyAction, &QAction::triggered, this, &AnimationKeyEditorDialog::onAddKey);
-	_deleteKeyAction = toolbar->addAction(QIcon(":/guibase/actions/animation/delete_animation_key.bw.svg"), tr("Delete animation key"));
+	_deleteKeyAction = toolbar->addAction(QIcon::fromTheme("animation_delete_key"), tr("Delete animation key"));
 	_deleteKeyAction->setEnabled(false);
 	connect(_deleteKeyAction, &QAction::triggered, this, &AnimationKeyEditorDialog::onDeleteKey);
 
 	toolbar->addSeparator();
-	QAction* animSettingsAction = toolbar->addAction(QIcon(":/guibase/actions/animation/animation_settings.bw.svg"), tr("Animation settings..."));
+	QAction* animSettingsAction = toolbar->addAction(QIcon::fromTheme("animation_settings"), tr("Animation settings..."));
 	connect(animSettingsAction, &QAction::triggered, [this]() {
 		AnimationSettingsDialog(this->ctrl()->dataset()->animationSettings(), this).exec();
 	});

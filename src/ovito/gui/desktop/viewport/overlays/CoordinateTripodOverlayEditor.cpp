@@ -67,10 +67,10 @@ void CoordinateTripodOverlayEditor::createUI(const RolloutInsertionParameters& r
 	VariantComboBoxParameterUI* alignmentPUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::alignment));
 	positionLayout->addWidget(new QLabel(tr("Alignment:")), 0, 0);
 	positionLayout->addWidget(alignmentPUI->comboBox(), 0, 1, 1, 2);
-	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_top_left.svg"), tr("Top left"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignLeft)));
-	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_top_right.svg"), tr("Top right"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignRight)));
-	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_bottom_right.svg"), tr("Bottom right"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignRight)));
-	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_bottom_left.svg"), tr("Bottom left"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignLeft)));
+	alignmentPUI->comboBox()->addItem(QIcon::fromTheme("overlay_alignment_top_left"), tr("Top left"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignLeft)));
+	alignmentPUI->comboBox()->addItem(QIcon::fromTheme("overlay_alignment_top_right"), tr("Top right"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignRight)));
+	alignmentPUI->comboBox()->addItem(QIcon::fromTheme("overlay_alignment_bottom_right"), tr("Bottom right"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignRight)));
+	alignmentPUI->comboBox()->addItem(QIcon::fromTheme("overlay_alignment_bottom_left"), tr("Bottom left"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignLeft)));
 
 	FloatParameterUI* offsetXPUI = new FloatParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::offsetX));
 	positionLayout->addWidget(new QLabel(tr("XY offset:")), 1, 0);
@@ -81,7 +81,7 @@ void CoordinateTripodOverlayEditor::createUI(const RolloutInsertionParameters& r
 	ViewportInputMode* moveOverlayMode = new MoveOverlayInputMode(this);
 	connect(this, &QObject::destroyed, moveOverlayMode, &ViewportInputMode::removeMode);
 	ViewportModeAction* moveOverlayAction = new ViewportModeAction(mainWindow(), tr("Move"), this, moveOverlayMode);
-	moveOverlayAction->setIcon(QIcon(":/guibase/actions/edit/mode_move.bw.svg"));
+	moveOverlayAction->setIcon(QIcon::fromTheme("edit_mode_move"));
 	moveOverlayAction->setToolTip(tr("Reposition the axes tripod in the viewport using the mouse"));
 	positionLayout->addWidget(new ViewportModeButton(moveOverlayAction), 2, 1, 1, 2, Qt::AlignRight | Qt::AlignTop);
 

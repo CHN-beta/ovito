@@ -49,7 +49,7 @@ OverlayAction* OverlayAction::createForClass(OvitoClassPtr clazz)
 	action->setStatusTip(!description.isEmpty() ? std::move(description) : tr("Insert this viewport layer."));
 
 	// Give the action an icon.
-	static QIcon icon(":/guibase/actions/overlays/layer_action_icon.svg");
+	static QIcon icon = QIcon::fromTheme("overlay_action_icon");
 	action->setIcon(icon);
 
 	return action;
@@ -73,7 +73,7 @@ OverlayAction* OverlayAction::createForScript(const QString& fileName, const QDi
 	action->setStatusTip(tr("Insert this Python-based viewport layer."));
 
 	// Give the action an icon.
-	static QIcon icon(":/guibase/actions/overlays/layer_action_icon.svg");
+	static QIcon icon = QIcon::fromTheme("overlay_action_icon");
 	action->setIcon(icon);
 	
 	return action;

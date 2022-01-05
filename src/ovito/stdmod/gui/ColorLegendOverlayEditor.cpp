@@ -87,14 +87,14 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
 	VariantComboBoxParameterUI* alignmentPUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::alignment));
 	positionLayout->addWidget(new QLabel(tr("Alignment:")), subrow, 0);
 	positionLayout->addWidget(alignmentPUI->comboBox(), subrow++, 1, 1, 2);
-	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_top_left.svg"), tr("Top left"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignLeft)));
-	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_top.svg"), tr("Top"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignHCenter)));
-	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_top_right.svg"), tr("Top right"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignRight)));
-	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_right.svg"), tr("Right"), QVariant::fromValue((int)(Qt::AlignVCenter | Qt::AlignRight)));
-	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_bottom_right.svg"), tr("Bottom right"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignRight)));
-	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_bottom.svg"), tr("Bottom"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignHCenter)));
-	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_bottom_left.svg"), tr("Bottom left"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignLeft)));
-	alignmentPUI->comboBox()->addItem(QIcon(":/guibase/actions/overlays/alignment_left.svg"), tr("Left"), QVariant::fromValue((int)(Qt::AlignVCenter | Qt::AlignLeft)));
+	alignmentPUI->comboBox()->addItem(QIcon::fromTheme("overlay_alignment_top_left"), tr("Top left"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignLeft)));
+	alignmentPUI->comboBox()->addItem(QIcon::fromTheme("overlay_alignment_top"), tr("Top"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignHCenter)));
+	alignmentPUI->comboBox()->addItem(QIcon::fromTheme("overlay_alignment_top_right"), tr("Top right"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignRight)));
+	alignmentPUI->comboBox()->addItem(QIcon::fromTheme("overlay_alignment_right"), tr("Right"), QVariant::fromValue((int)(Qt::AlignVCenter | Qt::AlignRight)));
+	alignmentPUI->comboBox()->addItem(QIcon::fromTheme("overlay_alignment_bottom_right"), tr("Bottom right"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignRight)));
+	alignmentPUI->comboBox()->addItem(QIcon::fromTheme("overlay_alignment_bottom"), tr("Bottom"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignHCenter)));
+	alignmentPUI->comboBox()->addItem(QIcon::fromTheme("overlay_alignment_bottom_left"), tr("Bottom left"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignLeft)));
+	alignmentPUI->comboBox()->addItem(QIcon::fromTheme("overlay_alignment_left"), tr("Left"), QVariant::fromValue((int)(Qt::AlignVCenter | Qt::AlignLeft)));
 
 	VariantComboBoxParameterUI* orientationPUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::orientation));
 	positionLayout->addWidget(new QLabel(tr("Orientation:")), subrow, 0);
@@ -111,7 +111,7 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
 	ViewportInputMode* moveOverlayMode = new MoveOverlayInputMode(this);
 	connect(this, &QObject::destroyed, moveOverlayMode, &ViewportInputMode::removeMode);
 	ViewportModeAction* moveOverlayAction = new ViewportModeAction(mainWindow(), tr("Move"), this, moveOverlayMode);
-	moveOverlayAction->setIcon(QIcon(":/guibase/actions/edit/mode_move.bw.svg"));
+	moveOverlayAction->setIcon(QIcon::fromTheme("edit_mode_move"));
 	moveOverlayAction->setToolTip(tr("Reposition the label in the viewport using the mouse"));
 	positionLayout->addWidget(new ViewportModeButton(moveOverlayAction), subrow, 1, 1, 2, Qt::AlignRight | Qt::AlignTop);
 

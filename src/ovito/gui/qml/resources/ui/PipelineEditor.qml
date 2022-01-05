@@ -125,7 +125,7 @@ ScrollView {
 					IconLabel {
 						id: textItem
 						text: title
-						icon.source: decoration
+						icon.name: decoration
 						icon.width: 22
 						icon.height: 22
 						spacing: 2
@@ -143,7 +143,7 @@ ScrollView {
 						anchors.right: parent.right
 						anchors.rightMargin: 4.0
 						opacity: 0
-						source: "qrc:/guibase/actions/modify/delete_modifier.bw.svg"
+						name: "modify_delete_modifier"
 						MouseArea {
 							anchors.fill: parent
 							onClicked: { 

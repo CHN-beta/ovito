@@ -13,7 +13,7 @@ ToolBar {
 			id: fileRow
 			ToolButton {
 				id: importLocalFileButton
-				icon.source: "qrc:/guibase/actions/file/file_import.bw.svg"
+				icon.name: "file_import"
 				ToolTip.text: qsTr("Import local file")
 				ToolTip.visible: hovered
 				ToolTip.delay: 500
@@ -28,7 +28,7 @@ ToolBar {
 			id: editRow
 			ToolButton {
 				id: undoButton
-				icon.source: "qrc:/guibase/actions/edit/edit_undo.bw.svg"
+				icon.name: "edit_undo"
 				ToolTip.text: qsTr("Undo action: ") + (mainWindow.datasetContainer.currentSet ? mainWindow.datasetContainer.currentSet.undoStack.undoText : "")
 				ToolTip.visible: hovered
 				ToolTip.delay: 500
@@ -38,7 +38,7 @@ ToolBar {
 			}
 			ToolButton {
 				id: redoButton
-				icon.source: "qrc:/guibase/actions/edit/edit_redo.bw.svg"
+				icon.name: "edit_redo"
 				ToolTip.text: qsTr("Redo action: ") + (mainWindow.datasetContainer.currentSet ? mainWindow.datasetContainer.currentSet.undoStack.redoText : "")
 				ToolTip.visible: hovered
 				ToolTip.delay: 500
@@ -68,7 +68,7 @@ ToolBar {
 				checkable: true
 				checked: viewportsPanel.viewportConfiguration && viewportsPanel.viewportConfiguration.maximizedViewport == null
 				enabled: viewportsPanel.viewportConfiguration
-				icon.source: "qrc:/guibase/actions/viewport/multi_viewports.svg"
+				icon.name: "viewport_multi_viewports"
 				ToolTip.text: qsTr("Show multiple viewports")
 				ToolTip.visible: hovered
 				ToolTip.delay: 500
@@ -84,7 +84,7 @@ ToolBar {
 			id: aboutRow
 			ToolButton {
 				id: helpButton
-				icon.source: "qrc:/guibase/actions/file/user_manual.bw.svg"
+				icon.name: "help_user_manual"
 				ToolTip.text: qsTr("User Manual")
 				ToolTip.visible: hovered
 				ToolTip.delay: 500
@@ -94,7 +94,7 @@ ToolBar {
 			/*
 			ToolButton {
 				id: aboutButton
-				icon.source: "qrc:/guibase/actions/file/about.bw.svg"
+				icon.name: "application_about"
 				ToolTip.text: qsTr("About OVITO")
 				ToolTip.visible: hovered
 				ToolTip.delay: 500

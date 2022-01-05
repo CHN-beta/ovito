@@ -62,8 +62,8 @@ QWidget* DataTableInspectionApplet::createWidget(MainWindow* mainWindow)
 	toolbar->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; spacing: 0px; }");
 
 	QActionGroup* plotTypeActionGroup = new QActionGroup(this);
-	_switchToPlotAction = plotTypeActionGroup->addAction(QIcon(":/gui/mainwin/inspector/show_chart.svg"), tr("Chart view"));
-	_switchToTableAction = plotTypeActionGroup->addAction(QIcon(":/gui/mainwin/inspector/table_chart.svg"), tr("Data table view"));
+	_switchToPlotAction = plotTypeActionGroup->addAction(QIcon::fromTheme("inspector_view_chart"), tr("Chart view"));
+	_switchToTableAction = plotTypeActionGroup->addAction(QIcon::fromTheme("inspector_view_table"), tr("Data table view"));
 	toolbar->addAction(_switchToPlotAction);
 	toolbar->addAction(_switchToTableAction);
 	_switchToPlotAction->setCheckable(true);
@@ -71,7 +71,7 @@ QWidget* DataTableInspectionApplet::createWidget(MainWindow* mainWindow)
 	_switchToPlotAction->setChecked(true);
 	toolbar->addSeparator();
 
-	_exportTableToFileAction = new QAction(QIcon(":/guibase/actions/file/file_save_as.bw.svg"), tr("Export data plot"), this);
+	_exportTableToFileAction = new QAction(QIcon::fromTheme("file_save_as"), tr("Export data plot"), this);
 	connect(_exportTableToFileAction, &QAction::triggered, this, &DataTableInspectionApplet::exportDataToFile);
 	toolbar->addAction(_exportTableToFileAction);
 
