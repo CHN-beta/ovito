@@ -78,6 +78,9 @@ public:
 	/// Returns an array with two colors per full bond, because the two half-bonds may have different colors.
 	std::vector<Color> halfBondColors(const ParticlesObject* particles, bool highlightSelection, ColoringMode coloringMode, bool ignoreBondColorProperty) const;
 
+	/// Determines the bond widths used for rendering.
+	ConstPropertyPtr bondWidths(const BondsObject* bonds) const;
+
 protected:
 
 	/// Allows the object to parse the serialized contents of a property field in a custom way.

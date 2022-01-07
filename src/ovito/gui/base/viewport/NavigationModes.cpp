@@ -484,7 +484,7 @@ void PickOrbitCenterMode::renderOverlay3D(Viewport* vp, SceneRenderer* renderer)
 		orbitCenterMarker.setShape(CylinderPrimitive::CylinderShape);
 		orbitCenterMarker.setShadingMode(CylinderPrimitive::NormalShading);
 		orbitCenterMarker.setRenderingQuality(CylinderPrimitive::HighQuality);
-		orbitCenterMarker.setUniformRadius(0.05);
+		orbitCenterMarker.setUniformWidth(0.1);
 		orbitCenterMarker.setPositions(basePositions.take(), headPositions.take());
 		orbitCenterMarker.setColors(colors.take());
 		renderer->renderCylinders(orbitCenterMarker);

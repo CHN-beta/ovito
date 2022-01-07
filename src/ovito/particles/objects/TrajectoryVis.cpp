@@ -188,8 +188,8 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 		visCache.corners.setPositions(nullptr);
 		visCache.cornerPseudoColors.reset();
 
-		FloatType lineRadius = lineWidth() / 2;
-		if(trajObj && lineRadius > 0) {
+		FloatType lineDiameter = lineWidth();
+		if(trajObj && lineDiameter > 0) {
 			trajObj->verifyIntegrity();
 
 			// Retrieve the line data stored in the TrajectoryObject.
@@ -267,7 +267,7 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 				visCache.segments.setRenderingQuality(CylinderPrimitive::HighQuality);
 				visCache.segments.setColors(segmentColors ? segmentColors.take() : segmentPseudoColors.take());
 				visCache.segments.setUniformColor(lineColor());
-				visCache.segments.setUniformRadius(lineRadius);
+				visCache.segments.setUniformWidth(lineDiameter);
 				visCache.segments.setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
 
 				// Create rendering primitive for the corner points.
@@ -277,7 +277,7 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 				visCache.corners.setPositions(cornerPoints.take());
 				visCache.corners.setUniformColor(lineColor());
 				visCache.corners.setColors(cornerColors.take());
-				visCache.corners.setUniformRadius(lineRadius);
+				visCache.corners.setUniformRadius(0.5 * lineDiameter);
 
 				// Save the pseudo-colors of the corner spheres. They will be converted to RGB colors below.
 				visCache.cornerPseudoColors = cornerPseudoColors.take();

@@ -318,7 +318,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 		arrows.setShape(CylinderPrimitive::ArrowShape);
 		arrows.setShadingMode(static_cast<CylinderPrimitive::ShadingMode>(shadingMode()));
 		arrows.setRenderingQuality(renderingQuality());
-		arrows.setUniformRadius(arrowWidth());
+		arrows.setUniformWidth(2 * arrowWidth());
 		arrows.setUniformColor(arrowColor());
 		arrows.setPositions(arrowBasePositions.take(), arrowHeadPositions.take());
 		arrows.setColors(arrowColors.take());

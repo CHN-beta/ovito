@@ -26,14 +26,13 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/dataset/data/DataBufferAccess.h>
-#include "PrimitiveBase.h"
 
 namespace Ovito {
 
 /**
  * \brief A set of lines to be rendered by a SceneRenderer implementation.
  */
-class OVITO_CORE_EXPORT LinePrimitive : public PrimitiveBase
+class OVITO_CORE_EXPORT LinePrimitive final
 {
 public:
 

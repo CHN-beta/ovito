@@ -196,7 +196,7 @@ Box3 ParticlesVis::particleBoundingBox(ConstPropertyAccess<Point3> positionPrope
 	}
 
 	// Extend the bounding box by the largest particle radius.
-	return bbox.padBox(std::max(radiusScaleFactor() * maxAtomRadius * sqrt(FloatType(3)), FloatType(0)));
+	return bbox.padBox(std::max(radiusScaleFactor() * maxAtomRadius * std::sqrt(FloatType(3)), FloatType(0)));
 }
 
 /******************************************************************************
@@ -971,9 +971,10 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 			// Allocate cylinder data buffers.
 			DataBufferAccessAndRef<Point3> cylinderBasePositions = DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float, 3, 0, false);
 			DataBufferAccessAndRef<Point3> cylinderHeadPositions = DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float, 3, 0, false);
-			DataBufferAccessAndRef<FloatType> cylinderRadii = DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float, 1, 0, false);
+			DataBufferAccessAndRef<FloatType> cylinderWidths = DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float, 1, 0, false);
 			DataBufferAccessAndRef<Color> cylinderColors = DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float, 3, 0, false);
 			DataBufferAccessAndRef<FloatType> cylinderTransparencies = transparencyProperty ? DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float, 1, 0, false) : nullptr;
+			DataBufferAccessAndRef<FloatType> sphereRadii = (shape == ParticleShape::Spherocylinder) ? DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float, 1, 0, false) : nullptr;
 
 			// Fill data buffers.
 			ConstPropertyAccess<Point3> positionArray(positionProperty);
@@ -1001,13 +1002,15 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 				Point3 p = center - (dir * FloatType(0.5));
 				cylinderBasePositions[index] = p;
 				cylinderHeadPositions[index] = p + dir;
-				cylinderRadii[index] = radius;
+				cylinderWidths[index] = 2 * radius;
 				cylinderColors[index] = colorsArray[effectiveParticleIndex];
 				if(cylinderTransparencies)
 					cylinderTransparencies[index] = transparencies[effectiveParticleIndex];
+				if(sphereRadii)
+					sphereRadii[index] = radius;
 			}
 			visCache.cylinderPrimitive.setPositions(cylinderBasePositions.take(), cylinderHeadPositions.take());
-			visCache.cylinderPrimitive.setRadii(cylinderRadii.take());
+			visCache.cylinderPrimitive.setWidths(cylinderWidths.take());
 			visCache.cylinderPrimitive.setColors(cylinderColors.take());
 			visCache.cylinderPrimitive.setTransparencies(cylinderTransparencies.take());
 
@@ -1017,14 +1020,14 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 				visCache.spheresPrimitives[0].setShadingMode(ParticlePrimitive::NormalShading);
 				visCache.spheresPrimitives[0].setRenderingQuality(ParticlePrimitive::HighQuality);
 				visCache.spheresPrimitives[0].setPositions(visCache.cylinderPrimitive.basePositions());
-				visCache.spheresPrimitives[0].setRadii(visCache.cylinderPrimitive.radii());
+				visCache.spheresPrimitives[0].setRadii(sphereRadii.take());
 				visCache.spheresPrimitives[0].setColors(visCache.cylinderPrimitive.colors());
 				visCache.spheresPrimitives[0].setTransparencies(visCache.cylinderPrimitive.transparencies());
 				visCache.spheresPrimitives[1].setParticleShape(ParticlePrimitive::SphericalShape);
 				visCache.spheresPrimitives[1].setShadingMode(ParticlePrimitive::NormalShading);
 				visCache.spheresPrimitives[1].setRenderingQuality(ParticlePrimitive::HighQuality);
 				visCache.spheresPrimitives[1].setPositions(visCache.cylinderPrimitive.headPositions());
-				visCache.spheresPrimitives[1].setRadii(visCache.cylinderPrimitive.radii());
+				visCache.spheresPrimitives[1].setRadii(visCache.spheresPrimitives[0].radii());
 				visCache.spheresPrimitives[1].setColors(visCache.cylinderPrimitive.colors());
 				visCache.spheresPrimitives[1].setTransparencies(visCache.cylinderPrimitive.transparencies());
 			}
@@ -1202,11 +1205,11 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 			highlightCylinderBuffer.setShadingMode(CylinderPrimitive::NormalShading);
 			highlightCylinderBuffer.setRenderingQuality(CylinderPrimitive::HighQuality);
 			cylinderBuffer.setUniformColor(color);
-			cylinderBuffer.setUniformRadius(radius);
+			cylinderBuffer.setUniformWidth(2 * radius);
 			cylinderBuffer.setPositions(positionBuffer1.take(), positionBuffer2.take());
 			FloatType padding = renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1);
 			highlightCylinderBuffer.setUniformColor(highlightColor);
-			highlightCylinderBuffer.setUniformRadius(radius + padding);
+			highlightCylinderBuffer.setUniformWidth(2 * (radius + padding));
 			highlightCylinderBuffer.setPositions(cylinderBuffer.basePositions(), cylinderBuffer.headPositions());
 			if(shape == Spherocylinder) {
 				particleBuffer.setParticleShape(ParticlePrimitive::SphericalShape);

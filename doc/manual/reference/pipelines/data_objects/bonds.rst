@@ -53,6 +53,8 @@ Bond property             Data type (components)     Description
 ``Transparency``          Real                       A value in the range [0,1] controlling the bonds's transparency. 
                                                      If not present, bonds are rendered fully opaque.
 ``Selection``             Integer                    Stores the current selection state of bonds (1 for selected bonds; 0 otherwise).
+``Width``                 Real                       Per-bond diameters (in simulation units of length). If not present, the uniform bond
+                                                     width is controlled by the :ref:`bonds visual element <visual_elements.bonds>`.
 ========================= ========================== =======================================================================================
 
 .. seealso::

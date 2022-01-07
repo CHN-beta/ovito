@@ -25,14 +25,13 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
-#include "PrimitiveBase.h"
 
 namespace Ovito {
 
 /**
  * \brief A set of particles to be rendered by a SceneRenderer implementation.
  */
-class OVITO_CORE_EXPORT ParticlePrimitive : public PrimitiveBase
+class OVITO_CORE_EXPORT ParticlePrimitive final
 {
 public:
 
@@ -62,41 +61,41 @@ public:
 public:
 
 	/// \brief Sets the array of particle indices to render.
-	virtual void setIndices(ConstDataBufferPtr indices) {
+	void setIndices(ConstDataBufferPtr indices) {
 		OVITO_ASSERT(!indices || (indices->dataType() == DataBuffer::Int && indices->componentCount() == 1));
 		_indices = std::move(indices);
 	}
 
 	/// \brief Sets the coordinates of the particles.
-	virtual void setPositions(ConstDataBufferPtr coordinates) {
+	void setPositions(ConstDataBufferPtr coordinates) {
 		OVITO_ASSERT(!coordinates || (coordinates->dataType() == DataBuffer::Float && coordinates->componentCount() == 3));
 		_positions = std::move(coordinates);
 	}
 
 	/// \brief Sets the radii of the particles.
-	virtual void setRadii(ConstDataBufferPtr radii) {
+	void setRadii(ConstDataBufferPtr radii) {
 		OVITO_ASSERT(!radii || (radii->dataType() == DataBuffer::Float && radii->componentCount() == 1));
 		_radii = std::move(radii);
 	}
 
 	/// \brief Sets the radius of all particles to the given value.
-	virtual void setUniformRadius(FloatType radius) {
+	void setUniformRadius(FloatType radius) {
 		_uniformParticleRadius = radius;
 	}
 
 	/// \brief Sets the colors of the particles.
-	virtual void setColors(ConstDataBufferPtr colors) {
+	void setColors(ConstDataBufferPtr colors) {
 		OVITO_ASSERT(!colors || (colors->dataType() == DataBuffer::Float && colors->componentCount() == 3));
 		_colors = std::move(colors);
 	}
 
 	/// \brief Sets the color of all particles to the given value.
-	virtual void setUniformColor(const Color& color) {
+	void setUniformColor(const Color& color) {
 		_uniformParticleColor = color;
 	}
 
 	/// \brief Sets the selection flags of the particles.
-	virtual void setSelection(ConstDataBufferPtr selection) {
+	void setSelection(ConstDataBufferPtr selection) {
 		OVITO_ASSERT(!selection || (selection->dataType() == DataBuffer::Int && selection->componentCount() == 1));
 		_selection = std::move(selection);
 	}
@@ -107,25 +106,25 @@ public:
 	}
 
 	/// \brief Sets the transparency values of the particles.
-	virtual void setTransparencies(ConstDataBufferPtr transparencies) {
+	void setTransparencies(ConstDataBufferPtr transparencies) {
 		OVITO_ASSERT(!transparencies || (transparencies->dataType() == DataBuffer::Float && transparencies->componentCount() == 1));
 		_transparencies = std::move(transparencies);
 	}
 
 	/// \brief Sets the aspherical shape of the particles.
-	virtual void setAsphericalShapes(ConstDataBufferPtr shapes) {
+	void setAsphericalShapes(ConstDataBufferPtr shapes) {
 		OVITO_ASSERT(!shapes || (shapes->dataType() == DataBuffer::Float && shapes->componentCount() == 3));
 		_asphericalShapes = std::move(shapes);		
 	}
 
 	/// \brief Sets the aspherical shape of the particles.
-	virtual void setOrientations(ConstDataBufferPtr orientations) {
+	void setOrientations(ConstDataBufferPtr orientations) {
 		OVITO_ASSERT(!orientations || (orientations->dataType() == DataBuffer::Float && orientations->componentCount() == 4));
 		_orientations = std::move(orientations);		
 	}
 
 	/// \brief Sets the superquadric roundness values of the particles.
-	virtual void setRoundness(ConstDataBufferPtr roundness) {
+	void setRoundness(ConstDataBufferPtr roundness) {
 		OVITO_ASSERT(!roundness || (roundness->dataType() == DataBuffer::Float && roundness->componentCount() == 2));
 		_roundness = std::move(roundness);
 	}

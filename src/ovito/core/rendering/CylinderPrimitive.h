@@ -25,7 +25,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
-#include "PrimitiveBase.h"
 #include "PseudoColorMapping.h"
 
 namespace Ovito {
@@ -33,7 +32,7 @@ namespace Ovito {
 /**
  * \brief A set of cylinders or arrow glyphs to be rendered by a SceneRenderer implementation.
  */
-class OVITO_CORE_EXPORT CylinderPrimitive : public PrimitiveBase
+class OVITO_CORE_EXPORT CylinderPrimitive
 {
 public:
 
@@ -76,12 +75,12 @@ public:
 	/// \brief Changes the element shape.
 	void setShape(Shape shape) { _shape = shape; }
 
-	/// Returns the cylinder radius assigned to all primtives.
-	FloatType uniformRadius() const { return _uniformRadius; }
+	/// Returns the cylinder diameter assigned to all primtives.
+	FloatType uniformWidth() const { return _uniformWidth; }
 
-	/// Sets the cylinder radius of all primitives to the given value.
-	void setUniformRadius(FloatType radius) {
-		_uniformRadius = radius;
+	/// Sets the cylinder diameter of all primitives to the given value.
+	void setUniformWidth(FloatType width) {
+		_uniformWidth = width;
 	}
 
 	/// Returns the color assigned to all primitives.
@@ -132,14 +131,14 @@ public:
 	/// Returns the buffer storing the transparancy values.
 	const ConstDataBufferPtr& transparencies() const { return _transparencies; }
 
-	/// Sets the radii of the primitives.
-	void setRadii(ConstDataBufferPtr radii) {
-		OVITO_ASSERT(!radii || (radii->dataType() == DataBuffer::Float && radii->componentCount() == 1));
-		_radii = std::move(radii);
+	/// Sets the diameters of the primitives.
+	void setWidths(ConstDataBufferPtr widths) {
+		OVITO_ASSERT(!widths || (widths->dataType() == DataBuffer::Float && widths->componentCount() == 1));
+		_widths = std::move(widths);
 	}
 
-	/// Returns the buffer storing the per-primitive radius values.
-	const ConstDataBufferPtr& radii() const { return _radii; }
+	/// Returns the buffer storing the per-primitive diameter values.
+	const ConstDataBufferPtr& widths() const { return _widths; }
 
 	/// Returns the mapping from pseudo-color values to RGB colors.
 	const PseudoColorMapping& pseudoColorMapping() const { return _pseudoColorMapping; }
@@ -169,8 +168,8 @@ private:
 	/// The color to be used if no per-primitive colors have been specified.
 	Color _uniformColor{1,1,1};
 
-	/// The radius of the cylinders.
-	FloatType _uniformRadius{1.0};
+	/// The diameter of the cylinders.
+	FloatType _uniformWidth{2.0};
 
 	/// Buffer storing the coordinates of the arrow/cylinder base points.
 	ConstDataBufferPtr _basePositions; // Array of Point3
@@ -184,8 +183,8 @@ private:
 	/// Buffer storing the semi-transparency values.
 	ConstDataBufferPtr _transparencies; // Array of FloatType	
 
-	/// Buffer storing the per-primitive radius values.
-	ConstDataBufferPtr _radii; // Array of FloatType	
+	/// Buffer storing the per-primitive width values.
+	ConstDataBufferPtr _widths; // Array of FloatType	
 };
 
 }	// End of namespace

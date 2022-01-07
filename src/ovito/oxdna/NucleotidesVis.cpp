@@ -314,7 +314,7 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 			visCache.connectionPrimitive.setShape(CylinderPrimitive::CylinderShape);
 			visCache.connectionPrimitive.setShadingMode(CylinderPrimitive::NormalShading);
 			visCache.connectionPrimitive.setRenderingQuality(CylinderPrimitive::HighQuality);
-			visCache.connectionPrimitive.setUniformRadius(cylinderRadius());
+			visCache.connectionPrimitive.setUniformWidth(2 * cylinderRadius());
 			visCache.connectionPrimitive.setColors(colors);
 			DataBufferAccessAndRef<Point3> headPositions = DataBufferPtr::create(dataset(), particles->elementCount(), DataBuffer::Float, 3, 0, false);
 			for(size_t i = 0; i < positionsArray.size(); i++)

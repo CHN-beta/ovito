@@ -24,14 +24,13 @@
 
 
 #include <ovito/core/Core.h>
-#include "PrimitiveBase.h"
 
 namespace Ovito {
 
 /**
  * \brief A text string to be rendered by a SceneRenderer implementation.
  */
-class OVITO_CORE_EXPORT TextPrimitive : public PrimitiveBase
+class OVITO_CORE_EXPORT TextPrimitive final
 {
 public:
 

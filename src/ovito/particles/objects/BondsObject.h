@@ -126,7 +126,8 @@ public:
 		TopologyProperty,
 		PeriodicImageProperty,
 		TransparencyProperty,
-		ParticleIdentifiersProperty
+		ParticleIdentifiersProperty,
+		WidthProperty,
 	};
 
 	/// \brief Constructor.
@@ -144,6 +145,9 @@ public:
 
 	/// Creates new bonds making sure bonds are not created twice.
 	size_t addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const ParticlesObject* particles, ObjectInitializationHints initializationHints, const std::vector<PropertyPtr>& bondProperties = {}, DataOORef<const BondType> bondType = {});
+
+	/// Returns a property array with the input bond widths.
+	ConstPropertyPtr inputBondWidths() const;
 };
 
 /**

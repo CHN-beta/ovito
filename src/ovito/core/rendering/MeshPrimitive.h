@@ -26,7 +26,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/dataset/data/mesh/TriMeshObject.h>
-#include "PrimitiveBase.h"
 #include "PseudoColorMapping.h"
 
 namespace Ovito {
@@ -34,7 +33,7 @@ namespace Ovito {
 /**
  * \brief A triangle mesh to be rendered by a scene renderer.
  */
-class OVITO_CORE_EXPORT MeshPrimitive : public PrimitiveBase
+class OVITO_CORE_EXPORT MeshPrimitive final
 {
 public:
 

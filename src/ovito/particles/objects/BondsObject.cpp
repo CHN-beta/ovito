@@ -242,6 +242,24 @@ size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsV
 }
 
 /******************************************************************************
+* Returns a property array with the input bond widths.
+******************************************************************************/
+ConstPropertyPtr BondsObject::inputBondWidths() const
+{
+	// Access the bonds vis element.
+	if(BondsVis* bondsVis = visElement<BondsVis>()) {
+
+		// Query bond widths from vis element.
+		return bondsVis->bondWidths(this);
+	}
+
+	// Return uniform default width for all bonds.
+	PropertyPtr buffer = OOClass().createStandardProperty(dataset(), elementCount(), BondsObject::WidthProperty, false, ObjectInitializationHint::LoadFactoryDefaults);
+	buffer->fill<FloatType>(1);
+	return buffer;
+}
+
+/******************************************************************************
 * Creates a storage object for standard bond properties.
 ******************************************************************************/
 PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t bondsCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const
@@ -253,6 +271,16 @@ PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* da
 			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath[containerPath.size()-2])) {
 				ConstPropertyPtr property = particles->inputBondColors();
 				OVITO_ASSERT(property && property->size() == bondsCount && property->type() == ColorProperty);
+				return std::move(property).makeMutable();
+			}
+		}
+		else if(type == WidthProperty) {
+			if(const BondsObject* bonds = dynamic_object_cast<BondsObject>(containerPath.back())) {
+				OVITO_ASSERT(bonds->elementCount() == bondsCount);
+				ConstPropertyPtr property = bonds->inputBondWidths();
+				OVITO_ASSERT(property);
+				OVITO_ASSERT(property->size() == bondsCount);
+				OVITO_ASSERT(property->type() == WidthProperty);
 				return std::move(property).makeMutable();
 			}
 		}
@@ -271,6 +299,7 @@ PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* da
 		break;
 	case LengthProperty:
 	case TransparencyProperty:
+	case WidthProperty:
 		dataType = PropertyObject::Float;
 		componentCount = 1;
 		stride = sizeof(FloatType);
@@ -340,11 +369,12 @@ void BondsObject::OOMetaClass::initialize()
 	registerStandardProperty(TypeProperty, tr("Bond Type"), PropertyObject::Int, emptyList, &BondType::OOClass(), tr("Bond types"));
 	registerStandardProperty(SelectionProperty, tr("Selection"), PropertyObject::Int, emptyList);
 	registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList, nullptr, tr("Bond colors"));
-	registerStandardProperty(LengthProperty, tr("Length"), PropertyObject::Float, emptyList);
+	registerStandardProperty(LengthProperty, tr("Length"), PropertyObject::Float, emptyList, nullptr, tr("Lengths"));
 	registerStandardProperty(TopologyProperty, tr("Topology"), PropertyObject::Int64, abList);
 	registerStandardProperty(PeriodicImageProperty, tr("Periodic Image"), PropertyObject::Int, xyzList);
 	registerStandardProperty(TransparencyProperty, tr("Transparency"), PropertyObject::Float, emptyList);
 	registerStandardProperty(ParticleIdentifiersProperty, tr("Particle Identifiers"), PropertyObject::Int64, onetwoList);
+	registerStandardProperty(WidthProperty, tr("Width"), PropertyObject::Float, emptyList, nullptr, tr("Widths"));
 }
 
 /******************************************************************************

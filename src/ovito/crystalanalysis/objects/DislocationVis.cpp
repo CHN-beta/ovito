@@ -316,7 +316,7 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 		}
 		// Allocate rendering data buffers.
 		std::vector<int> subobjToSegmentMap(lineSegmentCount + cornerCount);
-		FloatType lineRadius = std::max(lineWidth() / 2, FloatType(0));
+		FloatType lineDiameter = std::max(lineWidth(), FloatType(0));
 		DataBufferAccessAndRef<Point3> cornerPoints = DataBufferPtr::create(dataset(), cornerCount, DataBuffer::Float, 3, 0, false);
 		DataBufferAccessAndRef<Color> cornerColors = DataBufferPtr::create(dataset(), cornerCount, DataBuffer::Float, 3, 0, false);
 		DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), lineSegmentCount, DataBuffer::Float, 3, 0, false);
@@ -415,7 +415,7 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 		primitives.segments.setShape(showLineDirections() ? CylinderPrimitive::ArrowShape : CylinderPrimitive::CylinderShape);
 		primitives.segments.setShadingMode(shadingMode());
 		primitives.segments.setRenderingQuality(CylinderPrimitive::HighQuality);
-		primitives.segments.setUniformRadius(lineRadius);
+		primitives.segments.setUniformWidth(lineDiameter);
 		primitives.segments.setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
 		primitives.segments.setColors(segmentColors.take());
 
@@ -425,7 +425,7 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 		primitives.corners.setRenderingQuality(ParticlePrimitive::HighQuality);
 		primitives.corners.setPositions(cornerPoints.take());
 		primitives.corners.setColors(cornerColors.take());
-		primitives.corners.setUniformRadius(lineRadius);
+		primitives.corners.setUniformRadius(0.5 * lineDiameter);
 
 		if(dislocationsObj) {
 			if(showBurgersVectors()) {
@@ -451,7 +451,7 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 				primitives.burgersArrows.setShape(CylinderPrimitive::ArrowShape);
 				primitives.burgersArrows.setShadingMode(shadingMode());
 				primitives.burgersArrows.setRenderingQuality(CylinderPrimitive::HighQuality);
-				primitives.burgersArrows.setUniformRadius(std::max(burgersVectorWidth() / 2, FloatType(0)));
+				primitives.burgersArrows.setUniformWidth(std::max(burgersVectorWidth(), FloatType(0)));
 				primitives.burgersArrows.setUniformColor(burgersVectorColor());
 				primitives.burgersArrows.setPositions(baseArrowPoints.take(), headArrowPoints.take());
 			}
@@ -517,8 +517,8 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	TimeInterval iv;
 	const AffineTransformation& nodeTM = contextNode->getWorldTransform(time, iv);
 	renderer->setWorldTransform(nodeTM);
-	FloatType lineRadius = std::max(lineWidth() / 4, FloatType(0));
-	FloatType headRadius = lineRadius * 3;
+	FloatType lineDiameter = std::max(lineWidth() / 2, FloatType(0));
+	FloatType headRadius = lineDiameter * (3.0/2.0);
 
 	// Compute bounding box if requested.
 	if(renderer->isBoundingBoxPass()) {
@@ -536,7 +536,7 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	segmentBuffer.setShape(CylinderPrimitive::CylinderShape);
 	segmentBuffer.setShadingMode(CylinderPrimitive::FlatShading);
 	segmentBuffer.setRenderingQuality(CylinderPrimitive::HighQuality);
-	segmentBuffer.setUniformRadius(lineRadius);
+	segmentBuffer.setUniformWidth(lineDiameter);
 	segmentBuffer.setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
 	segmentBuffer.setUniformColor(Color(1,1,1));
 	renderer->renderCylinders(segmentBuffer);
@@ -547,7 +547,7 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	cornerBuffer.setRenderingQuality(ParticlePrimitive::HighQuality);
 	cornerBuffer.setPositions(cornerVertices.take());
 	cornerBuffer.setUniformColor(Color(1,1,1));
-	cornerBuffer.setUniformRadius(lineRadius);
+	cornerBuffer.setUniformRadius(0.5 * lineDiameter);
 	renderer->renderParticles(cornerBuffer);
 
 	if(!segment->line.empty()) {

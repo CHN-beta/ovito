@@ -16,7 +16,7 @@ Parameters
 """"""""""
 
 Bond width
-  Controls the width of bonds cylinders or lines (in simulation units of length).
+  Controls the width of bonds cylinders or lines (in simulation units of length). Ignored if per-bond diameter values have been assigned to the ``Width`` bond property.
 
 Flat shading
   Switches to a flat line representation instead of three-dimensional cylinders.

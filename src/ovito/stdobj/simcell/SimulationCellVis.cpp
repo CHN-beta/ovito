@@ -194,7 +194,7 @@ void SimulationCellVis::renderSolid(TimePoint time, const SimulationCellObject* 
 		visCache.edges.setShadingMode(CylinderPrimitive::NormalShading);
 		visCache.edges.setRenderingQuality(CylinderPrimitive::HighQuality);
 		visCache.edges.setUniformColor(cellColor());
-		visCache.edges.setUniformRadius(cellLineWidth());
+		visCache.edges.setUniformWidth(2 * cellLineWidth());
 
 		// Create a data buffer for the box corner coordinates.
 		DataBufferAccessAndRef<Point3> corners = DataBufferPtr::create(dataset(), cell->is2D() ? 4 : 8, DataBuffer::Float, 3, 0, false);
