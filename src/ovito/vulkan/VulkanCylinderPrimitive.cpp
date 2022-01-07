@@ -458,18 +458,19 @@ void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
     RendererResourceKey<struct VulkanCylinderVertexCache, ConstDataBufferPtr, ConstDataBufferPtr, ConstDataBufferPtr, FloatType> positionRadiusCacheKey{
         primitive.basePositions(),
         primitive.headPositions(),
-        primitive.radii(),
-        primitive.radii() ? FloatType(0) : primitive.uniformRadius()
+        primitive.widths(),
+        primitive.widths() ? FloatType(0) : primitive.uniformWidth()
     };
 
     // Upload vertex buffer with the base and head positions and radii.
     VkBuffer positionRadiusBuffer = context()->createCachedBuffer(positionRadiusCacheKey, primitiveCount * (sizeof(Vector_3<float>) + sizeof(Vector_3<float>) + sizeof(float)), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
-        OVITO_ASSERT(!primitive.radii() || primitive.radii()->size() == primitive.basePositions()->size());
+        OVITO_ASSERT(!primitive.widths() || primitive.widths()->size() == primitive.basePositions()->size());
         ConstDataBufferAccess<Point3> basePositionArray(primitive.basePositions());
         ConstDataBufferAccess<Point3> headPositionArray(primitive.headPositions());
-        ConstDataBufferAccess<FloatType> radiusArray(primitive.radii());
+        ConstDataBufferAccess<FloatType> diameterArray(primitive.widths());
         float* dst = reinterpret_cast<float*>(buffer);
-        const FloatType* radius = radiusArray ? radiusArray.cbegin() : nullptr;
+        const FloatType* diameter = diameterArray ? diameterArray.cbegin() : nullptr;
+        const float uniformRadius = 0.5f * primitive.uniformWidth();
         const Point3* basePos = basePositionArray.cbegin();
         const Point3* headPos = headPositionArray.cbegin();
         for(; basePos != basePositionArray.cend(); ++basePos, ++headPos) {
@@ -479,7 +480,7 @@ void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
             *dst++ = static_cast<float>(headPos->x());
             *dst++ = static_cast<float>(headPos->y());
             *dst++ = static_cast<float>(headPos->z());
-            *dst++ = static_cast<float>(radius ? *radius++ : primitive.uniformRadius());
+            *dst++ = diameter ? (0.5f * static_cast<float>(*diameter++)) : uniformRadius;
         }
     });
 
