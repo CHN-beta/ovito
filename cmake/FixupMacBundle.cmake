@@ -42,6 +42,10 @@ INSTALL(DIRECTORY "${_qtplugins_source_dir}/iconengines" DESTINATION ${_qtplugin
 IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6" OR NOT Qt5Core_VERSION VERSION_LESS "5.12")
 	INSTALL(DIRECTORY "${_qtplugins_source_dir}/styles" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
 ENDIF()
+IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
+	INSTALL(DIRECTORY "${_qtplugins_source_dir}/networkinformation" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
+	INSTALL(DIRECTORY "${_qtplugins_source_dir}/tls" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
+ENDIF()
 
 # Install a qt.conf file.
 # This inserts some cmake code into the install script to write the file
@@ -82,6 +86,8 @@ INSTALL(CODE "
 		\"\${CMAKE_INSTALL_PREFIX}/${_qtplugins_dest_dir}/imageformats\"
 		\"\${CMAKE_INSTALL_PREFIX}/${_qtplugins_dest_dir}/platforms\"
 		\"\${CMAKE_INSTALL_PREFIX}/${_qtplugins_dest_dir}/iconengines\"
+		\"\${CMAKE_INSTALL_PREFIX}/${_qtplugins_dest_dir}/networkinformation\"
+		\"\${CMAKE_INSTALL_PREFIX}/${_qtplugins_dest_dir}/tls\"
 		/opt/local/lib)
 
 	# Returns the path that others should refer to the item by when the item is embedded inside a bundle.
