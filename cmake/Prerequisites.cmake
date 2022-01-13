@@ -204,6 +204,9 @@ FUNCTION(deploy_qt_framework_files)
 		ENDIF()
 		OVITO_INSTALL_SHARED_LIB("${OVITO_XKBCOMMON_DEP}" "./lib")
 		UNSET(OVITO_XKBCOMMON_DEP CACHE)
+		# Additionally, place a symlink into the parent lib/ovito/ directory.
+		EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "lib/libxkbcommon.so.0" "${OVITO_LIBRARY_DIRECTORY}/libxkbcommon.so.0")
+		INSTALL(FILES "${OVITO_LIBRARY_DIRECTORY}/libxkbcommon.so.0" DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/")
 
 		# Distribute libxkbcommon-x11.so with Ovito, which is a dependency of the Qt XCB plugin that might not be present on all systems.
 		FIND_LIBRARY(OVITO_XKBCOMMONX11_DEP NAMES libxkbcommon-x11.so.0 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH)
