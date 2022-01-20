@@ -109,7 +109,7 @@ void GrainSegmentationModifierEditor::createUI(const RolloutInsertionParameters&
 	QPushButton* btn = new QPushButton(tr("Show list of grains"));
 	connect(btn, &QPushButton::clicked, this, [this]() {
 		if(modifierApplication())
-			mainWindow()->openDataInspector(modifierApplication(), QStringLiteral("grains"), 1); // Note: Mode hint "1" switches to table view.
+			mainWindow().openDataInspector(modifierApplication(), QStringLiteral("grains"), 1); // Note: Mode hint "1" switches to table view.
 	});
 	layout->addWidget(btn);
 

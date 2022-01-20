@@ -42,7 +42,7 @@ public:
 
 	/// \brief Evaluates the pipeline of an PipelineSceneNode and makes sure that the data to be
 	///        exported contains particles and throws an exception if not.
-	PipelineFlowState getParticleData(TimePoint time, SynchronousOperation operation) const;
+	PipelineFlowState getParticleData(TimePoint time, MainThreadOperation& operation) const;
 
 	/// \brief Returns the type(s) of data objects that this exporter service can export.
 	virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
@@ -55,7 +55,7 @@ protected:
 	ParticleExporter(DataSet* dataset);
 
 	/// \brief This is called once for every output file to be written and before exportFrame() is called.
-	virtual bool openOutputFile(const QString& filePath, int numberOfFrames, SynchronousOperation operation) override;
+	virtual bool openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation) override;
 
 	/// \brief This is called once for every output file written after exportFrame() has been called.
 	virtual void closeOutputFile(bool exportCompleted) override;
@@ -67,7 +67,7 @@ protected:
 	CompressedTextWriter& textStream() { return *_outputStream; }
 
 	/// \brief Exports a single animation frame to the current output file.
-	virtual bool exportFrame(int frameNumber, TimePoint time, const QString& filePath, SynchronousOperation operation) override;
+	virtual bool exportFrame(int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation) override;
 
 	/// \brief Writes the particle data of one animation frame to the current output file.
 	/// \param state The data to be exported.
@@ -76,7 +76,7 @@ protected:
 	/// \param filePath The path of the output file.
 	/// \throws Exception on error.
 	/// \return \a false when the operation has been canceled by the user; \a true on success.
-	virtual bool exportData(const PipelineFlowState& state, int frameNumber, TimePoint time, const QString& filePath, SynchronousOperation operation) = 0;
+	virtual bool exportData(const PipelineFlowState& state, int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation) = 0;
 
 private:
 

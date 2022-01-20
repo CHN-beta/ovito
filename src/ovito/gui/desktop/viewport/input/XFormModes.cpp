@@ -77,7 +77,7 @@ void XFormMode::deactivated(bool temporary)
 ******************************************************************************/
 void XFormMode::onSelectionChangeComplete(SelectionSet* selection)
 {
-	MainWindow* mainWindow = dynamic_cast<MainWindow*>(inputManager()->gui());
+	MainWindow* mainWindow = dynamic_cast<MainWindow*>(&inputManager()->userInterface());
 	CoordinateDisplayWidget* coordDisplay = mainWindow ? mainWindow->coordinateDisplay() : nullptr;
 
 	if(selection) {
@@ -106,7 +106,7 @@ void XFormMode::onSelectionChangeComplete(SelectionSet* selection)
 void XFormMode::onSceneNodeEvent(RefTarget* source, const ReferenceEvent& event)
 {
 	if(event.type() == ReferenceEvent::TransformationChanged) {
-		if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(inputManager()->gui()))
+		if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(&inputManager()->userInterface()))
 			updateCoordinateDisplay(mainWindow->coordinateDisplay());
 	}
 }
@@ -116,7 +116,7 @@ void XFormMode::onSceneNodeEvent(RefTarget* source, const ReferenceEvent& event)
 ******************************************************************************/
 void XFormMode::onTimeChanged(TimePoint time)
 {
-	if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(inputManager()->gui()))
+	if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(&inputManager()->userInterface()))
 		updateCoordinateDisplay(mainWindow->coordinateDisplay());
 }
 
@@ -329,8 +329,8 @@ void MoveMode::onAnimateTransformationButton()
 		if(prs_ctrl) {
 			KeyframeController* ctrl = dynamic_object_cast<KeyframeController>(prs_ctrl->positionController());
 			if(ctrl) {
-				if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(inputManager()->gui())) {
-					AnimationKeyEditorDialog dlg(ctrl, PROPERTY_FIELD(PRSTransformationController::positionController), mainWindow, mainWindow);
+				if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(&inputManager()->userInterface())) {
+					AnimationKeyEditorDialog dlg(ctrl, PROPERTY_FIELD(PRSTransformationController::positionController), mainWindow, *mainWindow);
 					dlg.exec();
 				}
 			}
@@ -430,7 +430,7 @@ void RotateMode::onCoordinateValueEntered(int component, FloatType value)
 	if(_selectedNode.target()) {
 		Controller* ctrl = _selectedNode.target()->transformationController();
 		if(ctrl) {
-			if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(inputManager()->gui())) {
+			if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(&inputManager()->userInterface())) {
 				TimeInterval iv;
 				DataSet* dataset = _selectedNode.target()->dataset();
 				CoordinateDisplayWidget* coordDisplay = mainWindow->coordinateDisplay();
@@ -453,8 +453,8 @@ void RotateMode::onAnimateTransformationButton()
 		if(prs_ctrl) {
 			KeyframeController* ctrl = dynamic_object_cast<KeyframeController>(prs_ctrl->rotationController());
 			if(ctrl) {
-				if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(inputManager()->gui())) {
-					AnimationKeyEditorDialog dlg(ctrl, PROPERTY_FIELD(PRSTransformationController::rotationController), mainWindow, mainWindow);
+				if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(&inputManager()->userInterface())) {
+					AnimationKeyEditorDialog dlg(ctrl, PROPERTY_FIELD(PRSTransformationController::rotationController), mainWindow, *mainWindow);
 					dlg.exec();
 				}
 			}

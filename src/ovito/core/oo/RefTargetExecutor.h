@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,10 +24,8 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/utilities/concurrent/Future.h>
-#include <ovito/core/utilities/concurrent/Promise.h>
-#include <ovito/core/utilities/concurrent/MainThreadTask.h>
 #include <ovito/core/oo/ExecutionContext.h>
+#include <ovito/core/oo/RefTarget.h>
 
 namespace Ovito {
 
@@ -37,107 +35,102 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT RefTargetExecutor
 {
-private:
-
-	/// Helper class that is used by this executor to transmit a callable object
-	/// to the UI thread where it is executed in the context on an OvitoObject.
-	class OVITO_CORE_EXPORT WorkEventBase : public QEvent
-	{
-	protected:
-
-		/// Constructor.
-		explicit WorkEventBase(const RefTarget* obj, ExecutionContext executionContext);
-
-		/// Determines whether work can be executed in the context of the OvitoObject or not.
-		bool needToCancelWork() const;
-
-		/// Activates the original execution context under which the work was submitted.
-		void activateExecutionContext();
-
-		/// Restores the execution context as it was before the work was executed.
-		void restoreExecutionContext();
-
-		/// Weak pointer to the RefTarget which provides the context for the work
-		/// to perform.
-		QPointer<RefTarget> _obj;
-
-		/// The execution context (interactive or scripting) under which the work has been submitted.
-		ExecutionContext _executionContext;
-	};
-
-	/// Helper class that is used by this executor to transmit a callable object
-	/// to the UI thread where it is executed in the context on a RefTarget.
-	template<typename F>
-	class WorkEvent : public WorkEventBase
-	{
-	public:
-
-		/// Constructor.
-		WorkEvent(const RefTarget* obj, ExecutionContext executionContext, F&& callable) :
-			WorkEventBase(obj, executionContext), _callable(std::move(callable)) {}
-
-		/// Destructor.
-		virtual ~WorkEvent() {
-			// Qt events should only be destroyed in the main thread.
-			OVITO_ASSERT(!QCoreApplication::instance() || QCoreApplication::closingDown() || QThread::currentThread() == QCoreApplication::instance()->thread());
-			if(!needToCancelWork()) {
-				/// Activate the original execution context under which the work was submitted.
-				activateExecutionContext();
-				// Execute the work function.
-				std::move(_callable)();
-				/// Restore the execution context as it was before the work was executed.
-				restoreExecutionContext();
-			}
-		}
-
-	private:
-		F _callable;
-	};
-
 public:
 
-	/**
-	 * Represents a work that will be scheduled for execution later
-	 * by invoking the class' call operator.
-	 */
-	class OVITO_CORE_EXPORT Work
-	{
-	public:
-		explicit Work(std::unique_ptr<WorkEventBase> event) : _event(std::move(event)) {}
-		Work(Work&& other) = default;
-#ifdef OVITO_DEBUG
-		~Work() { OVITO_ASSERT_MSG(!_event, "RefTargetExecutor::Work", "Work has not been executed by invoking the call operator or the post() method."); }
-#endif
-		Work& operator=(Work&&) = default;
-
-		/// Schedules the work function stored in this object for execution; or executes the work immediately if possible. 
-		/// If defer==true, the work will be executed at a later time, even if an immediate execution
-		/// would be possible. 
-		void operator()(bool defer);
-
-	private:
-
-		std::unique_ptr<WorkEventBase> _event;
-	};
-
-public:
-
-	/// \brief Constructor.
-	RefTargetExecutor(const RefTarget* obj, ExecutionContext executionContext) noexcept : _obj(obj), _executionContext(executionContext) { OVITO_ASSERT(obj); }
-
-	/// \brief Create some work that can be submitted for execution later.
-	template<typename F>
-	Work createWork(F&& f) {
-		OVITO_ASSERT(_obj != nullptr);
-		return Work(std::make_unique<WorkEvent<F>>(_obj, _executionContext, std::forward<F>(f)));
+	/// Constructor.
+	RefTargetExecutor(const RefTarget* obj, ExecutionContext executionContext, bool deferredExecution) noexcept : _obj(obj), _executionContext(executionContext), _deferredExecution(deferredExecution) { 
+		OVITO_ASSERT(obj != nullptr); 
 	}
 
-	/// \brief Returns the task manager that provides the context for tasks created by this executor.
-	TaskManager* taskManager() const;
+	/// Creates some work that can be submitted for execution later.
+	template<typename Function>
+	auto schedule(Function&& f) {
+
+		/// Helper class that is used by this executor to transmit a callable object
+		/// to the UI thread where it is executed in the context on a RefTarget.
+		class WorkEvent : public QEvent, public RefTargetExecutor
+		{
+		public:
+
+			/// Constructor.
+			WorkEvent(RefTargetExecutor&& executor, std::decay_t<Function>&& f, TaskPtr task) :
+				QEvent(workEventType()), 
+				RefTargetExecutor(std::move(executor)), 
+				_callable(std::move(f)),
+				_task(std::move(task)) { OVITO_ASSERT(this->object()); }
+
+			/// Event destructor, which runs the work function.
+			virtual ~WorkEvent() {
+				// Qt events should only be destroyed in the main thread.
+				OVITO_ASSERT(!QCoreApplication::instance() || QCoreApplication::closingDown() || QThread::currentThread() == QCoreApplication::instance()->thread());
+
+				if(!QCoreApplication::closingDown()) {
+					/// Activate the original execution context under which the work was submitted.
+					activateExecutionContext();
+					// Execute the work function.
+					if constexpr(std::is_invocable_v<Function, Task&>)
+						std::move(_callable)(*_task);
+					else
+						std::move(_callable)();
+					/// Restore the execution context as it was before the work was executed.
+					restoreExecutionContext();
+				}
+			}
+
+		private:
+			std::decay_t<Function> _callable;
+			const TaskPtr _task;
+		};
+				
+		if constexpr(std::is_invocable_v<Function, Task&>) {
+			return [f = std::forward<Function>(f), *this](Task& task) mutable noexcept {					
+				OVITO_ASSERT(this->object()); 
+				if(_deferredExecution || (QCoreApplication::instance() && QThread::currentThread() != object()->thread())) {
+					if(!QCoreApplication::closingDown()) {
+						// When not in the main thread, schedule work for later execution in the main thread.
+						WorkEvent* event = new WorkEvent(std::move(*this), std::move(f), task.shared_from_this());
+						OVITO_ASSERT(event->object()); 
+						QCoreApplication::postEvent(const_cast<RefTarget*>(event->object()), event);
+					}
+				}
+				else {
+					// When already in the main thread, execute work immediately.
+					// Activate the original execution context under which the work was submitted.
+					activateExecutionContext();
+					// Execute the work function.
+					std::move(f)(task);
+					// Restore the execution context as it was before the work was executed.
+					restoreExecutionContext();
+				}
+			};
+		}
+		else {
+			return [f = std::forward<Function>(f), *this]() mutable noexcept {
+				OVITO_ASSERT(this->object()); 
+				if(_deferredExecution || (QCoreApplication::instance() && QThread::currentThread() != object()->thread())) {
+					if(!QCoreApplication::closingDown()) {
+						// When not in the main thread, schedule work for later execution in the main thread.
+						WorkEvent* event = new WorkEvent(std::move(*this), std::move(f), nullptr);
+						OVITO_ASSERT(event->object()); 
+						QCoreApplication::postEvent(const_cast<RefTarget*>(event->object()), event);
+					}
+				}
+				else {
+					// When already in the main thread, execute work immediately.
+					// Activate the original execution context under which the work was submitted.
+					activateExecutionContext();
+					// Execute the work function.
+					std::move(f)();
+					// Restore the execution context as it was before the work was executed.
+					restoreExecutionContext();
+				}
+			};
+		}
+	}
 
 	/// Returns the RefTarget this executor is associated with.
 	/// Work submitted to this executor will be executed in the context of the RefTarget.
-	const RefTarget* object() const { return _obj; }
+	const RefTarget* object() const { return _obj.get(); }
 
 	/// Returns the unique Qt event type ID used by this class to schedule asynchronous work.
 	static QEvent::Type workEventType() {
@@ -147,13 +140,22 @@ public:
 
 private:
 
+	/// Activates the original execution context under which the work was submitted.
+	void activateExecutionContext();
+
+	/// Restores the execution context as it was before the work was executed.
+	void restoreExecutionContext();
+
+private:
+
 	/// The object the work is submitted to.
-	const RefTarget* _obj = nullptr;
+	OORef<const RefTarget> _obj;
 
 	/// The execution context (interactive or scripting) under which the work has been submitted.
 	ExecutionContext _executionContext;
 
-	friend class Application;
+	/// Controls whether execution of the work will be deferred even if immediate execution would be possible.
+	const bool _deferredExecution;
 };
 
 }	// End of namespace

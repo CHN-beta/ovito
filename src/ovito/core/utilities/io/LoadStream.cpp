@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,10 +33,8 @@ using namespace std;
 /******************************************************************************
 * Opens the stream for reading.
 ******************************************************************************/
-LoadStream::LoadStream(QDataStream& source, SynchronousOperation operation) : 
-	_is(source), _operation(std::move(operation))
+LoadStream::LoadStream(QDataStream& source) : _is(source)
 {
-	OVITO_ASSERT(_operation.isValid());
 	OVITO_ASSERT_MSG(!_is.device()->isSequential(), "LoadStream constructor", "LoadStream class requires a seekable input stream.");
     if(_is.device()->isSequential())
 		throw Exception("LoadStream class requires a seekable input stream.");

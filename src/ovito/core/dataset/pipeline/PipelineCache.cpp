@@ -29,6 +29,7 @@
 #include <ovito/core/dataset/data/TransformedDataObject.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/concurrent/Future.h>
+#include <ovito/core/utilities/concurrent/TaskManager.h>
 
 namespace Ovito {
 
@@ -206,7 +207,7 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 #endif
 
 	// Remove evaluation record from the list of ongoing evaluations once it is finished (successfully or not).
-	future.finally(ownerObject()->executor(), [this, evaluation](const TaskPtr&) {
+	future.finally(ownerObject()->executor(), [this, evaluation]() {
 		cleanupEvaluation(evaluation);
 	});
 
@@ -450,8 +451,9 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
 	// Start the animation frame precomputation process if it has been activated.
 	if(_precomputeAllFrames && !_precomputeFramesOperation.isValid() && !_allFramesPrecomputed) {
 		// Create the async operation object that manages the frame precomputation.
-		_precomputeFramesOperation = Promise<>::createAsynchronousOperation(ownerObject()->dataset()->taskManager());
-		ownerObject()->dataset()->taskManager().registerPromise(_precomputeFramesOperation);
+		_precomputeFramesOperation = Promise<>::create();
+		// Display progress in the user interface
+		ownerObject()->taskManager().registerPromise(_precomputeFramesOperation);
 
 		// Determine the number of frames that need to be precomputed.
 		PipelineObject* pipelineObject = dynamic_object_cast<PipelineObject>(ownerObject());
@@ -462,7 +464,7 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
 
 		// Automatically reset the async operation object and the current frame precomputation when the 
 		// task gets canceled by the system.
-		_precomputeFramesOperation.finally(ownerObject()->executor(), false, [this](const TaskPtr&) {
+		_precomputeFramesOperation.finally(ownerObject()->executor(), [this]() {
 			_precomputeFrameFuture.reset();
 			_precomputeFramesOperation.reset();
 		});
@@ -512,10 +514,10 @@ void PipelineCache::precomputeNextAnimationFrame(ObjectInitializationHints initi
 	_precomputeFrameFuture = evaluatePipeline(PipelineEvaluationRequest(initializationHints, nextFrameTime));
 
 	// Wait until input frame is ready.
-	_precomputeFrameFuture.finally(ownerObject()->executor(), true, [this,initializationHints](const TaskPtr& task) {
+	_precomputeFrameFuture.finally(ownerObject()->executor(true), [this,initializationHints](Task& task) {
 		try {
 			// If the pipeline evaluation has been canceled for some reason, we interrupt the precomputation process.
-			if(!_precomputeFramesOperation.isValid() || _precomputeFramesOperation.isFinished() || task->isCanceled()) {
+			if(!_precomputeFramesOperation.isValid() || _precomputeFramesOperation.isFinished() || task.isCanceled()) {
 				_precomputeFramesOperation.reset();
 				OVITO_ASSERT(!_precomputeFrameFuture.isValid());
 				return;

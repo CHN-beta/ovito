@@ -79,10 +79,13 @@ class OVITO_GUI_EXPORT ApplicationSettingsDialog : public QDialog
 public:
 
 	/// \brief Constructs the dialog window.
-	/// \param parent The parent window of the settings dialog.
+	/// \param mainWindow The parent window of the settings dialog.
 	/// \param startPage An optional pointer to the ApplicationSettingsDialogPage derived class whose
 	///                  settings page should be activated initially.
-	ApplicationSettingsDialog(QWidget* parent, OvitoClassPtr startPage = nullptr);
+	ApplicationSettingsDialog(MainWindow& mainWindow, OvitoClassPtr startPage = nullptr);
+
+	/// Returns the main window the application settings dialog was opened from.
+	MainWindow& mainWindow() const { return _mainWindow; }
 
 public Q_SLOTS:
 
@@ -98,6 +101,7 @@ public Q_SLOTS:
 
 private:
 
+	MainWindow& _mainWindow;
 	QVector<OORef<ApplicationSettingsDialogPage>> _pages;
 	QTabWidget* _tabWidget;
 };

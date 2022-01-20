@@ -41,7 +41,6 @@ bool parallelFor(
 		T progressChunkSize = 1024)
 {
 	promise.setProgressMaximum(loopCount / progressChunkSize);
-	promise.setProgressValue(0);
 
 #ifndef OVITO_DISABLE_THREADING
 	std::vector<std::future<void>> workers;
@@ -214,7 +213,6 @@ template<typename ResultObject, class Function>
 std::vector<ResultObject> parallelForCollect(size_t loopCount, Task& task, Function&& kernel, size_t progressChunkSize = 1024)
 {
 	task.setProgressMaximum(loopCount / progressChunkSize);
-	task.setProgressValue(0);
 
 #ifndef OVITO_DISABLE_THREADING
 	std::vector<std::future<void>> workers;

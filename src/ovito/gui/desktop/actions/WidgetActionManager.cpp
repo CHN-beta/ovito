@@ -42,10 +42,10 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the WidgetActionManager.
 ******************************************************************************/
-WidgetActionManager::WidgetActionManager(QObject* parent, MainWindow* mainWindow) : ActionManager(parent, mainWindow)
+WidgetActionManager::WidgetActionManager(QObject* parent, MainWindow& mainWindow) : ActionManager(parent, mainWindow)
 {
-	createViewportModeAction(ACTION_XFORM_MOVE_MODE, new MoveMode(mainWindow->viewportInputManager()), tr("Move"), "edit_mode_move", tr("Move objects."));
-	createViewportModeAction(ACTION_XFORM_ROTATE_MODE, new RotateMode(mainWindow->viewportInputManager()), tr("Rotate"), "edit_mode_rotate", tr("Rotate objects."));
+	createViewportModeAction(ACTION_XFORM_MOVE_MODE, new MoveMode(mainWindow.viewportInputManager()), tr("Move"), "edit_mode_move", tr("Move objects."));
+	createViewportModeAction(ACTION_XFORM_ROTATE_MODE, new RotateMode(mainWindow.viewportInputManager()), tr("Rotate"), "edit_mode_rotate", tr("Rotate objects."));
 
 	connect(getAction(ACTION_QUIT), &QAction::triggered, this, &WidgetActionManager::on_Quit_triggered);
 	connect(getAction(ACTION_HELP_ABOUT), &QAction::triggered, this, &WidgetActionManager::on_HelpAbout_triggered);
@@ -75,7 +75,7 @@ WidgetActionManager::WidgetActionManager(QObject* parent, MainWindow* mainWindow
 void WidgetActionManager::on_ClonePipeline_triggered()
 {
 	if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dataset()->selection()->firstNode())) {
-		ClonePipelineDialog dialog(pipeline, mainWindow());
+		ClonePipelineDialog dialog(pipeline, &mainWindow());
 		dialog.exec();
 	}
 }
@@ -88,7 +88,7 @@ void WidgetActionManager::on_RenamePipeline_triggered()
 	if(OORef<PipelineSceneNode> pipeline = dynamic_object_cast<PipelineSceneNode>(dataset()->selection()->firstNode())) {
 		QString oldPipelineName = pipeline->objectTitle();
 		bool ok;
-		QString pipelineName = QInputDialog::getText(mainWindow(), tr("Rename pipeline"), tr("New pipeline name:                                         "), QLineEdit::Normal, oldPipelineName, &ok).trimmed();
+		QString pipelineName = QInputDialog::getText(&mainWindow(), tr("Rename pipeline"), tr("New pipeline name:                                         "), QLineEdit::Normal, oldPipelineName, &ok).trimmed();
 		if(ok && pipelineName != oldPipelineName) {
 			UndoableTransaction::handleExceptions(dataset()->undoStack(), tr("Rename pipeline"), [&]() {
 				pipeline->setNodeName(pipelineName);
@@ -130,7 +130,7 @@ void WidgetActionManager::on_NewPipelineFileSource_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_AnimationSettings_triggered()
 {
-	AnimationSettingsDialog(dataset()->animationSettings(), mainWindow()).exec();
+	AnimationSettingsDialog(dataset()->animationSettings(), &mainWindow()).exec();
 }
 
 }	// End of namespace

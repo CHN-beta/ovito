@@ -25,6 +25,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/widgets/general/RolloutContainer.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/DeferredMethodInvocation.h>
@@ -86,15 +87,27 @@ public:
 	/// \param parentEditor The editor that owns this editor if it is a sub-object editor; NULL otherwise.
 	///
 	/// This method is called by the PropertiesPanel class to initialize the editor and to create the UI.
-	void initialize(PropertiesPanel* container, MainWindow* mainWindow, const RolloutInsertionParameters& rolloutParams, PropertiesEditor* parentEditor);
+	void initialize(PropertiesPanel* container, const RolloutInsertionParameters& rolloutParams, PropertiesEditor* parentEditor);
 
 	/// \brief Returns the rollout container widget this editor is placed in.
 	PropertiesPanel* container() const { return _container; }
 
 	/// \brief Returns the main window that hosts the editor.
-	MainWindow* mainWindow() const { return _mainWindow; }
+	MainWindow& mainWindow() const { 
+		OVITO_ASSERT(_mainWindow != nullptr); 
+		return *_mainWindow;
+	}
 
-	/// Returns a pointer to the parent editor which has opened this editor for one of its sub-components.
+	/// \brief Returns the top-level window hosting this editor panel.
+	QWidget* parentWindow() const;
+
+	/// \brief Creates an object that represents a longer-running operation executed in the main or GUI thread 
+	///        in the context of this properties editor 
+	MainThreadOperation createOperation() {
+		return mainWindow().createOperation(false); 
+	}
+
+	/// \brief Returns a pointer to the parent editor which has opened this editor for one of its sub-components.
 	PropertiesEditor* parentEditor() const { return _parentEditor; }
 
 	/// \brief Creates a new rollout in the rollout container and returns

@@ -43,7 +43,7 @@ void FileColumnParticleExporter::initializeObject(ObjectInitializationHints hint
 		settings.beginGroup("exporter/particles/");
 		if(settings.contains("columnmapping")) {
 			try {
-				_columnMapping.fromByteArray(settings.value("columnmapping").toByteArray(), dataset()->taskManager());
+				_columnMapping.fromByteArray(settings.value("columnmapping").toByteArray());
 			}
 			catch(Exception& ex) {
 				ex.setContext(dataset());

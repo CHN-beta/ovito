@@ -25,7 +25,6 @@
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
-#include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/SharedFuture.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/app/Application.h>
@@ -93,7 +92,7 @@ void TextLabelOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 /******************************************************************************
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
-void TextLabelOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation)
+void TextLabelOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
 {
 	if(renderer->isInteractive()) {
 		const PipelineFlowState& flowState = sourceNode() ? sourceNode()->evaluatePipelineSynchronous(true) : PipelineFlowState();

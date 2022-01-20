@@ -44,7 +44,7 @@ public:
 	SurfaceMeshVertexInspectionApplet(SurfaceMeshInspectionApplet* parentApplet) : PropertyInspectionApplet(SurfaceMeshVertices::OOClass()), _parentApplet(parentApplet) {}
 
 	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget(MainWindow* mainWindow) override;
+	virtual QWidget* createWidget() override;
 
 	/// Determines the list of data objects that are displayed by the applet.
 	virtual std::vector<ConstDataObjectPath> getDataObjectPaths() override;
@@ -68,7 +68,7 @@ public:
 	SurfaceMeshFaceInspectionApplet(SurfaceMeshInspectionApplet* parentApplet) : PropertyInspectionApplet(SurfaceMeshFaces::OOClass()), _parentApplet(parentApplet) {}
 
 	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget(MainWindow* mainWindow) override;
+	virtual QWidget* createWidget() override;
 
 	/// Determines the list of data objects that are displayed by the applet.
 	virtual std::vector<ConstDataObjectPath> getDataObjectPaths() override;
@@ -92,7 +92,7 @@ public:
 	SurfaceMeshRegionInspectionApplet(SurfaceMeshInspectionApplet* parentApplet) : PropertyInspectionApplet(SurfaceMeshRegions::OOClass()), _parentApplet(parentApplet) {}
 
 	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget(MainWindow* mainWindow) override;
+	virtual QWidget* createWidget() override;
 
 	/// Determines the list of data objects that are displayed by the applet.
 	virtual std::vector<ConstDataObjectPath> getDataObjectPaths() override;
@@ -120,7 +120,7 @@ public:
 	virtual int orderingKey() const override { return 220; }
 
 	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget(MainWindow* mainWindow) override;
+	virtual QWidget* createWidget() override;
 
 	/// Selects a specific data object in this applet.
 	virtual bool selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint) override;

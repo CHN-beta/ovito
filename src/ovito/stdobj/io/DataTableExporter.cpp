@@ -31,7 +31,7 @@ IMPLEMENT_OVITO_CLASS(DataTableExporter);
  * This is called once for every output file to be written and before
  * exportData() is called.
  *****************************************************************************/
-bool DataTableExporter::openOutputFile(const QString& filePath, int numberOfFrames, SynchronousOperation operation)
+bool DataTableExporter::openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation)
 {
 	OVITO_ASSERT(!_outputFile.isOpen());
 	OVITO_ASSERT(!_outputStream);
@@ -59,10 +59,10 @@ void DataTableExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool DataTableExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, SynchronousOperation operation)
+bool DataTableExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
 {
 	// Evaluate pipeline.
-	const PipelineFlowState& state = getPipelineDataToBeExported(time, operation.subOperation());
+	const PipelineFlowState& state = getPipelineDataToBeExported(time, operation);
 	if(operation.isCanceled())
 		return false;
 

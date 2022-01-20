@@ -45,6 +45,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include "AMBERNetCDFImporterEditor.h"
 
@@ -57,11 +58,15 @@ SET_OVITO_OBJECT_EDITOR(AMBERNetCDFImporter, AMBERNetCDFImporterEditor);
  * Displays a dialog box that allows the user to edit the custom file column to particle
  * property mapping.
  *****************************************************************************/
-bool AMBERNetCDFImporterEditor::showEditColumnMappingDialog(AMBERNetCDFImporter* importer, const FileSourceImporter::Frame& frame, MainWindow* mainWindow)
+bool AMBERNetCDFImporterEditor::showEditColumnMappingDialog(AMBERNetCDFImporter* importer, const FileSourceImporter::Frame& frame)
 {
 	Future<ParticleInputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
-	if(!importer->dataset()->taskManager().waitForFuture(inspectFuture))
+
+	// Block UI until reading is done.
+	ProgressDialog progressDialog(parentWindow(), mainWindow(), tr("Inspecting file header"));
+	if(!progressDialog.waitForFuture(inspectFuture))
 		return false;
+
 	ParticleInputColumnMapping mapping = inspectFuture.result();
 
 	if(!importer->customColumnMapping().empty()) {
@@ -72,7 +77,7 @@ bool AMBERNetCDFImporterEditor::showEditColumnMappingDialog(AMBERNetCDFImporter*
 		mapping = customMapping;
 	}
 
-	InputColumnMappingDialog dialog(mapping, mainWindow, importer->dataset()->taskManager());
+	InputColumnMappingDialog dialog(mapping, parentWindow());
 	if(dialog.exec() == QDialog::Accepted) {
 		importer->setCustomColumnMapping(dialog.mapping());
 		importer->setUseCustomColumnMapping(true);
@@ -139,7 +144,7 @@ void AMBERNetCDFImporterEditor::onEditColumnMapping()
 			int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
 
 			// Show the dialog box, which lets the user modify the file column mapping.
-			if(showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex], mainWindow())) {
+			if(showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex])) {
 				importer->requestReload();
 			}
 		});

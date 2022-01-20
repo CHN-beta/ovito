@@ -48,7 +48,7 @@ MoveOverlayInputMode::MoveOverlayInputMode(PropertiesEditor* editor) :
 void MoveOverlayInputMode::activated(bool temporary)
 {
 	ViewportInputMode::activated(temporary);
-	inputManager()->gui()->showStatusBarMessage(tr("Click and drag the mouse in the viewport to move the overlay. Right-click to cancel."));
+	inputManager()->userInterface().showStatusBarMessage(tr("Click and drag the mouse in the viewport to move the overlay. Right-click to cancel."));
 }
 
 /******************************************************************************
@@ -62,7 +62,7 @@ void MoveOverlayInputMode::deactivated(bool temporary)
 		viewport()->dataset()->undoStack().endCompoundOperation(false);
 		_viewport = nullptr;
 	}
-	inputManager()->gui()->clearStatusBarMessage();
+	inputManager()->userInterface().clearStatusBarMessage();
 	ViewportInputMode::deactivated(temporary);
 }
 

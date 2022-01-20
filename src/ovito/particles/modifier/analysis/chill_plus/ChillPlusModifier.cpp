@@ -102,7 +102,6 @@ void ChillPlusModifier::ChillPlusEngine::perform()
     // Find all relevant q_lm
     // create matrix of q_lm
     size_t particleCount = positions()->size();
-    setProgressValue(0);
     setProgressMaximum(particleCount);
     setProgressText(tr("Computing c_ij values of Chill+"));
 

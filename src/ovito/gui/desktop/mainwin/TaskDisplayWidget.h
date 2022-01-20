@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -70,11 +70,6 @@ private:
 
 	/// The progress bar widget.
 	QProgressBar* _progressBar;
-
-#if 0
-	/// The button that lets the user cancel running tasks.
-	QAbstractButton* _cancelTaskButton;
-#endif
 
 	/// The label that displays the current progress text.
 	QLabel* _progressTextDisplay;

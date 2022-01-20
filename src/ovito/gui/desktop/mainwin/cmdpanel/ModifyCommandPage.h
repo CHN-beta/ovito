@@ -45,7 +45,7 @@ class OVITO_GUI_EXPORT ModifyCommandPage : public QWidget
 public:
 
 	/// Initializes the modify page.
-    ModifyCommandPage(MainWindow* mainWindow, QWidget* parent);
+    ModifyCommandPage(MainWindow& mainWindow, QWidget* parent);
 
 	/// Returns the object that is currently being edited in the properties panel.
 	RefTarget* editObject() const { return _propertiesPanel->editObject(); }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,6 +36,9 @@ class GuiFileManager : public FileManager
 	Q_OBJECT
 
 public:
+
+	/// Inherit constructor from base class.
+	using FileManager::FileManager;
 
 #ifdef OVITO_SSH_CLIENT
 	/// \brief Asks the user for the login password for a SSH server.

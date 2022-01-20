@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/oo/CloneHelper.h>
@@ -93,7 +94,7 @@ ClonePipelineDialog::ClonePipelineDialog(PipelineSceneNode* node, QWidget* paren
 	connect(buttonBox, &QDialogButtonBox::accepted, this, &ClonePipelineDialog::onAccept);
 	connect(buttonBox, &QDialogButtonBox::rejected, this, &ClonePipelineDialog::reject);
 	connect(buttonBox, &QDialogButtonBox::helpRequested, [this]() {
-		MainWindow::openHelpTopic("manual:clone_pipeline");
+		ActionManager::openHelpTopic("manual:clone_pipeline");
 	});
 	mainLayout->addWidget(buttonBox);
 }

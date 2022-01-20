@@ -645,7 +645,6 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
 	// Perform analysis on each particle in parallel.
 	size_t vecComponent1 = _vecComponent1;
 	size_t vecComponent2 = _vecComponent2;
-	setProgressValue(0);
 	setProgressMaximum(particleCount);
 	std::mutex mutex;
 	parallelForChunks(particleCount, *this, [&,this](size_t startIndex, size_t chunkSize, Task& promise) {

@@ -387,7 +387,6 @@ private:
 	template<typename CellRegionFunc>
 	bool classifyTetrahedra(CellRegionFunc&& determineCellRegion, Task& task)
 	{
-		task.setProgressValue(0);
 		task.setProgressMaximum(_tessellation.numberOfTetrahedra());
 
 		_numFilledCells = 0;
@@ -641,7 +640,6 @@ private:
 		_tetrahedraFaceList.clear();
 		_faceLookupMap.clear();
 
-		task.setProgressValue(0);
 		task.setProgressMaximum(_numFilledCells);
 
 		for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells(); ++cellIter) {
@@ -792,7 +790,6 @@ private:
 
 	bool linkHalfedges(Task& task)
 	{
-		task.setProgressValue(0);
 		task.setProgressMaximum(_tetrahedraFaceList.size());
 
 		auto tet = _tetrahedraFaceList.cbegin();

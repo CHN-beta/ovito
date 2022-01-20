@@ -25,6 +25,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/PluginManager.h>
+#include <ovito/core/app/UserInterface.h>
 #include "StandaloneApplication.h"
 
 namespace Ovito {
@@ -130,7 +131,8 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 		}
 
 		// Prepares application to start running.
-		if(!startupApplication()) {
+		UserInterface* startupUserInterface = startupApplication();
+		if(!startupUserInterface) {
 			shutdown();
 			return false;
 		}
@@ -138,14 +140,28 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 		// Notify registered application services that application is starting up.
 		for(const auto& service : applicationServices()) {
 			// If any of the service callbacks returns false, abort the application startup process.
-			if(!service->applicationStarting()) {
+			if(!service->applicationStarting(*startupUserInterface)) {
 				shutdown();
 				return false;
 			}
 		}
 
-		// Complete the startup process once the event loop is running.
-		QTimer::singleShot(0, this, &StandaloneApplication::postStartupInitialization);
+		// Complete the startup process by calling postStartupInitialization() once the main event loop is running.
+		QMetaObject::invokeMethod(this, [this,startupUserInterface]() {
+			try {
+				MainThreadOperation operation = startupUserInterface->createOperation(true);
+				postStartupInitialization(operation);
+				if(operation.isCanceled()) 
+					throw Exception(tr("Program initialization was interrupted."));
+			}
+			catch(const Exception& ex) {
+				// Shutdown with error exit code when running in scripting mode.
+				if(consoleMode())
+					startupUserInterface->exitWithFatalError(ex);
+				else
+					ex.reportError(true);
+			}
+		}, Qt::QueuedConnection);
 	}
 	catch(const Exception& ex) {
 		ex.reportError(true);
@@ -158,21 +174,11 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 /******************************************************************************
 * Is called at program startup once the event loop is running.
 ******************************************************************************/
-void StandaloneApplication::postStartupInitialization()
+void StandaloneApplication::postStartupInitialization(MainThreadOperation& operation)
 {
-	try {
-		// Notify registered application services that application is running.
-		for(const auto& service : applicationServices())
-			service->applicationStarted();
-	}
-	catch(const Exception& ex) {
-		ex.reportError();
-		// Shutdown with error exit code when running in scripting mode.
-		setExitCode(1);
-		if(consoleMode()) {
-			QCoreApplication::exit(1);
-		}
-	}
+	// Notify registered application services that the application is fully running now.
+	for(const auto& service : applicationServices())
+		service->applicationStarted(operation);
 }
 
 /******************************************************************************
@@ -213,22 +219,8 @@ bool StandaloneApplication::processCommandLineParameters()
 ******************************************************************************/
 int StandaloneApplication::runApplication()
 {
-	// When the application is shutting down, we should cancel all pending tasks.
-	if(datasetContainer())
-		connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, &datasetContainer()->taskManager(), &TaskManager::cancelAll);
-
-	if(guiMode()) {
-		// Enter the main event loop.
-		return QCoreApplication::exec();
-	}
-	else {
-		// Deliver all events that have been posted during the initialization.
-		QCoreApplication::processEvents();
-		// Wait for all background tasks to finish before quitting.
-		if(datasetContainer())
-			datasetContainer()->taskManager().waitForAll();
-		return _exitCode;
-	}
+	// Enter the main event loop.
+	return QCoreApplication::exec();
 }
 
 /******************************************************************************
@@ -236,12 +228,6 @@ int StandaloneApplication::runApplication()
 ******************************************************************************/
 void StandaloneApplication::shutdown()
 {
-	// Release dataset and all contained objects.
-	if(datasetContainer()) {
-		datasetContainer()->setCurrentSet(nullptr);
-		datasetContainer()->taskManager().cancelAllAndWait();
-	}
-
 	// Destroy Qt application object.
 	delete QCoreApplication::instance();
 

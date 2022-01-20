@@ -263,10 +263,10 @@ void InteractiveMolecularDynamicsModifier::dataReceived()
 				}
 				if(!_pipelineUpdatePending) {
 					_pipelineUpdatePending = true;
-					// Wait until pipeline update that is caurrently in progress has completed before
+					// Wait until pipeline update that is currently in progress has completed before
 					// triggering a new pipeline update.
-					dataset()->whenSceneReady().finally(executor(), [&](const TaskPtr& task) {
-						if(!task->isCanceled()) {
+					dataset()->whenSceneReady().finally(executor(), [&](Task& task) {
+						if(!task.isCanceled()) {
 							_pipelineUpdatePending = false;
 							notifyTargetChanged();
 						}

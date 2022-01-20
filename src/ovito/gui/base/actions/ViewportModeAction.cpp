@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/base/GUIBase.h>
-#include <ovito/gui/base/mainwin/UserInterface.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include "ViewportModeAction.h"
 
@@ -30,10 +30,11 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the action object.
 ******************************************************************************/
-ViewportModeAction::ViewportModeAction(UserInterface* gui, const QString& text, QObject* parent, ViewportInputMode* inputMode, const QColor& highlightColor)
-	: QAction(text, parent), _inputMode(inputMode), _highlightColor(highlightColor), _viewportInputManager(*gui->viewportInputManager())
+ViewportModeAction::ViewportModeAction(UserInterface& userInterface, const QString& text, QObject* parent, ViewportInputMode* inputMode, const QColor& highlightColor)
+	: QAction(text, parent), _inputMode(inputMode), _highlightColor(highlightColor), _viewportInputManager(*userInterface.viewportInputManager())
 {
 	OVITO_CHECK_POINTER(inputMode);
+	OVITO_CHECK_POINTER(userInterface.viewportInputManager());
 
 	setCheckable(true);
 	setChecked(inputMode->isActive());
@@ -52,8 +53,7 @@ void ViewportModeAction::onActionToggled(bool checked)
 	if(checked && !_inputMode->isActive()) {
 		_viewportInputManager.pushInputMode(_inputMode);
 		// Give viewport windows the input focus.
-		if(_viewportInputManager.gui())
-			_viewportInputManager.gui()->setViewportInputFocus();
+		_viewportInputManager.userInterface().setViewportInputFocus();
 	}
 	else if(!checked) {
 		if(_viewportInputManager.activeMode() == _inputMode && _inputMode->modeType() == ViewportInputMode::ExclusiveMode) {

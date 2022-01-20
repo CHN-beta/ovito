@@ -392,8 +392,8 @@ void ColorCodingModifierEditor::onAdjustRangeGlobal()
 	OVITO_CHECK_OBJECT_POINTER(mod);
 
 	undoableTransaction(tr("Adjust range"), [this, mod]() {
-		ProgressDialog progressDialog(container(), mod->dataset()->taskManager(), tr("Determining property value range"));
-		mod->adjustRangeGlobal(ObjectInitializationHint::LoadUserDefaults, progressDialog.createOperation());
+		ProgressDialog progressDialog(container(), mainWindow(), tr("Determining property value range"));
+		mod->adjustRangeGlobal(ObjectInitializationHint::LoadUserDefaults, progressDialog);
 	});
 }
 
@@ -449,9 +449,7 @@ QIcon ColorCodingModifierEditor::iconFromColorMapClass(OvitoClassPtr clazz)
 	if(auto entry = iconCache.find(clazz); entry != iconCache.end())
 		return entry->second;
 
-	DataSet* dataset = mainWindow()->datasetContainer().currentSet();
-	OVITO_ASSERT(dataset);
-	if(dataset) {
+	if(DataSet* dataset = mainWindow().datasetContainer().currentSet()) {
 		try {
 			// Create a temporary instance of the color map class.
 			OORef<ColorCodingGradient> map = static_object_cast<ColorCodingGradient>(clazz->createInstance(dataset, ObjectInitializationHint::LoadUserDefaults));

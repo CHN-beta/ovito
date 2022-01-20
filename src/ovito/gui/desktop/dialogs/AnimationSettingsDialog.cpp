@@ -21,9 +21,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/base/actions/ActionManager.h>
+#include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "AnimationSettingsDialog.h"
 
 namespace Ovito {
@@ -153,7 +154,7 @@ AnimationSettingsDialog::AnimationSettingsDialog(AnimationSettings* animSettings
 
 	// Implement Help button.
 	connect(buttonBox, &QDialogButtonBox::helpRequested, []() {
-		MainWindow::openHelpTopic(QStringLiteral("manual:animation.animation_settings_dialog"));
+		ActionManager::openHelpTopic(QStringLiteral("manual:animation.animation_settings_dialog"));
 	});
 
 	layout1->addWidget(buttonBox);

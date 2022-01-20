@@ -65,7 +65,7 @@ ViewportsPanel::ViewportsPanel(MainWindow* mainWindow) : _mainWindow(mainWindow)
 * Factory method which creates a new viewport window widget. Depending on the 
 * user's settings this can be either a OpenGL or a Vulkan window.
 ******************************************************************************/
-BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport* vp, ViewportInputManager* inputManager, MainWindow* mainWindow, QWidget* parent)
+BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport* vp, MainWindow* mainWindow, QWidget* parent)
 {
 	// Select the viewport window implementation to use.
 	QSettings settings;
@@ -80,8 +80,10 @@ BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport* vp, ViewportI
 		}
 	}
 
+	qRegisterMetaType<UserInterface*>("UserInterfacePtr");
+
 	if(viewportImplementation)
-		return dynamic_cast<BaseViewportWindow*>(viewportImplementation->newInstance(Q_ARG(Viewport*, vp), Q_ARG(ViewportInputManager*, inputManager), Q_ARG(UserInterface*, mainWindow), Q_ARG(QWidget*, parent)));
+		return dynamic_cast<BaseViewportWindow*>(viewportImplementation->newInstance(Q_ARG(Viewport*, vp), Q_ARG(UserInterface*, mainWindow), Q_ARG(QWidget*, parent)));
 
 	return nullptr;
 }
@@ -96,7 +98,7 @@ QWidget* ViewportsPanel::viewportWidget(Viewport* vp)
 	// Create the viewport window if it hasn't been created for this viewport yet.
 	if(!vp->window() && !_graphicsInitializationErrorOccurred) {
 		try {
-			BaseViewportWindow* viewportWindow = createViewportWindow(vp, _mainWindow->viewportInputManager(), _mainWindow, this);
+			BaseViewportWindow* viewportWindow = createViewportWindow(vp, _mainWindow, this);
 			if(!viewportWindow || !viewportWindow->widget())
 				vp->throwException(tr("Failed to create viewport window or there is no realtime graphics implementation available. Please check your OVITO installation and the graphics capabilities of your system."));
 			if(_viewportConfig->activeViewport() == vp)

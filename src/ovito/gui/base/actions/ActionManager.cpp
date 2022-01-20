@@ -29,7 +29,7 @@
 #include <ovito/gui/base/viewport/NavigationModes.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
-#include <ovito/gui/base/mainwin/UserInterface.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include "ActionManager.h"
 
@@ -38,13 +38,13 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the ActionManager.
 ******************************************************************************/
-ActionManager::ActionManager(QObject* parent, UserInterface* gui) : QAbstractListModel(parent), _gui(gui)
+ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QAbstractListModel(parent), _userInterface(userInterface)
 {
 	// Actions need to be updated whenever a new dataset is loaded or the current selection changes.
-	connect(&gui->datasetContainer(), &DataSetContainer::dataSetChanged, this, &ActionManager::onDataSetChanged);
-	connect(&gui->datasetContainer(), &DataSetContainer::animationSettingsReplaced, this, &ActionManager::onAnimationSettingsReplaced);
-	connect(&gui->datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &ActionManager::onSelectionChangeComplete);
-	connect(&gui->datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &ActionManager::onViewportConfigurationReplaced);
+	connect(&userInterface.datasetContainer(), &DataSetContainer::dataSetChanged, this, &ActionManager::onDataSetChanged);
+	connect(&userInterface.datasetContainer(), &DataSetContainer::animationSettingsReplaced, this, &ActionManager::onAnimationSettingsReplaced);
+	connect(&userInterface.datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &ActionManager::onSelectionChangeComplete);
+	connect(&userInterface.datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &ActionManager::onViewportConfigurationReplaced);
 
 	createCommandAction(ACTION_QUIT, tr("Quit"), "file_quit", tr("Quit the application."));
 	createCommandAction(ACTION_FILE_OPEN, tr("Load Session State"), "file_open", tr("Load a previously saved session from a file."), QKeySequence::Open);
@@ -83,14 +83,14 @@ ActionManager::ActionManager(QObject* parent, UserInterface* gui) : QAbstractLis
 	createCommandAction(ACTION_VIEWPORT_ZOOM_SELECTION_EXTENTS, tr("Zoom Selection Extents"), nullptr, tr("Zoom active viewport to show the selected objects."));
 	createCommandAction(ACTION_VIEWPORT_ZOOM_SELECTION_EXTENTS_ALL, tr("Zoom Selection Extents All"), nullptr, tr("Zoom all viewports to show the selected objects."));
 
-	ViewportInputManager* vpInputManager = gui->viewportInputManager();
-	createViewportModeAction(ACTION_VIEWPORT_ZOOM, vpInputManager->zoomMode(), tr("Zoom"), "viewport_mode_zoom", tr("Activate zoom mode."));
-	createViewportModeAction(ACTION_VIEWPORT_PAN, vpInputManager->panMode(), tr("Pan"), "viewport_mode_pan", tr("Activate pan mode to shift the region visible in the viewports."));
-	createViewportModeAction(ACTION_VIEWPORT_ORBIT, vpInputManager->orbitMode(), tr("Orbit Camera"), "viewport_mode_orbit", tr("Activate orbit mode to rotate the camera around the scene."));
-	createViewportModeAction(ACTION_VIEWPORT_FOV, vpInputManager->fovMode(), tr("Change Field Of View"), "viewport_mode_fov", tr("Activate field of view mode to change the perspective projection."));
-	createViewportModeAction(ACTION_VIEWPORT_PICK_ORBIT_CENTER, vpInputManager->pickOrbitCenterMode(), tr("Set Orbit Center"), nullptr, tr("Set the center of rotation of the viewport camera."))->setVisible(false);
-
-	createViewportModeAction(ACTION_SELECTION_MODE, vpInputManager->selectionMode(), tr("Select"), "edit_mode_select", tr("Select objects in the viewports."));
+	if(ViewportInputManager* vpInputManager = userInterface.viewportInputManager()) {
+		createViewportModeAction(ACTION_VIEWPORT_ZOOM, vpInputManager->zoomMode(), tr("Zoom"), "viewport_mode_zoom", tr("Activate zoom mode."));
+		createViewportModeAction(ACTION_VIEWPORT_PAN, vpInputManager->panMode(), tr("Pan"), "viewport_mode_pan", tr("Activate pan mode to shift the region visible in the viewports."));
+		createViewportModeAction(ACTION_VIEWPORT_ORBIT, vpInputManager->orbitMode(), tr("Orbit Camera"), "viewport_mode_orbit", tr("Activate orbit mode to rotate the camera around the scene."));
+		createViewportModeAction(ACTION_VIEWPORT_FOV, vpInputManager->fovMode(), tr("Change Field Of View"), "viewport_mode_fov", tr("Activate field of view mode to change the perspective projection."));
+		createViewportModeAction(ACTION_VIEWPORT_PICK_ORBIT_CENTER, vpInputManager->pickOrbitCenterMode(), tr("Set Orbit Center"), nullptr, tr("Set the center of rotation of the viewport camera."))->setVisible(false);
+		createViewportModeAction(ACTION_SELECTION_MODE, vpInputManager->selectionMode(), tr("Select"), "edit_mode_select", tr("Select objects in the viewports."));
+	}
 
 	createCommandAction(ACTION_GOTO_START_OF_ANIMATION, tr("Go to Start of Animation"), "animation_goto_start", tr("Jump to first frame of the animation."), Qt::Key_Home);
 	createCommandAction(ACTION_GOTO_END_OF_ANIMATION, tr("Go to End of Animation"), "animation_goto_end", tr("Jump to the last frame of the animation."), Qt::Key_End);
@@ -121,7 +121,7 @@ ActionManager::ActionManager(QObject* parent, UserInterface* gui) : QAbstractLis
 ******************************************************************************/
 DataSet* ActionManager::dataset() const
 {
-	return gui()->datasetContainer().currentSet();
+	return userInterface().datasetContainer().currentSet();
 }
 
 void ActionManager::onDataSetChanged(DataSet* newDataSet)
@@ -299,7 +299,7 @@ QAction* ActionManager::createCommandAction(const QString& id, const QString& ti
 ******************************************************************************/
 QAction* ActionManager::createViewportModeAction(const QString& id, ViewportInputMode* inputHandler, const QString& title, const char* iconPath, const QString& statusTip, const QKeySequence& shortcut)
 {
-	QAction* action = new ViewportModeAction(gui(), title, this, inputHandler);
+	QAction* action = new ViewportModeAction(userInterface(), title, this, inputHandler);
 	action->setObjectName(id);
 	if(!shortcut.isEmpty())
 		action->setShortcut(shortcut);
@@ -377,5 +377,101 @@ void ActionManager::on_EditDelete_triggered()
 			dataset()->selection()->setNode(dataset()->sceneRoot()->children().front());
 	});
 }
+
+/******************************************************************************
+* Shows the online manual and opens the given help page.
+******************************************************************************/
+void ActionManager::openHelpTopic(const QString& helpTopicId)
+{
+	// Determine the filesystem path where OVITO's documentation files are installed.
+#ifndef Q_OS_WASM
+	QDir prefixDir(QCoreApplication::applicationDirPath());
+	QDir helpDir = QDir(prefixDir.absolutePath() + QChar('/') + QStringLiteral(OVITO_DOCUMENTATION_PATH));	
+	QUrl url;
+#else
+	QDir helpDir(QStringLiteral(":/doc/manual/"));
+	QUrl baseUrl(QStringLiteral("https://docs.ovito.org/"));
+	QUrl url = baseUrl;
+#endif
+
+	// Resolve the help topic ID.
+	if(helpTopicId.endsWith(".html") || helpTopicId.contains(".html#")) {
+		// If a HTML file name has been specified, open it directly.
+		url = QUrl::fromLocalFile(helpDir.absoluteFilePath(helpTopicId));
+	}
+	else if(helpTopicId.startsWith("manual:")) {
+		// If a Sphinx link target has been specified, resolve it to a HTML file path using the
+		// Intersphinx inventory. The file 'objects.txt' is generated by the script 'ovito/doc/manual/CMakeLists.txt'
+		// and gets distributed together with the application.
+		QFile inventoryFile(helpDir.absoluteFilePath("objects.txt"));
+		if(!inventoryFile.open(QIODevice::ReadOnly | QIODevice::Text))
+			qWarning() << "WARNING: Could not open Intersphinx inventory file to resolve help topic reference:" << inventoryFile.fileName() << inventoryFile.errorString();			
+		else {
+			QTextStream stream(&inventoryFile);
+			// Skip file until to the line "std:label":
+			while(!stream.atEnd()) {
+				QString line = stream.readLine();
+				if(line.startsWith("std:label"))
+					break;
+			}
+			// Now parse the link target list.
+			QString searchString = QChar('\t') + helpTopicId.mid(7) + QChar(' ');
+			while(!stream.atEnd()) {
+				QString line = stream.readLine();
+				if(line.startsWith(searchString)) {
+					int startIndex = line.lastIndexOf(QChar(' '));
+					QString filePath = line.mid(startIndex + 1).trimmed();
+					QString anchor;
+					int anchorIndex = filePath.indexOf(QChar('#'));
+					if(anchorIndex >= 0) {
+						anchor = filePath.mid(anchorIndex + 1);
+						filePath.truncate(anchorIndex);
+					}
+#ifndef Q_OS_WASM
+					url = QUrl::fromLocalFile(helpDir.absoluteFilePath(filePath));
+#else
+					url.setPath(QChar('/') + filePath);
+#endif
+					url.setFragment(anchor);
+					break;
+				}
+			}
+			OVITO_ASSERT(!url.isEmpty());
+		}
+	}
+	
+#ifndef Q_OS_WASM
+	if(url.isEmpty()) {
+		// If no help topic has been specified, open the main index page of the user manual.
+		url = QUrl::fromLocalFile(helpDir.absoluteFilePath(QStringLiteral("index.html")));
+	}
+#endif
+
+	// Workaround for a limitation of the Microsoft Edge browser:
+	// The browser drops any # fragment in local URLs to be opened, thus making it difficult to reference sub-topics within a HTML help page.
+	// Solution is to generate a temporary HTML file which redirects to the actual help page including the # fragment.
+	// See also https://forums.madcapsoftware.com/viewtopic.php?f=9&t=28376#p130613
+	// and https://stackoverflow.com/questions/26305322/shellexecute-fails-for-local-html-or-file-urls
+#ifdef Q_OS_WIN
+	if(url.isLocalFile() && url.hasFragment()) {
+		static QTemporaryFile* temporaryHtmlFile = nullptr;
+		if(temporaryHtmlFile) delete temporaryHtmlFile;
+		temporaryHtmlFile = new QTemporaryFile(QDir::temp().absoluteFilePath(QStringLiteral("ovito-help-XXXXXX.html")), qApp);
+		if(temporaryHtmlFile->open()) {
+			// Write a small HTML file that just contains a redirect directive to the actual help page including the # fragment.
+			QTextStream(temporaryHtmlFile) << QStringLiteral("<html><meta http-equiv=Refresh content=\"0; url=%1\"><body></body></html>").arg(url.toString(QUrl::FullyEncoded));
+			temporaryHtmlFile->close();
+			// Let the web brwoser ppen the redirect page instead of the original help page. 
+			url = QUrl::fromLocalFile(temporaryHtmlFile->fileName());
+		}
+	}
+#endif
+
+	// Use the local web browser to display the help page.
+	if(!QDesktopServices::openUrl(url)) {
+		Exception(QStringLiteral("Could not launch browser to display manual. The requested URL is:\n%1").arg(url.toDisplayString())).reportError();
+	}
+}
+
 
 }	// End of namespace

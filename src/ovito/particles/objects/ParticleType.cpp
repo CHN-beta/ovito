@@ -132,7 +132,7 @@ void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObje
 /******************************************************************************
  * Loads a user-defined display shape from a geometry file and assigns it to this particle type.
  ******************************************************************************/
-bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, SynchronousOperation operation, const FileImporterClass* importerType)
+bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, MainThreadOperation& operation, const FileImporterClass* importerType)
 {
     operation.setProgressText(tr("Loading mesh geometry file %1").arg(sourceUrl.fileName()));
 

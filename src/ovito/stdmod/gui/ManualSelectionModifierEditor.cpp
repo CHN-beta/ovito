@@ -66,7 +66,7 @@ public:
 						_editor->onElementPicked(pickResult, indexAndContainer.first, indexAndContainer.second);
 					}
 					else {
-						inputManager()->gui()->showStatusBarMessage(tr("You did not click on an element of type '%1'.").arg(mod->subject().dataClass()->elementDescriptionName()), 1000);
+						inputManager()->userInterface().showStatusBarMessage(tr("You did not click on an element of type '%1'.").arg(mod->subject().dataClass()->elementDescriptionName()), 1000);
 					}
 				}
 			}
@@ -170,11 +170,11 @@ protected:
 		ManualSelectionModifier* mod = static_object_cast<ManualSelectionModifier>(_editor->editObject());
 		if(mod && mod->subject()) {
 #ifndef Q_OS_MACOS
-			inputManager()->gui()->showStatusBarMessage(
+			inputManager()->userInterface().showStatusBarMessage(
 					tr("Draw a fence around a group of %1 to select. Use CONTROL or ALT keys to extend or reduce existing selection set.")
 					.arg(mod->subject().dataClass()->elementDescriptionName()));
 #else
-			inputManager()->gui()->showStatusBarMessage(
+			inputManager()->userInterface().showStatusBarMessage(
 					tr("Draw a fence around a group of %1 to select. Use COMMAND or ALT keys to extend or reduce existing selection set.")
 					.arg(mod->subject().dataClass()->elementDescriptionName()));
 #endif
@@ -185,7 +185,7 @@ protected:
 	/// This is called by the system after the input handler is no longer the active handler.
 	virtual void deactivated(bool temporary) override {
 		_fence.clear();
-		inputManager()->gui()->clearStatusBarMessage();
+		inputManager()->userInterface().clearStatusBarMessage();
 		inputManager()->removeViewportGizmo(this);
 		ViewportInputMode::deactivated(temporary);
 	}
@@ -359,7 +359,7 @@ void ManualSelectionModifierEditor::onElementPicked(const ViewportPickResult& pi
 				break;
 			}
 			else {
-				mainWindow()->showStatusBarMessage(tr("Cannot select this element, because it doesn't exist in the modifier's input data."), 2000);
+				mainWindow().showStatusBarMessage(tr("Cannot select this element, because it doesn't exist in the modifier's input data."), 2000);
 			}
 		}
 	});

@@ -42,8 +42,8 @@ ViewportWindowInterface::Registry& ViewportWindowInterface::registry()
 /******************************************************************************
 * Constructor which associates this window with the given viewport instance.
 ******************************************************************************/
-ViewportWindowInterface::ViewportWindowInterface(UserInterface* gui, Viewport* vp) : 
-	_gui(gui),
+ViewportWindowInterface::ViewportWindowInterface(UserInterface& userInterface, Viewport* vp) : 
+	_userInterface(userInterface),
 	_viewport(vp)
 {
 	// Associate the viewport with this window.

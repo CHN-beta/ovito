@@ -37,7 +37,7 @@ IMPLEMENT_OVITO_CLASS(ParticleInspectionApplet);
 * Lets the applet create the UI widget that is to be placed into the data
 * inspector panel.
 ******************************************************************************/
-QWidget* ParticleInspectionApplet::createWidget(MainWindow* mainWindow)
+QWidget* ParticleInspectionApplet::createWidget()
 {
 	createBaseWidgets();
 
@@ -48,7 +48,7 @@ QWidget* ParticleInspectionApplet::createWidget(MainWindow* mainWindow)
 
 	_pickingMode = new PickingMode(this);
 	connect(this, &QObject::destroyed, _pickingMode, &ViewportInputMode::removeMode);
-	ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow, tr("Select in viewports"), this, _pickingMode);
+	ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow(), tr("Select in viewports"), this, _pickingMode);
 	pickModeAction->setIcon(QIcon::fromTheme("particles_select_mode"));
 
 	_measuringModeAction = new QAction(QIcon::fromTheme("particles_measure_distances"), tr("Show distances and angles"), this);
@@ -212,7 +212,7 @@ void ParticleInspectionApplet::updateAngleTable()
 /******************************************************************************
 * This is called when the applet is no longer visible.
 ******************************************************************************/
-void ParticleInspectionApplet::deactivate(MainWindow* mainWindow)
+void ParticleInspectionApplet::deactivate()
 {
 	_pickingMode->removeMode();
 }

@@ -60,8 +60,6 @@ void ModifierGroupEditor::referenceReplaced(const PropertyFieldDescriptor* field
 ******************************************************************************/
 void ModifierGroupEditor::updateSubEditors()
 {
-	OVITO_ASSERT(mainWindow() != nullptr);
-
 	try {
 		auto subEditorIter = _subEditors.begin();
 		if(ModifierGroup* group = static_object_cast<ModifierGroup>(editObject())) {
@@ -79,7 +77,7 @@ void ModifierGroupEditor::updateSubEditors()
 					// Create a new sub-editor for this sub-object.
 					OORef<PropertiesEditor> editor = PropertiesEditor::create(modApp);
 					if(editor) {
-						editor->initialize(container(), mainWindow(), _rolloutParams, this);
+						editor->initialize(container(), _rolloutParams, this);
 						editor->setEditObject(modApp);
 						_subEditors.erase(subEditorIter, _subEditors.end());
 						_subEditors.push_back(std::move(editor));

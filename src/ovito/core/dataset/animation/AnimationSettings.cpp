@@ -253,8 +253,8 @@ void AnimationSettings::continuePlaybackAtTime(TimePoint time)
 
 	if(isPlaybackActive()) {
 		// Once the scene is ready, schedule the next animation frame.
-		_sceneReadyFuture.finally(executor(), false, [this](const TaskPtr& task) {
-			if(task->isCanceled())
+		_sceneReadyFuture.finally(executor(), [this]() {
+			if(_sceneReadyFuture.isCanceled())
 				stopAnimationPlayback();
 			else
 				scheduleNextAnimationFrame();

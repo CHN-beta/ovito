@@ -340,9 +340,7 @@ QIcon PropertyColorMappingEditor::iconFromColorMapClass(OvitoClassPtr clazz)
 	if(auto item = iconCache.find(clazz); item != iconCache.end())
 		return item->second;
 
-	DataSet* dataset = mainWindow()->datasetContainer().currentSet();
-	OVITO_ASSERT(dataset);
-	if(dataset) {
+	if(DataSet* dataset = mainWindow().datasetContainer().currentSet()) {
 		try {
 			// Create a temporary instance of the color map class.
 			OORef<ColorCodingGradient> map = static_object_cast<ColorCodingGradient>(clazz->createInstance(dataset, ObjectInitializationHint::LoadUserDefaults));

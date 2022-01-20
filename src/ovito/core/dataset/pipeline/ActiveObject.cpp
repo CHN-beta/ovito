@@ -86,6 +86,7 @@ void ActiveObject::notifyDependentsImpl(const ReferenceEvent& event)
 ******************************************************************************/
 void ActiveObject::incrementNumberOfActiveTasks()
 {
+	OVITO_ASSERT(QThread::currentThread() == this->thread());
 	if(_numberOfActiveTasks++ == 0) {
 		OVITO_ASSERT(_isInActivateState == false);
 		// Indicate activity status in the UI with a 100 ms delay to prevent excessive updates in case of short-running tasks.
@@ -99,6 +100,7 @@ void ActiveObject::incrementNumberOfActiveTasks()
 ******************************************************************************/
 void ActiveObject::decrementNumberOfActiveTasks()
 {
+	OVITO_ASSERT(QThread::currentThread() == this->thread());
 	OVITO_ASSERT(_numberOfActiveTasks > 0);
 	if(--_numberOfActiveTasks == 0) {
 		_activityTimer.stop();
@@ -114,10 +116,11 @@ void ActiveObject::decrementNumberOfActiveTasks()
 ******************************************************************************/
 void ActiveObject::registerActiveTask(const TaskPtr& task)
 {
+	OVITO_ASSERT(QThread::currentThread() == this->thread());
 	if(!task->isFinished() && Application::instance()->guiMode()) {
 		incrementNumberOfActiveTasks();
 		// Reset the pending status after the Future is fulfilled.
-		task->finally(executor(), false, std::bind(&ActiveObject::decrementNumberOfActiveTasks, this));
+		task->finally(executor(), std::bind(&ActiveObject::decrementNumberOfActiveTasks, this));
 	}
 }
 

@@ -43,11 +43,14 @@ public:
 
 	/// Factory method which creates a new viewport window widget. Depending on the 
 	/// user's settings this can be either a OpenGL or a Vulkan window.
-	static BaseViewportWindow* createViewportWindow(Viewport* vp, ViewportInputManager* inputManager, MainWindow* mainWindow, QWidget* parent);
+	static BaseViewportWindow* createViewportWindow(Viewport* vp, MainWindow* mainWindow, QWidget* parent);
 
 	/// Returns the widget that is associated with the given viewport.
 	QWidget* viewportWidget(Viewport* vp);
 
+	/// Returns the current viewport configuration object.
+	ViewportConfiguration* viewportConfiguration() const { return _viewportConfig; }
+	
 	/// Handles keyboard input for the viewport windows.
 	bool onKeyShortcut(QKeyEvent* event);
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -48,21 +48,12 @@ TaskDisplayWidget::TaskDisplayWidget(MainWindow* mainWindow) : _mainWindow(mainW
 	progressWidgetLayout->addWidget(_progressTextDisplay);
 	_progressBar = new QProgressBar(this);
 	_progressBar->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-#if 0
-	_cancelTaskButton = new QToolButton(this);
-	_cancelTaskButton->setText(tr("Cancel"));
-	QIcon cancelIcon(":/gui/mainwin/process-stop-16.png");
-	cancelIcon.addFile(":/gui/mainwin/process-stop-22.png");
-	_cancelTaskButton->setIcon(cancelIcon);
-#endif
 	progressWidgetLayout->addWidget(_progressBar);
-//	progressWidgetLayout->addWidget(_cancelTaskButton);
 	progressWidgetLayout->addStrut(_progressTextDisplay->sizeHint().height());
 	setMinimumHeight(_progressTextDisplay->minimumSizeHint().height());
 
-//	connect(_cancelTaskButton, &QAbstractButton::clicked, &mainWindow->datasetContainer().taskManager(), &TaskManager::cancelAll);
-	connect(&mainWindow->datasetContainer().taskManager(), &TaskManager::taskStarted, this, &TaskDisplayWidget::taskStarted);
-	connect(&mainWindow->datasetContainer().taskManager(), &TaskManager::taskFinished, this, &TaskDisplayWidget::taskFinished);
+	connect(&mainWindow->taskManager(), &TaskManager::taskStarted, this, &TaskDisplayWidget::taskStarted);
+	connect(&mainWindow->taskManager(), &TaskManager::taskFinished, this, &TaskDisplayWidget::taskFinished);
 	connect(this, &QObject::destroyed, _progressTextDisplay, &QObject::deleteLater);
 }
 
@@ -80,8 +71,7 @@ void TaskDisplayWidget::taskStarted(TaskWatcher* taskWatcher)
 		updateIndicator();
 	}
 
-	connect(taskWatcher, &TaskWatcher::progressRangeChanged, this, &TaskDisplayWidget::taskProgressChanged);
-	connect(taskWatcher, &TaskWatcher::progressValueChanged, this, &TaskDisplayWidget::taskProgressChanged);
+	connect(taskWatcher, &TaskWatcher::progressChanged, this, &TaskDisplayWidget::taskProgressChanged);
 	connect(taskWatcher, &TaskWatcher::progressTextChanged, this, &TaskDisplayWidget::taskProgressChanged);
 }
 
@@ -93,7 +83,7 @@ void TaskDisplayWidget::taskFinished(TaskWatcher* taskWatcher)
 	updateIndicator();
 
 	// Stop delay timer if no tasks are running.
-	const TaskManager& taskManager = _mainWindow->datasetContainer().taskManager();
+	const TaskManager& taskManager = _mainWindow->taskManager();
 	if(taskManager.runningTasks().empty())
 		_delayTimer.stop();
 }
@@ -103,7 +93,7 @@ void TaskDisplayWidget::taskFinished(TaskWatcher* taskWatcher)
 ******************************************************************************/
 void TaskDisplayWidget::taskProgressChanged()
 {
-	const TaskManager& taskManager = _mainWindow->datasetContainer().taskManager();
+	const TaskManager& taskManager = _mainWindow->taskManager();
 	if(taskManager.runningTasks().empty() == false)
 		updateIndicator();
 }
@@ -126,7 +116,7 @@ void TaskDisplayWidget::timerEvent(QTimerEvent* event)
 ******************************************************************************/
 void TaskDisplayWidget::showIndicator()
 {
-	const TaskManager& taskManager = _mainWindow->datasetContainer().taskManager();
+	const TaskManager& taskManager = _mainWindow->taskManager();
 	if(isHidden() && taskManager.runningTasks().empty() == false) {
 		show();
 		updateIndicator();
@@ -141,7 +131,7 @@ void TaskDisplayWidget::updateIndicator()
 	if(isHidden())
 		return;
 
-	const TaskManager& taskManager = _mainWindow->datasetContainer().taskManager();
+	const TaskManager& taskManager = _mainWindow->taskManager();
 	if(taskManager.runningTasks().empty()) {
 		_delayTimer.stop();
 		hide();

@@ -42,7 +42,7 @@ public:
 	/**
 	 * Abstract base class for algorithm engines performing the modifier's computation in a background thread.
 	 */
-	class OVITO_CORE_EXPORT Engine : public AsynchronousTaskBase
+	class OVITO_CORE_EXPORT Engine : public AsynchronousTask<>
 	{
 	public:
 

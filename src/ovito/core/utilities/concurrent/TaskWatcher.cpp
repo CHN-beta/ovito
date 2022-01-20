@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,8 +33,12 @@ void TaskWatcher::watch(const TaskPtr& task, bool pendingAssignment)
 	if(task == _task)
 		return;
 
+	if(isRegistered())
+		unregisterCallback();
+
 	if(_task) {
-		_task->unregisterWatcher(this);
+		// This is to prevent notifications from the old task still waiting in the event loop 
+		// to reach the TaskWatcher after the new task has been assigned.
 		if(pendingAssignment) {
 	        _finished = false;
 	        QCoreApplication::removePostedEvents(this);
@@ -42,7 +46,7 @@ void TaskWatcher::watch(const TaskPtr& task, bool pendingAssignment)
 	}
 	_task = task;
 	if(_task)
-		_task->registerWatcher(this);
+		registerCallback(_task.get(), true); // Request replay of state changes of the running task.
 }
 
 /// Cancels the operation being watched by this watcher.
@@ -52,13 +56,27 @@ void TaskWatcher::cancel()
 		task()->cancel();
 }
 
-void TaskWatcher::promiseCanceled()
+void TaskWatcher::taskStateChangedCallback(int state)
 {
-	if(isWatching())
-		Q_EMIT canceled();
+	if(state & Task::Started)
+		QMetaObject::invokeMethod(this, "taskStarted", Qt::QueuedConnection);
+	if(state & Task::Canceled)
+		QMetaObject::invokeMethod(this, "taskCanceled", Qt::QueuedConnection);
+	if(state & Task::Finished)
+		QMetaObject::invokeMethod(this, "taskFinished", Qt::QueuedConnection);
 }
 
-void TaskWatcher::promiseFinished()
+void TaskWatcher::taskProgressChangedCallback(qlonglong progress, qlonglong maximum)
+{
+	QMetaObject::invokeMethod(this, "taskProgressChanged", Qt::QueuedConnection, Q_ARG(qlonglong, progress), Q_ARG(qlonglong, maximum));
+}
+
+void TaskWatcher::taskTextChangedCallback()
+{
+	QMetaObject::invokeMethod(this, "taskTextChanged", Qt::QueuedConnection);
+}
+
+void TaskWatcher::taskFinished()
 {
 	if(isWatching()) {
 		_finished = true;
@@ -66,7 +84,14 @@ void TaskWatcher::promiseFinished()
 	}
 }
 
-void TaskWatcher::promiseStarted()
+void TaskWatcher::taskCanceled()
+{
+	if(isWatching()) {
+		Q_EMIT canceled();
+	}
+}
+
+void TaskWatcher::taskStarted()
 {
 	if(isWatching()) {
 		_finished = false; // Need to reset interal finished flag, in case task is run a second time.
@@ -74,22 +99,16 @@ void TaskWatcher::promiseStarted()
 	}
 }
 
-void TaskWatcher::promiseProgressRangeChanged(qlonglong maximum)
+void TaskWatcher::taskProgressChanged(qlonglong progress, qlonglong maximum)
 {
 	if(isWatching() && !task()->isCanceled())
-		Q_EMIT progressRangeChanged(maximum);
+		Q_EMIT progressChanged(progress, maximum);
 }
 
-void TaskWatcher::promiseProgressValueChanged(qlonglong progressValue)
+void TaskWatcher::taskTextChanged()
 {
 	if(isWatching() && !task()->isCanceled())
-		Q_EMIT progressValueChanged(progressValue);
-}
-
-void TaskWatcher::promiseProgressTextChanged(const QString& progressText)
-{
-	if(isWatching() && !task()->isCanceled())
-		Q_EMIT progressTextChanged(progressText);
+		Q_EMIT progressTextChanged(task()->progressText());
 }
 
 bool TaskWatcher::isCanceled() const
@@ -104,12 +123,12 @@ bool TaskWatcher::isFinished() const
 
 qlonglong TaskWatcher::progressMaximum() const
 {
-	return isWatching() ? task()->totalProgressMaximum() : 0;
+	return isWatching() ? task()->progressMaximum() : 0;
 }
 
 qlonglong TaskWatcher::progressValue() const
 {
-	return isWatching() ? task()->totalProgressValue() : 0;
+	return isWatching() ? task()->progressValue() : 0;
 }
 
 QString TaskWatcher::progressText() const

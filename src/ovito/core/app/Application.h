@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/Exception.h>
+#include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/oo/ExecutionContext.h>
 
 namespace Ovito {
@@ -39,10 +40,10 @@ class OVITO_CORE_EXPORT Application : public QObject
 public:
 
 	/// \brief Returns the one and only instance of this class.
-	inline static Application* instance() { return _instance; }
+	static Application* instance() { return _instance; }
 
 	/// \brief Constructor.
-	Application();
+	explicit Application(FileManager& fileManager);
 
 	/// \brief Destructor.
 	virtual ~Application();
@@ -73,16 +74,12 @@ public:
 	/// \brief Switches between graphical and console mode.
 	void setGuiMode(bool enableGui) { _consoleMode = !enableGui; }
 
-	/// \brief When in console mode, this specifies the exit code that will be returned by the application on shutdown.
-	void setExitCode(int code) { _exitCode = code; }
-
-	/// \brief Returns a pointer to the main dataset container.
-	/// \return The dataset container of the first main window when running in GUI mode;
-	///         or the global dataset container when running in console mode.
-	DataSetContainer* datasetContainer() const;
+	/// Returns the root task manager, which manages all asynchronous tasks that are 
+	/// associated with a specific user interface or dataset.
+	TaskManager& taskManager() { return _taskManager; }
 
 	/// Returns the global FileManager class instance.
-	FileManager* fileManager() const { return _fileManager.get(); }
+	FileManager& fileManager() { return _fileManager; }
 
 	/// Returns the number of parallel threads to be used by the application when doing computations.
 	int idealThreadCount() const { return _idealThreadCount; }
@@ -132,9 +129,6 @@ public:
 
 protected:
 
-	/// Creates the global FileManager class instance.
-	virtual FileManager* createFileManager();
-
 	/// Indicates that the application is running in console mode.
 	bool _consoleMode = true;
 
@@ -145,17 +139,14 @@ protected:
 	/// If false, the program is running in interactive mode and all actions are performed by the human user.
 	ExecutionContext _executionContext = ExecutionContext::Interactive;
 
-	/// In console mode, this is the exit code returned by the application on shutdown.
-	int _exitCode = 0;
-
-	/// The main dataset container.
-	QPointer<DataSetContainer> _datasetContainer;
-
 	/// The number of parallel threads to be used by the application when doing computations.
 	int _idealThreadCount = 1;
 
+	/// The root task manager, which manages all asynchronous tasks that are associated with a specific user interface or dataset.
+	TaskManager _taskManager;
+
 	/// The global file manager instance.
-	std::unique_ptr<FileManager> _fileManager;
+	FileManager& _fileManager;
 
 #ifndef Q_OS_WASM
 	/// The application-wide network manager object.

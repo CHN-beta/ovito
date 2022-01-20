@@ -36,7 +36,7 @@ class OVITO_GUIBASE_EXPORT BaseViewportWindow : public ViewportWindowInterface
 public:
 
 	/// Constructor.
-	BaseViewportWindow(UserInterface* gui, ViewportInputManager* inputManager, Viewport* vp);
+	BaseViewportWindow(UserInterface& userInterface, Viewport* vp) : ViewportWindowInterface(userInterface, vp) {}
 
 	/// Returns the input manager handling mouse events of the viewport (if any).
 	ViewportInputManager* inputManager() const;
@@ -84,9 +84,6 @@ public:
 	void keyPressEvent(QKeyEvent* event);
 
 private:
-
-	/// The input manager handling mouse events of the viewport.
-	QPointer<ViewportInputManager> _inputManager;
 
 	/// The zone in the upper left corner of the viewport where
 	/// the context menu can be activated by the user.

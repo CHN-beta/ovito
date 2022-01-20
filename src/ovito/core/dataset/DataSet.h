@@ -64,9 +64,7 @@ class OVITO_CORE_EXPORT DataSet : public RefTarget
 public:
 
 	/// \brief Constructs an empty dataset.
-	/// \param self This parameter is not used and is there to provide a constructor signature that is compatible
-	///             with the RefTarget base class.
-	Q_INVOKABLE DataSet(DataSet* self = nullptr);
+	Q_INVOKABLE DataSet(DataSet* = nullptr);
 
 	/// \brief Destructor.
 	virtual ~DataSet();
@@ -104,8 +102,8 @@ public:
 	/// \brief Returns the container this dataset belongs to.
 	DataSetContainer* container() const;
 
-	/// Returns the TaskManager responsible for this DataSet.
-	TaskManager& taskManager() const;
+	/// Returns the abstract user interface this dataset was opened in.
+	UserInterface& userInterface() const;
 
 	/// \brief Deletes all nodes from the scene.
 	/// \undoable
@@ -133,7 +131,7 @@ public:
 	///        sequence, the buffer will contain only the last rendered frame when the function returns.
 	/// \return true on success; false if operation has been canceled by the user.
 	/// \throw Exception on error.
-	bool renderScene(RenderSettings* renderSettings, ViewportConfiguration* viewportConfiguration, FrameBuffer* frameBuffer, SynchronousOperation operation);
+	bool renderScene(RenderSettings* renderSettings, ViewportConfiguration* viewportConfiguration, FrameBuffer* frameBuffer, MainThreadOperation& operation);
 
 	/// \brief This is the high-level rendering function, which invokes the renderer to generate one or more
 	///        output images of the scene. All rendering parameters are specified in the RenderSettings object.
@@ -142,7 +140,7 @@ public:
 	/// \param frameBuffer The frame buffer that will receive the rendered image. 
 	/// \return true on success; false if operation has been canceled by the user.
 	/// \throw Exception on error.
-	bool renderScene(RenderSettings* renderSettings, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, FrameBuffer* frameBuffer, SynchronousOperation operation);
+	bool renderScene(RenderSettings* renderSettings, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, FrameBuffer* frameBuffer, MainThreadOperation& operation);
 
 	/// \brief Returns a future that is triggered once all data pipelines in the scene
 	///        have been completely evaluated at the current animation time.
@@ -152,13 +150,13 @@ public:
 	/// \throw Exception on error.
 	///
 	/// Note that this method does NOT invoke setFilePath().
-	void saveToFile(const QString& filePath) const;
+	void saveToFile(const QString& filePath, MainThreadOperation operation) const;
 
 	/// \brief Loads the dataset contents from a session state file.
 	/// \throw Exception on error.
 	///
 	/// Note that this method does NOT invoke setFilePath().
-	void loadFromFile(const QString& filePath);
+	void loadFromFile(const QString& filePath, MainThreadOperation operation);
 
 	/// \brief Appends an object to this dataset's list of global objects.
 	void addGlobalObject(const RefTarget* target) {
@@ -221,7 +219,7 @@ private:
 
 	/// Renders a single frame and saves the output file. This is part of the implementation of the renderScene() method.
 	bool renderFrame(TimePoint renderTime, int frameNumber, RenderSettings* settings, SceneRenderer* renderer,
-			FrameBuffer* frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder, SynchronousOperation operation);
+			FrameBuffer* frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder, MainThreadOperation& operation);
 
 	/// Returns a viewport configuration that is used as template for new scenes.
 	OORef<ViewportConfiguration> createDefaultViewportConfiguration(ObjectInitializationHints initializationHints);

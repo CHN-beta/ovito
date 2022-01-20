@@ -304,7 +304,7 @@ private:
 /******************************************************************************
 * The constructor of the dialog widget.
 ******************************************************************************/
-AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, const PropertyFieldDescriptor* propertyField, QWidget* parent, MainWindow* mainWindow) :
+AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, const PropertyFieldDescriptor* propertyField, QWidget* parent, MainWindow& mainWindow) :
 	QDialog(parent),
 	UndoableTransaction(ctrl->dataset()->undoStack(), tr("Edit animatable parameter"))
 {
@@ -389,11 +389,11 @@ AnimationKeyEditorDialog::AnimationKeyEditorDialog(KeyframeController* ctrl, con
 	connect(buttonBox, &QDialogButtonBox::rejected, this, &AnimationKeyEditorDialog::reject);
 
 	// Handler for Animation Settings... button.
-	connect(animSettingsButton, &QPushButton::clicked, mainWindow->actionManager()->getAction(ACTION_ANIMATION_SETTINGS), &QAction::trigger);
+	connect(animSettingsButton, &QPushButton::clicked, mainWindow.actionManager()->getAction(ACTION_ANIMATION_SETTINGS), &QAction::trigger);
 
 	// Handler for Help button.
 	connect(buttonBox, &QDialogButtonBox::helpRequested, []() {
-		MainWindow::openHelpTopic(QStringLiteral("manual:usage.animation"));
+		ActionManager::openHelpTopic(QStringLiteral("manual:usage.animation"));
 	});
 
 	mainLayout->addWidget(buttonBox);

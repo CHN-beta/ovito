@@ -53,7 +53,7 @@ VoroTopModifier::VoroTopModifier(DataSet* dataset) : StructureIdentificationModi
 /******************************************************************************
  * Loads a new filter definition into the modifier.
  ******************************************************************************/
-bool VoroTopModifier::loadFilterDefinition(const QString& filepath, SynchronousOperation operation)
+bool VoroTopModifier::loadFilterDefinition(const QString& filepath, MainThreadOperation& operation)
 {
     operation.setProgressText(tr("Loading VoroTop filter %1").arg(filepath));
 
@@ -426,7 +426,6 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
             if(!count) return;
 
             setProgressMaximum(count);
-            setProgressValue(0);
             voro::c_loop_all cl(voroContainer);
             voro::voronoicell_neighbor v;
             if(cl.start()) {
@@ -462,7 +461,6 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
 
             if(!count) return;
             setProgressMaximum(count);
-            setProgressValue(0);
             voro::c_loop_all cl(voroContainer);
             voro::voronoicell_neighbor v;
             if(cl.start()) {

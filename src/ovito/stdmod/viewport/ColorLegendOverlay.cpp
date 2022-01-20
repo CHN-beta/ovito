@@ -155,7 +155,7 @@ void ColorLegendOverlay::initializeObject(ObjectInitializationHints hints)
 /******************************************************************************
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
-void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation)
+void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
 {
 	DataOORef<const PropertyObject> typedProperty;
 

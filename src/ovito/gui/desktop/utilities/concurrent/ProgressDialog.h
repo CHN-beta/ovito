@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,24 +28,12 @@
 
 namespace Ovito {
 
-class OVITO_GUI_EXPORT ProgressDialog : public QDialog
+class OVITO_GUI_EXPORT ProgressDialog : public QDialog, public MainThreadOperation
 {
 public:
 
 	/// Constructor.
-	ProgressDialog(QWidget* parent, TaskManager& taskManager, const QString& dialogTitle = QString());
-
-	/// Destructor.
-	~ProgressDialog();
-
-	/// Returns the TaskManager that manages the running task displayed in this progress dialog.
-	TaskManager& taskManager() { return _taskManager; }
-
-	/// Create a new synchronous operation, whose progress will be displayed in this dialog.
-	SynchronousOperation createOperation();
-
-	/// Shows the progress of the given task in this dialog.
-	void registerTask(const TaskPtr& task);
+	ProgressDialog(QWidget* parent, UserInterface& userInterface, const QString& dialogTitle = QString());
 
 protected:
 
@@ -54,11 +42,6 @@ protected:
 
 	/// Is called when the user tries to close the dialog.
 	virtual void reject() override;
-
-private:
-
-	/// The task manager.
-	TaskManager& _taskManager;
 };
 
 }	// End of namespace

@@ -37,8 +37,8 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the command panel page.
 ******************************************************************************/
-OverlayCommandPage::OverlayCommandPage(MainWindow* mainWindow, QWidget* parent) : QWidget(parent),
-		_datasetContainer(mainWindow->datasetContainer()), _actionManager(mainWindow->actionManager())
+OverlayCommandPage::OverlayCommandPage(MainWindow& mainWindow, QWidget* parent) : QWidget(parent),
+		_datasetContainer(mainWindow.datasetContainer()), _actionManager(mainWindow.actionManager())
 {
 	QVBoxLayout* layout = new QVBoxLayout(this);
 	layout->setContentsMargins(2,2,2,2);

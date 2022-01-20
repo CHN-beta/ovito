@@ -23,7 +23,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/Future.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
-#include <ovito/core/dataset/DataSetContainer.h>
 #ifdef OVITO_SSH_CLIENT
 	#include <ovito/core/utilities/io/ssh/SshConnection.h>
 #endif
@@ -69,7 +68,7 @@ FileManager::~FileManager()
 /******************************************************************************
 * Makes a file available on this computer.
 ******************************************************************************/
-SharedFuture<FileHandle> FileManager::fetchUrl(TaskManager& taskManager, const QUrl& url)
+SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
 {
 	if(url.isLocalFile()) {
 		// Nothing to do to fetch local files. Simply return a finished Future object.
@@ -77,7 +76,7 @@ SharedFuture<FileHandle> FileManager::fetchUrl(TaskManager& taskManager, const Q
 		// But first check if the file exists.
 		QString filePath = url.toLocalFile();
 		if(!QFileInfo(filePath).exists())
-			return Future<FileHandle>::createFailed(Exception(tr("File does not exist:\n%1").arg(filePath), taskManager.datasetContainer()));
+			return Future<FileHandle>::createFailed(Exception(tr("File does not exist:\n%1").arg(filePath)));
 
 		return FileHandle(url, std::move(filePath));
 	}
@@ -104,27 +103,30 @@ SharedFuture<FileHandle> FileManager::fetchUrl(TaskManager& taskManager, const Q
 		}
 
 		// Start the background download job.
-		DownloadRemoteFileJob* job = new DownloadRemoteFileJob(url, taskManager);
+		DownloadRemoteFileJob* job = new DownloadRemoteFileJob(url);
 		auto future = job->sharedFuture();
+		// Show task progress in the GUI.
+		_taskManager.registerFuture(future);
 		_pendingFiles.emplace(normalizedUrl, future);
 		return future;
 	}
 	else {
-		return Future<FileHandle>::createFailed(Exception(tr("URL scheme '%1' not supported. The program supports only the sftp and http(s) URLs as well as local file paths.").arg(url.scheme()), taskManager.datasetContainer()));
+		return Future<FileHandle>::createFailed(Exception(tr("URL scheme '%1' not supported. The program supports only the sftp and http(s) URLs as well as local file paths.").arg(url.scheme())));
 	}
 }
 
 /******************************************************************************
 * Lists all files in a remote directory.
 ******************************************************************************/
-Future<QStringList> FileManager::listDirectoryContents(TaskManager& taskManager, const QUrl& url)
+Future<QStringList> FileManager::listDirectoryContents(const QUrl& url)
 {
 	if(url.scheme() == QStringLiteral("sftp")) {
 #ifdef OVITO_SSH_CLIENT
-		ListRemoteDirectoryJob* job = new ListRemoteDirectoryJob(url, taskManager);
+		ListRemoteDirectoryJob* job = new ListRemoteDirectoryJob(url);
+		_taskManager.registerPromise(job->promise());
 		return job->future();
 #else
-		return Future<QStringList>::createFailed(Exception(tr("URL scheme not supported. This version of OVITO was built without support for the sftp:// protocol and can open local files only."), taskManager.datasetContainer()));
+		return Future<QStringList>::createFailed(Exception(tr("URL scheme not supported. This version of OVITO was built without support for the sftp:// protocol and can open local files only.")));
 #endif
 	}
 	else if(url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https")) {
@@ -142,11 +144,11 @@ Future<QStringList> FileManager::listDirectoryContents(TaskManager& taskManager,
         }
         return std::move(fileList);
 #else
-		return Future<QStringList>::createFailed(Exception(tr("URL scheme not supported. This version of OVITO was built without support for the http:// protocol and can open local files only."), taskManager.datasetContainer()));
+		return Future<QStringList>::createFailed(Exception(tr("URL scheme not supported. This version of OVITO was built without support for the http:// protocol and can open local files only.")));
 #endif
 	}
 	else {
-		return Future<QStringList>::createFailed(Exception(tr("Directory listings for URL scheme '%1' not supported. The program can only look for files in sftp:// locations and in local directories.").arg(url.scheme()), taskManager.datasetContainer()));
+		return Future<QStringList>::createFailed(Exception(tr("Directory listings for URL scheme '%1' not supported. The program can only look for files in sftp:// locations and in local directories.").arg(url.scheme())));
 	}
 }
 

@@ -25,7 +25,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/utilities/io/FileManager.h>
-#include <ovito/core/utilities/concurrent/ForEach.h>
+#include <ovito/core/utilities/concurrent/Reduce.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
@@ -210,7 +210,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 	}
 
 	// Load each dataset referenced by the VTM file. 
-	Future<ExtendedLoadRequest> future = for_each(std::move(modifiedRequest), std::move(blockDatasets), dataset()->executor(), [](const ParaViewVTMBlockInfo& blockInfo, ExtendedLoadRequest& request) {
+	Future<ExtendedLoadRequest> future = reduce_sequential(std::move(modifiedRequest), std::move(blockDatasets), dataset()->executor(true), [](const ParaViewVTMBlockInfo& blockInfo, ExtendedLoadRequest& request) {
 
 		// We can skip empty datasets which are not associated with a VTK file.
 		if(blockInfo.location.isEmpty())
@@ -222,7 +222,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 		request.appendData = (blockInfo.pieceIndex > 0); // Append data (instead of replacing it) when loading subsequent partial blocks of a piece-wise (parallel) dataset.
 
 		// Retrieve the data file.
-		return Application::instance()->fileManager()->fetchUrl(request.dataset->taskManager(), blockInfo.location).then_future(request.dataset->executor(), [&request](SharedFuture<FileHandle> fileFuture) mutable -> Future<> {
+		return Application::instance()->fileManager().fetchUrl(blockInfo.location).then(request.dataset->executor(), [&request](const SharedFuture<FileHandle>& fileFuture) mutable -> Future<> {
 			try {
 				// Obtain a handle to the referenced data file.
 				const FileHandle& file = fileFuture.result();
@@ -259,7 +259,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 				// Parse the referenced file.
 				// Note: We need to keep the FileSourceImporter object while the asynchronous parsing process is 
 				// in progress. That's why we store an otherwise unused pointer to it in the lambda function. 
-				return importer->loadFrame(request).then_future([importer, filename = file.sourceUrl().fileName(), &request, lastStatus](Future<PipelineFlowState> blockDataFuture) mutable {
+				return importer->loadFrame(request).then([importer, filename = file.sourceUrl().fileName(), &request, lastStatus](Future<PipelineFlowState> blockDataFuture) mutable {
 					try {
 						request.state = blockDataFuture.result();
 

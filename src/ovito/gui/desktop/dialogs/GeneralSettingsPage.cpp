@@ -86,7 +86,7 @@ void GeneralSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* se
 		// list of available devices to the application settings store, from where we can read them.
 		QString dummyBuffer;
 		QTextStream dummyStream(&dummyBuffer);
-		rendererClass->querySystemInformation(dummyStream, *Application::instance()->datasetContainer());
+		rendererClass->querySystemInformation(dummyStream, settingsDialog->mainWindow());
 
 		settings.beginGroup("rendering/vulkan");
 		int numDevices = settings.beginReadArray("available_devices");

@@ -27,10 +27,6 @@
 #include <ovito/core/rendering/LinePrimitive.h>
 #include <ovito/core/rendering/TextPrimitive.h>
 
-namespace Ovito { 
-	class UserInterface;   // Note: This class is defined in another plugin module.
-}
-
 namespace Ovito {
 
 /**
@@ -42,7 +38,7 @@ class OVITO_CORE_EXPORT ViewportWindowInterface
 public:
 
 	/// Constructor which associates this window with the given viewport instance.
-	ViewportWindowInterface(UserInterface* gui, Viewport* vp);
+	ViewportWindowInterface(UserInterface& userInterface, Viewport* vp);
 
 	/// Destructor.
 	~ViewportWindowInterface();
@@ -53,11 +49,8 @@ public:
 	/// Returns the viewport associated with this window.
 	Viewport* viewport() const { return _viewport; }
 
-	/// Sets the user interface hosting this viewport.
-	void setGui(UserInterface* gui) { _gui = gui; }
-
-	/// Returns the user interface hosting this viewport window.
-	UserInterface* gui() const { return _gui; }
+	/// Returns the abstract user interface hosting this viewport window.
+	UserInterface& userInterface() const { return _userInterface; }
 
     /// Puts an update request for this window in the event loop.
 	virtual void renderLater() = 0;
@@ -131,8 +124,8 @@ protected:
 
 private:
 
-	/// Pointer to the abstract user interface hosting this viewport window.
-	UserInterface* _gui;
+	/// The abstract user interface hosting this viewport window.
+	UserInterface& _userInterface;
 
 	/// The viewport associated with this window.
 	Viewport* _viewport;

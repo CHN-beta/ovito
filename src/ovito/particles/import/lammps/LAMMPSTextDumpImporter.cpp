@@ -497,7 +497,7 @@ Future<ParticleInputColumnMapping> LAMMPSTextDumpImporter::inspectFileHeader(con
 	activateCLocale();
 
 	// Retrieve file.
-	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
+	return Application::instance()->fileManager().fetchUrl(frame.sourceFile)
 		.then([](const FileHandle& fileHandle) {
 			
 			// Start parsing the file up to the specification of the file columns.

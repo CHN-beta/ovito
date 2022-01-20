@@ -42,9 +42,9 @@ ParticleExporter::ParticleExporter(DataSet* dataset) : FileExporter(dataset)
 * Evaluates the pipeline of an PipelineSceneNode and makes sure that the data to be
 * exported contains particles and throws an exception if not.
 ******************************************************************************/
-PipelineFlowState ParticleExporter::getParticleData(TimePoint time, SynchronousOperation operation) const
+PipelineFlowState ParticleExporter::getParticleData(TimePoint time, MainThreadOperation& operation) const
 {
-	PipelineFlowState state = getPipelineDataToBeExported(time, operation.subOperation());
+	PipelineFlowState state = getPipelineDataToBeExported(time, operation);
 	if(operation.isCanceled())
 		return {};
 
@@ -67,7 +67,7 @@ PipelineFlowState ParticleExporter::getParticleData(TimePoint time, SynchronousO
  * This is called once for every output file to be written and before
  * exportFrame() is called.
  *****************************************************************************/
-bool ParticleExporter::openOutputFile(const QString& filePath, int numberOfFrames, SynchronousOperation operation)
+bool ParticleExporter::openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation)
 {
 	OVITO_ASSERT(!_outputFile.isOpen());
 	OVITO_ASSERT(!_outputStream);
@@ -96,10 +96,10 @@ void ParticleExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool ParticleExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, SynchronousOperation operation)
+bool ParticleExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
 {
 	// Retreive the particle data to be exported.
-	const PipelineFlowState& state = getParticleData(time, operation.subOperation());
+	const PipelineFlowState& state = getParticleData(time, operation);
 	if(operation.isCanceled() || !state)
 		return false;
 
@@ -107,7 +107,7 @@ bool ParticleExporter::exportFrame(int frameNumber, TimePoint time, const QStrin
 	operation.setProgressText(tr("Writing file %1").arg(filePath));
 
 	// Let the subclass do the work.
-	return exportData(state, frameNumber, time, filePath, std::move(operation));
+	return exportData(state, frameNumber, time, filePath, operation);
 }
 
 }	// End of namespace

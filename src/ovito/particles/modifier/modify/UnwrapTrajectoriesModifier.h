@@ -96,7 +96,7 @@ public:
 	const UnflipData& unflipRecords() const { return _unflipRecords; }
 
 	/// Processes all frames of the input trajectory to detect periodic crossings of the particles.
-	SharedFuture<> detectPeriodicCrossings(TimePoint time, ObjectInitializationHints initializationHints);
+	SharedFuture<> detectPeriodicCrossings(const ModifierEvaluationRequest& request);
 
 	/// Unwraps the current particle coordinates.
 	void unwrapParticleCoordinates(const ModifierEvaluationRequest& request, PipelineFlowState& state);
@@ -118,12 +118,6 @@ protected:
 	/// Is called when the value of a reference field of this object changes.
 	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
-	/// Requests the next trajectory frame from the upstream pipeline.
-	void fetchNextFrame();
-
-	/// Calculates the information that is needed to unwrap particle coordinates.
-	void processNextFrame(int frame, TimePoint time, const PipelineFlowState& state);
-
 	/// Throws away the precomputed unwrapping information and interrupts
 	/// any computation currently in progress.
 	void invalidateUnwrapData();
@@ -131,12 +125,9 @@ protected:
 private:
 
 	/// The operation that processes all trajectory frames in the background to detect periodic crossings of particles.
-	Promise<> _unwrapOperation;
+	SharedFuture<> _unwrapOperation;
 
-	/// The future for fetching the next frame from the upstream pipeline. 
-	SharedFuture<PipelineFlowState> _fetchFrameFuture;
-
-	/// Indicates the animation time up to which trajectories have been unwrapped already.
+	/// The animation time up to which trajectories have already been unwrapped so far.
 	TimePoint _unwrappedUpToTime = TimeNegativeInfinity();
 
 	/// The list of particle crossings through periodic cell boundaries.
@@ -145,11 +136,16 @@ private:
 	/// The list of detected cell flips.
 	UnflipData _unflipRecords;
 
-	/// Working data used during processing of the input trajectory.
-	std::unordered_map<qlonglong,Point3> _previousPositions;
-	DataOORef<const SimulationCellObject> _previousCell;
-	std::array<int,3> _currentFlipState{{0,0,0}};
-	ObjectInitializationHints _initializationHints;
+	/// Working state used during processing of the input trajectory.
+	struct WorkingData {
+		UnwrapTrajectoriesModifierApplication* _modApp;
+		std::unordered_map<qlonglong,Point3> _previousPositions;
+		DataOORef<const SimulationCellObject> _previousCell;
+		std::array<int,3> _currentFlipState{{0,0,0}};
+
+		/// Calculates the information that is needed to unwrap particle coordinates.
+		void operator()(int frame, const PipelineFlowState& state);
+	};
 };
 
 }	// End of namespace

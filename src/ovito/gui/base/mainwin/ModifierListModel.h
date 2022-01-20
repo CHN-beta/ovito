@@ -84,7 +84,7 @@ class OVITO_GUIBASE_EXPORT ModifierListModel : public QAbstractListModel
 public:
 
 	/// Constructor.
-	ModifierListModel(QObject* parent, UserInterface* gui, PipelineListModel* pipelineListModel);
+	ModifierListModel(QObject* parent, UserInterface& userInterface, PipelineListModel* pipelineListModel);
 
 	/// Destructor.
 	virtual ~ModifierListModel() { _allModels.removeOne(this); }
@@ -162,7 +162,7 @@ private:
 	std::vector<QString> _categoryNames;
 
 	/// The abstract user interface.
-	UserInterface* _gui;
+	UserInterface& _userInterface;
 
 	/// The model representing the current data pipeline.
 	PipelineListModel* _pipelineListModel;

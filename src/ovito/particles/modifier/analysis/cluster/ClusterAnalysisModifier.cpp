@@ -201,7 +201,6 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 
 		// Visit all input particles again.
 		size_t particleCount = positions()->size();
-		setProgressValue(0);
 		setProgressMaximum(particleCount);
 		for(size_t particleIndex = 0; particleIndex < particleCount; particleIndex++) {
 
@@ -346,7 +345,6 @@ void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vec
 		return;
 
 	size_t particleCount = positions()->size();
-	setProgressValue(0);
 	setProgressMaximum(particleCount);
 	size_t progress = 0;
 
@@ -421,7 +419,6 @@ void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vec
 void ClusterAnalysisModifier::BondClusterAnalysisEngine::doClustering(std::vector<Point3>& centersOfMass)
 {
 	size_t particleCount = positions()->size();
-	setProgressValue(0);
 	setProgressMaximum(particleCount);
 	size_t progress = 0;
 

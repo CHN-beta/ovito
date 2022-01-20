@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -53,10 +53,10 @@ public:
 	void loadFromStream(LoadStream& stream);
 
 	/// \brief Converts the mapping data into a byte array.
-	QByteArray toByteArray(TaskManager& taskManager) const;
+	QByteArray toByteArray() const;
 
 	/// \brief Loads the mapping from a byte array.
-	void fromByteArray(const QByteArray& array, TaskManager& taskManager);
+	void fromByteArray(const QByteArray& array);
 };
 
 template<class PropertyContainerType>
@@ -80,10 +80,10 @@ public:
 	void loadFromStream(LoadStream& stream) { static_cast<OutputColumnMapping&>(*this).loadFromStream(stream); }
 
 	/// \brief Converts the mapping data into a byte array.
-	QByteArray toByteArray(TaskManager& taskManager) const { return static_cast<const OutputColumnMapping&>(*this).toByteArray(taskManager); }
+	QByteArray toByteArray() const { return static_cast<const OutputColumnMapping&>(*this).toByteArray(); }
 
 	/// \brief Loads the mapping from a byte array.
-	void fromByteArray(const QByteArray& array, TaskManager& taskManager) { static_cast<OutputColumnMapping&>(*this).fromByteArray(array, taskManager); }
+	void fromByteArray(const QByteArray& array) { static_cast<OutputColumnMapping&>(*this).fromByteArray(array); }
 };
 
 /**

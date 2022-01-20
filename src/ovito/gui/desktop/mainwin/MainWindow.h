@@ -25,7 +25,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/dataset/GuiDataSetContainer.h>
-#include <ovito/gui/base/mainwin/UserInterface.h>
+#include <ovito/core/app/UserInterface.h>
 
 namespace Ovito {
 
@@ -68,8 +68,8 @@ public:
 	/// Gives the active viewport the input focus.
 	virtual void setViewportInputFocus() override;
 
-	/// Closes the main window (and shuts down application if this is the last open window).
-	virtual void shutdown() override { QMainWindow::close(); }
+	/// Closes the user interface and shuts down the entire application after displaying an error message.
+	virtual void exitWithFatalError(const Exception& ex) override;
 
 	/// Returns the frame buffer window showing the rendered image.
 	FrameBufferWindow* frameBufferWindow() const { return _frameBufferWindow; }
@@ -118,9 +118,6 @@ public:
 
 	/// Determines whether the application window uses a dark theme.
 	bool darkTheme() const;
-
-	/// Returns the main window in which the given dataset is opened.
-	static MainWindow* fromDataset(DataSet* dataset);
 
 protected:
 

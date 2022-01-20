@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,12 +25,18 @@
 
 #include <ovito/core/Core.h>
 #include <function2/function2.hpp>
-#include "FutureDetail.h"
+#include "detail/FutureDetail.h"
 
 namespace Ovito {
 
+namespace detail { 
+    class TaskReference; // Forward declaration
+    class TaskCallbackBase;
+    template<typename Derived> class TaskCallback;
+}
+
 /**
- * \brief The shared state of a Promise/Future pair.
+ * \brief The shared state of promises and futures.
  */
 class OVITO_CORE_EXPORT Task : public std::enable_shared_from_this<Task>
 {
@@ -45,60 +51,70 @@ public:
     };
 
     /// Constructor.
-    Task(State initialState = NoState, TaskManager* taskManager = nullptr) : _state(initialState), _taskManager(taskManager) {
+    explicit Task(State initialState = NoState, void* resultsStorage = nullptr) noexcept : _state(initialState), _resultsStorage(resultsStorage) {
 #ifdef OVITO_DEBUG
-        _instanceCounter.fetch_add(1);
+        // In debug builds we keep track of how many task objects exist to check whether they all get destroyed correctly 
+        // at program termination. 
+        _globalTaskCounter.fetch_add(1);
 #endif
     }
 
+#ifdef OVITO_DEBUG
     /// Destructor.
-    virtual ~Task();
+    ~Task();
+#endif
 
     /// Returns whether this shared state has been canceled by a previous call to cancel().
-    bool isCanceled() const { return (_state & Canceled); }
+    bool isCanceled() const { return (_state.loadRelaxed() & Canceled); }
 
     /// Returns true if the promise is in the 'started' state.
-    bool isStarted() const { return (_state & Started); }
+    bool isStarted() const { return (_state.loadRelaxed() & Started); }
 
     /// Returns true if the promise is in the 'finished' state.
-    bool isFinished() const { return (_state & Finished); }
+    bool isFinished() const { return (_state.loadRelaxed() & Finished); }
 
     /// Returns the maximum value for progress reporting.
-    virtual qlonglong progressMaximum() const { return 0; }
-
-    /// \brief Sets the current maximum value for progress reporting.
-    virtual void setProgressMaximum(qlonglong maximum) {}
+    qlonglong progressMaximum() const {
+        const QMutexLocker lock(&_mutex);
+        return _totalProgressMaximum;
+    }
 
     /// \brief Returns the current progress of the task.
     /// \return A value in the range 0 to progressMaximum().
-    virtual qlonglong progressValue() const { return 0; }
+    qlonglong progressValue() const {
+        const QMutexLocker lock(&_mutex);
+        return _totalProgressValue;
+    }
+
+    /// \brief Returns the current status text of this task.
+    /// \return A string describing the ongoing operation, which is displayed in the user interface.
+    QString progressText() const {
+        const QMutexLocker lock(&_mutex);
+        return _progressText;
+    }
+
+    /// \brief Sets the current maximum value for progress reporting. The current progress value is reset to zero.
+    void setProgressMaximum(qlonglong maximum);
 
     /// \brief Sets the current progress value of the task.
     /// \param progressValue The new value, which must be in the range 0 to progressMaximum().
-    /// \return false if the task has been canceled in the meantime.
-    virtual bool setProgressValue(qlonglong progressValue) { return !isCanceled(); }
+    /// \return false if the task has been canceled.
+    bool setProgressValue(qlonglong progressValue);
 
     /// \brief Increments the progress value of the task.
     /// \param increment The number of progress units to add to the current progress value.
-    /// \return false if the task has been canceled in the meantime.
-    virtual bool incrementProgressValue(qlonglong increment = 1) { return !isCanceled(); }
+    /// \return false if the task has been canceled.
+    bool incrementProgressValue(qlonglong increment = 1);
 
     /// \brief Sets the current progress value of the task, generating update events only occasionally.
     /// \param progressValue The new value, which must be in the range 0 to progressMaximum().
     /// \param updateEvery Generate an update event only after the method has been called this many times.
-    /// \return false if the task has been canceled in the meantime.
-    virtual bool setProgressValueIntermittent(qlonglong progressValue, int updateEvery = 2000) { return !isCanceled(); }
+    /// \return false if the task has been canceled.
+    bool setProgressValueIntermittent(qlonglong progressValue, int updateEvery = 2000);
 
-    /// \brief Returns the current status text of this task.
-    /// \return A string describing the ongoing operation, which is displayed in the user interface.
-    virtual QString progressText() const { return QString(); }
-
-    /// \brief Changes the status text of this task.
-    /// \param progressText The text string that will be displayed in the user interface to describe the operation in
-    ///                     progress.
-    virtual void setProgressText(const QString& progressText) {}
-
-    // Progress reporting for tasks with sub-steps:
+    /// \brief Changes the description of this task to be displayed in the GUI.
+    /// \param progressText The text string that will be displayed in the user interface to describe the operation in progress.
+    void setProgressText(const QString& progressText);
 
     /// \brief Starts a sequence of sub-steps in the progress range of this task.
     ///
@@ -107,7 +123,7 @@ public:
     ///
     /// \param weights A vector of relative weights, one for each sub-step, which will be used to calculate the
     ///                the total progress as sub-steps are completed.
-    virtual void beginProgressSubStepsWithWeights(std::vector<int> weights) {}
+    void beginProgressSubStepsWithWeights(std::vector<int> weights);
 
     /// \brief Convenience version of the function above, which creates *N* substeps, all with the same weight.
     /// \param nsteps The number of sub-steps in the sequence.
@@ -115,34 +131,22 @@ public:
 
     /// \brief Completes the current sub-step in the sequence started with beginProgressSubSteps() or
     ///        beginProgressSubStepsWithWeights() and moves to the next one.
-    virtual void nextProgressSubStep() {}
+    void nextProgressSubStep();
 
     /// \brief Completes a sub-step sequence started with beginProgressSubSteps() or beginProgressSubStepsWithWeights().
     ///
     /// Call this method after the last sub-step has been completed.
-    virtual void endProgressSubSteps() {}
-
-    /// \brief Returns the maximum duration of this task (also taking into account any sub-steps).
-    /// \return The number of work units this task consists of. The special value 0 indicates that the duration of the task is unknown.
-    virtual qlonglong totalProgressMaximum() const { return 0; }
-
-    /// \brief Returns the current progress value of this task (also taking into account any sub-steps).
-    /// \return The number of work units of this task that have been completed so far. This is a value between 0 and totalProgressMaximum().
-    virtual qlonglong totalProgressValue() const { return 0; }
+    void endProgressSubSteps();
 
     /// \brief Requests cancellation of the task.
-    virtual void cancel() noexcept;
+    void cancel() noexcept;
 
     /// \brief Switches the task into the 'started' state.
-    /// \return false if the task has already been in the 'started' state.
-    ///
-    /// This should be called after creating a task to put it into the 'started' state.
-    virtual bool setStarted();
+    /// \return false if the task was already in the 'started' state before.
+    bool setStarted() noexcept;
 
     /// \brief Switches the task into the 'finished' state.
-    ///
-    /// This should be called after the task has been completed or when it has failed.
-    virtual void setFinished();
+    void setFinished() noexcept;
 
     /// \brief Switches the task into the 'exception' state to signal that an exception has occurred.
     ///
@@ -152,53 +156,62 @@ public:
 
     /// \brief Switches the task into the 'exception' state to signal that an exception has occurred.
     /// \param ex The exception to store into the task object.
-    virtual void setException(std::exception_ptr&& ex);
+    void setException(const std::exception_ptr& ex) { setException(std::exception_ptr(ex)); }
 
     /// \brief Switches the task into the 'exception' state to signal that an exception has occurred.
     /// \param ex The exception to store into the task object.
-    void setException(const std::exception_ptr& ex) { setException(std::exception_ptr(ex)); }
+    void setException(std::exception_ptr&& ex) {
+        const QMutexLocker locker(&taskMutex());
 
-    /// \brief Returns the internal exception store, which contains an exception object in case the task has failed.
-    const std::exception_ptr& exceptionStore() const { return _exceptionStore; }
+        // Check if task is already canceled or finished.
+        if(_state.loadRelaxed() & (Canceled | Finished))
+            return;
 
-    /// \brief Moves the internal exception store out of the task object.
-    std::exception_ptr takeExceptionStore() { return std::move(_exceptionStore); }
+        exceptionLocked(std::move(ex));
+    }
 
-    /// \brief Resets the task object to its initial state, so that it can be run again.
-    /// \note This method may only be called on a task that has finished running.
-    virtual void startOver();
-
-    /// \brief Blocks execution until the given future enters the completed state.
-    /// \param future The future to wait for.
-    /// \return false if the either this task or the future have been canceled.
+    /// \brief Switches the task into the 'exception' and the 'finished' states to signal that an exception has occurred.
     ///
-    /// If the future gets canceled for some reason while waiting for it, this task gets automatically canceled as well.
-	bool waitForFuture(const FutureBase& future);
+    /// This method should be called from within an exception handler. It saves a copy of the current exception
+    /// being handled into the task object.
+    void captureExceptionAndFinish() {
+        QMutexLocker locker(&taskMutex());
 
-	/// \brief Returns the TaskManager this task is associated with (may be null).
-	TaskManager* taskManager() const { return _taskManager; }
+        // Check if task is already canceled or finished.
+        if(_state.loadRelaxed() & (Canceled | Finished))
+            return;
 
-	/// Runs the given contintuation function once this task has reached either the 'finished' or 'canceled' states.
+        exceptionLocked(std::current_exception());
+        finishLocked(locker);
+    }
+
+	/// Runs the given continuation function once this task has reached either the 'finished' or the 'canceled' state.
 	/// Note that the continuation function will always be executed, even if this task was canceled or set to an error state.
-    /// The continuation function must accept a TaskPtr (pointing to this Task) as a parameter.
-    template<typename Executor, typename F>
-    void finally(Executor&& executor, bool defer, F&& continuationFunc) noexcept {
-        addContinuationImpl(
-            fu2::unique_function<void(bool)>(
-                std::forward<Executor>(executor).createWork(
-                    std::bind(std::forward<F>(continuationFunc), shared_from_this()))), 
-            defer);
+    /// The callable may take one optional parameter: a reference to the Task object that completed.
+    template<typename Executor, typename Function>
+    void finally(Executor&& executor, Function&& f) {
+        QMutexLocker locker(&taskMutex());
+        addContinuation(std::forward<Executor>(executor).schedule(std::forward<Function>(f)), locker);
+    }
+
+	/// Runs the given continuation function once this task has reached either the 'finished' or the 'canceled' state.
+	/// Note that the continuation function will always be executed, even if this task was canceled or set to an error state.
+    /// The callable may take one optional parameter: a reference to the Task object that completed.
+    template<typename Function>
+    void finally(Function&& f) { 
+        QMutexLocker locker(&taskMutex());
+        addContinuation(std::forward<Function>(f), locker); 
     }
 
     /// Accessor function for the internal results storage.
     /// This overload is used for tasks with a non-empty results tuple.
     template<typename tuple_type>
     const std::enable_if_t<std::tuple_size<tuple_type>::value != 0, tuple_type>& getResults() const {
-        OVITO_ASSERT(_resultsTuple != nullptr);
+        OVITO_ASSERT(_resultsStorage != nullptr);
 #ifdef OVITO_DEBUG
-        OVITO_ASSERT((bool)_resultSet);
+        OVITO_ASSERT(_hasResultsStored.load());
 #endif
-        return *static_cast<const tuple_type*>(_resultsTuple);
+        return *static_cast<const tuple_type*>(_resultsStorage);
     }
 
     /// Accessor function for the internal results storage.
@@ -212,268 +225,187 @@ public:
     template<typename tuple_type>
     tuple_type takeResults() {
         if constexpr(std::tuple_size<tuple_type>::value != 0) {
-            OVITO_ASSERT(_resultsTuple != nullptr);
 #ifdef OVITO_DEBUG
-            OVITO_ASSERT((bool)_resultSet);
-            _resultSet = false;
+            OVITO_ASSERT(_hasResultsStored.exchange(false) == true);
 #endif
-            return std::move(*static_cast<tuple_type*>(_resultsTuple));
+            OVITO_ASSERT(_resultsStorage != nullptr);
+            return std::move(*static_cast<tuple_type*>(_resultsStorage));
         }
         else {
             return {};
         }
     }
 
-#ifdef OVITO_DEBUG
-    /// Returns the global number of Task instances that currently exist. Used to detect memory leaks.
-    static size_t instanceCount() { return _instanceCounter.load(); }
-
-    /// Returns the current number of futures that hold a strong reference to this shared state.
-    int shareCount() const noexcept { return _shareCount.load(); }
-#endif
-
-protected:
-
-	/// \brief Associates this task with a TaskManager.
-	void setTaskManager(TaskManager* taskManager) { _taskManager = taskManager; }
-
     /// \brief Re-throws the exception stored in this task state if an exception was previously set via setException().
     /// \throw The exception stored in the Task (if any).
     void throwPossibleException() {
         if(exceptionStore())
-            std::rethrow_exception(takeExceptionStore());
+            std::rethrow_exception(exceptionStore());
     }
 
-	template<typename tuple_type, typename source_tuple_type>
-	void setResultsImpl(source_tuple_type&& value, std::false_type) {
+    /// \brief Returns the internal exception store, which contains an exception object in case the task has failed.
+    const std::exception_ptr& exceptionStore() const noexcept { return _exceptionStore; }
+
+    /// \brief Returns a copy of the internal exception store, which contains an exception object in case the task has failed.
+    std::exception_ptr copyExceptionStore() const { return std::exception_ptr{exceptionStore()}; }
+
+protected:
+
+    /// Assigns a tuple of values to the internal results storage of the task.
+    template<typename tuple_type, typename... R>
+    void setResults(std::tuple<R...>&& value) {
+		static_assert(std::tuple_size_v<tuple_type> == std::tuple_size_v<std::tuple<R...>>, "Must assign a compatible tuple");
 #ifdef OVITO_DEBUG
-        OVITO_ASSERT(!(bool)_resultSet);
-        _resultSet = true;
+        OVITO_ASSERT(_hasResultsStored.exchange(true) == false);
 #endif
+        if constexpr(std::tuple_size_v<tuple_type> != 0) {
+            OVITO_ASSERT(_resultsStorage != nullptr);
+            *static_cast<tuple_type*>(_resultsStorage) = std::move(value);
+        }
     }
 
-    template<typename tuple_type, typename source_tuple_type>
-	void setResultsImpl(source_tuple_type&& value, std::true_type) {
-        OVITO_ASSERT(_resultsTuple != nullptr);
-#ifdef OVITO_DEBUG
-        OVITO_ASSERT(!(bool)_resultSet);
-        _resultSet = true;
-#endif
-        *static_cast<tuple_type*>(_resultsTuple) = std::forward<source_tuple_type>(value);
+    /// Assigns a single value to the internal results storage of the task.
+	template<typename tuple_type, typename value_type>
+	void setResults(value_type&& result) {
+		setResults<tuple_type>(std::forward_as_tuple(std::forward<value_type>(result)));
+	}
+
+    /// Assigns a void value to the internal results storage of the task.
+	template<typename tuple_type>
+	void setResults() {
+		setResults<tuple_type>(std::tuple<>{});
+	}
+
+    /// Adds a callback to this task's list, which will get notified during state changes.
+    void addCallback(detail::TaskCallbackBase* cb, bool replayStateChanges) noexcept;
+
+    /// Removes a callback from this task's list, which will no longer get notified about state changes.
+    void removeCallback(detail::TaskCallbackBase* cb) noexcept;
+
+    /// Registers a callback function that will be run when this task reaches the 'finished' state. 
+    /// If the task is already in one of these states, the continuation function is invoked immediately.
+    template<typename Function>
+    void addContinuation(Function&& f, QMutexLocker<QMutex>& locker) {
+        // Check if task is already finished.
+        if(isFinished()) {
+            // Run continuation function immediately.
+            locker.unlock();
+            if constexpr(std::is_invocable_v<Function, Task&>)
+                std::forward<Function>(f)(*this);
+            else
+                std::forward<Function>(f)();
+        }
+        else {
+            // Otherwise, insert into list to run continuation function later.
+            registerContinuation(std::forward<Function>(f));
+        }
     }
 
-    /// Accessor function for the internal results storage.
-    template<typename tuple_type, typename source_tuple_type>
-    void setResults(source_tuple_type&& value) {
-        setResultsImpl<tuple_type>(std::forward<source_tuple_type>(value), std::integral_constant<bool, std::tuple_size<tuple_type>::value != 0>{});
+    /// Registers a callback function that will be run when this task reaches the 'finished' state. 
+    /// Do not call this method if the task is already in the 'finished' state.
+    template<typename Function>
+    void registerContinuation(Function&& f) {
+        OVITO_ASSERT(!isFinished());
+        // Insert into list. Will run continuation function once the task finishes.
+        if constexpr(std::is_invocable_v<Function, Task&>)
+            _continuations.push_back(fu2::unique_function<void(Task&) noexcept>{std::forward<Function>(f)});
+        else
+            _continuations.push_back(fu2::unique_function<void(Task&) noexcept>{
+                [f = std::forward<Function>(f)](Task&) mutable noexcept { return std::forward<Function>(f)(); }});
     }
 
-    virtual void registerWatcher(TaskWatcher* watcher);
-    virtual void unregisterWatcher(TaskWatcher* watcher);
+    /// Puts this task into the 'started' state (without newly locking the task).
+    bool startLocked() noexcept;
 
-    virtual void addContinuationImpl(fu2::unique_function<void(bool)>&& continuationFunc, bool defer);
+    /// Puts this task into the 'canceled' state (without newly locking the task).
+    void exceptionLocked(std::exception_ptr&& ex) noexcept;
 
-    void cancelNoSelfLock() noexcept;
-    void setFinishedNoSelfLock() noexcept;
+    /// Puts this task into the 'canceled' state (without newly locking the task).
+    void cancelLocked(QMutexLocker<QMutex>& locker) noexcept;
 
-    /// Increments the counter of futures currently holding a strong reference to this task.
-    void incrementShareCount() noexcept { _shareCount.fetch_add(1, std::memory_order_relaxed); }
+    /// Puts this task into the 'finished' state (without newly locking the task).
+    void finishLocked(QMutexLocker<QMutex>& locker) noexcept;
 
-    /// Decrements the counter of futures currently holding a strong reference to this task.
-    /// If the counter reaches zero, the task gets automatically canceled.
-    void decrementShareCount() noexcept;
+    /// Puts this task into the 'canceled' and 'finished' states (without newly locking the task).
+    void cancelAndFinishLocked(QMutexLocker<QMutex>& locker) noexcept;
 
-    /// Head of linked list of TaskWatchers currently monitoring this task.
-    TaskWatcher* _watchers = nullptr;
+    /// Increments the counter of futures or parent tasks currently waiting for this task to complete.
+    void incrementDependentsCount() noexcept { _dependentsCount.ref(); }
 
-    /// Pointer to a std::tuple<...> storing the results of this task.
-    void* _resultsTuple = nullptr;
+    /// Decrements the counter of futures or parent tasks currently waiting for this task to complete.
+    /// If this counter reaches zero, the task gets canceled.
+    void decrementDependentsCount() noexcept { 
+        // Automatically cancel this task when there are no one left who depends on it.
+        if(!_dependentsCount.deref())
+            cancel();
+    }
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0) // Note: QVarLengthArray fully supports move-only types since Qt 5.12
+    /// Returns the mutex that is used to manage concurrent access to this task.
+    QMutex& taskMutex() const { return _mutex; }
+
+    /// Recomputes the total progress made so far based on the progress of the current sub-task.
+    void updateTotalProgress();
+
+    /// The current state this task is in.
+    QAtomicInt _state;
+
+    /// The number of other parties currently waiting for this task to complete.
+    QAtomicInt _dependentsCount{0};
+
+    /// Used for managing concurrent access to this task.
+    mutable QMutex _mutex;
+
     /// List of continuation functions that will be called when this task enters the 'finished' or the 'canceled' state.
-    QVarLengthArray<fu2::unique_function<void(bool)>, 1> _continuations;
-#else
-    /// List of continuation functions that will be called when this task enters the 'finished' or the 'canceled' state.
-    std::vector<fu2::unique_function<void(bool)>> _continuations;
-#endif
+    QVarLengthArray<fu2::unique_function<void(Task&) noexcept>, 2> _continuations;
 
     /// Holds the exception object when this shared state is in the failed state.
     std::exception_ptr _exceptionStore;
 
-	/// The TaskManager this task is registered with.
-	TaskManager* _taskManager = nullptr;
+    /// Head of linked list of callback functions currently registered to this task.
+    detail::TaskCallbackBase* _callbacks = nullptr;
 
-    /// The current state this task is in.
-    State _state;
+    /// Pointer to a std::tuple<...> storing the result value(s) of this task.
+    void* _resultsStorage = nullptr;
 
-    /// The number of Futures or other tasks currently referencing this shared state.
-    std::atomic_int _shareCount{0};
+    /// The progress value of the current sub-task.
+    qlonglong _progressValue = 0;
+    
+    /// The maximum progress value of the current sub-task.
+    qlonglong _progressMaximum = 0;
+
+    /// The progress value of the task.
+	qlonglong _totalProgressValue = 0;
+
+    /// The maximum progress value of the task.
+	qlonglong _totalProgressMaximum = 0;
+
+    /// A description of what this task is currently doing, to be displayed in the GUI.
+    QString _progressText;
+
+    /// Keeps track of nested sub-tasks and their current progress.
+    std::vector<std::pair<int, std::vector<int>>> _subTaskProgressStack;
+    
+    int _intermittentUpdateCounter = 0;
+    
+    QElapsedTimer _progressTime;
 
 #ifdef OVITO_DEBUG
-    /// Indicates whether the result value of shared state has been set.
-    std::atomic<bool> _resultSet{false};
+    /// Indicates whether the result value of the task has been set.
+    std::atomic<bool> _hasResultsStored{false};
 
-    /// Global counter of Task instance. Used to detect memory leaks.
-    static std::atomic_size_t _instanceCounter;
+    /// Global counter of Task instances that exist at a time. Used only in debug builds to detect memory leaks.
+    static std::atomic_size_t _globalTaskCounter;
 #endif
 
-    friend class TaskWatcher;
-    friend class TaskManager;
     friend class FutureBase;
-    friend class TaskDependency;
+    friend class PromiseBase;
+    friend class MainThreadOperation;
+    friend class detail::TaskReference;
+    friend class detail::TaskCallbackBase;
+    template<typename Derived> friend class detail::TaskCallback;
     template<typename... R2> friend class Future;
     template<typename... R2> friend class SharedFuture;
     template<typename... R2> friend class Promise;
-};
-
-/**
- * \brief Composite class template that packages a Task together with the storage for the task's results tuple.
- *
- * \tparam TaskType A Task derived class.
- * \tparam Tuple The std::tuple<...> type of the results storage.
- *
- * The Task gets automatically configured to use the internal results storage provided by this class.
- */
-template<class TaskType, class Tuple>
-#ifndef Q_CC_MSVC
-class TaskWithResultStorage : public TaskType, private Tuple
-#else
-class TaskWithResultStorage : public TaskType
-#endif
-{
-public:
-    using tuple_type = Tuple;
-
-    /// A special tag parameter type used to differentiate the second TaskWithResultStorage constructor.
-    struct no_result_init_t {
-        explicit no_result_init_t() = default;
-    };
-
-    /// \brief Constructor assigning the task's results storage and forwarding any extra arguments to the task class constructor.
-    /// \param initialResult The value to assign to the results storage tuple.
-    /// \param args The extra arguments which will be passed to the constructor of the Task derived class.
-    template <typename... Args>
-    TaskWithResultStorage(tuple_type initialResult, Args&&... args) : TaskType(std::forward<Args>(args)...),
-#ifndef Q_CC_MSVC
-        tuple_type(std::move(initialResult))
-#else
-        _tuple(std::move(initialResult))
-#endif
-    {
-        // Inform the Task about the internal storage location for the task results.
-#ifndef Q_CC_MSVC
-        this->_resultsTuple = static_cast<tuple_type*>(this);
-#else
-        this->_resultsTuple = static_cast<tuple_type*>(&_tuple);
-#endif
-#ifdef OVITO_DEBUG
-        // This is used in debug builds to detect programming errors and explicitly keep track of whether a result has
-        // been assigned to the task.
-        this->_resultSet = true;
-#endif
-    }
-
-    /// \brief Constructor which doesn't initialize the results storage (only the Task).
-    /// \param ignored An unused tag parameter for discriminating this constructor from the other one.
-    /// \param args The arguments to be passed to the constructor of the Task derived class.
-    template <typename... Args>
-    TaskWithResultStorage(no_result_init_t ignored, Args&&... args) : TaskType(std::forward<Args>(args)...)
-    {
-        // Inform the Task about the internal storage location for the task results,
-        // unless this is a task not having any return value (i.e. empty tuple).
-        if(std::tuple_size<tuple_type>::value != 0)
-#ifndef Q_CC_MSVC
-            this->_resultsTuple = static_cast<tuple_type*>(this);
-#else
-            this->_resultsTuple = static_cast<tuple_type*>(&_tuple);
-#endif
-    }
-private:
-
-#ifdef Q_CC_MSVC
-    tuple_type _tuple;
-#endif
-};
-
-/**
- * \brief A smart pointer to a Task, implementing intrusive reference counting.
- *
- * This is used by the classes Future and SharedFuture to express their dependency on a Task. If the reference
- * count to the Task reaches zero, because no future depends on it anymore, the Task is automatically canceled.
- */
-class OVITO_CORE_EXPORT TaskDependency
-{
-public:
-
-#ifndef Q_CC_MSVC
-    /// Default constructor, initializing the smart pointer to null.
-    TaskDependency() noexcept = default;
-#else  // Workaround for MSVC compiler deficiency:
-    /// Default constructor, initializing the smart pointer to null.
-    TaskDependency() noexcept {}
-#endif
-
-    /// Initialization constructor.
-    TaskDependency(TaskPtr ptr) noexcept : _ptr(std::move(ptr)) {
-        if(_ptr) _ptr->incrementShareCount();
-    }
-
-    /// Copy constructor.
-    TaskDependency(const TaskDependency& other) noexcept : _ptr(other._ptr) {
-        if(_ptr) _ptr->incrementShareCount();
-    }
-
-    /// Move constructor.
-    TaskDependency(TaskDependency&& rhs) noexcept : _ptr(std::move(rhs._ptr)) {}
-
-    /// Destructor.
-    ~TaskDependency() noexcept {
-        if(_ptr) _ptr->decrementShareCount();
-    }
-
-    // Copy assignment.
-    TaskDependency& operator=(const TaskDependency& rhs) noexcept {
-        TaskDependency(rhs).swap(*this);
-        return *this;
-    }
-
-    // Move assignment.
-    TaskDependency& operator=(TaskDependency&& rhs) noexcept {
-        TaskDependency(std::move(rhs)).swap(*this);
-        return *this;
-    }
-
-    // Access to pointer value.
-    const TaskPtr& get() const noexcept {
-        return _ptr;
-    }
-
-    void reset() noexcept {
-        TaskDependency().swap(*this);
-    }
-
-    void reset(TaskPtr rhs) noexcept {
-        TaskDependency(std::move(rhs)).swap(*this);
-    }
-
-    inline void swap(TaskDependency& rhs) noexcept {
-        _ptr.swap(rhs._ptr);
-    }
-
-    inline Task& operator*() const noexcept {
-        OVITO_ASSERT(_ptr);
-    	return *_ptr.get();
-    }
-
-    inline Task* operator->() const noexcept {
-        OVITO_ASSERT(_ptr);
-    	return _ptr.get();
-    }
-
-	explicit operator bool() const { return (bool)_ptr; }
-
-private:
-    TaskPtr _ptr;
 };
 
 }	// End of namespace

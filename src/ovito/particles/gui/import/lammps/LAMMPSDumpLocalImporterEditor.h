@@ -42,12 +42,12 @@ public:
 	Q_INVOKABLE LAMMPSDumpLocalImporterEditor() {}
 
 	/// This is called by the system when the user has selected a new file to import.
-	virtual bool inspectNewFile(FileImporter* importer, const QUrl& sourceFile, QWidget* parent) override;
+	virtual bool inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) override;
 
 protected:
 
 	/// Displays a dialog box that allows the user to edit the file column to property mapping.
-	bool showEditColumnMappingDialog(LAMMPSDumpLocalImporter* importer, const FileSourceImporter::Frame& frame, MainWindow* mainWindow);
+	bool showEditColumnMappingDialog(LAMMPSDumpLocalImporter* importer, const FileSourceImporter::Frame& frame);
 
 	/// Creates the user interface controls for the editor.
 	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;

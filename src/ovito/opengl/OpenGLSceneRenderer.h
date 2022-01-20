@@ -56,7 +56,7 @@ public:
 		using SceneRenderer::OOMetaClass::OOMetaClass;
 
 		/// Is called by OVITO to query the class for any information that should be included in the application's system report.
-		virtual void querySystemInformation(QTextStream& stream, DataSetContainer& container) const override;
+		virtual void querySystemInformation(QTextStream& stream, UserInterface& userInterface) const override;
 	};
 
 	OVITO_CLASS_META(OpenGLSceneRenderer, OOMetaClass)
@@ -73,13 +73,13 @@ public:
 	virtual qreal devicePixelRatio() const override { return antialiasingLevel() * SceneRenderer::devicePixelRatio(); }
 
 	/// Renders the current animation frame.
-	virtual bool renderFrame(const QRect& viewportRect, SynchronousOperation operation) override;
+	virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
 
 	/// This method is called just before renderFrame() is called.
 	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
 	/// Renders the overlays/underlays of the viewport into the framebuffer.
-	virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation) override;
+	virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;
 	
 	/// This method is called after renderFrame() has been called.
 	virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;

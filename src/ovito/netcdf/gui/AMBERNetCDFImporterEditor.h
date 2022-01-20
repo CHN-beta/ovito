@@ -47,7 +47,7 @@ protected:
 	virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
 	/// Displays a dialog box that allows the user to edit the custom file column to particle property mapping.
-	bool showEditColumnMappingDialog(AMBERNetCDFImporter* importer, const FileSourceImporter::Frame& frame, MainWindow* mainWindow);
+	bool showEditColumnMappingDialog(AMBERNetCDFImporter* importer, const FileSourceImporter::Frame& frame);
 
 protected Q_SLOTS:
 

@@ -42,7 +42,7 @@ class OVITO_VULKANRENDERERGUI_EXPORT VulkanViewportWindow : public QWindow, publ
 public:
 
 	/// Constructor.
-	Q_INVOKABLE VulkanViewportWindow(Viewport* vp, ViewportInputManager* inputManager, UserInterface* gui, QWidget* parentWidget);
+	Q_INVOKABLE VulkanViewportWindow(Viewport* vp, UserInterface* userInterface, QWidget* parentWidget);
 
 	/// Returns the QWidget that is associated with this viewport window.
 	virtual QWidget* widget() override { return _widget; }

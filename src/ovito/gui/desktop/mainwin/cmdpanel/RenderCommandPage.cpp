@@ -32,7 +32,7 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the command panel page.
 ******************************************************************************/
-RenderCommandPage::RenderCommandPage(MainWindow* mainWindow, QWidget* parent) : QWidget(parent)
+RenderCommandPage::RenderCommandPage(MainWindow& mainWindow, QWidget* parent) : QWidget(parent)
 {
 	QVBoxLayout* layout = new QVBoxLayout(this);
 	layout->setContentsMargins(2,2,2,2);
@@ -42,7 +42,7 @@ RenderCommandPage::RenderCommandPage(MainWindow* mainWindow, QWidget* parent) : 
 	propertiesPanel->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
 	layout->addWidget(propertiesPanel, 1);
 
-	connect(&mainWindow->datasetContainer(), &DataSetContainer::dataSetChanged, this, &RenderCommandPage::onDataSetChanged);
+	connect(&mainWindow.datasetContainer(), &DataSetContainer::dataSetChanged, this, &RenderCommandPage::onDataSetChanged);
 }
 
 /******************************************************************************

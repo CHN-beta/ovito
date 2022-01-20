@@ -55,7 +55,7 @@ public:
 	Q_INVOKABLE VoroTopModifier(DataSet* dataset);
 
 	/// Loads a new filter definition into the modifier.
-	bool loadFilterDefinition(const QString& filepath, SynchronousOperation operation);
+	bool loadFilterDefinition(const QString& filepath, MainThreadOperation& operation);
 
 	/// Returns the VoroTop filter definition cached from the last analysis run.
 	const std::shared_ptr<Filter>& filter() const { return _filter; }

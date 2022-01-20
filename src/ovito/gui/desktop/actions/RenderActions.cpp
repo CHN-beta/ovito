@@ -38,7 +38,7 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
 	try {
 		// Set input focus to main window.
 		// This will process any pending user inputs in QLineEdit fields that haven't been processed yet.
-		mainWindow()->setFocus();
+		mainWindow().setFocus();
 
 		// Stop animation playback.
 		dataset()->animationSettings()->stopAnimationPlayback();
@@ -50,17 +50,17 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
 		ViewportConfiguration* viewportConfig = dataset()->viewportConfig();
 
 		// Allocate and resize frame buffer and display the frame buffer window.
-		std::shared_ptr<FrameBuffer> frameBuffer = mainWindow()->createAndShowFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight());
+		std::shared_ptr<FrameBuffer> frameBuffer = mainWindow().createAndShowFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight());
 
 		// Show progress dialog.
-		ProgressDialog progressDialog(mainWindow()->frameBufferWindow(), dataset()->taskManager(), tr("Rendering"));
+		ProgressDialog progressDialog(mainWindow().frameBufferWindow(), mainWindow(), tr("Rendering"));
 
 		// Display modal progress dialog immediately (not after a time delay) to prevent the user from 
 		// pressing the render button a second time.
 		progressDialog.show();
 
 		// Call high-level rendering function, which will take care of the rest.
-		dataset()->renderScene(renderSettings, viewportConfig, frameBuffer.get(), progressDialog.createOperation());
+		dataset()->renderScene(renderSettings, viewportConfig, frameBuffer.get(), progressDialog);
 	}
 	catch(const Exception& ex) {
 		ex.logError();

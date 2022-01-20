@@ -192,7 +192,6 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
 	// Get access to the particle selection flags.
 	ConstPropertyAccess<int> selectionData(selection());
 
-	setProgressValue(0);
 	setProgressMaximum(positions()->size());
 	setProgressText(tr("Pre-calculating neighbor ordering"));
 

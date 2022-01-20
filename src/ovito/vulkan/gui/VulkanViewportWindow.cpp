@@ -35,8 +35,8 @@ OVITO_REGISTER_VIEWPORT_WINDOW_IMPLEMENTATION(VulkanViewportWindow);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, ViewportInputManager* inputManager, UserInterface* gui, QWidget* parentWidget) : 
-		BaseViewportWindow(gui, inputManager, viewport)
+VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, UserInterface* userInterface, QWidget* parentWidget) : 
+		BaseViewportWindow(*userInterface, vp)
 {
     // Create the VulkanContext, a wrapper for the Vulkan logical device.
 	// Share the same device with by all viewport windows.
@@ -764,14 +764,7 @@ void VulkanViewportWindow::beginFrame()
             catch(Exception& ex) {
                 if(ex.context() == nullptr) ex.setContext(viewport()->dataset());
                 ex.prependGeneralMessage(tr("An unexpected error occurred while rendering the viewport contents. The program will quit."));
-                viewport()->dataset()->viewportConfig()->suspendViewportUpdates();
-
-                QCoreApplication::removePostedEvents(nullptr, 0);
-                if(gui())
-                    gui()->shutdown();
-                ex.reportError(true);
-                QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
-                QCoreApplication::exit();
+                userInterface().exitWithFatalError(ex);
             }
         }
         else {

@@ -56,7 +56,7 @@ SET_PROPERTY_FIELD_LABEL(DataSet, globalObjects, "Global objects");
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DataSet::DataSet(DataSet* self) : RefTarget(this), _unitsManager(this)
+DataSet::DataSet(DataSet*) : RefTarget(this), _unitsManager(this)
 {
 	connect(&_pipelineEvaluationWatcher, &TaskWatcher::finished, this, &DataSet::pipelineEvaluationFinished);
 }
@@ -89,14 +89,6 @@ void DataSet::initializeObject(ObjectInitializationHints hints)
 		setRenderSettings(new RenderSettings(this));
 
 	RefTarget::initializeObject(hints);
-}
-
-/******************************************************************************
-* Returns the TaskManager responsible for this DataSet.
-******************************************************************************/
-TaskManager& DataSet::taskManager() const
-{
-	return container()->taskManager();
 }
 
 /******************************************************************************
@@ -262,6 +254,14 @@ DataSetContainer* DataSet::container() const
 }
 
 /******************************************************************************
+* Returns the abstract user interface this dataset was opened in.
+******************************************************************************/
+UserInterface& DataSet::userInterface() const
+{
+	return container()->userInterface();
+}
+
+/******************************************************************************
 * Deletes all nodes from the scene.
 ******************************************************************************/
 void DataSet::clearScene()
@@ -294,7 +294,7 @@ SharedFuture<> DataSet::whenSceneReady()
 
 	TimePoint time = animationSettings()->time();
 	if(_sceneReadyPromise.isValid()) {
-		// The promise should never be in the canceled state, because we've used autoResetWhenCanceled().
+		// The promise should never be in the canceled state, because we automatically reset it when it gets canceled (see below).
 		OVITO_ASSERT(!_sceneReadyPromise.isCanceled());
 
 		// Recreate async operation object if the animation time has changed.
@@ -306,8 +306,14 @@ SharedFuture<> DataSet::whenSceneReady()
 
 	// Create a new promise to represent the process of making the scene ready.
 	if(!_sceneReadyPromise.isValid()) {
-		_sceneReadyPromise = Promise<>::createSignal();
-		_sceneReadyPromise.autoResetWhenCanceled(executor());
+		_sceneReadyPromise = Promise<>::create();
+
+		/// Reset the promise to the null state as soon as it gets canceled.
+		_sceneReadyPromise.finally(executor(), [this]() {
+			if(_sceneReadyPromise.isCanceled())
+				_sceneReadyPromise.reset();
+		});
+
 		_sceneReadyTime = time;
 
 		// This will call makeSceneReady() soon in order to evaluate all pipelines in the scene.
@@ -326,6 +332,11 @@ void DataSet::makeSceneReady(bool forceReevaluation)
 	if(!_sceneReadyPromise.isValid()) {
 		return;
 	}
+
+	// Stop when application is shutting down.
+	if(_container.isNull()) {
+		return;
+	}	 
 
 	// If scene is already ready, we are done.
 	if(_sceneReadyPromise.isFinished() && _sceneReadyTime == animationSettings()->time()) {
@@ -374,9 +385,7 @@ void DataSet::makeSceneReady(bool forceReevaluation)
 		return true;
 	});
 
-	if(oldEvaluation.isValid()) {
-		oldEvaluation.cancelRequest();
-	}
+	oldEvaluation.reset();
 
 	// If all pipelines are already complete, we are done.
 	if(!_pipelineEvaluation.isValid()) {
@@ -429,7 +438,7 @@ void DataSet::pipelineEvaluationFinished()
 * This is the high-level rendering function, which invokes the renderer to 
 * generate one or more output images of the scene. 
 ******************************************************************************/
-bool DataSet::renderScene(RenderSettings* renderSettings, ViewportConfiguration* viewportConfiguration, FrameBuffer* frameBuffer, SynchronousOperation operation)
+bool DataSet::renderScene(RenderSettings* renderSettings, ViewportConfiguration* viewportConfiguration, FrameBuffer* frameBuffer, MainThreadOperation& operation)
 {
 	OVITO_CHECK_OBJECT_POINTER(renderSettings);
 	OVITO_CHECK_OBJECT_POINTER(viewportConfiguration);
@@ -450,14 +459,14 @@ bool DataSet::renderScene(RenderSettings* renderSettings, ViewportConfiguration*
 		viewportLayout.push_back({ viewportConfiguration->activeViewport(), QRectF(0,0,1,1) });
 	}
 
-	return renderScene(renderSettings, viewportLayout, frameBuffer, std::move(operation));
+	return renderScene(renderSettings, viewportLayout, frameBuffer, operation);
 }
 
 /******************************************************************************
 * This is the high-level rendering function, which invokes the renderer to 
 * generate one or more output images of the scene. 
 ******************************************************************************/
-bool DataSet::renderScene(RenderSettings* renderSettings, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, FrameBuffer* frameBuffer, SynchronousOperation operation)
+bool DataSet::renderScene(RenderSettings* renderSettings, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, FrameBuffer* frameBuffer, MainThreadOperation& operation)
 {
 	OVITO_CHECK_OBJECT_POINTER(renderSettings);
 	OVITO_ASSERT(frameBuffer);
@@ -513,13 +522,13 @@ bool DataSet::renderScene(RenderSettings* renderSettings, const std::vector<std:
 				TimePoint renderTime = animationSettings()->time();
 				int frameNumber = animationSettings()->timeToFrame(renderTime);
 				operation.setProgressText(tr("Rendering frame %1").arg(frameNumber));
-				notCanceled = renderFrame(renderTime, frameNumber, renderSettings, renderer, frameBuffer, viewportLayout, videoEncoder, std::move(operation));
+				notCanceled = renderFrame(renderTime, frameNumber, renderSettings, renderer, frameBuffer, viewportLayout, videoEncoder, operation);
 			}
 			else if(renderSettings->renderingRangeType() == RenderSettings::CUSTOM_FRAME) {
 				// Render a specific frame.
 				TimePoint renderTime = animationSettings()->frameToTime(renderSettings->customFrame());
 				operation.setProgressText(tr("Rendering frame %1").arg(renderSettings->customFrame()));
-				notCanceled = renderFrame(renderTime, renderSettings->customFrame(), renderSettings, renderer, frameBuffer, viewportLayout, videoEncoder, std::move(operation));
+				notCanceled = renderFrame(renderTime, renderSettings->customFrame(), renderSettings, renderer, frameBuffer, viewportLayout, videoEncoder, operation);
 			}
 			else if(renderSettings->renderingRangeType() == RenderSettings::ANIMATION_INTERVAL || renderSettings->renderingRangeType() == RenderSettings::CUSTOM_INTERVAL) {
 				// Render an animation interval.
@@ -547,7 +556,8 @@ bool DataSet::renderScene(RenderSettings* renderSettings, const std::vector<std:
 					operation.setProgressValue(frameIndex);
 					operation.setProgressText(tr("Rendering animation (frame %1 of %2)").arg(frameIndex+1).arg(numberOfFrames));
 
-					notCanceled = renderFrame(renderTime, frameNumber, renderSettings, renderer, frameBuffer, viewportLayout, videoEncoder, operation.subOperation(true));
+					MainThreadOperation frameOperation = operation.createSubTask(true);
+					notCanceled = renderFrame(renderTime, frameNumber, renderSettings, renderer, frameBuffer, viewportLayout, videoEncoder, frameOperation);
 
 					// Go to next animation frame.
 					renderTime += animationSettings()->ticksPerFrame() * renderSettings->everyNthFrame();
@@ -586,7 +596,7 @@ bool DataSet::renderScene(RenderSettings* renderSettings, const std::vector<std:
 * Renders a single frame and saves the output file.
 ******************************************************************************/
 bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings* settings, SceneRenderer* renderer, 
-		FrameBuffer* frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder, SynchronousOperation operation)
+		FrameBuffer* frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder, MainThreadOperation& operation)
 {
 	// Determine output filename for this frame.
 	QString imageFilename;
@@ -636,7 +646,7 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 			ViewProjectionParameters projParams = viewport->computeProjectionParameters(renderTime, viewportAspectRatio);
 
 			// Request scene bounding box.
-			Box3 boundingBox = renderer->computeSceneBoundingBox(renderTime, projParams, nullptr, operation.subOperation());
+			Box3 boundingBox = renderer->computeSceneBoundingBox(renderTime, projParams, nullptr, operation);
 			if(operation.isCanceled())
 				return false;
 
@@ -648,19 +658,19 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 				renderer->beginFrame(renderTime, projParams, viewport, destinationRect, frameBuffer);
 
 				// Render viewport "underlays".
-				if(!renderer->renderOverlays(true, destinationRect, destinationRect, operation.subOperation())) {
+				if(!renderer->renderOverlays(true, destinationRect, destinationRect, operation)) {
 					renderer->endFrame(false, destinationRect);
 					return false;
 				}
 
 				// Let the scene renderer do its work.
-				if(!renderer->renderFrame(destinationRect, operation.subOperation())) {
+				if(!renderer->renderFrame(destinationRect, operation)) {
 					renderer->endFrame(false, destinationRect);
 					return false;
 				}
 
 				// Render viewport "overlays" on top.
-				if(!renderer->renderOverlays(false, destinationRect, destinationRect, operation.subOperation())) {
+				if(!renderer->renderOverlays(false, destinationRect, destinationRect, operation)) {
 					renderer->endFrame(false, destinationRect);
 					return false;
 				}
@@ -697,7 +707,7 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 /******************************************************************************
 * Saves the dataset to a session state file.
 ******************************************************************************/
-void DataSet::saveToFile(const QString& filePath) const
+void DataSet::saveToFile(const QString& filePath, MainThreadOperation operation) const
 {
 	// Make path absolute.
 	QString absolutePath = QFileInfo(filePath).absoluteFilePath();
@@ -707,7 +717,7 @@ void DataSet::saveToFile(const QString& filePath) const
     	throwException(tr("Failed to open output file '%1' for writing: %2").arg(absolutePath).arg(fileStream.errorString()));
 
 	QDataStream dataStream(&fileStream);
-	ObjectSaveStream stream(dataStream, SynchronousOperation::create(taskManager(), ObjectInitializationHint::LoadFactoryDefaults));
+	ObjectSaveStream stream(dataStream, operation);
 	stream.saveObject(this);
 	stream.close();
 
@@ -719,7 +729,7 @@ void DataSet::saveToFile(const QString& filePath) const
 /******************************************************************************
 * Loads the dataset's contents from a session state file.
 ******************************************************************************/
-void DataSet::loadFromFile(const QString& filePath)
+void DataSet::loadFromFile(const QString& filePath, MainThreadOperation operation)
 {
 	// Make path absolute.
 	QString absolutePath = QFileInfo(filePath).absoluteFilePath();
@@ -729,7 +739,7 @@ void DataSet::loadFromFile(const QString& filePath)
     	throwException(tr("Failed to open file '%1' for reading: %2").arg(absolutePath).arg(fileStream.errorString()));
 
 	QDataStream dataStream(&fileStream);
-	ObjectLoadStream stream(dataStream, SynchronousOperation::create(taskManager(), ObjectInitializationHint::LoadFactoryDefaults));
+	ObjectLoadStream stream(dataStream, operation);
 	stream.setDataset(this);
 	OORef<DataSet> dataSet = stream.loadObject<DataSet>();
 	stream.close();

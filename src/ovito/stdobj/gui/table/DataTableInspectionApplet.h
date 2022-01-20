@@ -47,7 +47,7 @@ public:
 	virtual int orderingKey() const override { return 200; }
 
 	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget(MainWindow* mainWindow) override;
+	virtual QWidget* createWidget() override;
 
 	/// Returns the plotting widget.
 	DataTablePlotWidget* plotWidget() const { return _plotWidget; }
@@ -76,7 +76,6 @@ private:
 	/// The plotting widget.
 	DataTablePlotWidget* _plotWidget;
 
-	MainWindow* _mainWindow;
 	QStackedWidget* _stackedWidget;
 	QAction* _switchToPlotAction;
 	QAction* _switchToTableAction;

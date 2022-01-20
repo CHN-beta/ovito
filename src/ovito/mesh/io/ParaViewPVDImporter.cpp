@@ -25,7 +25,6 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/utilities/io/FileManager.h>
-#include <ovito/core/utilities/concurrent/ForEach.h>
 #include <ovito/core/app/Application.h>
 #include "ParaViewPVDImporter.h"
 

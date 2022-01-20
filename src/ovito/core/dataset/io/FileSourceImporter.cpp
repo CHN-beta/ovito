@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -228,8 +228,8 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(std::vector<std::pair
 	if(importMode != ReplaceSelected && importMode != DontAddToScene) {
 		// Adjust viewports to completely show the newly imported object.
 		// This needs to be done after the data has been completely loaded.
-		dataset()->whenSceneReady().finally(dataset()->executor(), [dataset = dataset()](const TaskPtr& task) {
-			if(!task->isCanceled() && dataset->viewportConfig())
+		dataset()->whenSceneReady().finally(dataset()->executor(), [dataset = dataset()](Task& task) {
+			if(!task.isCanceled() && dataset->viewportConfig())
 				dataset->viewportConfig()->zoomToSelectionExtents();
 		});
 	}
@@ -320,11 +320,11 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 		}
 
 		// Fetch file.
-		return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), sourceUrl)
+		return Application::instance()->fileManager().fetchUrl(sourceUrl)
 			.then(executor(), [this](const FileHandle& file) {
 				// Scan file.
 				if(FrameFinderPtr frameFinder = createFrameFinder(file))
-					return dataset()->taskManager().runTaskAsync(frameFinder);
+					return taskManager().runTaskAsync(frameFinder);
 				else
 					return Future<QVector<Frame>>::createImmediateEmplace();
 			});
@@ -366,18 +366,18 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
 	OVITO_ASSERT(frameLoader);
 
 	// Execute the loader in a background thread.
-	Future<PipelineFlowState> future = dataset()->taskManager().runTaskAsync(std::move(frameLoader));
+	Future<PipelineFlowState> future = taskManager().runTaskAsync(std::move(frameLoader));
 
 	// If the parser has detects additional frames following the first frame in the 
 	// input file being loaded, automatically turn on scanning of the input file.
 	// Only automatically turn scanning on if the file is being newly imported, i.e. if the file source has no data collection yet.
 	if(request.isNewlyImportedFile) {
 		// Note: Changing a parameter of the file importer must be done in the correct thread.
-		future.finally(executor(), [this](TaskPtr task) {
-			if(!task->isCanceled()) {
-				FrameLoader* frameLoader = static_cast<FrameLoader*>(task.get());
-				OVITO_ASSERT(frameLoader->dataset() == dataset());
-				if(frameLoader->additionalFramesDetected()) {
+		future.finally(executor(), [this](Task& task) {
+			if(!task.isCanceled()) {
+				FrameLoader& frameLoader = static_cast<FrameLoader&>(task);
+				OVITO_ASSERT(frameLoader.dataset() == dataset());
+				if(frameLoader.additionalFramesDetected()) {
 					UndoSuspender noUndo(this);
 					setMultiTimestepFile(true);
 				}
@@ -455,7 +455,7 @@ Future<std::vector<QUrl>> FileSourceImporter::findWildcardMatches(const QUrl& so
 			directoryUrl.setPath(fileInfo.path());
 
 			// Retrieve list of files in remote directory.
-			Future<QStringList> remoteFileListFuture = Application::instance()->fileManager()->listDirectoryContents(dataset->taskManager(), directoryUrl);
+			Future<QStringList> remoteFileListFuture = Application::instance()->fileManager().listDirectoryContents(directoryUrl);
 
 			// Filter file names.
 			entriesFuture = remoteFileListFuture.then([pattern](QStringList&& remoteFileList) {

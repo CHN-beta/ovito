@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,7 +38,7 @@ class OVITO_STDOBJGUI_EXPORT InputColumnMappingDialog : public QDialog
 public:
 
 	/// Constructor.
-	InputColumnMappingDialog(const InputColumnMapping& mapping, QWidget* parent, TaskManager& taskManager);
+	InputColumnMappingDialog(const InputColumnMapping& mapping, QWidget* parent);
 
 	/// Fills the editor with the given mapping.
 	void setMapping(const InputColumnMapping& mapping);
@@ -67,8 +67,6 @@ protected:
 
 	/// The property container type.
 	PropertyContainerClassPtr _containerClass = nullptr;
-
-	TaskManager& _taskManager;
 
 	/// The main table widget that contains the entries for each data column of the input file.
 	QTableWidget* _tableWidget;

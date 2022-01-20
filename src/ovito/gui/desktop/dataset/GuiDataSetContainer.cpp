@@ -23,7 +23,6 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/dataset/io/FileImporter.h>
 #include <ovito/core/dataset/UndoStack.h>
-#include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/scene/RootSceneNode.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
@@ -43,16 +42,8 @@ IMPLEMENT_OVITO_CLASS(GuiDataSetContainer);
 /******************************************************************************
 * Initializes the dataset manager.
 ******************************************************************************/
-GuiDataSetContainer::GuiDataSetContainer(MainWindow* mainWindow) : _mainWindow(mainWindow)
+GuiDataSetContainer::GuiDataSetContainer(TaskManager& taskManager, MainWindow& mainWindow) : DataSetContainer(taskManager, mainWindow), _mainWindow(mainWindow)
 {
-}
-
-/******************************************************************************
-* Returns the graphical user interface this dataset container is associated with.
-******************************************************************************/
-UserInterface* GuiDataSetContainer::guiInterface() 
-{ 
-	return _mainWindow; 
 }
 
 /******************************************************************************
@@ -69,7 +60,7 @@ bool GuiDataSetContainer::fileSave()
 
 	// Save dataset to file.
 	try {
-		currentSet()->saveToFile(currentSet()->filePath());
+		currentSet()->saveToFile(currentSet()->filePath(), createOperation(true));
 		currentSet()->undoStack().setClean();
 	}
 	catch(const Exception& ex) {
@@ -91,10 +82,7 @@ bool GuiDataSetContainer::fileSaveAs(const QString& filename)
 
 	if(filename.isEmpty()) {
 
-		if(!mainWindow())
-			currentSet()->throwException(tr("Cannot save session state. No filename has been specified."));
-
-		QFileDialog dialog(mainWindow(), tr("Save Session State As"));
+		QFileDialog dialog(&mainWindow(), tr("Save Session State As"));
 		dialog.setNameFilter(tr("OVITO State Files (*.ovito);;All Files (*)"));
 		dialog.setAcceptMode(QFileDialog::AcceptSave);
 		dialog.setFileMode(QFileDialog::AnyFile);
@@ -137,7 +125,7 @@ bool GuiDataSetContainer::fileSaveAs(const QString& filename)
 ******************************************************************************/
 bool GuiDataSetContainer::askForSaveChanges()
 {
-	if(!currentSet() || currentSet()->undoStack().isClean() || currentSet()->filePath().isEmpty() || !mainWindow())
+	if(!currentSet() || currentSet()->undoStack().isClean() || currentSet()->filePath().isEmpty())
 		return true;
 
 	QString message;
@@ -149,7 +137,7 @@ bool GuiDataSetContainer::askForSaveChanges()
 		message = tr("The current program session has not been saved. Do you want to save it?");
 	}
 
-	QMessageBox::StandardButton result = QMessageBox::question(mainWindow(), tr("Save changes"),
+	QMessageBox::StandardButton result = QMessageBox::question(&mainWindow(), tr("Save changes"),
 		message,
 		QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::Cancel);
 	if(result == QMessageBox::Cancel)
@@ -165,7 +153,7 @@ bool GuiDataSetContainer::askForSaveChanges()
 /******************************************************************************
 * Imports a given file into the scene.
 ******************************************************************************/
-bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType)
+bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadOperation operation, const FileImporterClass* importerType)
 {
 	OVITO_ASSERT(currentSet() != nullptr);
 	OVITO_ASSERT(!urls.empty());
@@ -180,7 +168,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
 
 			// Detect file format.
 			Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(currentSet(), ObjectInitializationHint::LoadUserDefaults, url);
-			if(!taskManager().waitForFuture(importerFuture))
+			if(!operation.waitForFuture(importerFuture))
 				return false;
 
 			importer = importerFuture.result();
@@ -206,18 +194,16 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
 	});
 
 	// Display the optional UI (which is provided by the corresponding FileImporterEditor class) for each importer.
-	if(mainWindow()) {
-		for(const auto& item : urlImporters) {
-			const QUrl& url = item.first;
-			const OORef<FileImporter>& importer = item.second;
-			for(OvitoClassPtr clazz = &importer->getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
-				OvitoClassPtr editorClass = PropertiesEditor::registry().getEditorClass(clazz);
-				if(editorClass && editorClass->isDerivedFrom(FileImporterEditor::OOClass())) {
-					OORef<FileImporterEditor> editor = dynamic_object_cast<FileImporterEditor>(editorClass->createInstance());
-					if(editor) {
-						if(!editor->inspectNewFile(importer, url, mainWindow()))
-							return false;
-					}
+	for(const auto& item : urlImporters) {
+		const QUrl& url = item.first;
+		const OORef<FileImporter>& importer = item.second;
+		for(OvitoClassPtr clazz = &importer->getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
+			OvitoClassPtr editorClass = PropertiesEditor::registry().getEditorClass(clazz);
+			if(editorClass && editorClass->isDerivedFrom(FileImporterEditor::OOClass())) {
+				OORef<FileImporterEditor> editor = dynamic_object_cast<FileImporterEditor>(editorClass->createInstance());
+				if(editor) {
+					if(!editor->inspectNewFile(importer, url, mainWindow()))
+						return false;
 				}
 			}
 		}
@@ -228,56 +214,54 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
 
 	const QUrl& url = urlImporters.front().first;
 	OORef<FileImporter> importer = urlImporters.front().second;
-	if(mainWindow()) {
-		if(importer->isReplaceExistingPossible(urls)) {
-			// Ask user if the current import node including any applied modifiers should be kept.
-			QMessageBox msgBox(QMessageBox::Question, tr("Import file"),
-					tr("When importing the selected file, do you want to keep the existing objects?"),
-					QMessageBox::NoButton, mainWindow());
+	if(importer->isReplaceExistingPossible(urls)) {
+		// Ask user if the current import node including any applied modifiers should be kept.
+		QMessageBox msgBox(QMessageBox::Question, tr("Import file"),
+				tr("When importing the selected file, do you want to keep the existing objects?"),
+				QMessageBox::NoButton, &mainWindow());
 
-			QPushButton* cancelButton = msgBox.addButton(QMessageBox::Cancel);
-			QPushButton* resetSceneButton = msgBox.addButton(tr("No"), QMessageBox::NoRole);
-			QPushButton* addToSceneButton = msgBox.addButton(tr("Add to scene"), QMessageBox::YesRole);
-			QPushButton* replaceSourceButton = msgBox.addButton(tr("Replace selected"), QMessageBox::AcceptRole);
-			msgBox.setDefaultButton(resetSceneButton);
-			msgBox.setEscapeButton(cancelButton);
-			msgBox.exec();
+		QPushButton* cancelButton = msgBox.addButton(QMessageBox::Cancel);
+		QPushButton* resetSceneButton = msgBox.addButton(tr("No"), QMessageBox::NoRole);
+		QPushButton* addToSceneButton = msgBox.addButton(tr("Add to scene"), QMessageBox::YesRole);
+		QPushButton* replaceSourceButton = msgBox.addButton(tr("Replace selected"), QMessageBox::AcceptRole);
+		msgBox.setDefaultButton(resetSceneButton);
+		msgBox.setEscapeButton(cancelButton);
+		msgBox.exec();
 
-			if(msgBox.clickedButton() == cancelButton) {
-				return false; // Operation canceled by user.
-			}
-			else if(msgBox.clickedButton() == resetSceneButton) {
-				importMode = FileImporter::ResetScene;
-				// Ask user if current scene should be saved before it is replaced by the imported data.
-				if(!askForSaveChanges())
-					return false;
-			}
-			else if(msgBox.clickedButton() == addToSceneButton) {
-				importMode = FileImporter::AddToScene;
-			}
-			else {
-				importMode = FileImporter::ReplaceSelected;
-			}
+		if(msgBox.clickedButton() == cancelButton) {
+			return false; // Operation canceled by user.
 		}
-		else if(currentSet()->sceneRoot()->children().empty() == false) {
-			// Ask user if the current scene should be completely replaced by the imported data.
-			QMessageBox::StandardButton result = QMessageBox::question(mainWindow(), tr("Import file"),
-				tr("Do you want to keep the existing objects in the current scene?"),
-				QMessageBox::Yes|QMessageBox::No|QMessageBox::Cancel, QMessageBox::Cancel);
+		else if(msgBox.clickedButton() == resetSceneButton) {
+			importMode = FileImporter::ResetScene;
+			// Ask user if current scene should be saved before it is replaced by the imported data.
+			if(!askForSaveChanges())
+				return false;
+		}
+		else if(msgBox.clickedButton() == addToSceneButton) {
+			importMode = FileImporter::AddToScene;
+		}
+		else {
+			importMode = FileImporter::ReplaceSelected;
+		}
+	}
+	else if(currentSet()->sceneRoot()->children().empty() == false) {
+		// Ask user if the current scene should be completely replaced by the imported data.
+		QMessageBox::StandardButton result = QMessageBox::question(&mainWindow(), tr("Import file"),
+			tr("Do you want to keep the existing objects in the current scene?"),
+			QMessageBox::Yes|QMessageBox::No|QMessageBox::Cancel, QMessageBox::Cancel);
 
-			if(result == QMessageBox::Cancel) {
-				return false; // Operation canceled by user.
-			}
-			else if(result == QMessageBox::No) {
-				importMode = FileImporter::ResetScene;
+		if(result == QMessageBox::Cancel) {
+			return false; // Operation canceled by user.
+		}
+		else if(result == QMessageBox::No) {
+			importMode = FileImporter::ResetScene;
 
-				// Ask user if current scene should be saved before it is replaced by the imported data.
-				if(!askForSaveChanges())
-					return false;
-			}
-			else {
-				importMode = FileImporter::AddToScene;
-			}
+			// Ask user if current scene should be saved before it is replaced by the imported data.
+			if(!askForSaveChanges())
+				return false;
+		}
+		else {
+			importMode = FileImporter::AddToScene;
 		}
 	}
 

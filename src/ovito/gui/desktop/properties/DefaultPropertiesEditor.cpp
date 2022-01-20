@@ -63,8 +63,6 @@ bool DefaultPropertiesEditor::referenceEvent(RefTarget* source, const ReferenceE
 ******************************************************************************/
 void DefaultPropertiesEditor::updateSubEditors()
 {
-	OVITO_ASSERT(mainWindow() != nullptr);
-
 	try {
 		auto subEditorIter = _subEditors.begin();
 		if(editObject()) {
@@ -86,7 +84,7 @@ void DefaultPropertiesEditor::updateSubEditors()
 							// Create a new sub-editor for this sub-object.
 							OORef<PropertiesEditor> editor = PropertiesEditor::create(subobject);
 							if(editor) {
-								editor->initialize(container(), mainWindow(), _rolloutParams, this);
+								editor->initialize(container(), _rolloutParams, this);
 								editor->setEditObject(subobject);
 								_subEditors.erase(subEditorIter, _subEditors.end());
 								_subEditors.push_back(std::move(editor));
@@ -110,7 +108,7 @@ void DefaultPropertiesEditor::updateSubEditors()
 								// Create a new sub-editor for this sub-object.
 								OORef<PropertiesEditor> editor = PropertiesEditor::create(subobject);
 								if(editor) {
-									editor->initialize(container(), mainWindow(), _rolloutParams, this);
+									editor->initialize(container(), _rolloutParams, this);
 									editor->setEditObject(subobject);
 									_subEditors.erase(subEditorIter, _subEditors.end());
 									_subEditors.push_back(std::move(editor));

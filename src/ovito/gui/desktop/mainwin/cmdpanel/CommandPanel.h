@@ -38,7 +38,7 @@ class OVITO_GUI_EXPORT CommandPanel : public QWidget
 public:
 
 	/// \brief Creates the command panel.
-	CommandPanel(MainWindow* mainWindow, QWidget* parent);
+	CommandPanel(MainWindow& mainWindow, QWidget* parent);
 
 	/// \brief Activate one of the command pages.
 	/// \param newPage The identifier of the page to activate.

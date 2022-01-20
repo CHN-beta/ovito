@@ -56,6 +56,7 @@ MainWindow::MainWindow() : MainWindowInterface(_datasetContainer), _datasetConta
 MainWindow::~MainWindow()
 {
 	datasetContainer()->setCurrentSet(nullptr);
+	taskManager().cancelAllAndWait();
 }
 
 /******************************************************************************

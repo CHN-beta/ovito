@@ -352,7 +352,7 @@ void SliceModifierEditor::onCenterOfBox()
 void PickPlanePointsInputMode::activated(bool temporary)
 {
 	ViewportInputMode::activated(temporary);
-	inputManager()->gui()->showStatusBarMessage(tr("Pick three points to define a new slicing plane."));
+	inputManager()->userInterface().showStatusBarMessage(tr("Pick three points to define a new slicing plane."));
 	if(!temporary)
 		_numPickedPoints = 0;
 	inputManager()->addViewportGizmo(this);
@@ -367,7 +367,7 @@ void PickPlanePointsInputMode::deactivated(bool temporary)
 		_numPickedPoints = 0;
 		_hasPreliminaryPoint = false;
 	}
-	inputManager()->gui()->clearStatusBarMessage();
+	inputManager()->userInterface().clearStatusBarMessage();
 	inputManager()->removeViewportGizmo(this);
 	ViewportInputMode::deactivated(temporary);
 }

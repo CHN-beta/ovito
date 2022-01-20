@@ -133,10 +133,10 @@ void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(TimePoint time, const V
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool OffscreenInteractiveOpenGLSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOperation operation)
+bool OffscreenInteractiveOpenGLSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
 {
 	// Let the base class do the main rendering work.
-	if(!OpenGLSceneRenderer::renderFrame(viewportRect, std::move(operation)))
+	if(!OpenGLSceneRenderer::renderFrame(viewportRect, operation))
 		return false;
 
 	// Clear OpenGL error state, so we start fresh for the glReadPixels() call below.

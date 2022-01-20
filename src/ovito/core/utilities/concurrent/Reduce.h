@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -20,37 +20,25 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#pragma once
+
+
 #include <ovito/core/Core.h>
-#include "MainThreadTask.h"
-#include "TaskManager.h"
+#include "ForEach.h"
 
 namespace Ovito {
 
-bool MainThreadTask::setProgressValue(qlonglong value)
+template<typename ResultType, typename InputRange, class Executor, typename Function>
+auto reduce_sequential(ResultType&& initialResultValue, InputRange&& inputRange, Executor&& executor, Function&& f)
 {
-	// Yield control to the event loop to process user interface events.
-	// This is necessary so that the user can interrupt the running operation.
-	taskManager()->processEvents();
-
-    return ProgressiveTask::setProgressValue(value);
-}
-
-bool MainThreadTask::incrementProgressValue(qlonglong increment)
-{
-	// Yield control to the event loop to process user interface events.
-	// This is necessary so that the user can interrupt the running operation.
-	taskManager()->processEvents();
-
-	return ProgressiveTask::incrementProgressValue(increment);
-}
-
-void MainThreadTask::setProgressText(const QString& progressText)
-{
-	ProgressiveTask::setProgressText(progressText);
-
-	// Yield control to the event loop to process user interface events.
-	// This is necessary so that the user can interrupt the running operation.
-	taskManager()->processEvents();
+	return for_each_sequential(
+		std::forward<InputRange>(inputRange),
+		std::forward<Executor>(executor),
+		// Iteration start function:
+		std::forward<Function>(f),
+		// Iteration completed function (a no-op):
+		[](typename InputRange::const_reference iterValue) {},
+		std::forward<ResultType>(initialResultValue));
 }
 
 }	// End of namespace

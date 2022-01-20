@@ -110,7 +110,7 @@ void GenerateTrajectoryLinesModifier::evaluateSynchronous(const ModifierEvaluati
 /******************************************************************************
 * Updates the stored trajectories from the source particle object.
 ******************************************************************************/
-bool GenerateTrajectoryLinesModifier::generateTrajectories(SynchronousOperation operation)
+bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& operation)
 {
 	TimePoint currentTime = dataset()->animationSettings()->time();
 	

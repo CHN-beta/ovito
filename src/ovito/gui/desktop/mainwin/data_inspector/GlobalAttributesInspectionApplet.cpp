@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,10 +47,8 @@ bool GlobalAttributesInspectionApplet::appliesTo(const DataCollection& data)
 * Lets the applet create the UI widget that is to be placed into the data
 * inspector panel.
 ******************************************************************************/
-QWidget* GlobalAttributesInspectionApplet::createWidget(MainWindow* mainWindow)
+QWidget* GlobalAttributesInspectionApplet::createWidget()
 {
-	_mainWindow = mainWindow;
-
 	QWidget* panel = new QWidget();
 	QHBoxLayout* layout = new QHBoxLayout(panel);
 	layout->setContentsMargins(0,0,0,0);
@@ -118,7 +116,7 @@ void GlobalAttributesInspectionApplet::exportToFile()
 		return;
 
 	// Let the user select a destination file.
-	HistoryFileDialog dialog("export", _mainWindow, tr("Export Attributes"));
+	HistoryFileDialog dialog("export", &mainWindow(), tr("Export Attributes"));
 	QString filterString = QStringLiteral("%1 (%2)").arg(AttributeFileExporter::OOClass().fileFilterDescription(), AttributeFileExporter::OOClass().fileFilter());
 	dialog.setNameFilter(filterString);
 	dialog.setOption(QFileDialog::DontUseNativeDialog);
@@ -151,15 +149,15 @@ void GlobalAttributesInspectionApplet::exportToFile()
 		exporter->setNodeToExport(currentPipeline());
 
 		// Let the user adjust the export settings.
-		FileExporterSettingsDialog settingsDialog(_mainWindow, exporter);
+		FileExporterSettingsDialog settingsDialog(mainWindow(), exporter);
 		if(settingsDialog.exec() != QDialog::Accepted)
 			return;
 
 		// Show progress dialog.
-		ProgressDialog progressDialog(_mainWindow, exporter->dataset()->taskManager(), tr("File export"));
+		ProgressDialog progressDialog(&mainWindow(), mainWindow(), tr("File export"));
 
 		// Let the exporter do its job.
-		exporter->doExport(progressDialog.createOperation());
+		exporter->doExport(progressDialog);
 	}
 	catch(const Exception& ex) {
 		ex.reportError();

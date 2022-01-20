@@ -28,6 +28,7 @@
 #include <ovito/core/dataset/scene/RootSceneNode.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/utilities/io/ObjectSaveStream.h>
@@ -42,7 +43,7 @@ DEFINE_REFERENCE_FIELD(DataSetContainer, currentSet);
 /******************************************************************************
 * Initializes the dataset manager.
 ******************************************************************************/
-DataSetContainer::DataSetContainer() : _taskManager(this)
+DataSetContainer::DataSetContainer(TaskManager& taskManager, UserInterface& userInterface) : _taskManager(taskManager), _userInterface(userInterface)
 {
 }
 
@@ -52,8 +53,15 @@ DataSetContainer::DataSetContainer() : _taskManager(this)
 DataSetContainer::~DataSetContainer()
 {
 	setCurrentSet(nullptr);
-	taskManager().cancelAllAndWait();
 	clearAllReferences();
+}
+
+/******************************************************************************
+* Creates an object that represents a longer-running operation performed in the main or GUI thread. 
+******************************************************************************/
+MainThreadOperation DataSetContainer::createOperation(bool visibleInUserInterface)
+{
+	return userInterface().createOperation(visibleInUserInterface);
 }
 
 /******************************************************************************
@@ -215,7 +223,7 @@ bool DataSetContainer::newDataset()
 /******************************************************************************
 * Loads the given session state file and makes it the current dataset.
 ******************************************************************************/
-bool DataSetContainer::loadDataset(const QString& filename)
+bool DataSetContainer::loadDataset(const QString& filename, MainThreadOperation operation)
 {
 	// Make path absolute.
 	QString absoluteFilepath = QFileInfo(filename).absoluteFilePath();
@@ -229,7 +237,7 @@ bool DataSetContainer::loadDataset(const QString& filename)
 			throw Exception(tr("Failed to open session state file '%1' for reading: %2").arg(absoluteFilepath).arg(fileStream.errorString()), this);
 
 		QDataStream dataStream(&fileStream);
-		ObjectLoadStream stream(dataStream, SynchronousOperation::create(taskManager(), ObjectInitializationHint::LoadFactoryDefaults));
+		ObjectLoadStream stream(dataStream, operation);
 
 #if 0
 		// Issue a warning when the floating-point precision of the input file does not match

@@ -36,19 +36,21 @@ IMPLEMENT_OVITO_CLASS(VulkanSceneRenderer);
 * Is called by OVITO to query the class for any information that should be 
 * included in the application's system report.
 ******************************************************************************/
-void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& stream, DataSetContainer& container) const
+void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& stream, UserInterface& userInterface) const
 {
 	if(this == &VulkanSceneRenderer::OOClass()) {
 		stream << "======== Vulkan info =======" << "\n";
         try {
             // Look up an existing Vulkan context from one of the interactive viewport windows. 
-            // All viewport windows will share the same logical Vulkan device.
+            // All viewport windows share a single logical Vulkan device.
             std::shared_ptr<VulkanContext> context;
-            for(Viewport* vp : container.currentSet()->viewportConfig()->viewports()) {
-                if(ViewportWindowInterface* window = vp->window()) {
-                    if(VulkanSceneRenderer* renderer = dynamic_object_cast<VulkanSceneRenderer>(window->sceneRenderer())) {
-                        context = renderer->context();
-                        break;
+            if(DataSet* dataset = userInterface.datasetContainer().currentSet()) {
+                for(Viewport* vp : dataset->viewportConfig()->viewports()) {
+                    if(ViewportWindowInterface* window = vp->window()) {
+                        if(VulkanSceneRenderer* renderer = dynamic_object_cast<VulkanSceneRenderer>(window->sceneRenderer())) {
+                            context = renderer->context();
+                            break;
+                        }
                     }
                 }
             }

@@ -32,7 +32,7 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshInspectionApplet);
 * Lets the applet create the UI widget that is to be placed into the data
 * inspector panel.
 ******************************************************************************/
-QWidget* SurfaceMeshInspectionApplet::createWidget(MainWindow* mainWindow)
+QWidget* SurfaceMeshInspectionApplet::createWidget()
 {
 	QSplitter* splitter = new QSplitter();
 	splitter->addWidget(objectSelectionWidget());
@@ -70,16 +70,16 @@ QWidget* SurfaceMeshInspectionApplet::createWidget(MainWindow* mainWindow)
 	rightLayout->addWidget(toolbar, 0);
 
 	_verticesApplet = new SurfaceMeshVertexInspectionApplet(this);
-	_verticesApplet->setParent(this);
-	_stackedWidget->addWidget(_verticesApplet->createWidget(mainWindow));
+	_verticesApplet->setParent(this->parent());
+	_stackedWidget->addWidget(_verticesApplet->createWidget());
 
 	_facesApplet = new SurfaceMeshFaceInspectionApplet(this);
-	_facesApplet->setParent(this);
-	_stackedWidget->addWidget(_facesApplet->createWidget(mainWindow));
+	_facesApplet->setParent(this->parent());
+	_stackedWidget->addWidget(_facesApplet->createWidget());
 
 	_regionsApplet = new SurfaceMeshRegionInspectionApplet(this);
-	_regionsApplet->setParent(this);
-	_stackedWidget->addWidget(_regionsApplet->createWidget(mainWindow));
+	_regionsApplet->setParent(this->parent());
+	_stackedWidget->addWidget(_regionsApplet->createWidget());
 
 	connect(_switchToVerticesAction, &QAction::triggered, this, [this]() {
 		_stackedWidget->setCurrentIndex(0);
@@ -168,7 +168,7 @@ std::vector<ConstDataObjectPath> SurfaceMeshRegionInspectionApplet::getDataObjec
 * Lets the applet create the UI widget that is to be placed into the data
 * inspector panel.
 ******************************************************************************/
-QWidget* SurfaceMeshVertexInspectionApplet::createWidget(MainWindow* mainWindow)
+QWidget* SurfaceMeshVertexInspectionApplet::createWidget()
 {
 	createBaseWidgets();
 
@@ -200,7 +200,7 @@ QWidget* SurfaceMeshVertexInspectionApplet::createWidget(MainWindow* mainWindow)
 * Lets the applet create the UI widget that is to be placed into the data
 * inspector panel.
 ******************************************************************************/
-QWidget* SurfaceMeshFaceInspectionApplet::createWidget(MainWindow* mainWindow)
+QWidget* SurfaceMeshFaceInspectionApplet::createWidget()
 {
 	createBaseWidgets();
 
@@ -232,7 +232,7 @@ QWidget* SurfaceMeshFaceInspectionApplet::createWidget(MainWindow* mainWindow)
 * Lets the applet create the UI widget that is to be placed into the data
 * inspector panel.
 ******************************************************************************/
-QWidget* SurfaceMeshRegionInspectionApplet::createWidget(MainWindow* mainWindow)
+QWidget* SurfaceMeshRegionInspectionApplet::createWidget()
 {
 	createBaseWidgets();
 

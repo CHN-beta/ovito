@@ -51,8 +51,8 @@ void VideoEncoder::initCodecs()
 {
 	static std::once_flag initFlag;
 	std::call_once(initFlag, []() {
-		::av_register_all();
-		::avcodec_register_all();
+		QT_IGNORE_DEPRECATIONS(::av_register_all());
+		QT_IGNORE_DEPRECATIONS(::avcodec_register_all());
 	});
 }
 
@@ -79,7 +79,7 @@ QList<VideoEncoder::Format> VideoEncoder::supportedFormats()
 	initCodecs();
 
 	AVOutputFormat* fmt = nullptr;
-	while((fmt = ::av_oformat_next(fmt))) {
+	while((fmt = QT_IGNORE_DEPRECATIONS(::av_oformat_next(fmt)))) {
 
 		if(fmt->flags & AVFMT_NOFILE || fmt->flags & AVFMT_NEEDNUMBER)
 			continue;

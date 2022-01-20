@@ -36,7 +36,7 @@ IMPLEMENT_OVITO_CLASS(VTKDislocationsExporter);
  * This is called once for every output file to be written and before
  * exportFrame() is called.
  *****************************************************************************/
-bool VTKDislocationsExporter::openOutputFile(const QString& filePath, int numberOfFrames, SynchronousOperation operation)
+bool VTKDislocationsExporter::openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation)
 {
 	OVITO_ASSERT(!_outputFile.isOpen());
 	OVITO_ASSERT(!_outputStream);
@@ -64,12 +64,12 @@ void VTKDislocationsExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool VTKDislocationsExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, SynchronousOperation operation)
+bool VTKDislocationsExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
 {
 	// Evaluate data pipeline.
 	// Note: We are requesting the renderable flow state from the pipeline,
 	// because we are interested in clipped (post-processed) dislocation lines.
-	const PipelineFlowState& state = getPipelineDataToBeExported(time, operation.subOperation(), true);
+	const PipelineFlowState& state = getPipelineDataToBeExported(time, operation, true);
 	if(operation.isCanceled())
 		return false;
 

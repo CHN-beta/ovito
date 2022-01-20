@@ -24,6 +24,7 @@
 #include <ovito/core/oo/CloneHelper.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/Application.h>
 #include "RefTarget.h"
 
@@ -265,9 +266,27 @@ bool RefTarget::isObjectBeingEdited() const
 * Returns an executor object to be used with Future<>::then(), which executes work
 * in the context (and the thread) of this object.
 ******************************************************************************/
-RefTargetExecutor RefTarget::executor() const
+RefTargetExecutor RefTarget::executor(ExecutionContext executionContext, bool requireDeferredExecution) const
 {
-	return executor(Application::instance()->executionContext());
+	return RefTargetExecutor(this, executionContext, requireDeferredExecution);
+}
+
+/******************************************************************************
+* Returns an executor object to be used with Future<>::then(), which executes work
+* in the context (and the thread) of this object.
+******************************************************************************/
+RefTargetExecutor RefTarget::executor(bool requireDeferredExecution) const
+{
+	return RefTargetExecutor(this, Application::instance()->executionContext(), requireDeferredExecution);
+}
+
+/******************************************************************************
+* Returns a reference to the manager for asycnhronous tasks associated with 
+* this object's dataset. 
+******************************************************************************/
+TaskManager& RefTarget::taskManager() const
+{
+	return dataset()->container()->taskManager();
 }
 
 }	// End of namespace

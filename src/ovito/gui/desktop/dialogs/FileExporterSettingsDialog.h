@@ -38,7 +38,7 @@ class OVITO_GUI_EXPORT FileExporterSettingsDialog : public QDialog
 public:
 
 	/// Constructor.
-	FileExporterSettingsDialog(MainWindow* parent, FileExporter* exporter);
+	FileExporterSettingsDialog(MainWindow& mainWindow, FileExporter* exporter);
 
 	virtual int exec() override {
 		// If there is no animation sequence (just a single frame), and if the exporter does not expose any other settings,

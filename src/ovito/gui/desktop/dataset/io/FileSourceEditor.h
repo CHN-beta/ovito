@@ -52,7 +52,7 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Loads a new file into the FileSource.
-	bool importNewFile(FileSource* fileSource, const QUrl& url, OvitoClassPtr importerType);
+	bool importNewFile(FileSource* fileSource, const QUrl& url, OvitoClassPtr importerType, MainThreadOperation operation);
 
 protected Q_SLOTS:
 

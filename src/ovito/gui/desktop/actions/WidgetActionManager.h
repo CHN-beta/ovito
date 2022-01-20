@@ -39,10 +39,10 @@ class OVITO_GUI_EXPORT WidgetActionManager : public ActionManager
 public:
 
 	/// Constructor.
-	WidgetActionManager(QObject* parent, MainWindow* mainWindow);
+	WidgetActionManager(QObject* parent, MainWindow& mainWindow);
 
 	/// Returns the main window this action manager belongs to.
-	MainWindow* mainWindow() const { return static_cast<MainWindow*>(ActionManager::gui()); }
+	MainWindow& mainWindow() const { return static_cast<MainWindow&>(ActionManager::userInterface()); }
 
 private Q_SLOTS:
 

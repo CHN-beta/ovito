@@ -575,7 +575,7 @@ ParticleInputColumnMapping XYZImporter::parseExtendedXYZColumnSpecification(cons
 Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& frame)
 {
 	// Retrieve file.
-	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
+	return Application::instance()->fileManager().fetchUrl(frame.sourceFile)
 		.then([](const FileHandle& fileHandle) {
 
 			// Parse the file header to determine the number of data columns.

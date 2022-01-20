@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,7 +26,11 @@
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/utilities/concurrent/TaskManager.h>
+#include <ovito/core/utilities/concurrent/ForEach.h>
 #include "UnwrapTrajectoriesModifier.h"
+
+#include <boost/range/counting_range.hpp>
 
 namespace Ovito::Particles {
 
@@ -51,7 +55,7 @@ Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluate(const ModifierEva
 	if(input) {
 		if(UnwrapTrajectoriesModifierApplication* unwrapModApp = dynamic_object_cast<UnwrapTrajectoriesModifierApplication>(request.modApp())) {
 
-			// If the periodic image flags particle property is present, use it to unwrap particle positions.
+			// If the periodic image flags property is present, use it to unwrap particle positions.
 			const ParticlesObject* inputParticles = input.expectObject<ParticlesObject>();
 			if(inputParticles->getProperty(ParticlesObject::PeriodicImageProperty)) {
 				PipelineFlowState output = input;
@@ -59,9 +63,9 @@ Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluate(const ModifierEva
 				return output;
 			}
 
-			// Without the periodic image flags information, we need to scan the entire particle trajectories
-			// to make them continuous.
-			return unwrapModApp->detectPeriodicCrossings(request.time(), request.initializationHints()).then(unwrapModApp->executor(), [state = input, request]() mutable {
+			// Without the periodic image flags information, we have to scan the particle trajectories
+			// from beginning to end before making them continuous.
+			return unwrapModApp->detectPeriodicCrossings(request).then(unwrapModApp->executor(), [state = input, request]() mutable {
 				static_object_cast<UnwrapTrajectoriesModifierApplication>(request.modApp())->unwrapParticleCoordinates(request, state);
 				return std::move(state);
 			});
@@ -95,39 +99,40 @@ void UnwrapTrajectoriesModifier::evaluateSynchronous(const ModifierEvaluationReq
 * Processes all frames of the input trajectory to detect periodic crossings 
 * of the particles.
 ******************************************************************************/
-SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(TimePoint time, ObjectInitializationHints initializationHints)
+SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(const ModifierEvaluationRequest& request)
 {
 	if(_unwrapOperation.isValid() == false) {
-		_initializationHints = initializationHints;
-		_unwrapOperation = Promise<>::createAsynchronousOperation(dataset()->taskManager());
-		_unwrapOperation.setProgressText(tr("Unwrapping particle trajectories"));
-		registerActivePromise(_unwrapOperation);
-		dataset()->taskManager().registerPromise(_unwrapOperation);
 
-		// Automatically reset the async operation object and the current frame evaluation if the 
-		// task gets canceled by the system.
-		_unwrapOperation.finally(executor(), false, [this](const TaskPtr& task) {
-			if(task->isCanceled())
-				_unwrapOperation.reset();
-			_fetchFrameFuture.reset();
+		// Determine the range of animation frames to be processed.
+		int startFrame = 0;
+		if(unwrappedUpToTime() != TimeNegativeInfinity())
+			startFrame = animationTimeToSourceFrame(unwrappedUpToTime());
+		int endFrame = std::max(numberOfSourceFrames(), startFrame);
+		auto inputFrameRange = boost::counting_range(startFrame, endFrame);
+
+		// Iterate over all frames of the input range in sequential order.
+		_unwrapOperation = for_each_sequential(
+			std::move(inputFrameRange), 
+			executor(true), // require deferred execution of each frame
+			// Requests the next frame from the upstream pipeline.
+			[this,initializationHints = request.initializationHints()](int frame) {
+				return evaluateInput(PipelineEvaluationRequest(initializationHints, sourceFrameToAnimationTime(frame)));
+			},
+			// This object processes each frame's data.
+			WorkingData{this});
+
+		// Display progress in the UI.
+		_unwrapOperation.task()->setProgressText(tr("Unwrapping particle trajectories"));
+		taskManager().registerFuture(_unwrapOperation);
+		registerActiveFuture(_unwrapOperation);
+
+		// Automatically reset the reference to the async operation once it gets canceled by the system.
+		_unwrapOperation.finally(executor(), [this](Task& task) { 
+			if(task.isCanceled())
+				_unwrapOperation.reset(); 
 		});
-		
-		// Determine the remaining number of animation frames that need to be processed.
-		_unwrapOperation.setProgressMaximum(numberOfSourceFrames());
-		if(unwrappedUpToTime() != TimeNegativeInfinity()) {
-			_unwrapOperation.setProgressValue(animationTimeToSourceFrame(unwrappedUpToTime()) + 1);
-		}
-		else {
-			// Initialize working data structures.
-			_previousPositions.clear();
-			_previousCell.reset();
-			_currentFlipState.fill(0);
-		}
-
-		// Starting the unwrap operation.
-		fetchNextFrame();
 	}
-	return _unwrapOperation.sharedFuture();
+	return _unwrapOperation;
 }
 
 /******************************************************************************
@@ -140,8 +145,6 @@ void UnwrapTrajectoriesModifierApplication::invalidateUnwrapData()
 	_unwrapRecords.clear();
 	_unflipRecords.clear();
 	if(_unwrapOperation.isValid()) {
-		_previousPositions.clear();
-		_unwrapOperation.cancel();
 		_unwrapOperation.reset();
 	}
 }
@@ -313,81 +316,23 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
 }
 
 /******************************************************************************
-* Requests the next trajectory frame from the upstream pipeline.
-******************************************************************************/
-void UnwrapTrajectoriesModifierApplication::fetchNextFrame()
-{
-	OVITO_ASSERT(_unwrapOperation.isValid());
-
-	// Stop fetching frames if the operation has been canceled.
-	if(_unwrapOperation.isCanceled()) {
-		_unwrapOperation.reset();
-		return;
-	}
-
-	// Determine the next frame number to fetch from the input trajectory.
-	int nextFrame = 0;
-	if(unwrappedUpToTime() != TimeNegativeInfinity())
-		nextFrame = animationTimeToSourceFrame(unwrappedUpToTime()) + 1;
-
-	// When we have reached the end of the input trajectory, we can stop the operation.
-	if(nextFrame >= numberOfSourceFrames()) {
-		_previousPositions.clear();
-		_unwrapOperation.setFinished();
-		OVITO_ASSERT(!_fetchFrameFuture.isValid());
-		return;
-	}
-
-	// Request the next frame from the input trajectory.
-	TimePoint nextFrameTime = sourceFrameToAnimationTime(nextFrame);
-	_fetchFrameFuture = evaluateInput(PipelineEvaluationRequest(_initializationHints, nextFrameTime));
-
-	// Wait until input frame is ready.
-	_fetchFrameFuture.finally(executor(), true, [this, nextFrame, nextFrameTime](const TaskPtr& task) {
-		try {	
-			// If the pipeline evaluation has been canceled for some reason, we cancel the unwrapping
-			// operation as well.
-			if(task->isCanceled() || !_unwrapOperation.isValid() || _unwrapOperation.isFinished()) {
-				_previousPositions.clear();
-				_unwrapOperation.reset();
-				OVITO_ASSERT(!_fetchFrameFuture.isValid());
-				return;
-			}
-			OVITO_ASSERT(_fetchFrameFuture.isValid());
-
-			// Get the next frame and process it.
-			processNextFrame(nextFrame, nextFrameTime, _fetchFrameFuture.result());
-			_unwrapOperation.incrementProgressValue(1);
-
-			// Schedule the pipeline evaluation for the next frame.
-			fetchNextFrame();
-		}
-		catch(const Exception&) {
-			// In case of an error during pipeline evaluation or the unwrapping calculation, 
-			// abort the operation and forward the exception to the pipeline.
-			_unwrapOperation.captureException();
-			_previousPositions.clear();
-			_unwrapOperation.setFinished();
-		}
-	});
-}
-
-/******************************************************************************
 * Calculates the information that is needed to unwrap particle coordinates.
 ******************************************************************************/
-void UnwrapTrajectoriesModifierApplication::processNextFrame(int frame, TimePoint time, const PipelineFlowState& state)
+void UnwrapTrajectoriesModifierApplication::WorkingData::operator()(int frame, const PipelineFlowState& state)
 {
+	TimePoint time = _modApp->sourceFrameToAnimationTime(frame);
+
 	// Get simulation cell geometry and boundary conditions.
 	const SimulationCellObject* cell = state.getObject<SimulationCellObject>();
 	if(!cell)
-		throwException(tr("Input data contains no simulation cell information at frame %1.").arg(frame));
+		_modApp->throwException(tr("Input data contains no simulation cell information at frame %1.").arg(frame));
 	if(!cell->hasPbcCorrected())
-		throwException(tr("No periodic boundary conditions set for the simulation cell."));
+		_modApp->throwException(tr("No periodic boundary conditions set for the simulation cell."));
 	AffineTransformation reciprocalCellMatrix = cell->inverseMatrix();
 
 	const ParticlesObject* particles = state.getObject<ParticlesObject>();
 	if(!particles)
-		throwException(tr("Input data contains no particles at frame %1.").arg(frame));
+		_modApp->throwException(tr("Input data contains no particles at frame %1.").arg(frame));
 	ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
 	ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
 	if(identifierProperty && identifierProperty.size() != posProperty.size())
@@ -418,7 +363,7 @@ void UnwrapTrajectoriesModifierApplication::processNextFrame(int frame, TimePoin
 			}
 			// Emit a timeline record whever a flipping occurred.
 			if(flipState != _currentFlipState)
-				_unflipRecords.emplace_back(time, flipState);
+				_modApp->_unflipRecords.emplace_back(time, flipState);
 			_currentFlipState = flipState;
 		}
 		_previousCell = cell;
@@ -437,7 +382,7 @@ void UnwrapTrajectoriesModifierApplication::processNextFrame(int frame, TimePoin
 		Point3 rp = reciprocalCellMatrix * p;
 		// Try to insert new position of particle into map.
 		// If an old position already exists, insertion will fail and we can
-		// test if the particle has crossed a periodic cell boundary.
+		// test whether the particle did cross a periodic cell boundary.
 		auto result = _previousPositions.insert(std::make_pair(identifierProperty ? identifierProperty[index] : index, rp));
 		if(!result.second) {
 			Vector3 delta = result.first->second - rp;
@@ -446,7 +391,7 @@ void UnwrapTrajectoriesModifierApplication::processNextFrame(int frame, TimePoin
 					int shift = (int)std::round(delta[dim]);
 					if(shift != 0) {
 						// Create a new record when particle has crossed a periodic cell boundary.
-						_unwrapRecords.emplace(result.first->first, std::make_tuple(time, (qint8)dim, (qint16)shift));
+						_modApp->_unwrapRecords.emplace(result.first->first, std::make_tuple(time, (qint8)dim, (qint16)shift));
 					}
 				}
 			}
@@ -455,8 +400,8 @@ void UnwrapTrajectoriesModifierApplication::processNextFrame(int frame, TimePoin
 		index++;
 	}
 
-	_unwrappedUpToTime = time;
-	setStatus(tr("Processed input trajectory frame %1 of %2.").arg(frame).arg(numberOfSourceFrames()));
+	_modApp->_unwrappedUpToTime = time;
+	_modApp->setStatus(tr("Processed input trajectory frame %1 of %2.").arg(frame).arg(_modApp->numberOfSourceFrames()));
 }
 
 /******************************************************************************

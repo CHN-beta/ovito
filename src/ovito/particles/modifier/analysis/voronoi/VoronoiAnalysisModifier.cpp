@@ -418,7 +418,6 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 			}
 			if(!count) return;
 
-			setProgressValue(0);
 			setProgressMaximum(count);
 
 			voro::c_loop_all cl(voroContainer);
@@ -455,7 +454,6 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 			}
 
 			if(!count) return;
-			setProgressValue(0);
 			setProgressMaximum(count);
 
 			voro::c_loop_all cl(voroContainer);

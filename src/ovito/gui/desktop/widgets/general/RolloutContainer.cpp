@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include "RolloutContainer.h"
 #include "RolloutContainerLayout.h"
 
@@ -342,13 +343,7 @@ void Rollout::paintEvent(QPaintEvent* event)
 ******************************************************************************/
 void Rollout::onHelpButton()
 {
-	MainWindow* mainWindow = nullptr;
-	if(RolloutContainer* container = this->container())
-		mainWindow = container->mainWindow();
-	if(!mainWindow)
-		mainWindow = qobject_cast<MainWindow*>(window());
-	if(mainWindow)
-		mainWindow->openHelpTopic(_helpPageUrl);
+	ActionManager::openHelpTopic(_helpPageUrl);
 }
 
 /******************************************************************************

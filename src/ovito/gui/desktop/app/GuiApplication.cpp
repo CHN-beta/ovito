@@ -23,9 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dataset/GuiDataSetContainer.h>
-#include <ovito/gui/desktop/utilities/io/GuiFileManager.h>
 #include <ovito/gui/base/actions/ActionManager.h>
-#include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/app/ApplicationService.h>
 #include "GuiApplication.h"
 
@@ -44,7 +42,9 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-GuiApplication::GuiApplication()
+GuiApplication::GuiApplication() : StandaloneApplication(_fileManager), UserInterface(_globalDatasetContainer), 
+	_fileManager(StandaloneApplication::taskManager()),
+	_globalDatasetContainer(StandaloneApplication::taskManager(), *this)
 {
 	// Register Qt resources.
 	::registerQtResources();
@@ -140,17 +140,9 @@ void GuiApplication::createQtApplication(int& argc, char** argv)
 }
 
 /******************************************************************************
-* Creates the global FileManager class instance.
-******************************************************************************/
-FileManager* GuiApplication::createFileManager()
-{
-	return new GuiFileManager();
-}
-
-/******************************************************************************
 * Prepares application to start running.
 ******************************************************************************/
-bool GuiApplication::startupApplication()
+UserInterface* GuiApplication::startupApplication()
 {
 	if(guiMode()) {
 		// Set up graphical user interface.
@@ -166,7 +158,6 @@ bool GuiApplication::startupApplication()
 
 		// Create the main window.
 		MainWindow* mainWin = new MainWindow();
-		_datasetContainer = &mainWin->datasetContainer();
 
 		// Make the application shutdown as soon as the last main window has been closed.
 		QGuiApplication::setQuitOnLastWindowClosed(true);
@@ -196,30 +187,30 @@ bool GuiApplication::startupApplication()
 			msgbox.setTextInteractionFlags(Qt::TextBrowserInteraction);
 			msgbox.setIcon(QMessageBox::Critical);
 			msgbox.exec();
-			return false;
+			return nullptr;
 		}
 #endif
+		return mainWin;
 	}
 	else {
-		// Create a dataset container.
-		_datasetContainer = new GuiDataSetContainer();
-		_datasetContainer->setParent(this);
+		// Use this application's command line user interface.
+		return this;
 	}
-
-	return true;
 }
 
 /******************************************************************************
 * Is called at program startup once the event loop is running.
 ******************************************************************************/
-void GuiApplication::postStartupInitialization()
+void GuiApplication::postStartupInitialization(MainThreadOperation& operation)
 {
+	DataSetContainer& datasetContainer = operation.userInterface().datasetContainer();
+
 	// Load session state file specified on the command line.
 	if(!cmdLineParser().positionalArguments().empty()) {
 		QString startupFilename = cmdLineParser().positionalArguments().front();
 		if(startupFilename.endsWith(".ovito", Qt::CaseInsensitive)) {
 			try {
-				datasetContainer()->loadDataset(startupFilename);
+				datasetContainer.loadDataset(startupFilename, operation.createSubTask(true));
 			}
 			catch(const Exception& ex) {
 				ex.reportError();
@@ -229,12 +220,12 @@ void GuiApplication::postStartupInitialization()
 
 	// If no .ovito state file was specified on the command line, load 
 	// the user's default state from the standard location.
-	if(datasetContainer()->currentSet() == nullptr && guiMode()) {
+	if(datasetContainer.currentSet() == nullptr && guiMode()) {
 		QString defaultsFilePath = QStandardPaths::locate(QStandardPaths::AppDataLocation, QStringLiteral("defaults.ovito"));
 		if(!defaultsFilePath.isEmpty()) {
 			try {
-				datasetContainer()->loadDataset(defaultsFilePath);
-				datasetContainer()->currentSet()->setFilePath({});
+				datasetContainer.loadDataset(defaultsFilePath, operation.createSubTask(true));
+				datasetContainer.currentSet()->setFilePath({});
 			}
 			catch(Exception& ex) {
 				ex.prependGeneralMessage(tr("An error occured while loading the user's default session state from the file: %1").arg(defaultsFilePath));
@@ -244,8 +235,8 @@ void GuiApplication::postStartupInitialization()
 	}
 
 	// Create an empty dataset if nothing has been loaded.
-	if(datasetContainer()->currentSet() == nullptr) {
-		datasetContainer()->newDataset();
+	if(datasetContainer.currentSet() == nullptr) {
+		datasetContainer.newDataset();
 	}
 
 	// Import data file(s) specified on the command line.
@@ -256,14 +247,14 @@ void GuiApplication::postStartupInitialization()
 			if(importFilename.endsWith(".ovito", Qt::CaseInsensitive))
 				numSessionFiles++;
 			else
-				importUrls.push_back(Application::instance()->fileManager()->urlFromUserInput(importFilename));
+				importUrls.push_back(Application::instance()->fileManager().urlFromUserInput(importFilename));
 		}
 		try {
 			if(!importUrls.empty()) {
 				if(numSessionFiles)
 					throw Exception(tr("Detected multiple command line arguments: Cannot open a session state file and a simulation data file at the same time."));
-				if(GuiDataSetContainer* guiContainer = dynamic_object_cast<GuiDataSetContainer>(datasetContainer()))
-					guiContainer->importFiles(std::move(importUrls));
+				if(GuiDataSetContainer* guiContainer = dynamic_object_cast<GuiDataSetContainer>(&datasetContainer))
+					guiContainer->importFiles(std::move(importUrls), operation.createSubTask(true));
 				else
 					throw Exception(tr("Cannot import data files from the command line when running in console mode."));
 			}
@@ -273,11 +264,11 @@ void GuiApplication::postStartupInitialization()
 		catch(const Exception& ex) {
 			ex.reportError();
 		}
-		if(datasetContainer()->currentSet())
-			datasetContainer()->currentSet()->undoStack().setClean();
+		if(datasetContainer.currentSet())
+			datasetContainer.currentSet()->undoStack().setClean();
 	}
 
-	StandaloneApplication::postStartupInitialization();
+	StandaloneApplication::postStartupInitialization(operation);
 }
 
 /******************************************************************************
@@ -288,12 +279,14 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
 	if(event->type() == QEvent::FileOpen) {
 		QFileOpenEvent* openEvent = static_cast<QFileOpenEvent*>(event);
 		try {
-			if(openEvent->file().endsWith(".ovito", Qt::CaseInsensitive)) {
-				datasetContainer()->loadDataset(openEvent->file());
-			}
-			else if(GuiDataSetContainer* guiContainer = dynamic_object_cast<GuiDataSetContainer>(datasetContainer())) {
-				guiContainer->importFiles({openEvent->url()});
-				guiContainer->currentSet()->undoStack().setClean();
+			if(MainWindow* mainWindow = qobject_cast<MainWindow*>(QApplication::activeWindow())) {
+				if(openEvent->file().endsWith(".ovito", Qt::CaseInsensitive)) {
+					mainWindow->datasetContainer().loadDataset(openEvent->file(), mainWindow->createOperation(true));
+				}
+				else {
+					mainWindow->datasetContainer().importFiles({openEvent->url()}, mainWindow->createOperation(true));
+					mainWindow->datasetContainer().currentSet()->undoStack().setClean();
+				}
 			}
 		}
 		catch(const Exception& ex) {
@@ -308,6 +301,8 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
 ******************************************************************************/
 void GuiApplication::reportError(const Exception& ex, bool blocking)
 {
+	OVITO_ASSERT(QThread::currentThread() == this->thread());
+
 	// Always display errors in the terminal window.
 	Application::reportError(ex, blocking);
 
@@ -347,12 +342,13 @@ void GuiApplication::showErrorMessages()
 
 		// If the exception has been thrown within the context of a DataSet or a DataSetContainer,
 		// show the message box under the corresponding window.
-		QWidget* window;
+		QWidget* window = nullptr;
 		if(DataSet* dataset = qobject_cast<DataSet*>(exception.context())) {
-			window = MainWindow::fromDataset(dataset);
+			if(GuiDataSetContainer* datasetContainer = qobject_cast<GuiDataSetContainer*>(dataset->container()))
+				window = &datasetContainer->mainWindow();
 		}
 		else if(GuiDataSetContainer* datasetContainer = qobject_cast<GuiDataSetContainer*>(exception.context())) {
-			window = datasetContainer->mainWindow();
+			window = &datasetContainer->mainWindow();
 		}
 		else {
 			window = qobject_cast<QWidget*>(exception.context());

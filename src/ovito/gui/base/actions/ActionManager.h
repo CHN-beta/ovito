@@ -175,10 +175,10 @@ public:
 	};
 
 	/// Constructor.
-	ActionManager(QObject* parent, UserInterface* gui);
+	ActionManager(QObject* parent, UserInterface& userInterface);
 
 	/// Returns the user interface this action manager belongs to.
-	UserInterface* gui() const { return _gui; }
+	UserInterface& userInterface() const { return _userInterface; }
 
 	/// Returns dataset currently being edited in the main window.
 	DataSet* dataset() const;
@@ -227,6 +227,9 @@ public:
 	/// \brief Removes the given action from the ActionManager and deletes it.
 	/// \param action The action to be deletes.
 	void deleteAction(QAction* action);
+
+	/// Shows the online manual and opens the given help page.
+	static void openHelpTopic(const QString& page);
 
 	/// \brief Returns the number of rows in this list model.
 	virtual int rowCount(const QModelIndex& parent) const override { return _actions.size(); }
@@ -278,8 +281,8 @@ protected:
 
 private:
 
-	/// The main window that owns this action manager.
-	UserInterface* _gui;
+	/// The UI that owns this action manager.
+	UserInterface& _userInterface;
 
 	/// The list of registered actions.
 	QVector<QAction*> _actions;

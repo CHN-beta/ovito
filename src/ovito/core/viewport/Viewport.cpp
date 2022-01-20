@@ -566,10 +566,10 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 			adjustProjectionForRenderFrame(_projParams);
 
 		// This is the async operation object used when calling rendering functions in the following.
-		SynchronousOperation renderOperation = SynchronousOperation::createSignal(dataset()->taskManager(), ObjectInitializationHint::LoadUserDefaults);
+		MainThreadOperation renderOperation = MainThreadOperation::create(dataset()->userInterface(), ObjectInitializationHint::LoadUserDefaults);
 
 		// Determine scene bounding box.
-		Box3 boundingBox = renderer->computeSceneBoundingBox(time, _projParams, this, renderOperation.subOperation());
+		Box3 boundingBox = renderer->computeSceneBoundingBox(time, _projParams, this, renderOperation);
 
 		// Set up final projection with the now known bounding box.
 		_projParams = computeProjectionParameters(time, aspectRatio, boundingBox);
@@ -593,7 +593,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 							renderFrameBox.width() * vpRect.width() / 2,
 							renderFrameBox.height() * vpRect.height() / 2);
 					renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), boundingBox));
-					renderer->renderOverlays(true, renderViewportRect, renderFrameRect, renderOperation.subOperation());
+					renderer->renderOverlays(true, renderViewportRect, renderFrameRect, renderOperation);
 				}
 			}
 		}
@@ -602,7 +602,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 		renderer->setProjParams(_projParams);
 
 		// Call the viewport renderer to render the scene objects.
-		renderer->renderFrame(vpRect, renderOperation.subOperation());
+		renderer->renderFrame(vpRect, renderOperation);
 
 		// Render viewport "overlays".
 		if(renderPreviewMode() && !renderer->isPicking()) {
@@ -616,7 +616,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 							renderFrameBox.width() * vpRect.width() / 2,
 							renderFrameBox.height() * vpRect.height() / 2);
 					renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), boundingBox));
-					renderer->renderOverlays(false, renderViewportRect, renderFrameRect, renderOperation.subOperation());
+					renderer->renderOverlays(false, renderViewportRect, renderFrameRect, renderOperation);
 				}
 			}
 		}

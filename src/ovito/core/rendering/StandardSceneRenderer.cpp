@@ -98,19 +98,19 @@ void StandardSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParam
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool StandardSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOperation operation)
+bool StandardSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
 {
 	// Delegate rendering work to implementation class.
-	return _internalRenderer->renderFrame(viewportRect, std::move(operation));
+	return _internalRenderer->renderFrame(viewportRect, operation);
 }
 
 /******************************************************************************
 * Renders the overlays/underlays of the viewport into the framebuffer.
 ******************************************************************************/
-bool StandardSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation)
+bool StandardSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
 {
 	// Delegate rendering work to implementation class.
-	return _internalRenderer->renderOverlays(underlays, logicalViewportRect, physicalViewportRect, std::move(operation));
+	return _internalRenderer->renderOverlays(underlays, logicalViewportRect, physicalViewportRect, operation);
 }
 
 /******************************************************************************

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,98 +24,166 @@
 
 
 #include <ovito/core/Core.h>
-#include "ThreadSafeTask.h"
+#include <ovito/core/utilities/BindFront.h>
+#include "detail/ContinuationTask.h"
 
 namespace Ovito {
 
-template<typename WorkingState, typename InputRange, typename F, class Executor>
-auto for_each(WorkingState&& inputState, InputRange&& inputRange, Executor&& executor, F&& f) noexcept
+template<typename InputRange, class Executor, typename StartIterFunc, typename CompleteIterFunc, typename... ResultType>
+auto for_each_sequential(
+	InputRange&& inputRange, 
+	Executor&& executor, 
+	StartIterFunc&& startFunc, 
+	CompleteIterFunc&& completeFunc, 
+	ResultType&&... initialResult)
 {
-    class ForEachTask : public ThreadSafeTask
+	// The type of future returned by the user function.
+	using output_future_type = std::invoke_result_t<StartIterFunc, decltype(*std::begin(inputRange)), std::decay_t<ResultType>&...>; // C++20: Use std::indirect_result_t instead.
+
+	// The output tuple produced by the task.
+	using task_tuple_type = std::tuple<std::decay_t<ResultType>...>;
+
+	class ForEachTask : public detail::ContinuationTask<task_tuple_type>
     {
     public:
-        using WorkingStateValue = std::decay_t<WorkingState>;
 
 		/// Constructor.
-		ForEachTask(WorkingState&& inputState, InputRange&& inputRange, Executor&& executor, F&& f) : 
-			ThreadSafeTask(Task::Started, executor.taskManager()),
-			_state(std::forward<WorkingState>(inputState)),
-			_range(std::forward<InputRange>(inputRange)),
-            _executor(std::forward<Executor>(executor)),
-            _func(std::forward<F>(f)),
-            _iterator(std::begin(_range)) {}
-
-		/// Creates a future that returns the results of this asynchronous task to the caller.
-		Future<WorkingStateValue> future() {
-			return Future<WorkingStateValue>::createFromTask(shared_from_this(), _state);
+		ForEachTask(
+			InputRange&& inputRange, 
+			Executor&& executor, 
+			StartIterFunc&& startFunc, 
+			CompleteIterFunc&& completeFunc, 
+			ResultType&&... initialResult) : 
+				detail::ContinuationTask<task_tuple_type>(Task::Started, std::forward_as_tuple(std::forward<ResultType>(initialResult)...)),
+				_range(std::forward<InputRange>(inputRange)),
+				_executor(std::forward<Executor>(executor)),
+				_startFunc(std::forward<StartIterFunc>(startFunc)),
+				_completeFunc(std::forward<CompleteIterFunc>(completeFunc)),
+				_iterator(std::begin(_range)) 
+		{
+			// Determine the number of iterations we are going to perform.
+			if constexpr(std::is_same_v<typename std::iterator_traits<typename InputRange::iterator>::iterator_category, std::random_access_iterator_tag>)
+				this->setProgressMaximum(std::distance(_iterator, std::end(_range)));
 		}
 
-		/// Is called when this task gets canceled by the system.
-		virtual void cancel() noexcept override {
-            if(isCanceled() || isFinished()) return;
-			_future.reset(); // Cancel function call that is currently in progress.
-			ThreadSafeTask::cancel();
-			setFinished();
+		/// Start execution of the task.
+		void go() noexcept {
+			// Begin execution of first iteration.
+			if(_iterator != std::end(_range))
+				_executor.schedule(detail::bind_front(&ForEachTask::iteration_begin, static_pointer_cast<ForEachTask>(this->shared_from_this())))();
+			else
+				this->setFinished();
 		}
 
-		void go() {
-			if(isCanceled()) return;
-			if(_iterator != std::end(_range)) {
-				_future = _func(*_iterator++, _state);
-				_future.finally(_executor, true, 
-					std::bind(&ForEachTask::next, static_pointer_cast<ForEachTask>(shared_from_this()), std::placeholders::_1));
+		/// Method that provides public read/write access to the internal results storage of this task.
+		using detail::ContinuationTask<task_tuple_type>::resultsStorage;
+
+		/// Performs the next iteration of the mapping process.
+		void iteration_begin() noexcept {
+			// Report the number of iterations we have performed so far.
+			if constexpr(std::is_same_v<typename std::iterator_traits<typename InputRange::iterator>::iterator_category, std::random_access_iterator_tag>)
+				this->setProgressValue(std::distance(std::begin(_range), _iterator));
+
+			// Did we already reach the end of the input range?
+			if(_iterator != std::end(_range) && !this->isCanceled()) {
+				output_future_type future;
+				try {
+					// Call the user-provided function with the current loop value and, optionally, the task's result storage 
+					if constexpr(std::is_invocable_v<std::decay_t<StartIterFunc>, decltype(*_iterator), std::decay_t<ResultType>&...> && std::tuple_size_v<task_tuple_type> == 1)
+						future = _startFunc(*_iterator, this->resultsStorage());
+					else
+						future = _startFunc(*_iterator);
+				}
+				catch(...) {
+					this->captureExceptionAndFinish();
+					return;
+				}
+				OVITO_ASSERT(future.isValid());
+				// Schedule next iteration upon completion of the future returned by the user function.
+				this->whenTaskFinishes(future.takeTaskReference(), _executor, 
+					detail::bind_front(&ForEachTask::iteration_complete, static_pointer_cast<ForEachTask>(this->shared_from_this())));
 			}
 			else {
-#ifdef OVITO_DEBUG
-        		this->_resultSet = true;
-#endif	
-				setFinished();
+				// Inform caller that the task has finished and the result is available.
+				this->setFinished();
 			}
 		}
 
-        void next(const TaskPtr& task) {
+		// Is called at the end of each iteration, when user function has finished performing its work.
+        void iteration_complete() noexcept {
+			// Lock access to this task object.
+			QMutexLocker locker(&this->taskMutex());
+
+			// Get the task that did just finish and wrap it in a future of the original type.
+			output_future_type future(this->takeAwaitedTask());
+
+			// Stop if the awaited future was canceled.
+			if(!future.isValid() || future.isCanceled()) {
+				this->cancelAndFinishLocked(locker);
+				return;
+			}
+
+			// Check if the awaited future completed with an error.
+			if(future.task()->exceptionStore()) {
+				this->exceptionLocked(future.task()->copyExceptionStore());
+				this->finishLocked(locker);
+				return;
+			}
+
+			locker.unlock();
+
 			try {
-				if(!isCanceled() && !task->isCanceled()) {
-					OVITO_ASSERT(_future.isValid());
-					_future.result();
-					OVITO_ASSERT(!_future.isValid());
-					go();
-				}
-				else cancel();
+				// Invoke the user function that completes this iteration by processing the results returned by the future.
+				if constexpr(std::tuple_size_v<typename output_future_type::tuple_type> == 1 && std::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result()), std::decay_t<ResultType>&...> && std::tuple_size_v<task_tuple_type> == 1)
+					_completeFunc(*_iterator, std::move(future).result(), resultsStorage());
+				else if constexpr(std::tuple_size_v<typename output_future_type::tuple_type> == 1 && std::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result())>)
+					_completeFunc(*_iterator, std::move(future).result());
+				else
+					_completeFunc(*_iterator);
 			}
 			catch(...) {
-				captureException();
-				setFinished();
+				this->captureExceptionAndFinish();
+				return;
 			}
+
+			// Continue with next iteration.
+			++_iterator;
+			iteration_begin();
         }
 
 	private:
 
-		/// The working state of this asynchronous task, which is also the result being returned to the caller.
-		WorkingStateValue _state;
-
         /// The range of items to be processed.
         std::decay_t<InputRange> _range;
 
-        /// The user function to call on each item of the input range.
-        F _func;
+        /// The user function to call with each item of the input range.
+        std::decay_t<StartIterFunc> _startFunc;
+
+        /// The user function to call with each result produced by the future.
+        std::decay_t<CompleteIterFunc> _completeFunc;
 
         /// The executor used for sub-tasks.
-        Executor _executor;
+        std::decay_t<Executor> _executor;
 
         /// The iterator pointing to the current item from the range.
         typename InputRange::iterator _iterator;
-
-        /// The future returned by the last call to the user function.
-		Future<> _future;
     };
 
-	// Create the asynchronous task object.
+	// Create the task object.
 	std::shared_ptr<ForEachTask> task = std::make_shared<ForEachTask>(
-        std::forward<WorkingState>(inputState), std::forward<InputRange>(inputRange), 
-        std::forward<Executor>(executor), std::forward<F>(f));
+        std::forward<InputRange>(inputRange), 
+        std::forward<Executor>(executor), 
+		std::forward<StartIterFunc>(startFunc),
+		std::forward<CompleteIterFunc>(completeFunc),
+		std::forward<ResultType>(initialResult)...);
+
+	// Start iterating over the input range.
+	// Note: Cannot do this in the task's constructor, because creating a temporary std::shared_ptr<> referring to 
+	// the task object isn't valid there. 
 	task->go();
-	return task->future();
+	
+	// Return a future to the caller.
+	return Future<std::decay_t<ResultType>...>::createFromTask(std::move(task));
 }
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,35 +24,47 @@
 
 
 #include <ovito/core/Core.h>
-#include "ProgressiveTask.h"
+#include "SharedFuture.h"
 
 namespace Ovito {
 
-/**
- * \brief Type of Task to be used within a single-thread context.
- *
- * The methods of this class are not thread-safe and may only be from the main thread.
- * A new main-thread task is typically created using the TaskManager::createMainThreadOperation() method.
- *
- * \sa ThreadSafeTask
- */
-class OVITO_CORE_EXPORT MainThreadTask : public ProgressiveTask
+/******************************************************************************
+* A weak reference to a SharedFuture
+******************************************************************************/
+template<typename... R>
+class WeakSharedFuture : private std::weak_ptr<Task>
 {
 public:
 
-	/// Constructor.
-	explicit MainThreadTask(State initialState, TaskManager* taskManager) : ProgressiveTask(initialState, taskManager) {}
+#ifndef Q_CC_MSVC
+	constexpr WeakSharedFuture() noexcept = default;
+#else
+	constexpr WeakSharedFuture() noexcept : std::weak_ptr<Task>() {}
+#endif
 
-	/// Sets the current progress value (must be in the range 0 to progressMaximum()).
-	/// Returns false if the promise has been canceled.
-    virtual bool setProgressValue(qlonglong value) override;
+	WeakSharedFuture(const SharedFuture<R...>& future) noexcept : std::weak_ptr<Task>(future.task()) {}
 
-	/// Increments the progress value by 1.
-	/// Returns false if the promise has been canceled.
-    virtual bool incrementProgressValue(qlonglong increment = 1) override;
+	WeakSharedFuture& operator=(const Future<R...>& f) noexcept {
+		std::weak_ptr<Task>::operator=(f.task());
+		return *this;
+	}
 
-	/// Changes the status text of this promise.
-	virtual void setProgressText(const QString& progressText) override;
+	WeakSharedFuture& operator=(const SharedFuture<R...>& f) noexcept {
+		std::weak_ptr<Task>::operator=(f.task());
+		return *this;
+	}
+
+	void reset() noexcept {
+		std::weak_ptr<Task>::reset();
+	}
+
+	SharedFuture<R...> lock() const noexcept {
+		return SharedFuture<R...>(std::weak_ptr<Task>::lock());
+	}
+
+	bool expired() const noexcept {
+		return std::weak_ptr<Task>::expired();
+	}
 };
 
 }	// End of namespace

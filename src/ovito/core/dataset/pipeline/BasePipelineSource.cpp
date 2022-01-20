@@ -48,9 +48,9 @@ BasePipelineSource::BasePipelineSource(DataSet* dataset) : CachingPipelineObject
 ******************************************************************************/
 Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int animationFrame, ObjectInitializationHints initializationHints, TimeInterval frameInterval, Future<PipelineFlowState> future)
 {
-	return std::move(future).then_future(executor(), [this,animationFrame,initializationHints,frameInterval](Future<PipelineFlowState> future) -> PipelineFlowState {
+	return std::move(future).then(executor(), [this,animationFrame,initializationHints,frameInterval](Future<PipelineFlowState> future) -> PipelineFlowState {
+		OVITO_ASSERT(future.isFinished() && !future.isCanceled());
 		try {
-			OVITO_ASSERT(future.isFinished() && !future.isCanceled());
 			PipelineFlowState state = future.result();
 			setStatus(state.status());
 

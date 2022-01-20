@@ -49,7 +49,7 @@ public:
 	virtual bool appliesTo(const DataCollection& data) override;
 
 	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget(MainWindow* mainWindow) override;
+	virtual QWidget* createWidget() override;
 
 	/// Updates the contents displayed in the inspector.
 	virtual void updateDisplay(const PipelineFlowState& state, PipelineSceneNode* pipeline) override;
@@ -138,9 +138,6 @@ private:
 
 	/// The table model.
 	AttributeTableModel* _tableModel = nullptr;
-
-	/// The parent window.
-	MainWindow* _mainWindow;
 };
 
 }	// End of namespace

@@ -140,7 +140,7 @@ void OffscreenOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool OffscreenOpenGLSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOperation operation)
+bool OffscreenOpenGLSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
 {
 	// Always render into the upper left corner of the OpenGL framebuffer.
 	// That's because the OpenGL framebuffer may be smaller than the target OVITO framebuffer.
@@ -148,13 +148,13 @@ bool OffscreenOpenGLSceneRenderer::renderFrame(const QRect& viewportRect, Synchr
 	shiftedViewportRect.moveTo(0,0);
 
 	// Let the base class do the main rendering work.
-	return OpenGLSceneRenderer::renderFrame(shiftedViewportRect, std::move(operation));
+	return OpenGLSceneRenderer::renderFrame(shiftedViewportRect, operation);
 }
 
 /******************************************************************************
 * Renders the overlays/underlays of the viewport into the framebuffer.
 ******************************************************************************/
-bool OffscreenOpenGLSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation)
+bool OffscreenOpenGLSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
 {
 	// Always render into the upper left corner of the OpenGL framebuffer.
 	// That's because the OpenGL framebuffer may be smaller than the target OVITO framebuffer.
@@ -162,7 +162,7 @@ bool OffscreenOpenGLSceneRenderer::renderOverlays(bool underlays, const QRect& l
 	shiftedViewportRect.moveTo(0,0);
 
 	// Delegate rendering work to base class.
-	return OpenGLSceneRenderer::renderOverlays(underlays, logicalViewportRect, shiftedViewportRect, std::move(operation));
+	return OpenGLSceneRenderer::renderOverlays(underlays, logicalViewportRect, shiftedViewportRect, operation);
 }
 
 /******************************************************************************

@@ -48,7 +48,7 @@ Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset,
 			dataset->throwException(tr("There are no files in the directory matching the filename pattern."));
 
 		// Download file so we can determine its format.
-		return Application::instance()->fileManager()->fetchUrl(dataset->taskManager(), urls.front())
+		return Application::instance()->fileManager().fetchUrl(urls.front())
 			.then(dataset->executor(), [dataset, initializationHints, url = urls.front(), existingImporterHint = std::move(existingImporterHint)](const FileHandle& file) {
 				// Detect file format.
 				return autodetectFileFormat(dataset, initializationHints, file, std::move(existingImporterHint));

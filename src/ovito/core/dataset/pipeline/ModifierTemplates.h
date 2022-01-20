@@ -64,7 +64,7 @@ public:
 	/// \param templateName The name of the new template. If a temnplate with the same name exists, it is overwritten.
 	/// \param modifiers The list of one or more modifiers from which the template should be created.
 	/// \return The index of the created template.
-	int createTemplate(const QString& templateName, const QVector<OORef<Modifier>>& modifiers);
+	int createTemplate(const QString& templateName, const QVector<OORef<Modifier>>& modifiers, UserInterface& userInterface);
 
 	/// \brief Creates a new modifier template given a serialized version of the modifier.
 	/// \param templateName The name of the new template. If a temnplate with the same name exists, it is overwritten.

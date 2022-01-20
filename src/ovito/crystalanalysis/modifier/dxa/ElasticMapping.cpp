@@ -37,7 +37,6 @@ static const int edgeVertices[6][2] = {{0,1},{0,2},{0,3},{1,2},{1,3},{2,3}};
 ******************************************************************************/
 bool ElasticMapping::generateTessellationEdges(Task& promise)
 {
-	promise.setProgressValue(0);
 	promise.setProgressMaximum(tessellation().numberOfPrimaryTetrahedra());
 
 	// Generate list of tessellation edges.
@@ -83,7 +82,6 @@ bool ElasticMapping::generateTessellationEdges(Task& promise)
 bool ElasticMapping::assignVerticesToClusters(Task& promise)
 {
 	// Unknown runtime length.
-	promise.setProgressValue(0);
 	promise.setProgressMaximum(0);
 
 	// Assign a cluster to each vertex of the tessellation, which will be used to express
@@ -137,7 +135,6 @@ bool ElasticMapping::assignIdealVectorsToEdges(int crystalPathSteps, Task& promi
 	CrystalPathFinder pathFinder(_structureAnalysis, crystalPathSteps);
 
 	// Try to assign a reference vector to the tessellation edges.
-	promise.setProgressValue(0);
 	promise.setProgressMaximum(_vertexEdges.size());
 	size_t progressCounter = 0;
 	for(const auto& firstEdge : _vertexEdges) {

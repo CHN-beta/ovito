@@ -102,7 +102,6 @@ void BondsComputePropertyModifierDelegate::Engine::perform()
 {
 	setProgressText(tr("Computing property '%1'").arg(outputProperty()->name()));
 	setProgressMaximum(outputProperty()->size());
-	setProgressValue(0);
 
 	// Parallelized loop over all bonds.
 	parallelForChunks(outputProperty()->size(), *this, [this](size_t startIndex, size_t count, Task& promise) {

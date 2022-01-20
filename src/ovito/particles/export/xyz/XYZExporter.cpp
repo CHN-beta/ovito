@@ -34,7 +34,7 @@ SET_PROPERTY_FIELD_LABEL(XYZExporter, subFormat, "XYZ format style");
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
 ******************************************************************************/
-bool XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, TimePoint time, const QString& filePath, SynchronousOperation operation)
+bool XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
 {
 	// Get particle positions.
 	const ParticlesObject* particles = state.expectObject<ParticlesObject>();

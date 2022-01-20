@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/base/GUIBase.h>
-#include <ovito/gui/base/mainwin/UserInterface.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/app/Application.h>
@@ -35,12 +35,18 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OpenGLOffscreenViewportWindow::OpenGLOffscreenViewportWindow(Viewport* vp, ViewportInputManager* inputManager, UserInterface* gui, const QSize& initialSize, std::function<void(QImage)> imageCallback) : BaseViewportWindow(gui, inputManager, vp),
+OpenGLOffscreenViewportWindow::OpenGLOffscreenViewportWindow(Viewport* vp, const QSize& initialSize, std::function<void(QImage)> imageCallback) : 
+	BaseViewportWindow(*this, vp),
+	UserInterface(*vp->dataset()->container()),
+	_inputManager(nullptr, *this),
 	_imageCallback(std::move(imageCallback))
 {
 	OVITO_ASSERT(vp);
 	OVITO_ASSERT(qApp);
 	OVITO_ASSERT(QThread::currentThread() == qApp->thread());
+
+	// Assign our internal input manager to the UserInterface object.
+	setViewportInputManager(&_inputManager);
 
 	// Create a OpenGL context for rendering to an offscreen buffer.
 	// The context should share its resources with interactive viewport renderers (only when operating in the same thread).
@@ -281,9 +287,7 @@ void OpenGLOffscreenViewportWindow::renderViewport()
 			stream << "OpenGL shader programs: " << QOpenGLShaderProgram::hasOpenGLShaderPrograms() << "\n";
 			ex.appendDetailMessage(openGLReport);
 
-			if(gui())
-				gui()->shutdown();
-			ex.reportError(true);
+			userInterface().exitWithFatalError(ex);
 		}
 
 		// Release the resources created by the OpenGL renderer during the last render pass before the current pass.

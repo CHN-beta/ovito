@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/app/UserInterface.h>
 #include "ModifierTemplates.h"
 
 namespace Ovito {
@@ -50,14 +51,15 @@ ModifierTemplates::ModifierTemplates(QObject* parent) : QAbstractListModel(paren
 /******************************************************************************
 * Creates a new modifier template on the basis of the given modifier(s).
 ******************************************************************************/
-int ModifierTemplates::createTemplate(const QString& templateName, const QVector<OORef<Modifier>>& modifiers)
+int ModifierTemplates::createTemplate(const QString& templateName, const QVector<OORef<Modifier>>& modifiers, UserInterface& userInterface)
 {
 	if(modifiers.empty())
 		throw Exception(tr("Expected non-empty modifier list for creating a new modifier template."));
 
+	MainThreadOperation operation = userInterface.createOperation(false);
 	QByteArray buffer;
 	QDataStream dstream(&buffer, QIODevice::WriteOnly);
-	ObjectSaveStream stream(dstream, SynchronousOperation::create(modifiers.front()->dataset()->taskManager(), ObjectInitializationHint::LoadFactoryDefaults));
+	ObjectSaveStream stream(dstream, operation);
 
 	// Serialize modifiers.
 	for(Modifier* modifier : modifiers) {
@@ -155,7 +157,7 @@ QByteArray ModifierTemplates::templateData(const QString& templateName)
 }
 
 /******************************************************************************
-* Instantiates the modifiers that are stored under the given temnplate name.
+* Instantiates the modifiers that are stored under the given template name.
 ******************************************************************************/
 QVector<OORef<Modifier>> ModifierTemplates::instantiateTemplate(const QString& templateName, DataSet* dataset)
 {
@@ -173,8 +175,9 @@ QVector<OORef<Modifier>> ModifierTemplates::instantiateTemplate(const QString& t
 #endif
 		if(buffer.isEmpty())
 			throw Exception(tr("Modifier template with the name '%1' does not exist.").arg(templateName));
+		MainThreadOperation operation = dataset->userInterface().createOperation(false);
 		QDataStream dstream(buffer);
-		ObjectLoadStream stream(dstream, SynchronousOperation::create(dataset->taskManager(), ObjectInitializationHint::LoadFactoryDefaults));
+		ObjectLoadStream stream(dstream, operation);
 		stream.setDataset(dataset);
 		for(int chunkId = stream.expectChunkRange(0,1); chunkId == 1; chunkId = stream.expectChunkRange(0,1)) {
 			modifierSet.push_back(stream.loadObject<Modifier>());

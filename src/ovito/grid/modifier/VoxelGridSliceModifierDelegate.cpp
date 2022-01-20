@@ -137,8 +137,10 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 					return planeGridSpace.pointDistance(Point3(i,j,k));
 				};
 
+				TaskPtr localOperation = std::make_shared<Task>(Task::Started);
 				MarchingCubes mc(mesh, gridShape[0]*resolution, gridShape[1]*resolution, gridShape[2]*resolution, false, std::move(getFieldValue), true);
-				mc.generateIsosurface(0.0, *SynchronousOperation::createSignal(dataset()->taskManager(), request.initializationHints()).task());
+				mc.generateIsosurface(0.0, *localOperation);
+				localOperation->setFinished();
 			}
 
 			// Create a manifold by connecting adjacent faces.
@@ -165,8 +167,9 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 				fieldProperties.push_back(property);
 
 			// Copy field values from voxel grid to surface mesh vertices.
-			SynchronousOperation operation = SynchronousOperation::createSignal(dataset()->taskManager(), request.initializationHints());
-			CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(*operation.task(), mesh, fieldProperties, gridShape, request.initializationHints());
+			TaskPtr localOperation = std::make_shared<Task>();
+			CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(*localOperation, mesh, fieldProperties, gridShape, request.initializationHints());
+			localOperation->setFinished();
 
 			// Transform mesh vertices from orthogonal grid space to world space.
 			const AffineTransformation tm = cell->matrix() * Matrix3(

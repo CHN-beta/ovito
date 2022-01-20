@@ -717,7 +717,7 @@ InputColumnInfo AMBERNetCDFImporter::mapVariableToColumn(const QString& name, in
 Future<ParticleInputColumnMapping> AMBERNetCDFImporter::inspectFileHeader(const Frame& frame)
 {
 	// Retrieve file.
-	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
+	return Application::instance()->fileManager().fetchUrl(frame.sourceFile)
 		.then(executor(), [](const FileHandle& fileHandle) {
 			QString filename = QDir::toNativeSeparators(fileHandle.localFilePath());
 			if(filename.isEmpty())

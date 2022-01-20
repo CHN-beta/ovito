@@ -221,7 +221,6 @@ bool DislocationTracer::findPrimarySegments(int maxBurgersCircuitSize, Task& pro
 
 	MemoryPool<BurgersCircuitSearchStruct> structPool;
 
-	promise.setProgressValue(0);
 	promise.setProgressMaximum(mesh().vertexCount());
 	int progressCounter = 0;
 

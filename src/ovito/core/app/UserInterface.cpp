@@ -1,0 +1,116 @@
+////////////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright 2022 OVITO GmbH, Germany
+//
+//  This file is part of OVITO (Open Visualization Tool).
+//
+//  OVITO is free software; you can redistribute it and/or modify it either under the
+//  terms of the GNU General Public License version 3 as published by the Free Software
+//  Foundation (the "GPL") or, at your option, under the terms of the MIT License.
+//  If you do not alter this notice, a recipient may use your version of this
+//  file under either the GPL or the MIT License.
+//
+//  You should have received a copy of the GPL along with this program in a
+//  file LICENSE.GPL.txt.  You should have received a copy of the MIT License along
+//  with this program in a file LICENSE.MIT.txt
+//
+//  This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND,
+//  either express or implied. See the GPL or the MIT License for the specific language
+//  governing rights and limitations.
+//
+////////////////////////////////////////////////////////////////////////////////////////
+
+#include <ovito/core/Core.h>
+#include <ovito/core/app/Application.h>
+#include <ovito/core/app/PluginManager.h>
+#include <ovito/core/rendering/FrameBuffer.h>
+#include "UserInterface.h"
+
+#include <QOperatingSystemVersion>
+
+namespace Ovito {
+
+/******************************************************************************
+* Creates an object that represents a longer-running operation executed in the 
+* main or GUI thread in the context of this abstract user interface. 
+******************************************************************************/
+MainThreadOperation UserInterface::createOperation(bool visibleInUserInterface)
+{
+	return MainThreadOperation::create(
+		*this,
+		(Application::instance()->executionContext() == ExecutionContext::Interactive) 
+			? ObjectInitializationHint::LoadUserDefaults 
+			: ObjectInitializationHint::LoadFactoryDefaults,
+		visibleInUserInterface);
+}
+
+/******************************************************************************
+* Closes the user interface and shuts down the entire application after 
+* displaying an error message.
+******************************************************************************/
+void UserInterface::exitWithFatalError(const Exception& ex) 
+{
+	ex.reportError(true);
+	QCoreApplication::exit(1);
+}
+
+/******************************************************************************
+* Creates a frame buffer of the requested size and displays it as a window in the user interface.
+******************************************************************************/
+std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, int height) 
+{ 
+	return std::make_shared<FrameBuffer>(width, height);
+}
+
+/******************************************************************************
+* Queries the system's information and graphics capabilities.
+******************************************************************************/
+QString UserInterface::generateSystemReport()
+{
+	QString text;
+	QTextStream stream(&text, QIODevice::WriteOnly | QIODevice::Text);
+	stream << "======= System info =======\n";
+	stream << "Current date: " << QDateTime::currentDateTime().toString() << "\n";
+	stream << "Application: " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
+	stream << "Operating system: " <<  QOperatingSystemVersion::current().name() << " (" << QOperatingSystemVersion::current().majorVersion() << "." << QOperatingSystemVersion::current().minorVersion() << ")" << "\n";
+#if defined(Q_OS_LINUX)
+	// Get 'uname' output.
+	QProcess unameProcess;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	unameProcess.start("uname", QStringList() << "-m" << "-i" << "-o" << "-r" << "-v", QIODevice::ReadOnly);
+#else
+	unameProcess.start("uname -m -i -o -r -v", QIODevice::ReadOnly);
+#endif
+	unameProcess.waitForFinished();
+	QByteArray unameOutput = unameProcess.readAllStandardOutput();
+	unameOutput.replace('\n', ' ');
+	stream << "uname output: " << unameOutput << "\n";
+	// Get 'lsb_release' output.
+	QProcess lsbProcess;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	lsbProcess.start("lsb_release", QStringList() << "-s" << "-i" << "-d" << "-r", QIODevice::ReadOnly);
+#else
+	lsbProcess.start("lsb_release -s -i -d -r", QIODevice::ReadOnly);
+#endif
+	lsbProcess.waitForFinished();
+	QByteArray lsbOutput = lsbProcess.readAllStandardOutput();
+	lsbOutput.replace('\n', ' ');
+	stream << "LSB output: " << lsbOutput << "\n";
+#endif
+	stream << "Processor architecture: " << QSysInfo::currentCpuArchitecture() << "\n";
+	stream << "Floating-point type: " << (sizeof(FloatType)*8) << "-bit" << "\n";
+	stream << "Qt version: " << QT_VERSION_STR << " (" << QSysInfo::buildCpuArchitecture() << ")\n";
+#ifdef OVITO_DISABLE_THREADING
+	stream << "Multi-threading: disabled\n";
+#endif
+	stream << "Command line: " << QCoreApplication::arguments().join(' ') << "\n";
+	// Let the plugin class add their information to their system report.
+	for(Plugin* plugin : PluginManager::instance().plugins()) {
+		for(OvitoClassPtr clazz : plugin->classes()) {
+			clazz->querySystemInformation(stream, *this);
+		}
+	}
+	return text;
+}
+
+}	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,6 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/PropertiesPanel.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/UndoStack.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "ModalPropertiesEditorDialog.h"
@@ -32,7 +33,7 @@ namespace Ovito {
 /******************************************************************************
 * The constructor of the dialog.
 ******************************************************************************/
-ModalPropertiesEditorDialog::ModalPropertiesEditorDialog(RefTarget* object, OORef<PropertiesEditor> editor, QWidget* parent, MainWindow* mainWindow, const QString& dialogTitle, const QString& undoString, const QString& helpTopic) :
+ModalPropertiesEditorDialog::ModalPropertiesEditorDialog(RefTarget* object, OORef<PropertiesEditor> editor, QWidget* parent, MainWindow& mainWindow, const QString& dialogTitle, const QString& undoString, const QString& helpTopic) :
 		QDialog(parent), _editor(std::move(editor)), UndoableTransaction(object->dataset()->undoStack(), undoString)
 {
 	setWindowTitle(dialogTitle);
@@ -41,7 +42,7 @@ ModalPropertiesEditorDialog::ModalPropertiesEditorDialog(RefTarget* object, OORe
 
 	PropertiesPanel* propertiesPanel = new PropertiesPanel(this, mainWindow);
 	propertiesPanel->setVisible(false);
-	_editor->initialize(propertiesPanel, mainWindow, RolloutInsertionParameters().insertInto(this), nullptr);
+	_editor->initialize(propertiesPanel, RolloutInsertionParameters().insertInto(this), nullptr);
 	_editor->setEditObject(object);
 	layout->addWidget(propertiesPanel, 1);
 
@@ -54,7 +55,7 @@ ModalPropertiesEditorDialog::ModalPropertiesEditorDialog(RefTarget* object, OORe
 		accept();
 	});
 	connect(buttonBox, &QDialogButtonBox::helpRequested, [helpTopic]() {
-		MainWindow::openHelpTopic(helpTopic);
+		ActionManager::openHelpTopic(helpTopic);
 	});
 }
 

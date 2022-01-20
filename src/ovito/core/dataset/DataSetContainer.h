@@ -24,14 +24,11 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/oo/RefMaker.h>
 
 namespace Ovito {
-
-class MainWindowInterface; // defined in MainWindowInterface.h
 
 /**
  * \brief Manages the DataSet being edited.
@@ -47,29 +44,25 @@ class OVITO_CORE_EXPORT DataSetContainer : public RefMaker
 public:
 
 	/// \brief Constructor.
-	DataSetContainer();
+	explicit DataSetContainer(TaskManager& taskManager, UserInterface& userInterface);
 
 	/// \brief Destructor.
 	virtual ~DataSetContainer();
 
-	/// \brief Returns the manager of background tasks.
-	/// \return Reference to the task manager, which is part of this dataset manager.
-	///
-	/// Use the task manager to start and control background jobs.
+	/// Returns the manager of asynchronous tasks associated with this container.
 	TaskManager& taskManager() { return _taskManager; }
 
-	/// \brief Returns the graphical user interface this dataset container is associated with.
-	virtual UserInterface* guiInterface() { return nullptr; }
+	/// Returns the abstract user interface this container is part of.
+	UserInterface& userInterface() { return _userInterface; }
 
-	/// \brief Creates an empty dataset and makes it the current dataset.
-	/// \return \c true if the operation was completed; \c false if the operation has been canceled by the user.
-	/// \throw Exception on error.
+	/// Creates an object that represents a longer-running operation performed in the main or GUI thread. 
+	MainThreadOperation createOperation(bool visibleInUserInterface);
+
+	/// Creates an empty dataset and makes it the current dataset.
 	bool newDataset();
 
-	/// \brief Loads the given session state file and makes it the current dataset.
-	/// \return \c true if the file has been successfully loaded; \c false if the operation has been canceled by the user.
-	/// \throw Exception on error.
-	bool loadDataset(const QString& filename);
+	/// Loads the given session state file and makes it the current dataset.
+	bool loadDataset(const QString& filename, MainThreadOperation operation);
 
 Q_SIGNALS:
 
@@ -150,11 +143,14 @@ private:
 	/// The current dataset being edited by the user.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<DataSet>, currentSet, setCurrentSet, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
-	/// The list of running compute tasks.
-	TaskManager _taskManager;
-
 	/// Is called when scene of the current dataset is ready to be displayed.
 	void sceneBecameReady();
+
+	/// The manager of asynchronous tasks associated with this container.
+	TaskManager& _taskManager;
+
+	/// The abstract user interface this container is part of.
+	UserInterface& _userInterface;
 
 	/// Indicates whether we are already waiting for the scene to become ready.
 	bool _sceneReadyScheduled = false;

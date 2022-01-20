@@ -291,7 +291,6 @@ ComputePropertyModifierDelegate::PropertyComputeEngine::PropertyComputeEngine(
 void ComputePropertyModifierDelegate::PropertyComputeEngine::perform()
 {
 	setProgressText(tr("Computing property '%1'").arg(outputProperty()->name()));
-	setProgressValue(0);
 	setProgressMaximum(outputProperty()->size());
 
 	// Parallelized loop over all data elements.

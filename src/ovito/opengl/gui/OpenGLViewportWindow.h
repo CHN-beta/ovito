@@ -41,7 +41,7 @@ class OVITO_OPENGLRENDERERGUI_EXPORT OpenGLViewportWindow : public QOpenGLWidget
 public:
 
 	/// Constructor.
-	Q_INVOKABLE OpenGLViewportWindow(Viewport* vp, ViewportInputManager* inputManager, UserInterface* gui, QWidget* parentWidget);
+	Q_INVOKABLE OpenGLViewportWindow(Viewport* vp, UserInterface* userInterface, QWidget* parentWidget);
 
 	/// Destructor.
 	virtual ~OpenGLViewportWindow();

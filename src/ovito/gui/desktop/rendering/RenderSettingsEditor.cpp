@@ -117,7 +117,7 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 
 		QPushButton* animSettingsBtn = new QPushButton(tr("Animation settings..."));
 		layout2->addWidget(animSettingsBtn);
-		connect(animSettingsBtn, &QPushButton::clicked, mainWindow()->actionManager()->getAction(ACTION_ANIMATION_SETTINGS), &QAction::trigger);
+		connect(animSettingsBtn, &QPushButton::clicked, mainWindow().actionManager()->getAction(ACTION_ANIMATION_SETTINGS), &QAction::trigger);
 	}
 
 	// Output size
@@ -154,9 +154,9 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 
 		_viewportPreviewModeBox = new QCheckBox(tr("Preview visible region"));
 		sublayout->addWidget(_viewportPreviewModeBox);
-		connect(&mainWindow()->datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &RenderSettingsEditor::onViewportConfigReplaced);
+		connect(&mainWindow().datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &RenderSettingsEditor::onViewportConfigReplaced);
 		connect(_viewportPreviewModeBox, &QCheckBox::clicked, this, &RenderSettingsEditor::onViewportPreviewModeToggled);
-		onViewportConfigReplaced(mainWindow()->datasetContainer().currentSet() ? mainWindow()->datasetContainer().currentSet()->viewportConfig() : nullptr);
+		onViewportConfigReplaced(mainWindow().datasetContainer().currentSet() ? mainWindow().datasetContainer().currentSet()->viewportConfig() : nullptr);
 
 		renderAllViewportsUI = new BooleanParameterUI(this, PROPERTY_FIELD(RenderSettings::renderAllViewports));
 		sublayout->addWidget(renderAllViewportsUI->checkBox());
@@ -226,7 +226,7 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 	// Create render button.
 	QPushButton* renderButton = new QPushButton();
 	renderButton->setAutoDefault(true);
-	QAction* renderAction = mainWindow()->actionManager()->getAction(ACTION_RENDER_ACTIVE_VIEWPORT);
+	QAction* renderAction = mainWindow().actionManager()->getAction(ACTION_RENDER_ACTIVE_VIEWPORT);
 	renderButton->setText(tr("Render active viewport"));
 	renderButton->setIcon(renderAction->icon());
 	connect(renderButton, &QPushButton::clicked, renderAction, &QAction::trigger);
@@ -342,7 +342,7 @@ void RenderSettingsEditor::onSwitchRenderer()
 	connect(buttonBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
 	connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
 	connect(buttonBox, &QDialogButtonBox::helpRequested, [this]() {
-		mainWindow()->openHelpTopic("usage.rendering");
+		ActionManager::openHelpTopic("usage.rendering");
 	});
 	connect(rendererListWidget, &QListWidget::itemDoubleClicked, &dlg, &QDialog::accept);
 	layout->addWidget(buttonBox, 2, 1, Qt::AlignRight);

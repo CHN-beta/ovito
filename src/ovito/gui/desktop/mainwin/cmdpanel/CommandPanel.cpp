@@ -31,7 +31,7 @@ namespace Ovito {
 /******************************************************************************
 * The constructor of the command panel class.
 ******************************************************************************/
-CommandPanel::CommandPanel(MainWindow* mainWindow, QWidget* parent) : QWidget(parent)
+CommandPanel::CommandPanel(MainWindow& mainWindow, QWidget* parent) : QWidget(parent)
 {
 	QVBoxLayout* layout = new QVBoxLayout(this);
 	layout->setContentsMargins(0,0,0,0);

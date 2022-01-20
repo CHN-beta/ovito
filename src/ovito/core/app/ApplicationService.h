@@ -49,13 +49,10 @@ public:
 	virtual void registerCommandLineOptions(QCommandLineParser& cmdLineParser) {}
 
 	/// \brief Is called by the system during standalone application startup after the main window has been created.
-	virtual bool applicationStarting() { return true; }
+	virtual bool applicationStarting(UserInterface& userInterface) { return true; }
 
 	/// \brief Is called by the system after the standalone application has been completely initialized.
-	virtual void applicationStarted() {}
-
-	/// \brief Is called by the system when the ovito module has been imported by an external Python interpreter.
-	virtual void importedByExternalPythonInterpreter() {}
+	virtual void applicationStarted(MainThreadOperation& operation) {}
 };
 
 }	// End of namespace

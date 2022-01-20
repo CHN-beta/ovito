@@ -174,7 +174,7 @@ bool FileExporter::isSuitablePipelineOutput(const PipelineFlowState& state) cons
 /******************************************************************************
 * Evaluates the pipeline whose data is to be exported.
 ******************************************************************************/
-PipelineFlowState FileExporter::getPipelineDataToBeExported(TimePoint time, SynchronousOperation operation, bool requestRenderState) const
+PipelineFlowState FileExporter::getPipelineDataToBeExported(TimePoint time, MainThreadOperation& operation, bool requestRenderState) const
 {
 	PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(nodeToExport());
 	if(!pipeline)
@@ -201,7 +201,7 @@ PipelineFlowState FileExporter::getPipelineDataToBeExported(TimePoint time, Sync
 /******************************************************************************
  * Exports the scene data to the output file(s).
  *****************************************************************************/
-bool FileExporter::doExport(SynchronousOperation operation)
+bool FileExporter::doExport(MainThreadOperation& operation)
 {
 	if(outputFilename().isEmpty())
 		throwException(tr("The output filename not been set for the file exporter."));
@@ -241,7 +241,7 @@ bool FileExporter::doExport(SynchronousOperation operation)
 
 	// Open output file for writing.
 	if(!exportAnimation() || !useWildcardFilename()) {
-		if(!openOutputFile(filename, numberOfFrames, operation.subOperation()))
+		if(!openOutputFile(filename, numberOfFrames, operation))
 			return false;
 	}
 
@@ -259,13 +259,13 @@ bool FileExporter::doExport(SynchronousOperation operation)
 				filename = dir.absoluteFilePath(QFileInfo(wildcardFilename()).fileName());
 				filename.replace(QChar('*'), QString::number(frameNumber));
 
-				if(!openOutputFile(filename, 1, operation.subOperation()))
+				if(!openOutputFile(filename, 1, operation))
 					return false;
 			}
 
 			operation.setProgressText(tr("Exporting frame %1 to file '%2'").arg(frameNumber).arg(filename));
 
-			exportFrame(frameNumber, exportTime, filename, operation.subOperation());
+			exportFrame(frameNumber, exportTime, filename, operation);
 
 			if(exportAnimation() && useWildcardFilename())
 				closeOutputFile(!operation.isCanceled());
@@ -293,7 +293,7 @@ bool FileExporter::doExport(SynchronousOperation operation)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool FileExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, SynchronousOperation operation)
+bool FileExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
 {
 	return !operation.isCanceled();
 }

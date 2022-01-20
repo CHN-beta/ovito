@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,28 +29,9 @@
 namespace Ovito {
 
 /******************************************************************************
-* Returns the task manager that provides the context for tasks created by this executor.
-******************************************************************************/
-TaskManager* RefTargetExecutor::taskManager() const
-{
-    return &object()->dataset()->taskManager();
-}
-
-/******************************************************************************
-* Event class constructor.
-******************************************************************************/
-RefTargetExecutor::WorkEventBase::WorkEventBase(const RefTarget* obj, ExecutionContext executionContext) :
-    QEvent(workEventType()),
-    _obj(const_cast<RefTarget*>(obj)),
-    _executionContext(executionContext)
-{    
-//    OVITO_ASSERT(!_obj->dataset()->undoStack().isRecording());
-}
-
-/******************************************************************************
 * Activates the original execution context under which the work was submitted.
 ******************************************************************************/
-void RefTargetExecutor::WorkEventBase::activateExecutionContext()
+void RefTargetExecutor::activateExecutionContext()
 {
     if(Application* app = Application::instance()) {
         ExecutionContext previousContext = app->executionContext();
@@ -59,15 +40,15 @@ void RefTargetExecutor::WorkEventBase::activateExecutionContext()
 
         // In the current implementation, deferred work is always executed without undo recording.
         // Thus, we should suspend the undo stack while running the work function.
-        if(_obj->dataset()) 
-            _obj->dataset()->undoStack().suspend();
+        if(object()->dataset()) 
+            object()->dataset()->undoStack().suspend();
     }
 }
 
 /******************************************************************************
 * Restores the execution context as it was before the work was executed.
 ******************************************************************************/
-void RefTargetExecutor::WorkEventBase::restoreExecutionContext()
+void RefTargetExecutor::restoreExecutionContext()
 {
     if(Application* app = Application::instance()) {
         ExecutionContext previousContext = app->executionContext();
@@ -75,36 +56,9 @@ void RefTargetExecutor::WorkEventBase::restoreExecutionContext()
         _executionContext = previousContext;
 
         // Restore undo recording state.
-        if(_obj->dataset()) 
-            _obj->dataset()->undoStack().resume();
+        if(object()->dataset()) 
+            object()->dataset()->undoStack().resume();
     }
-}
-
-/******************************************************************************
-* Submits the work for execution.
-******************************************************************************/
-void RefTargetExecutor::Work::operator()(bool defer)
-{
-    OVITO_ASSERT(_event);
-
-    if(defer || (QCoreApplication::instance() && !QCoreApplication::closingDown() && QThread::currentThread() != QCoreApplication::instance()->thread())) {
-        // Schedule work for later execution in the main thread.
-        QCoreApplication::postEvent(Application::instance(), _event.release());
-    }
-    else {
-        // Execute work immediately by calling the event destructor.
-        _event.reset();
-    }
-}
-
-/******************************************************************************
-* Determines whether work can be executed in the context of the RefTarget or not.
-******************************************************************************/
-bool RefTargetExecutor::WorkEventBase::needToCancelWork() const
-{
-    // The RefTarget must still be alive and the application may not be in
-    // the process of shutting down for the work to be executable.
-    return _obj.isNull() || QCoreApplication::closingDown();
 }
 
 }	// End of namespace

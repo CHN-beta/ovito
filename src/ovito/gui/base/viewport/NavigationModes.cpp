@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/base/GUIBase.h>
-#include <ovito/gui/base/mainwin/UserInterface.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportSettings.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
@@ -407,8 +407,7 @@ bool PickOrbitCenterMode::pickOrbitCenter(ViewportWindowInterface* vpwin, const 
 	else {
 		vp->dataset()->viewportConfig()->setOrbitCenterMode(ViewportConfiguration::ORBIT_SELECTION_CENTER);
 		vp->dataset()->viewportConfig()->setUserOrbitCenter(Point3::Origin());
-		if(vpwin->gui())
-			vpwin->gui()->showStatusBarMessage(tr("No object has been picked. Resetting orbit center to default position."), 1200);
+		vpwin->userInterface().showStatusBarMessage(tr("No object has been picked. Resetting orbit center to default position."), 1200);
 		return false;
 	}
 }

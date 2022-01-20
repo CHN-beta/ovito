@@ -25,6 +25,7 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/gui/desktop/widgets/general/SpinnerWidget.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include "AdjustViewDialog.h"
 
 namespace Ovito {
@@ -262,7 +263,7 @@ AdjustViewDialog::AdjustViewDialog(Viewport* viewport, QWidget* parent) :
 	connect(buttonBox, &QDialogButtonBox::accepted, this, &AdjustViewDialog::close);
 	connect(buttonBox, &QDialogButtonBox::rejected, this, &AdjustViewDialog::onCancel);
 	connect(buttonBox, &QDialogButtonBox::helpRequested, [this]() {
-		MainWindow::openHelpTopic("manual:viewports.adjust_view_dialog");
+		ActionManager::openHelpTopic("manual:viewports.adjust_view_dialog");
 	});
 	mainLayout->addWidget(buttonBox);
 

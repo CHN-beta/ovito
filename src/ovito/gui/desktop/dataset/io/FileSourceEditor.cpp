@@ -232,7 +232,7 @@ void FileSourceEditor::onPickLocalInputFile()
 		}
 
 		// Set the new input location.
-		importNewFile(fileSource, newSourceUrl, importerType);
+		importNewFile(fileSource, newSourceUrl, importerType, createOperation());
 	}
 	catch(const Exception& ex) {
 		ex.reportError();
@@ -272,7 +272,7 @@ void FileSourceEditor::onPickRemoteInputFile()
 		}
 
 		// Set the new input location.
-		importNewFile(fileSource, newSourceUrl, importerType);
+		importNewFile(fileSource, newSourceUrl, importerType, createOperation());
 	}
 	catch(const Exception& ex) {
 		ex.reportError();
@@ -282,7 +282,7 @@ void FileSourceEditor::onPickRemoteInputFile()
 /******************************************************************************
 * Loads a new file into the FileSource.
 ******************************************************************************/
-bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, OvitoClassPtr importerType)
+bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, OvitoClassPtr importerType, MainThreadOperation operation)
 {
 	OORef<FileImporter> fileImporter;
 
@@ -291,7 +291,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 
 		// Detect file format.
 		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(fileSource->dataset(), ObjectInitializationHint::LoadUserDefaults, url, fileSource->importer());
-		if(!fileSource->dataset()->taskManager().waitForFuture(importerFuture))
+		if(!operation.waitForFuture(importerFuture))
 			return false;
 
 		fileImporter = importerFuture.result();
@@ -358,9 +358,9 @@ void FileSourceEditor::onReloadAnimation()
 		// Let the FileSource update the list of source animation frames.
 		// After the update is complete, jump to the last of the newly added animation frames.
 		int oldFrameCount = fileSource->frames().size();
-		fileSource->updateListOfFrames(true).force_then(fileSource->executor(), [fileSource, oldFrameCount](const QVector<FileSourceImporter::Frame>& frames) {
-			if(frames.size() > oldFrameCount) {
-				TimePoint time = fileSource->sourceFrameToAnimationTime(frames.size() - 1);
+		fileSource->updateListOfFrames(true).finally(fileSource->executor(), [fileSource, oldFrameCount](Task& task) {
+			if(!task.isCanceled() && fileSource->frames().size() > oldFrameCount) {
+				TimePoint time = fileSource->sourceFrameToAnimationTime(fileSource->frames().size() - 1);
 				fileSource->dataset()->animationSettings()->setTime(time);
 			}
 		});

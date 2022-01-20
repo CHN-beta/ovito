@@ -165,7 +165,7 @@ Future<PipelineFlowState> SmoothTrajectoryModifier::evaluate(const ModifierEvalu
 
 		// Obtain the range of input frames from the upstream pipeline.
 		return request.modApp()->evaluateInputMultiple(frameRequest, std::move(otherTimes))
-			.then(executor(), false, [this, state = input, request](const std::vector<PipelineFlowState>& otherStates) mutable {
+			.then(executor(), [this, state = input, request](const std::vector<PipelineFlowState>& otherStates) mutable {
 				// Compute smoothed state.
 				averageState(state, otherStates, request);
 				return std::move(state);

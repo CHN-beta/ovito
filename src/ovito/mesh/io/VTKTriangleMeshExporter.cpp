@@ -33,7 +33,7 @@ IMPLEMENT_OVITO_CLASS(VTKTriangleMeshExporter);
  * This is called once for every output file to be written and before
  * exportData() is called.
  *****************************************************************************/
-bool VTKTriangleMeshExporter::openOutputFile(const QString& filePath, int numberOfFrames, SynchronousOperation operation)
+bool VTKTriangleMeshExporter::openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation)
 {
 	OVITO_ASSERT(!_outputFile.isOpen());
 	OVITO_ASSERT(!_outputStream);
@@ -61,12 +61,12 @@ void VTKTriangleMeshExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool VTKTriangleMeshExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, SynchronousOperation operation)
+bool VTKTriangleMeshExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
 {
 	// Evaluate pipeline.
 	// Note: We are requesting the rendering state from the pipeline,
 	// because we are interested in renderable triangle meshes.
-	const PipelineFlowState& state = getPipelineDataToBeExported(time, operation.subOperation(), true);
+	const PipelineFlowState& state = getPipelineDataToBeExported(time, operation, true);
 	if(operation.isCanceled())
 		return false;
 

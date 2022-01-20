@@ -50,7 +50,7 @@ public:
 	explicit PickingOpenGLSceneRenderer(DataSet* dataset);
 
 	/// Renders the current animation frame.
-	virtual bool renderFrame(const QRect& viewportRect, SynchronousOperation operation) override;
+	virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
 
 	/// This method is called after renderFrame() has been called.
 	virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;

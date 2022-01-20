@@ -23,7 +23,7 @@
 #include <ovito/gui/base/GUIBase.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
-#include <ovito/gui/base/mainwin/UserInterface.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -32,19 +32,11 @@
 namespace Ovito {
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-BaseViewportWindow::BaseViewportWindow(UserInterface* gui, ViewportInputManager* inputManager, Viewport* vp)
-	: ViewportWindowInterface(gui, vp), _inputManager(inputManager)
-{
-}
-
-/******************************************************************************
 * Returns the input manager handling mouse events of the viewport (if any).
 ******************************************************************************/
 ViewportInputManager* BaseViewportWindow::inputManager() const
 {
-	return _inputManager.data();
+	return userInterface().viewportInputManager();
 }
 
 /******************************************************************************
@@ -171,8 +163,7 @@ void BaseViewportWindow::leaveEvent(QEvent* event)
 		_cursorInContextMenuArea = false;
 		viewport()->updateViewport();
 	}
-	if(gui())
-		gui()->clearStatusBarMessage();
+	userInterface().clearStatusBarMessage();
 }
 
 /******************************************************************************

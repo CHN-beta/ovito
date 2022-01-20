@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
@@ -70,14 +71,13 @@ OORef<PropertiesEditor> PropertiesEditor::create(RefTarget* obj)
 /******************************************************************************
 * This will bind the editor to the given container.
 ******************************************************************************/
-void PropertiesEditor::initialize(PropertiesPanel* container, MainWindow* mainWindow, const RolloutInsertionParameters& rolloutParams, PropertiesEditor* parentEditor)
+void PropertiesEditor::initialize(PropertiesPanel* container, const RolloutInsertionParameters& rolloutParams, PropertiesEditor* parentEditor)
 {
 	OVITO_CHECK_POINTER(container);
-	OVITO_CHECK_POINTER(mainWindow);
 	OVITO_ASSERT_MSG(_container == nullptr, "PropertiesEditor::initialize()", "Editor can only be initialized once.");
 	OVITO_ASSERT_MSG(_parentEditor == nullptr, "PropertiesEditor::initialize()", "Editor can only be initialized once.");
 	_container = container;
-	_mainWindow = mainWindow;
+	_mainWindow = &container->mainWindow();
 	_parentEditor = parentEditor;
 	// Forward signals emitted by the parent editor.
 	if(parentEditor) {
@@ -146,6 +146,14 @@ QWidget* PropertiesEditor::createRollout(const QString& title, const RolloutInse
 		params.container()->layout()->addWidget(panel);
 	}
 	return panel;
+}
+
+/******************************************************************************
+* Returns the top-level window hosting this editor panel.
+******************************************************************************/
+QWidget* PropertiesEditor::parentWindow() const 
+{ 
+	return parentEditor() ? parentEditor()->parentWindow() : container()->window(); 
 }
 
 /******************************************************************************

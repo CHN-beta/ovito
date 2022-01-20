@@ -46,7 +46,7 @@ public:
 	virtual int orderingKey() const override { return 210; }
 
 	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget(MainWindow* mainWindow) override;
+	virtual QWidget* createWidget() override;
 
 protected:
 
@@ -60,7 +60,6 @@ private Q_SLOTS:
 
 private:
 
-	MainWindow* _mainWindow;
 	QLabel* _gridInfoLabel;
 };
 

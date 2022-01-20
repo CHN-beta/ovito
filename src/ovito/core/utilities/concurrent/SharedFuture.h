@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,8 +25,8 @@
 
 #include <ovito/core/Core.h>
 #include "Future.h"
-#include "FutureDetail.h"
-#include "ContinuationTask.h"
+#include "detail/FutureDetail.h"
+#include "detail/TaskReference.h"
 
 namespace Ovito {
 
@@ -43,11 +43,7 @@ public:
 	using promise_type = typename Future<R...>::promise_type;
 
 	/// Default constructor that constructs an invalid SharedFuture that is not associated with any shared state.
-#ifndef Q_CC_MSVC
 	SharedFuture() noexcept = default;
-#else
-	SharedFuture() noexcept {}
-#endif
 
 	/// Move constructor.
 	SharedFuture(SharedFuture&& other) noexcept = default;
@@ -58,6 +54,12 @@ public:
 	/// Constructor that constructs a shared future from a normal future.
 	SharedFuture(Future<R...>&& other) noexcept : FutureBase(std::move(other)) {}
 
+	/// Constructor that constructs a SharedFuture that is associated with the given shared state.
+	explicit SharedFuture(TaskPtr p) noexcept : FutureBase(std::move(p)) {}
+
+	/// Constructor that constructs a Future from an existing task dependency.
+	explicit SharedFuture(detail::TaskReference&& p) noexcept : FutureBase(std::move(p)) {}
+
 	/// A future may directly be initialized from r-values.
 	template<typename... R2, size_t C = sizeof...(R),
 		typename = std::enable_if_t<C != 0
@@ -65,12 +67,6 @@ public:
 			&& !std::is_same<std::tuple<std::decay_t<R2>...>, std::tuple<Future<R...>>>::value
 			&& !std::is_same<std::tuple<std::decay_t<R2>...>, std::tuple<TaskPtr>>::value>>
 	SharedFuture(R2&&... val) noexcept : FutureBase(std::move(promise_type::createImmediate(std::forward<R2>(val)...)._task)) {}
-
-	/// Cancels the shared state associated with this Future.
-	/// The SharedFuture is no longer valid after calling this function.
-	void cancelRequest() {
-		reset();
-	}
 
 	/// Move assignment operator.
 	SharedFuture& operator=(SharedFuture&& other) noexcept = default;
@@ -84,7 +80,7 @@ public:
 		OVITO_ASSERT_MSG(isValid(), "SharedFuture::results()", "Future must be valid.");
 		OVITO_ASSERT_MSG(isFinished(), "SharedFuture::results()", "Future must be in fulfilled state.");
 		OVITO_ASSERT_MSG(!isCanceled(), "SharedFuture::results()", "Future must not be canceled.");
-		OVITO_ASSERT_MSG(std::tuple_size<tuple_type>::value != 0, "SharedFuture::results()", "Future must not be of type <void>.");
+		OVITO_ASSERT_MSG(std::tuple_size_v<tuple_type> != 0, "SharedFuture::results()", "Future must not be of type <void>.");
 	    task()->throwPossibleException();
 		return task()->template getResults<tuple_type>();
 	}
@@ -97,48 +93,15 @@ public:
 
 	/// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the given continuation function.
 	/// The provided continuation function must accept the results of this future as an input parameter.
-	template<typename FC, class Executor>
-	typename Ovito::detail::resulting_future_type<FC,std::add_lvalue_reference_t<const tuple_type>>::type 
-	then(Executor&& executor, bool defer, FC&& cont) noexcept;
-
-	/// Overload of the function above allowing eager execution of the continuation function.
-	template<typename FC, class Executor>
-	typename Ovito::detail::resulting_future_type<FC,std::add_lvalue_reference_t<const tuple_type>>::type 
-	then(Executor&& executor, FC&& cont) noexcept { return then(std::forward<Executor>(executor), false, std::forward<FC>(cont)); }
+	template<typename Executor, typename Function>
+	detail::continuation_future_type<Function,SharedFuture>
+	then(Executor&& executor, Function&& f);
 
 	/// Overload of the function above using the default inline executor.
-	template<typename FC>
-	typename Ovito::detail::resulting_future_type<FC,std::add_lvalue_reference_t<const tuple_type>>::type 
-	then(FC&& cont) noexcept { return then(Ovito::detail::InlineExecutor(), std::forward<FC>(cont)); }
-
-	/// Runs the given continuation function upon fulfillment of this future. The function creates a strong 
-	/// reference to this future in order to keep it going even if this future object is destroyed.
-	/// The provided continuation function must accept the results of this future as an input parameter.
-	template<typename FC, class Executor>
-	void force_then(Executor&& executor, bool defer, FC&& cont) noexcept;
-
-	/// Overload of the function above allowing eager execution of the continuation function.
-	template<typename FC, class Executor>
-	void force_then(Executor&& executor, FC&& cont) noexcept { force_then(std::forward<Executor>(executor), false, std::forward<FC>(cont)); }
-
-	/// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the specified continuation function.
-	/// The provided continuation function must accept this shared future as an input parameter.
-	template<typename FC, class Executor>
-	typename Ovito::detail::resulting_future_type<FC,std::tuple<this_type>>::type 
-	then_future(Executor&& executor, bool defer, FC&& cont) noexcept;
-
-	/// Overload of the function above allowing eager execution of the continuation function.
-	template<typename FC, class Executor>
-	typename Ovito::detail::resulting_future_type<FC,std::tuple<this_type>>::type 
-	then_future(Executor&& executor, FC&& cont) noexcept { return then_future(std::forward<Executor>(executor), false, std::forward<FC>(cont)); }
+	template<typename Function>
+	decltype(auto) then(Function&& f) { return then(detail::InlineExecutor{}, std::forward<Function>(f)); }
 
 protected:
-
-	/// Constructor that constructs a SharedFuture that is associated with the given shared state.
-	explicit SharedFuture(TaskPtr p) noexcept : FutureBase(std::move(p)) {}
-
-	/// Constructor that constructs a Future from an existing task dependency.
-	explicit SharedFuture(TaskDependency&& p) noexcept : FutureBase(std::move(p)) {}
 
 	template<typename... R2> friend class Promise;
 	template<typename... R2> friend class WeakSharedFuture;
@@ -147,164 +110,65 @@ protected:
 /// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the given continuation function.
 /// The provided continuation function must accept the results of this future as an input parameter.
 template<typename... R>
-template<typename FC, class Executor>
-typename Ovito::detail::resulting_future_type<FC,std::add_lvalue_reference_t<const typename SharedFuture<R...>::tuple_type>>::type SharedFuture<R...>::then(Executor&& executor, bool defer, FC&& cont) noexcept
+template<typename Executor, typename Function>
+detail::continuation_future_type<Function,SharedFuture<R...>> 
+SharedFuture<R...>::then(Executor&& executor, Function&& f)
 {
 	// Infer the exact future/promise/task types to create.
-	using result_future_type = typename Ovito::detail::resulting_future_type<FC,tuple_type>::type;
+	using result_future_type = detail::continuation_future_type<Function,SharedFuture<R...>>;
 	using result_promise_type = typename result_future_type::promise_type;
-	using continuation_task_type = Ovito::detail::ContinuationTask<typename result_promise_type::tuple_type>;
+	using continuation_task_type = detail::ContinuationTask<typename result_promise_type::tuple_type>;
 
 	// This future must be valid for then() to work.
 	OVITO_ASSERT_MSG(isValid(), "SharedFuture::then()", "Future must be valid.");
 
-	// Create an unfulfilled task and promise for the result of the continuation.
-	result_promise_type promise(std::make_shared<continuation_task_type>(task(), executor.taskManager()));
-
-	// Create the future, which will be returned to the caller.
+	// Create a task, promise and future for the continuation.
+	result_promise_type promise{std::make_shared<continuation_task_type>()};
 	result_future_type future = promise.future();
+	continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());
 
-	// Register continuation function with the current task.
-	task()->finally(std::forward<Executor>(executor), defer, [cont = std::forward<FC>(cont), promise = std::move(promise)](const TaskPtr&) mutable noexcept {
+	// Run the following function once the existing task finishes to invoke the user's continuation function.
+	continuationTask->whenTaskFinishes(
+			this->task(),
+			std::forward<Executor>(executor), 
+			[f = std::forward<Function>(f), promise = std::move(promise)]() mutable noexcept {
 
 		// Get the task that is about to continue.
 		continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());
-		OVITO_ASSERT(continuationTask != nullptr);
 
-		// Get the task that has finished.
-		TaskDependency finishedTask = continuationTask->takeContinuedTask();
+		// Manage access to the task that represents the continuation.
+		QMutexLocker locker(&continuationTask->taskMutex());
 
-		// Don't need to run continuation function when the promise has been canceled in the meantime.
-		// Also don't run continuation function if the original task was canceled.
-		if(promise.isCanceled() || !finishedTask || finishedTask->isCanceled())
-			return;
+		// Get the task that did just finish.
+		detail::TaskReference finishedTask = continuationTask->takeAwaitedTask();
 
-		// Don't execute continuation function in case of an exception state in the original task.
-		// In such a case, forward the exception state to the continuation promise.
+		// Don't need to run continuation function if the continuation task has been canceled in the meantime.
+		// Also don't run continuation function if the preceding task was canceled.
+		if(!finishedTask || finishedTask->isCanceled())
+			return; // Note: The Promise's destructor automatically puts the continuation task into 'canceled' and 'finished' states.
+
+		OVITO_ASSERT(finishedTask->isFinished());
+		OVITO_ASSERT(!continuationTask->isFinished());
+		OVITO_ASSERT(!continuationTask->isCanceled());
+
+		// Put the continuation task into the 'started' state.
+		continuationTask->startLocked();
+
+		// Don't execute continuation function in case an error occurred in the preceding task.
+		// In such a case, copy the exception state to the continuation promise.
 		if(finishedTask->exceptionStore()) {
-			continuationTask->setStarted();
-			continuationTask->setException(finishedTask->exceptionStore());
-			continuationTask->setFinished();
+			continuationTask->exceptionLocked(finishedTask->copyExceptionStore());
+			continuationTask->finishLocked(locker);
 			return;
 		}
 
 		// Now it's time to execute the continuation function.
-		// Store its return value as result of the continuation promise. 
-		OVITO_ASSERT(finishedTask->isFinished());
-		continuationTask->fulfillWith(std::move(promise), std::forward<FC>(cont), finishedTask->template getResults<tuple_type>());
+		// Assign the function's return value as result of the continuation task.
+		locker.unlock();
+		continuationTask->fulfillWith(std::move(promise), std::forward<Function>(f), SharedFuture<R...>(std::move(finishedTask)));
 	});
 
 	return future;
 }
-
-/// Runs the given continuation function upon fulfillment of this future. The function creates a strong 
-/// reference to this future in order to keep it going even if this future object is destroyed.
-/// The provided continuation function must accept the results of this future as an input parameter.
-template<typename... R>
-template<typename FC, class Executor>
-void SharedFuture<R...>::force_then(Executor&& executor, bool defer, FC&& cont) noexcept
-{
-	// This future must be valid for force_then() to work.
-	OVITO_ASSERT_MSG(isValid(), "SharedFuture::force_then()", "Future must be valid.");
-
-	// Register continuation function with the current task.
-	task()->finally(std::forward<Executor>(executor), defer, [cont = std::forward<FC>(cont), task = TaskDependency(task())](const TaskPtr&) mutable noexcept {
-		OVITO_ASSERT(task->isFinished());
-
-		// Don't need to run continuation function when the task has been canceled in the meantime.
-		if(task->isCanceled())
-			return;
-
-		// Don't run continuation function either in case of an exception state.
-		if(task->exceptionStore())
-			return;
-
-		// Now it's time to execute the continuation function.
-		std::apply(std::forward<FC>(cont), task->template getResults<tuple_type>());
-	});
-}
-
-/// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the specified continuation function.
-/// The provided continuation function must accept this shared future as an input parameter.
-template<typename... R>
-template<typename FC, class Executor>
-typename Ovito::detail::resulting_future_type<FC,std::tuple<SharedFuture<R...>>>::type SharedFuture<R...>::then_future(Executor&& executor, bool defer, FC&& cont) noexcept
-{
-	// Infer the exact future/promise/task types to create.
-	using result_future_type = typename Ovito::detail::resulting_future_type<FC,std::tuple<this_type>>::type;
-	using result_promise_type = typename result_future_type::promise_type;
-	using continuation_task_type = Ovito::detail::ContinuationTask<typename result_promise_type::tuple_type>;
-
-	// This future must be valid for then() to work.
-	OVITO_ASSERT_MSG(isValid(), "SharedFuture::then()", "Future must be valid.");
-
-	// Create an unfulfilled task and promise for the result of the continuation.
-	result_promise_type promise(std::make_shared<continuation_task_type>(task(), executor.taskManager()));
-
-	// Create the future, which will be returned to the caller.
-	result_future_type future = promise.future();
-
-	// Register continuation function with the current task.
-	task()->finally(std::forward<Executor>(executor), defer, [cont = std::forward<FC>(cont), promise = std::move(promise)](const TaskPtr&) mutable noexcept {
-
-		// Get the task that is about to continue.
-		continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());
-		OVITO_ASSERT(continuationTask != nullptr);
-
-		// Get the task that has finished.
-		TaskDependency finishedTask = continuationTask->takeContinuedTask();
-
-		// Don't need to run continuation function when the promise has been canceled in the meantime.
-		// Also don't run continuation function if the original task was canceled.
-		if(promise.isCanceled() || !finishedTask || finishedTask->isCanceled())
-			return;
-
-		// Now it's time to execute the continuation function.
-		// Store its return value as result of the continuation promise. 
-		OVITO_ASSERT(finishedTask->isFinished());
-		continuationTask->fulfillWith(std::move(promise), std::forward<FC>(cont), std::forward_as_tuple(SharedFuture<R...>(std::move(finishedTask))));
-	});
-
-	return future;
-}
-
-/******************************************************************************
-* A weak reference to a SharedFuture
-******************************************************************************/
-template<typename... R>
-class WeakSharedFuture : private std::weak_ptr<Task>
-{
-public:
-
-#ifndef Q_CC_MSVC
-	constexpr WeakSharedFuture() noexcept = default;
-#else
-	constexpr WeakSharedFuture() noexcept : std::weak_ptr<Task>() {}
-#endif
-
-	WeakSharedFuture(const SharedFuture<R...>& future) noexcept : std::weak_ptr<Task>(future.task()) {}
-
-	WeakSharedFuture& operator=(const Future<R...>& f) noexcept {
-		std::weak_ptr<Task>::operator=(f.task());
-		return *this;
-	}
-
-	WeakSharedFuture& operator=(const SharedFuture<R...>& f) noexcept {
-		std::weak_ptr<Task>::operator=(f.task());
-		return *this;
-	}
-
-	void reset() noexcept {
-		std::weak_ptr<Task>::reset();
-	}
-
-	SharedFuture<R...> lock() const noexcept {
-		return SharedFuture<R...>(std::weak_ptr<Task>::lock());
-	}
-
-	bool expired() const noexcept {
-		return std::weak_ptr<Task>::expired();
-	}
-};
 
 }	// End of namespace

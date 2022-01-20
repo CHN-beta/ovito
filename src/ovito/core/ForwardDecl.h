@@ -43,13 +43,13 @@ namespace Ovito {
 	class Task;
 	class TaskManager;
 	class TaskWatcher;
-	class AsynchronousTaskBase;
-	class MainThreadTask;
 	template<typename... R> class Future;
 	template<typename... R> class SharedFuture;
 	template<typename... R> class Promise;
-	template<class BaseState, class tuple_type> class TaskWithResultStorage;
+	template<class Tuple> class TaskWithStorage;
 	using TaskPtr = std::shared_ptr<Task>;
+	class MainThreadOperation;
+	class UserInterface;
 	class TriMeshObject;
 	class TriMeshVis;
 	class Controller;
@@ -75,6 +75,7 @@ namespace Ovito {
 	template<typename property_data_type, int flags> class PropertyField;
 	template<typename T> class ReferenceField;
 	template<typename T> class VectorReferenceField;
+	class RefTargetExecutor;
 	class DataSet;
 	class DataSetContainer;
 	class ParameterUnit;
@@ -144,4 +145,7 @@ namespace Ovito {
 	class FileExporterClass;
 	class FileSource;
 	class FileSourceImporter;
+
+	class ViewportInputManager;   // Note: This class is defined in another plugin module (GuiBase).
+	class ActionManager;          // Note: This class is defined in another plugin module (GuiBase).
 }

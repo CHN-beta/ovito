@@ -85,7 +85,7 @@ bool OpenGLSceneRenderer::_openGLSupportsGeometryShaders = false;
 * Is called by OVITO to query the class for any information that should be 
 * included in the application's system report.
 ******************************************************************************/
-void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& stream, DataSetContainer& container) const
+void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& stream, UserInterface& userInterface) const
 {
 	if(this == &OpenGLSceneRenderer::OOClass()) {
 		OpenGLSceneRenderer::determineOpenGLInfo();
@@ -339,13 +339,13 @@ void OpenGLSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewpo
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOperation operation)
+bool OpenGLSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
 {
 	OVITO_ASSERT(_glcontext == QOpenGLContext::currentContext());
     OVITO_REPORT_OPENGL_ERRORS(this);
 
 	// Let the visual elements in the scene send their primitives to this renderer.
-	if(renderScene(operation.subOperation())) {
+	if(renderScene(operation)) {
 		OVITO_REPORT_OPENGL_ERRORS(this);
 
 		// Render additional content that is only visible in the interactive viewports.
@@ -364,13 +364,13 @@ bool OpenGLSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOper
 /******************************************************************************
 * Renders the overlays/underlays of the viewport into the framebuffer.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation)
+bool OpenGLSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
 {
 	// Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
 	QRect openGLViewportRect(physicalViewportRect.x() * antialiasingLevel(), physicalViewportRect.y() * antialiasingLevel(), physicalViewportRect.width() * antialiasingLevel(), physicalViewportRect.height() * antialiasingLevel());
 
 	// Delegate rendering work to base class.
-	return SceneRenderer::renderOverlays(underlays, logicalViewportRect, openGLViewportRect, std::move(operation));
+	return SceneRenderer::renderOverlays(underlays, logicalViewportRect, openGLViewportRect, operation);
 }
 
 /******************************************************************************

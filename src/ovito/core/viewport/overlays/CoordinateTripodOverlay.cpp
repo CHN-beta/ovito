@@ -106,7 +106,7 @@ void CoordinateTripodOverlay::propertyChanged(const PropertyFieldDescriptor* fie
 /******************************************************************************
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
-void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation)
+void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
 {
 	FloatType tripodSize = this->tripodSize() * physicalViewportRect.height();
 	if(tripodSize <= 0) return;

@@ -25,6 +25,7 @@
 #include <ovito/stdobj/gui/properties/InputColumnMappingDialog.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
+#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include "LAMMPSTextDumpImporterEditor.h"
@@ -38,11 +39,16 @@ SET_OVITO_OBJECT_EDITOR(LAMMPSTextDumpImporter, LAMMPSTextDumpImporterEditor);
  * Displays a dialog box that allows the user to edit the custom file column to particle
  * property mapping.
  *****************************************************************************/
-bool LAMMPSTextDumpImporterEditor::showEditColumnMappingDialog(LAMMPSTextDumpImporter* importer, const FileSourceImporter::Frame& frame, MainWindow* mainWindow)
+bool LAMMPSTextDumpImporterEditor::showEditColumnMappingDialog(LAMMPSTextDumpImporter* importer, const FileSourceImporter::Frame& frame)
 {
+	// Read the list of columns from the file's header.
 	Future<ParticleInputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
-	if(!importer->dataset()->taskManager().waitForFuture(inspectFuture))
+
+	// Block UI until reading is done.
+	ProgressDialog progressDialog(parentWindow(), mainWindow(), tr("Inspecting file header"));
+	if(!progressDialog.waitForFuture(inspectFuture))
 		return false;
+
 	ParticleInputColumnMapping mapping = inspectFuture.result();
 
 	if(!importer->customColumnMapping().empty()) {
@@ -53,7 +59,7 @@ bool LAMMPSTextDumpImporterEditor::showEditColumnMappingDialog(LAMMPSTextDumpImp
 		mapping = std::move(customMapping);
 	}
 
-	InputColumnMappingDialog dialog(mapping, mainWindow, importer->dataset()->taskManager());
+	InputColumnMappingDialog dialog(mapping, parentWindow());
 	if(dialog.exec() == QDialog::Accepted) {
 		importer->setCustomColumnMapping(dialog.mapping());
 		importer->setUseCustomColumnMapping(true);
@@ -134,10 +140,10 @@ void LAMMPSTextDumpImporterEditor::onEditColumnMapping()
 			// Determine the currently loaded data file of the FileSource.
 			FileSource* fileSource = importer->fileSource();
 			if(!fileSource || fileSource->frames().empty()) return;
-			int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
+			int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size() - 1);
 
 			// Show the dialog box, which lets the user modify the file column mapping.
-			if(showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex], mainWindow())) {
+			if(showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex])) {
 				importer->requestReload();
 			}
 		});

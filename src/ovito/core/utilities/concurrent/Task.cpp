@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,185 +23,388 @@
 #include <ovito/core/Core.h>
 #include "Task.h"
 #include "Future.h"
-#include "TaskWatcher.h"
-#include "TaskManager.h"
+#include "detail/TaskCallback.h"
 
 namespace Ovito {
 
+constexpr static int MaxProgressEmitsPerSecond = 20;
+
 #ifdef OVITO_DEBUG
-// Global counter of Task instance. Used to detect memory leaks.
-std::atomic_size_t Task::_instanceCounter{0};
+std::atomic_size_t Task::_globalTaskCounter{0};
 #endif
 
+#ifdef OVITO_DEBUG
+/*******************************************************x***********************
+* Destructor.
+******************************************************************************/
 Task::~Task()
 {
-	// No-op destructor.
+	// No-op destructor in release builds.
 
-	// Shared states must always end up in the finished state.
+	// Check if the mutex is currently locked.
+	// This should never be the case while destroying the promise state.
+	OVITO_ASSERT(_mutex.tryLock());
+	_mutex.unlock();
+
+	// At the end of their lifetime, tasks must always end up in the finished state.
 	OVITO_ASSERT(isFinished());
 
-#ifdef OVITO_DEBUG
-	_instanceCounter.fetch_sub(1);
+	// All registered callbacks should have been unregistered by now.
+	OVITO_ASSERT(_callbacks == nullptr);
+
+	// In debug builds we keep track of how many task objects exist to check whether they all get destroyed correctly 
+	// at program termination. 
+	_globalTaskCounter.fetch_sub(1);
+}
 #endif
+
+/******************************************************************************
+* Sets the current maximum value for progress reporting.
+* The current progress value is reset to zero.
+******************************************************************************/
+void Task::setProgressMaximum(qlonglong maximum)
+{
+    const QMutexLocker locker(&_mutex);
+
+    _progressMaximum = maximum;
+	_progressValue = 0;
+
+    updateTotalProgress();
+
+	for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
+		cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
 }
 
-void Task::decrementShareCount() noexcept
+/******************************************************************************
+* Sets the current progress value of the task.
+******************************************************************************/
+bool Task::setProgressValue(qlonglong value)
 {
-	// Automatically cancel this shared state when there are no more futures left that depend on it.
-	int oldCount = _shareCount.fetch_sub(1, std::memory_order_release);
-	OVITO_ASSERT(oldCount >= 1);
-	if(oldCount == 1) {
-		cancel();
+    const QMutexLocker locker(&_mutex);
+
+	auto state = _state.loadRelaxed();
+    if(state & (Canceled | Finished) || value == _progressValue)
+        return !(state & Canceled);
+
+    _progressValue = value;
+    updateTotalProgress();
+
+    if(!_progressTime.isValid() || _totalProgressValue >= _totalProgressMaximum || _progressTime.elapsed() >= (1000 / MaxProgressEmitsPerSecond)) {
+		_progressTime.start();
+
+		for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
+			cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
+    }
+
+    return !(state & Canceled);
+}
+
+/******************************************************************************
+* Increments the progress value of the task.
+******************************************************************************/
+bool Task::incrementProgressValue(qlonglong increment)
+{
+    const QMutexLocker locker(&_mutex);
+
+	auto state = _state.loadRelaxed();
+    if(state & (Canceled | Finished))
+        return !(state & Canceled);
+
+    _progressValue += increment;
+    updateTotalProgress();
+
+    if(!_progressTime.isValid() || _totalProgressValue >= _totalProgressMaximum || _progressTime.elapsed() >= (1000 / MaxProgressEmitsPerSecond)) {
+		_progressTime.start();
+
+		for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
+			cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
+    }
+
+    return !(state & Canceled);
+}
+
+/******************************************************************************
+* Sets the current progress value of the task, generating update events only occasionally.
+******************************************************************************/
+bool Task::setProgressValueIntermittent(qlonglong progressValue, int updateEvery)
+{
+	if(_intermittentUpdateCounter >= updateEvery) {
+		_intermittentUpdateCounter = 0;
+		return setProgressValue(progressValue);
+	}
+	else {
+		_intermittentUpdateCounter++;
+		return !isCanceled();
 	}
 }
 
-void Task::cancel() noexcept
+/******************************************************************************
+* Changes the description of this task to be displayed in the GUI.
+******************************************************************************/
+void Task::setProgressText(const QString& progressText)
 {
-	if(isCanceled() || isFinished()) return;
+    const QMutexLocker locker(&_mutex);
 
-	// Prevent this task instance from getting deleted while clearning up.
-	TaskPtr selfLock = shared_from_this();
-	cancelNoSelfLock();
+    if(auto state = _state.loadRelaxed(); state & (Canceled | Finished))
+        return;
+
+    _progressText = progressText;
+
+	for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
+		cb->callTextChanged();
 }
 
-void Task::cancelNoSelfLock() noexcept
+/******************************************************************************
+* Recomputes the total progress made so far based on the progress of the current sub-task.
+******************************************************************************/
+void Task::updateTotalProgress()
 {
-	if(isCanceled() || isFinished()) return;
-
-	// Put this task into the 'canceled' state.
-	_state = State(_state | Canceled);
-
-	for(TaskWatcher* watcher = _watchers; watcher != nullptr; watcher = watcher->_nextInList)
-		QMetaObject::invokeMethod(watcher, "promiseCanceled", Qt::QueuedConnection);
-
-	// Run the continuation functions.
-	// Note: Move the functions into a new local list to avoid running them twice in case one of the continuation
-	// functions puts this task into the 'finished' state (which will also run all continuation functions).
-	decltype(_continuations) contFunctions;
-	std::move(_continuations.begin(), _continuations.end(), std::back_inserter(contFunctions));
-	_continuations.clear();
-	for(auto& cont : contFunctions)
-		std::move(cont)(false);
+	if(_subTaskProgressStack.empty()) {
+		_totalProgressMaximum = _progressMaximum;
+		_totalProgressValue = _progressValue;
+	}
+	else {
+		double percentage;
+		if(_progressMaximum > 0)
+			percentage = (double)_progressValue / _progressMaximum;
+		else
+			percentage = 0;
+		for(auto level = _subTaskProgressStack.crbegin(); level != _subTaskProgressStack.crend(); ++level) {
+			OVITO_ASSERT(level->first >= 0 && level->first <= level->second.size());
+			int weightSum1 = std::accumulate(level->second.cbegin(), level->second.cbegin() + level->first, 0);
+			int weightSum2 = std::accumulate(level->second.cbegin() + level->first, level->second.cend(), 0);
+			percentage = ((double)weightSum1 + percentage * (level->first < level->second.size() ? level->second[level->first] : 0)) / (weightSum1 + weightSum2);
+		}
+		_totalProgressMaximum = 1000;
+		_totalProgressValue = (qlonglong)(percentage * 1000.0);
+	}
 }
 
-bool Task::setStarted()
+/******************************************************************************
+* Starts a sequence of sub-steps in the progress range of this task.
+******************************************************************************/
+void Task::beginProgressSubStepsWithWeights(std::vector<int> weights)
 {
-    if(isStarted())
-        return false;	// It's already started. Don't run it again.
+    OVITO_ASSERT(std::accumulate(weights.cbegin(), weights.cend(), 0) > 0);
 
-    OVITO_ASSERT(!isFinished());
-    _state = State(_state | Started);
+    _subTaskProgressStack.emplace_back(0, std::move(weights));
+    _progressMaximum = 0;
+    _progressValue = 0;
+}
 
-	for(TaskWatcher* watcher = _watchers; watcher != nullptr; watcher = watcher->_nextInList)
-		QMetaObject::invokeMethod(watcher, "promiseStarted", Qt::QueuedConnection);
+/******************************************************************************
+* Completes the current sub-step in the sequence started with beginProgressSubSteps() 
+* or beginProgressSubStepsWithWeights() and moves to the next one.
+******************************************************************************/
+void Task::nextProgressSubStep()
+{
+    const QMutexLocker locker(&_mutex);
+
+    if(auto state = _state.loadRelaxed(); state & (Canceled | Finished))
+        return;
+
+	OVITO_ASSERT(!_subTaskProgressStack.empty());
+	OVITO_ASSERT(_subTaskProgressStack.back().first < _subTaskProgressStack.back().second.size());
+	_subTaskProgressStack.back().first++;
+
+    _progressMaximum = 0;
+    _progressValue = 0;
+    updateTotalProgress();
+
+	for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
+		cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
+}
+
+/******************************************************************************
+* Completes a sub-step sequence started with beginProgressSubSteps() or 
+* beginProgressSubStepsWithWeights().
+******************************************************************************/
+void Task::endProgressSubSteps()
+{
+	OVITO_ASSERT(!_subTaskProgressStack.empty());
+	_subTaskProgressStack.pop_back();
+    _progressMaximum = 0;
+    _progressValue = 0;
+}
+
+/******************************************************************************
+* Switches the task into the 'started' state.
+******************************************************************************/
+bool Task::setStarted() noexcept
+{
+	const QMutexLocker locker(&_mutex);
+	return startLocked();
+}
+
+/******************************************************************************
+* Puts this taskinto the 'started' state (without locking access to the object).
+******************************************************************************/
+bool Task::startLocked() noexcept
+{
+	// Check if already started.
+	auto state = _state.loadRelaxed();
+    if(state & Started)
+        return false;
+
+    OVITO_ASSERT(!(state & Finished));
+    _state.fetchAndOrRelaxed(Started);
+
+	// Inform the registered task watchers.
+	for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
+		cb->callStateChanged(Started);
 
 	return true;
 }
 
-void Task::setFinished()
+/******************************************************************************
+* Switches the task into the 'finished' state.
+******************************************************************************/
+void Task::setFinished() noexcept
 {
-    OVITO_ASSERT(isStarted());
-    if(!isFinished()) {
-		// Prevent this task instance from getting deleted while finishing up.
-		TaskPtr selfLock = shared_from_this();
-		setFinishedNoSelfLock();
-    }
+	QMutexLocker locker(&taskMutex());
+	if(!isFinished())
+		finishLocked(locker);
 }
 
-void Task::setFinishedNoSelfLock() noexcept
+/******************************************************************************
+* Puts this task into the 'finished' state (without newly locking the task).
+******************************************************************************/
+void Task::finishLocked(QMutexLocker<QMutex>& locker) noexcept
 {
 	OVITO_ASSERT(!isFinished());
+    OVITO_ASSERT(isStarted());
 
-	// Change state.
-	_state = State(_state | Finished);
+	// Put this task into the 'finished' state.
+	int state = _state.fetchAndOrRelaxed(Finished);
 
-	// Make sure that a result has been set (if not in canceled or error state).
-	OVITO_ASSERT_MSG(_exceptionStore || isCanceled() || _resultSet.load() || !_resultsTuple,
-		"Task::setFinishedNoSelfLock()",
-		qPrintable(QStringLiteral("Result has not been set for the promise state. Please check program code setting the promise state. Progress text: %1").arg(progressText())));
+	// Make sure that the result has been set (if not in canceled or error state).
+	OVITO_ASSERT_MSG(_exceptionStore || isCanceled() || _hasResultsStored.load() || !_resultsStorage,
+		"Task::finishLocked()",
+		qPrintable(QStringLiteral("Result has not been set for the task. Please check program code setting the task to finished. Task's last progress text: %1").arg(progressText())));
 
-	// Inform task watchers.
-	for(TaskWatcher* watcher = _watchers; watcher != nullptr; watcher = watcher->_nextInList)
-		QMetaObject::invokeMethod(watcher, "promiseFinished", Qt::QueuedConnection);
+	// Inform the registered task watchers.
+	for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
+		cb->callStateChanged(Finished);
 
-	// Run the continuation functions.
-	for(auto& cont : _continuations)
-		std::move(cont)(false);
+	// Note: Move the functions into a new local list first so that we can unlock the mutex.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0) 
+	decltype(_continuations) continuations = std::move(_continuations);
+	OVITO_ASSERT(_continuations.empty());
+#else
+	decltype(_continuations) continuations;
+	std::move(_continuations.begin(), _continuations.end(), std::back_inserter(continuations));
 	_continuations.clear();
+#endif
+	locker.unlock();
+
+	// Run all continuation functions.
+	for(auto& cont : continuations)
+		std::move(cont)(*this);
 }
 
-void Task::setException(std::exception_ptr&& ex)
+/******************************************************************************
+* Requests cancellation of the task.
+******************************************************************************/
+void Task::cancel() noexcept
 {
-	if(isCanceled() || isFinished())
+	QMutexLocker locker(&taskMutex());
+	cancelAndFinishLocked(locker);
+}
+
+/******************************************************************************
+* Puts this task into the 'canceled' and 'finished' states (without newly locking the task).
+******************************************************************************/
+void Task::cancelAndFinishLocked(QMutexLocker<QMutex>& locker) noexcept
+{
+	// Put this task into the 'finished' state.
+	auto state = _state.fetchAndOrRelaxed(Finished);
+
+	// Do nothing if task was already in the 'finished' state.
+	if(state & Finished)
 		return;
 
+	// Put the task into the 'canceled' state as well.
+	state = _state.fetchAndOrRelaxed(Canceled);
+
+	// Inform the registered task watchers.
+	for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList) {
+		cb->callStateChanged(!(state & Canceled) ? (Canceled | Finished) : Finished);
+	}
+
+	// Note: Move the functions into a new local list first so that we can unlock the mutex.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	decltype(_continuations) continuations = std::move(_continuations);
+	OVITO_ASSERT(_continuations.empty());
+#else
+	decltype(_continuations) continuations;
+	std::move(_continuations.begin(), _continuations.end(), std::back_inserter(continuations));
+	_continuations.clear();
+#endif
+	locker.unlock();
+
+	// Run the continuation functions.
+	for(auto& cont : continuations)
+		std::move(cont)(*this);
+}
+
+/******************************************************************************
+* Puts this task into the 'exception' state to signal that an error has occurred.
+******************************************************************************/
+void Task::exceptionLocked(std::exception_ptr&& ex) noexcept
+{
 	OVITO_ASSERT(ex != std::exception_ptr());
+
+	// Make sure the task isn't already canceled or finished.
+    OVITO_ASSERT(!(_state.loadRelaxed() & (Canceled | Finished)));
+
 	_exceptionStore = std::move(ex); // NOLINT
 }
 
-void Task::startOver()
+/******************************************************************************
+* Adds a callback to this task's list, which will get notified during state changes.
+******************************************************************************/
+void Task::addCallback(detail::TaskCallbackBase* cb, bool replayStateChanges) noexcept
 {
-	OVITO_ASSERT(isFinished());
-	OVITO_ASSERT(_continuations.empty());
+	OVITO_ASSERT(cb != nullptr);
+	
+    const QMutexLocker locker(&_mutex);
 
-	_exceptionStore = std::exception_ptr{};
-	_state = NoState;
+	// Insert into linked list of callbacks.
+	cb->_nextInList = _callbacks;
+	_callbacks = cb;
 
-#ifdef OVITO_DEBUG
-    _resultSet = false;
-#endif
+	// Replay past state changes to the new callback if requested.
+	if(replayStateChanges)
+		cb->callStateChanged(_state.loadRelaxed());
 }
 
-void Task::registerWatcher(TaskWatcher* watcher)
+/******************************************************************************
+* Removes a callback from this task's list, which will no longer get notified about state changes.
+******************************************************************************/
+void Task::removeCallback(detail::TaskCallbackBase* cb) noexcept
 {
-	if(isStarted())
-		QMetaObject::invokeMethod(watcher, "promiseStarted", Qt::QueuedConnection);
+    const QMutexLocker locker(&_mutex);
 
-	if(isCanceled())
-		QMetaObject::invokeMethod(watcher, "promiseCanceled", Qt::QueuedConnection);
-
-	if(isFinished())
-		QMetaObject::invokeMethod(watcher, "promiseFinished", Qt::QueuedConnection);
-
-	watcher->_nextInList = _watchers;
-	_watchers = watcher;
-}
-
-void Task::unregisterWatcher(TaskWatcher* watcher)
-{
-	if(_watchers == watcher) {
-		_watchers = watcher->_nextInList;
+	// Remove from linked list of callbacks.
+	if(_callbacks == cb) {
+		_callbacks = cb->_nextInList;
 	}
 	else {
-		for(TaskWatcher* w2 = _watchers; w2 != nullptr; w2 = w2->_nextInList) {
-			if(w2->_nextInList == watcher) {
-				w2->_nextInList = watcher->_nextInList;
+		for(detail::TaskCallbackBase* cb2 = _callbacks; cb2 != nullptr; cb2 = cb2->_nextInList) {
+			if(cb2->_nextInList == cb) {
+				cb2->_nextInList = cb->_nextInList;
 				return;
 			}
 		}
-		OVITO_ASSERT(false);
+		OVITO_ASSERT(false); // Callback was not found in linked list. Did you try to remove a callback that was never added?
 	}
 }
 
-void Task::addContinuationImpl(fu2::unique_function<void(bool)>&& cont, bool defer)
+/******************************************************************************
+* Puts this task into the 'canceled' and 'finished' states (without newly locking the task).
+******************************************************************************/
+void Task::cancelAndFinishLocked(QMutexLocker<QMutex>& locker) noexcept
 {
-	if(!isFinished() && !isCanceled()) {
-		_continuations.push_back(std::move(cont));
-	}
-	else {
-		std::move(cont)(defer);
-	}
-}
-
-bool Task::waitForFuture(const FutureBase& future)
-{
-	OVITO_ASSERT_MSG(taskManager() != nullptr, "Task::waitForFuture()", "Calling waitForFuture() on this type of Task is not allowed.");
-
-	if(!taskManager()->waitForTask(future.task(), shared_from_this())) {
-		cancel();
-		return false;
-	}
-	return true;
 }
 
 }	// End of namespace

@@ -47,7 +47,7 @@ public:
 	virtual int orderingKey() const override { return 15; }
 
 	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget(MainWindow* mainWindow) override;
+	virtual QWidget* createWidget() override;
 };
 
 }	// End of namespace

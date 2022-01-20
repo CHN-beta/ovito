@@ -36,7 +36,7 @@ DEFINE_PROPERTY_FIELD(AttributeFileExporter, attributesToExport);
  * This is called once for every output file to be written and before
  * exportData() is called.
 *****************************************************************************/
-bool AttributeFileExporter::openOutputFile(const QString& filePath, int numberOfFrames, SynchronousOperation operation)
+bool AttributeFileExporter::openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation)
 {
 	OVITO_ASSERT(!_outputFile.isOpen());
 	OVITO_ASSERT(!_outputStream);
@@ -94,9 +94,9 @@ void AttributeFileExporter::initializeObject(ObjectInitializationHints hints)
 * Evaluates the pipeline of the PipelineSceneNode to be exported and returns
 * the attributes list.
 ******************************************************************************/
-bool AttributeFileExporter::getAttributesMap(TimePoint time, QVariantMap& attributes, SynchronousOperation operation)
+bool AttributeFileExporter::getAttributesMap(TimePoint time, QVariantMap& attributes, MainThreadOperation& operation)
 {
-	const PipelineFlowState& state = getPipelineDataToBeExported(time, operation.subOperation());
+	const PipelineFlowState& state = getPipelineDataToBeExported(time, operation);
 	if(operation.isCanceled())
 		return false;
 
@@ -112,10 +112,10 @@ bool AttributeFileExporter::getAttributesMap(TimePoint time, QVariantMap& attrib
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool AttributeFileExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, SynchronousOperation operation)
+bool AttributeFileExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
 {
 	QVariantMap attrMap;
-	if(!getAttributesMap(time, attrMap, operation.subOperation()))
+	if(!getAttributesMap(time, attrMap, operation))
 		return false;
 
 	// Write the values of all attributes marked for export to the output file.

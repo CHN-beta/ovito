@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -87,21 +87,21 @@ class OVITO_CORE_EXPORT FileManager : public QObject
 public:
 
 	/// Constructor.
-	FileManager() = default;
+	FileManager(TaskManager& taskManager) : _taskManager(taskManager) {}
 
 	/// Destructor.
 	~FileManager();
 
 	/// \brief Makes a file available locally.
 	/// \return A Future that will provide access to the file contents after it has been fetched from the remote location.
-	virtual SharedFuture<FileHandle> fetchUrl(TaskManager& taskManager, const QUrl& url);
+	virtual SharedFuture<FileHandle> fetchUrl(const QUrl& url);
 
 	/// \brief Removes a cached remote file so that it will be downloaded again next time it is requested.
 	void removeFromCache(const QUrl& url);
 
 	/// \brief Lists all files in a remote directory.
 	/// \return A Future that will provide the list of file names.
-	virtual Future<QStringList> listDirectoryContents(TaskManager& taskManager, const QUrl& url);
+	virtual Future<QStringList> listDirectoryContents(const QUrl& url);
 
 	/// \brief Constructs a URL from a path entered by the user.
 	QUrl urlFromUserInput(const QString& path);
@@ -181,6 +181,9 @@ private:
 
 	/// Cache holding the remote files that have already been downloaded.
 	QCache<QUrl, QTemporaryFile> _downloadedFiles{std::numeric_limits<int>::max()};
+
+	/// The manager of tasks associated with file I/O.
+	TaskManager& _taskManager;
 
 	/// The mutex to synchronize access to above data structures.
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)

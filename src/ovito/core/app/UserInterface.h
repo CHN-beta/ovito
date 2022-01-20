@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,7 +23,9 @@
 #pragma once
 
 
-#include <ovito/gui/base/GUIBase.h>
+#include <ovito/core/Core.h>
+#include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/utilities/concurrent/TaskManager.h>
 
 namespace Ovito {
 
@@ -32,12 +34,15 @@ namespace Ovito {
  *
  * Note that is is possible to open multiple GUI windows per process.
  */
-class OVITO_GUIBASE_EXPORT UserInterface
+class OVITO_CORE_EXPORT UserInterface
 {
 public:
 
 	/// Constructor.
 	explicit UserInterface(DataSetContainer& datasetContainer) : _datasetContainer(datasetContainer) {}
+
+	/// Destructor.
+	virtual ~UserInterface() {}
 
 	/// Returns the container managing the current dataset.
 	DataSetContainer& datasetContainer() { return _datasetContainer; }
@@ -48,6 +53,13 @@ public:
 	/// Returns the viewport input manager of the user interface.
 	ViewportInputManager* viewportInputManager() const { return _viewportInputManager; }
 
+	/// Returns the manager of asynchronous tasks belonging to this user interface.
+	TaskManager& taskManager() { return _taskManager; }
+
+	/// Creates an object that represents a longer-running operation executed in the main or GUI thread 
+	/// in the context of this abstract user interface. 
+	MainThreadOperation createOperation(bool visibleInUserInterface);
+
 	/// Gives the active viewport the input focus.
 	virtual void setViewportInputFocus() {}
 	
@@ -57,17 +69,14 @@ public:
 	/// Hides any messages currently displayed in the status bar.
 	virtual void clearStatusBarMessage() {}
 
-	/// Closes the user interface (and shuts down application if there are no more windows open).
-	virtual void shutdown() {}
+	/// Closes the user interface and shuts down the entire application after displaying an error message.
+	virtual void exitWithFatalError(const Exception& ex);
 
 	/// Returns the manager of the user interface actions.
 	ActionManager* actionManager() const { return _actionManager; }
 
 	/// Queries the system's information and graphics capabilities.
 	QString generateSystemReport();
-
-	/// Shows the online manual and opens the given help page.
-	static void openHelpTopic(const QString& page);
 
 	/// Creates a frame buffer of the requested size for rendering and displays it in a window in the user interface.
 	virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height);
@@ -79,7 +88,7 @@ protected:
 
 private:
 
-	/// Container managing the DataSet currently being edited in this user interface.
+	/// Hosts the dataset that is currently being edited in this user interface.
 	DataSetContainer& _datasetContainer;
 
 	/// Viewport input manager of the user interface.
@@ -87,6 +96,9 @@ private:
 
 	/// Actions of the user interface.
 	ActionManager* _actionManager = nullptr;
+
+	/// Manages the running asynchronous tasks that belong to this user interface.
+	TaskManager _taskManager;
 };
 
 }	// End of namespace

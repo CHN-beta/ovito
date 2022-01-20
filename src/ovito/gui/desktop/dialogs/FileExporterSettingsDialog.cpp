@@ -35,8 +35,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow* mainWindow, FileExporter* exporter)
-	: QDialog(mainWindow), _exporter(exporter)
+FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, FileExporter* exporter)
+	: QDialog(&mainWindow), _exporter(exporter)
 {
 	setWindowTitle(tr("Data Export Settings"));
 

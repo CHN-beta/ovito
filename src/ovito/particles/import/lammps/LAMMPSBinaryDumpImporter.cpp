@@ -523,7 +523,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 Future<ParticleInputColumnMapping> LAMMPSBinaryDumpImporter::inspectFileHeader(const Frame& frame)
 {
 	// Retrieve file.
-	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
+	return Application::instance()->fileManager().fetchUrl(frame.sourceFile)
 		.then([](const FileHandle& fileHandle) {
 
 			// Open input file for reading.

@@ -357,7 +357,7 @@ Future<PipelineFlowState> ModifierApplication::evaluateInternal(const PipelineEv
 			// Post-process the modifier results before returning them to the caller.
 			// Turn any exception that was thrown during modifier evaluation into a
 			// valid pipeline state with an error code.
-			return future.then_future(executor(), [this, inputData = std::move(inputData)](Future<PipelineFlowState> future) mutable {
+			return future.then(executor(), [this, inputData = std::move(inputData)](Future<PipelineFlowState> future) mutable {
 				OVITO_ASSERT(future.isFinished() && !future.isCanceled());
 				try {
 					try {

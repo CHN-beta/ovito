@@ -34,8 +34,7 @@ enum {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-InputColumnMappingDialog::InputColumnMappingDialog(const InputColumnMapping& mapping, QWidget* parent, TaskManager& taskManager) : QDialog(parent), 
-	_taskManager(taskManager),
+InputColumnMappingDialog::InputColumnMappingDialog(const InputColumnMapping& mapping, QWidget* parent) : QDialog(parent), 
 	_containerClass(mapping.containerClass())
 {
 	OVITO_ASSERT(_containerClass);
@@ -305,13 +304,13 @@ void InputColumnMappingDialog::onSavePreset()
 		int index = presetNames.indexOf(name);
 		if(index >= 0) {
 			// Overwrite existing preset with the same name.
-			presetData[index] = m.toByteArray(_taskManager);
+			presetData[index] = m.toByteArray();
 		}
 		else {
 			// Add a new preset. Sort alphabetically.
 			index = std::lower_bound(presetNames.begin(), presetNames.end(), name) - presetNames.begin();
 			presetNames.insert(index, name);
-			presetData.insert(index, m.toByteArray(_taskManager));
+			presetData.insert(index, m.toByteArray());
 		}
 
 		// Write mappings to settings store.
@@ -361,7 +360,7 @@ void InputColumnMappingDialog::onLoadPreset()
 
 		// Load preset.
 		InputColumnMapping mapping(_containerClass);
-		mapping.fromByteArray(presetData[presetNames.indexOf(name)], _taskManager);
+		mapping.fromByteArray(presetData[presetNames.indexOf(name)]);
 		OVITO_ASSERT(mapping.containerClass() == _containerClass);
 
 		for(int index = 0; index < (int)mapping.size() && index < _tableWidget->rowCount(); index++) {

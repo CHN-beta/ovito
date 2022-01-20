@@ -168,7 +168,7 @@ public:
 	}
 
 	/// \brief Is called by OVITO to query the class for any information that should be included in the application's system report.
-	virtual void querySystemInformation(QTextStream& stream, DataSetContainer& container) const {}
+	virtual void querySystemInformation(QTextStream& stream, UserInterface& userInterface) const {}
 
 protected:
 

@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/base/GUIBase.h>
-#include <ovito/gui/base/mainwin/UserInterface.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/app/Application.h>
@@ -37,9 +37,9 @@ OVITO_REGISTER_VIEWPORT_WINDOW_IMPLEMENTATION(OpenGLViewportWindow);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, ViewportInputManager* inputManager, UserInterface* gui, QWidget* parentWidget) : 
+OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, UserInterface* userInterface, QWidget* parentWidget) : 
 		QOpenGLWidget(parentWidget),
-		BaseViewportWindow(gui, inputManager, vp)
+		BaseViewportWindow(*userInterface, vp)
 {
 	setMouseTracking(true);
 	setFocusPolicy(Qt::StrongFocus);
@@ -205,8 +205,7 @@ void OpenGLViewportWindow::paintGL()
 		static bool errorMessageShown = false;
 		if(!errorMessageShown) {
 			errorMessageShown = true;
-			viewport()->dataset()->viewportConfig()->suspendViewportUpdates();
-			Exception ex(tr(
+			userInterface().exitWithFatalError(Exception(tr(
 					"The OpenGL graphics driver installed on this system does not support OpenGL version %6.%7 or newer.\n\n"
 					"Ovito requires modern graphics hardware and up-to-date graphics drivers to display 3D content. Your current system configuration is not compatible with Ovito and the application will quit now.\n\n"
 					"To avoid this error, please install the newest graphics driver of the hardware vendor or, if necessary, consider replacing your graphics card with a newer model.\n\n"
@@ -222,13 +221,7 @@ void OpenGLViewportWindow::paintGL()
 					.arg(QString(OpenGLSceneRenderer::openGLVersion()))
 					.arg(OVITO_OPENGL_MINIMUM_VERSION_MAJOR)
 					.arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR)
-				);
-			QCoreApplication::removePostedEvents(nullptr, 0);
-			if(gui())
-				gui()->shutdown();
-			ex.reportError(true);
-			QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
-			QCoreApplication::exit();
+				));
 		}
 		return;
 	}
@@ -250,7 +243,6 @@ void OpenGLViewportWindow::paintGL()
 		catch(Exception& ex) {
 			if(ex.context() == nullptr) ex.setContext(viewport()->dataset());
 			ex.prependGeneralMessage(tr("An unexpected error occurred while rendering the viewport contents. The program will quit."));
-			viewport()->dataset()->viewportConfig()->suspendViewportUpdates();
 
 			QString openGLReport;
 			QTextStream stream(&openGLReport, QIODevice::WriteOnly | QIODevice::Text);
@@ -263,12 +255,7 @@ void OpenGLViewportWindow::paintGL()
 			stream << "OpenGL shader programs: " << QOpenGLShaderProgram::hasOpenGLShaderPrograms() << "\n";
 			ex.appendDetailMessage(openGLReport);
 
-			QCoreApplication::removePostedEvents(nullptr, 0);
-			ex.reportError(true);
-			if(gui())
-				gui()->shutdown();
-			QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
-			QCoreApplication::exit();
+			userInterface().exitWithFatalError(ex);
 		}
 
 		// Release the resources created by the OpenGL renderer during the last render pass before the current pass.

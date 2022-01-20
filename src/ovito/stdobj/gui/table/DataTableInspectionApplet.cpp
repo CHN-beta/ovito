@@ -38,10 +38,9 @@ IMPLEMENT_OVITO_CLASS(DataTableInspectionApplet);
 * Lets the applet create the UI widget that is to be placed into the data
 * inspector panel.
 ******************************************************************************/
-QWidget* DataTableInspectionApplet::createWidget(MainWindow* mainWindow)
+QWidget* DataTableInspectionApplet::createWidget()
 {
 	createBaseWidgets();
-	_mainWindow = mainWindow;
 
 	QSplitter* splitter = new QSplitter();
 	splitter->addWidget(objectSelectionWidget());
@@ -152,7 +151,7 @@ void DataTableInspectionApplet::exportDataToFile()
 		return;
 
 	// Let the user select a destination file.
-	HistoryFileDialog dialog("export", _mainWindow, tr("Export Data Table"));
+	HistoryFileDialog dialog("export", &mainWindow(), tr("Export Data Table"));
 	QString filterString;
 	if(_stackedWidget->currentIndex() == 0)
 		filterString = QStringLiteral("%1 (%2)").arg(DataTablePlotExporter::OOClass().fileFilterDescription(), DataTablePlotExporter::OOClass().fileFilter());
@@ -196,15 +195,15 @@ void DataTableInspectionApplet::exportDataToFile()
 		exporter->setDataObjectToExport(DataObjectReference(&DataTable::OOClass(), table->identifier(), table->title()));
 
 		// Let the user adjust the export settings.
-		FileExporterSettingsDialog settingsDialog(_mainWindow, exporter);
+		FileExporterSettingsDialog settingsDialog(mainWindow(), exporter);
 		if(settingsDialog.exec() != QDialog::Accepted)
 			return;
 
 		// Show progress dialog.
-		ProgressDialog progressDialog(_mainWindow, exporter->dataset()->taskManager(), tr("File export"));
+		ProgressDialog progressDialog(&mainWindow(), mainWindow(), tr("File export"));
 
 		// Let the exporter do its job.
-		exporter->doExport(progressDialog.createOperation());
+		exporter->doExport(progressDialog);
 	}
 	catch(const Exception& ex) {
 		ex.reportError();

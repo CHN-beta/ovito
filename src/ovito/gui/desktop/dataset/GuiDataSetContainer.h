@@ -38,20 +38,18 @@ class OVITO_GUI_EXPORT GuiDataSetContainer : public DataSetContainer
 public:
 
 	/// \brief Constructor.
-	GuiDataSetContainer(MainWindow* mainWindow = nullptr);
+	GuiDataSetContainer(TaskManager& taskManager, MainWindow& mainWindow);
 
-	/// \brief Returns the window this dataset container is linked to (may be NULL).
-	MainWindow* mainWindow() const { return _mainWindow; }
-
-	/// \brief Returns the graphical user interface this dataset container is associated with.
-	virtual UserInterface* guiInterface() override;
+	/// \brief Returns the window this dataset container is linked to.
+	MainWindow& mainWindow() const { return _mainWindow; }
 
 	/// \brief Imports a set of files into the current dataset.
 	/// \param urls The locations of the files to import.
-	/// \param importerType The FileImporter type to use. If NULL, the file format will be auto-detected.
+	/// \param operation The process in which this operation is being performed.
+	/// \param importerType The FileImporter type to use. If null, the file's format will be auto-detected.
 	/// \return true if the file(s) were successfully imported; false if operation has been canceled by the user.
 	/// \throw Exception on error.
-	bool importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType = nullptr);
+	bool importFiles(const std::vector<QUrl>& urls, MainThreadOperation operation, const FileImporterClass* importerType = nullptr);
 
 	/// \brief Save the current dataset.
 	/// \return \c true, if the dataset has been saved; \c false if the operation has been canceled by the user.
@@ -79,7 +77,7 @@ public:
 private:
 
 	/// The window this dataset container is linked to (may be null).
-	MainWindow* _mainWindow;
+	MainWindow& _mainWindow;
 };
 
 }	// End of namespace

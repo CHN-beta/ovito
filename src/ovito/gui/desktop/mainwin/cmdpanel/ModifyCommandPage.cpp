@@ -45,8 +45,8 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the modify page.
 ******************************************************************************/
-ModifyCommandPage::ModifyCommandPage(MainWindow* mainWindow, QWidget* parent) : QWidget(parent),
-		_datasetContainer(mainWindow->datasetContainer()), _actionManager(mainWindow->actionManager())
+ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : QWidget(parent),
+		_datasetContainer(mainWindow.datasetContainer()), _actionManager(mainWindow.actionManager())
 {
 	QGridLayout* layout = new QGridLayout(this);
 	layout->setContentsMargins(2,2,2,2);
@@ -159,7 +159,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow* mainWindow, QWidget* parent) : 
 	editToolbar->addAction(_actionManager->getAction(ACTION_PIPELINE_MAKE_INDEPENDENT));
 
 	QAction* manageModifierTemplatesAction = _actionManager->createCommandAction(ACTION_MODIFIER_MANAGE_TEMPLATES, tr("Manage Modifier Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved modifier templates."));
-	connect(manageModifierTemplatesAction, &QAction::triggered, [mainWindow]() {
+	connect(manageModifierTemplatesAction, &QAction::triggered, [&mainWindow]() {
 		ApplicationSettingsDialog dlg(mainWindow, &ModifierTemplatesPage::OOClass());
 		dlg.exec();
 	});

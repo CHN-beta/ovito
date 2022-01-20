@@ -187,7 +187,7 @@ void RefTargetListParameterUI::openSubEditor()
 				return;
 			}
 			if(subEditor()) {
-				subEditor()->initialize(editor()->container(), editor()->mainWindow(), _rolloutParams, editor());
+				subEditor()->initialize(editor()->container(), _rolloutParams, editor());
 			}
 		}
 		if(subEditor()) {

@@ -27,7 +27,6 @@ OVITO_STANDARD_PLUGIN(GuiBase
 		actions/ViewportModeAction.cpp
 		actions/ViewportActions.cpp
 		actions/AnimationActions.cpp
-		mainwin/UserInterface.cpp
 		mainwin/OverlayListModel.cpp
 		mainwin/OverlayListItem.cpp
 		mainwin/OverlayTypesModel.cpp

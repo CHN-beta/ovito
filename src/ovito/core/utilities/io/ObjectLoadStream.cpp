@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,7 +33,7 @@ namespace Ovito {
 /******************************************************************************
 * Opens the stream for reading.
 ******************************************************************************/
-ObjectLoadStream::ObjectLoadStream(QDataStream& source, SynchronousOperation operation) : LoadStream(source, std::move(operation))
+ObjectLoadStream::ObjectLoadStream(QDataStream& source, MainThreadOperation& operation) : LoadStream(source), _operation(operation)
 {
 	qint64 oldPos = filePosition();
 

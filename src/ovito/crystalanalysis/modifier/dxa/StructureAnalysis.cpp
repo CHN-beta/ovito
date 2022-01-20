@@ -763,7 +763,6 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
 ******************************************************************************/
 bool StructureAnalysis::buildClusters(Task& promise)
 {
-	promise.setProgressValue(0);
 	promise.setProgressMaximum(positions()->size());
 	int progressCounter = 0;
 	ConstPropertyAccess<Point3> positionsArray(positions());
@@ -935,7 +934,6 @@ bool StructureAnalysis::buildClusters(Task& promise)
 ******************************************************************************/
 bool StructureAnalysis::connectClusters(Task& promise)
 {
-	promise.setProgressValue(0);
 	promise.setProgressMaximum(positions()->size());
 
 	for(size_t atomIndex = 0; atomIndex < positions()->size(); atomIndex++) {

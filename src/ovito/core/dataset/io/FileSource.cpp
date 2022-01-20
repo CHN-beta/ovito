@@ -195,25 +195,21 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::updateListOfFrames(
 {
 	// Remove current data file from local file cache so that it will get downloaded again in case it came from a remote location.
 	if(refetchCurrentFile && dataCollectionFrame() >= 0 && dataCollectionFrame() < frames().size()) {
-		Application::instance()->fileManager()->removeFromCache(frames()[dataCollectionFrame()].sourceFile);
+		Application::instance()->fileManager().removeFromCache(frames()[dataCollectionFrame()].sourceFile);
 	}
 
 	// Update the list of frames.
 	SharedFuture<QVector<FileSourceImporter::Frame>> framesFuture = requestFrameList(true);
 
-	// Catch exceptions and display error messages in the UI.
-	framesFuture.on_error(executor(), [](const std::exception_ptr& ex_ptr) {
-		try {
-			std::rethrow_exception(ex_ptr);
-		}
-		catch(const Exception& ex) {
-			ex.reportError();
-		}
+	// Display error messages to the user.
+	framesFuture.finally(executor(), [](Task& task) {
+		try { task.throwPossibleException(); }
+		catch(const Exception& ex) { ex.reportError(); }
 		catch(...) {}
 	});
 
 	// Show progress in the main window status bar.
-	dataset()->taskManager().registerFuture(framesFuture);
+	taskManager().registerFuture(framesFuture);
 
 	return framesFuture;
 }
@@ -438,7 +434,7 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bo
 		// Note that execution of the following continuation function is explicitly deferred,
 		// because setListOfFrames() generates a TargetChanged event, which is not allowed during
 		// a synchronous call to the pipeline evaulation function.
-		.then(executor(), true, [this](QVector<FileSourceImporter::Frame>&& frameList) {
+		.then(executor(true), [this](QVector<FileSourceImporter::Frame>&& frameList) {
 			// Store the new list of frames in the FileSource. 
 			setListOfFrames(frameList);
 			// Pass the frame list on to the caller.
@@ -496,7 +492,7 @@ Future<PipelineFlowState> FileSource::requestFrameInternal(int frame, ObjectInit
 			}
 
 			// Retrieve the file.
-			Future<PipelineFlowState> loadFrameFuture = Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), sourceFrames[frame].sourceFile)
+			Future<PipelineFlowState> loadFrameFuture = Application::instance()->fileManager().fetchUrl(sourceFrames[frame].sourceFile)
 				.then(executor(), [this, frame, initializationHints](const FileHandle& fileHandle) -> Future<PipelineFlowState> {
 
 					// Without an importer object we have to give up immediately.
@@ -556,11 +552,11 @@ void FileSource::reloadFrame(bool refetchFiles, int frameIndex)
 	// if they came from a remote location.
 	if(refetchFiles) {
 		if(frameIndex >= 0 && frameIndex < frames().size()) {
-			Application::instance()->fileManager()->removeFromCache(frames()[frameIndex].sourceFile);
+			Application::instance()->fileManager().removeFromCache(frames()[frameIndex].sourceFile);
 		}
 		else if(frameIndex == -1) {
 			for(const FileSourceImporter::Frame& frame : frames())
-				Application::instance()->fileManager()->removeFromCache(frame.sourceFile);
+				Application::instance()->fileManager().removeFromCache(frame.sourceFile);
 		}
 	}
 

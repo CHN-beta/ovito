@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,10 +41,13 @@ class OVITO_GUI_EXPORT DataInspectorPanel : public QWidget
 public:
 
 	/// \brief Constructor.
-	DataInspectorPanel(MainWindow* mainWindow);
+	DataInspectorPanel(MainWindow& mainWindow);
 
 	/// Selects a specific data object in the data inspector.
 	bool selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint);
+
+	/// Returns the main window this panel is part of.
+	MainWindow& mainWindow() const { return _mainWindow; }
 
 public Q_SLOTS:
 
@@ -104,12 +107,12 @@ private:
 	void updateTabs(const DataCollection* dataCollection);
 
 	/// Returns the dataset container this panel is associated with.
-	GuiDataSetContainer& datasetContainer() const { return _mainWindow->datasetContainer(); }
+	GuiDataSetContainer& datasetContainer() const { return mainWindow().datasetContainer(); }
 
 private:
 
 	/// Pointer to the main window this inspector panel is part of.
-	MainWindow* _mainWindow;
+	MainWindow& _mainWindow;
 
 	/// The list of all installed data inspection applets.
 	std::vector<OORef<DataInspectionApplet>> _applets;

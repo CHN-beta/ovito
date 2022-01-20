@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,10 +33,8 @@ using namespace std;
 /******************************************************************************
 * Opens the stream for writing.
 ******************************************************************************/
-SaveStream::SaveStream(QDataStream& destination, SynchronousOperation operation) : 
-	_os(destination), _operation(std::move(operation))
+SaveStream::SaveStream(QDataStream& destination) : _os(destination)
 {
-	OVITO_ASSERT(_operation.isValid());
 	OVITO_ASSERT_MSG(!_os.device()->isSequential(), "SaveStream constructor", "SaveStream class requires a seekable output stream.");
 	if(_os.device()->isSequential())
 		throw Exception("SaveStream class requires a seekable output stream.");

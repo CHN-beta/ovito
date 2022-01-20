@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,53 +24,52 @@
 
 
 #include <ovito/core/Core.h>
-#include "ThreadSafeTask.h"
+#include "detail/TaskWithStorage.h"
 #include "Future.h"
 
 namespace Ovito {
 
-class OVITO_CORE_EXPORT AsynchronousTaskBase : public ThreadSafeTask, public QRunnable
+template<typename... R>
+class AsynchronousTask : public detail::TaskWithStorage<std::tuple<R...>>, public QRunnable
 {
 public:
 
-	/// Destructor.
-	virtual ~AsynchronousTaskBase();
-
-	/// This virtual function is responsible for computing the results of the task.
-	virtual void perform() = 0;
-
-	/// Returns a future that gets fulfilled when this asynchronous task has run.
-	Future<> future() {
-		return Future<>(shared_from_this());
-	}
-
-protected:
-
 	/// Constructor.
-	AsynchronousTaskBase() {
+	AsynchronousTask() {
 		QRunnable::setAutoDelete(false);
 	}
 
-private:
+	/// Destructor.
+	virtual ~AsynchronousTask() {
+		// If task was never submitted for execution, cancel and finish it.
+		if(!this->isFinished()) {
+			this->cancel();
+			this->setFinished();
+		}
+	}
 
-	/// Implementation of QRunnable.
-	virtual void run() override;
+#ifndef OVITO_DISABLE_THREADING
+	/// Submits the task to a thread pool for execution and returns a future for the task's results.
+	Future<R...> submit(QThreadPool* pool) {
+		OVITO_ASSERT(!_thisTask);
+		OVITO_ASSERT(!this->isStarted());
 
-	friend class TaskManager;
-};
-
-template<typename... R>
-class AsynchronousTask : public TaskWithResultStorage<AsynchronousTaskBase, std::tuple<R...>>
-{
-public:
-
-	/// Returns a future that is associated with the same shared state as this task.
-	Future<R...> future() {
-#ifdef OVITO_DEBUG
-		OVITO_ASSERT_MSG(!_futureCreated, "AsynchronousTask::future()", "Only a single Future may be created from a task.");
-		_futureCreated = true;
+		// Store a shared_ptr to this task to keep it alive while running.
+		_thisTask = this->shared_from_this();
+		this->setStarted();
+		pool->start(this);
+		return Future<R...>::createFromTask(_thisTask);
+	}
 #endif
-		return Future<R...>(this->shared_from_this());
+
+	/// Runs the task in place and returns a future for the task's results.
+	Future<R...> runImmediately() {
+		OVITO_ASSERT(!_thisTask);
+		OVITO_ASSERT(!this->isStarted());
+
+		this->setStarted();
+		run();
+		return Future<R...>::createFromTask(this->shared_from_this());
 	}
 
 	/// Sets the result value of the task.
@@ -79,15 +78,37 @@ public:
 		this->template setResults<std::tuple<R...>>(std::forward_as_tuple(std::forward<R2>(result)...));
 	}
 
-protected:
+    /// \brief Blocks execution until another future is complete. 
+	/// \param future The future to wait for.
+	/// \return false if either the future or this task have been canceled.
+    bool waitForFuture(const FutureBase& future) {
+		OVITO_ASSERT(false); // Not implemented yet.
+		return false;
+	}
 
-	/// Constructor.
-	AsynchronousTask() :
-		TaskWithResultStorage<AsynchronousTaskBase, std::tuple<R...>>(typename TaskWithResultStorage<AsynchronousTaskBase, std::tuple<R...>>::no_result_init_t()) {}
+	/// This virtual function is responsible for computing the results of the task.
+	virtual void perform() = 0;
 
-#ifdef OVITO_DEBUG
-	bool _futureCreated = false;
-#endif
+private:
+
+	/// Implementation of QRunnable.
+	virtual void run() override {
+		OVITO_ASSERT(this->isStarted());
+		try {
+			perform();
+		}
+		catch(...) {
+			this->captureException();
+		}
+		this->setFinished();
+		this->_thisTask.reset(); // No need to keep the task object alive any longer.
+	}
+
+	/// A shared pointer to the task itself, which is used to keep the C++ object alive
+	/// while the task is running in a thread pool.
+	TaskPtr _thisTask;
+
+	friend class TaskManager;
 };
 
 }	// End of namespace

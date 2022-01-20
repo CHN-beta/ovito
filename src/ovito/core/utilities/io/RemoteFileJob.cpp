@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -91,14 +91,11 @@ void RemoteFileJob::start()
 		return;
 	}
 
-	// Get notified if user has canceled the task.
-	_promise.finally([this](const TaskPtr& task) {
-		if(task->isCanceled())
+	// When the user cancels the task, cancel the remote connection.
+	_promise.finally([this](Task& task) noexcept {
+		if(task.isCanceled())
 			QMetaObject::invokeMethod(this, "connectionCanceled");
 	});
-
-	// Show task progress in the GUI.
-	_promise.task()->taskManager()->registerPromise(_promise);
 
 #ifdef OVITO_SSH_CLIENT
 	if(_url.scheme() == QStringLiteral("sftp")) {
@@ -112,7 +109,7 @@ void RemoteFileJob::start()
 		_promise.setProgressText(tr("Connecting to remote host %1").arg(connectionParams.host));
 
 		// Open connection
-		_connection = Application::instance()->fileManager()->acquireSshConnection(connectionParams);
+		_connection = Application::instance()->fileManager().acquireSshConnection(connectionParams);
 		OVITO_CHECK_POINTER(_connection);
 
 		// Listen for signals of the connection.
@@ -152,7 +149,7 @@ void RemoteFileJob::shutdown(bool success)
 #ifdef OVITO_SSH_CLIENT
 	if(_connection) {
 		disconnect(_connection, nullptr, this, nullptr);
-		Application::instance()->fileManager()->releaseSshConnection(_connection);
+		Application::instance()->fileManager().releaseSshConnection(_connection);
 		_connection = nullptr;
 	}
 #endif
@@ -339,7 +336,7 @@ void DownloadRemoteFileJob::shutdown(bool success)
 	RemoteFileJob::shutdown(success);
 
 	// Hand downloaded file over to FileManager cache.
-	Application::instance()->fileManager()->fileFetched(url(), _localFile.release());
+	Application::instance()->fileManager().fileFetched(url(), _localFile.release());
 }
 
 #ifdef OVITO_SSH_CLIENT

@@ -99,7 +99,6 @@ bool GrainSegmentationEngine1::createNeighborBonds()
 	if(!neighFinder.prepare(positions(), cell(), nullptr, structureTypes(), orientations(), correspondences(), this))
 		return false;
 
-	setProgressValue(0);
 	setProgressMaximum(_numParticles);
 	setProgressText(GrainSegmentationModifier::tr("Grain segmentation - building neighbor lists"));
 
@@ -361,7 +360,6 @@ bool GrainSegmentationEngine1::determineMergeSequence()
 	if(_algorithmType == GrainSegmentationModifier::GraphClusteringAutomatic || _algorithmType == GrainSegmentationModifier::GraphClusteringManual) {
 
 		setProgressText(GrainSegmentationModifier::tr("Grain segmentation - building graph"));
-		setProgressValue(0);
 		setProgressMaximum(neighborBonds().size());
 
 		size_t progress = 0;
@@ -384,7 +382,6 @@ bool GrainSegmentationEngine1::determineMergeSequence()
 	_dendrogram.resize(0);
 
 	setProgressText(GrainSegmentationModifier::tr("Grain segmentation - region merging"));
-	setProgressValue(0);
 	setProgressMaximum(_numParticles);  //TODO: make this num. crystalline particles
 
 	if(_algorithmType == GrainSegmentationModifier::GraphClusteringAutomatic || _algorithmType == GrainSegmentationModifier::GraphClusteringManual) {

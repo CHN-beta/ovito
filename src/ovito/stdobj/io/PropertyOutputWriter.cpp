@@ -56,11 +56,11 @@ void OutputColumnMapping::loadFromStream(LoadStream& stream)
 /******************************************************************************
  * Saves the mapping into a byte array.
  *****************************************************************************/
-QByteArray OutputColumnMapping::toByteArray(TaskManager& taskManager) const
+QByteArray OutputColumnMapping::toByteArray() const
 {
 	QByteArray buffer;
 	QDataStream dstream(&buffer, QIODevice::WriteOnly);
-	SaveStream stream(dstream, SynchronousOperation::createSignal(taskManager, ObjectInitializationHint::LoadFactoryDefaults));
+	SaveStream stream(dstream);
 	saveToStream(stream);
 	stream.close();
 	return buffer;
@@ -69,10 +69,10 @@ QByteArray OutputColumnMapping::toByteArray(TaskManager& taskManager) const
 /******************************************************************************
  * Loads the mapping from a byte array.
  *****************************************************************************/
-void OutputColumnMapping::fromByteArray(const QByteArray& array, TaskManager& taskManager)
+void OutputColumnMapping::fromByteArray(const QByteArray& array)
 {
 	QDataStream dstream(array);
-	LoadStream stream(dstream, SynchronousOperation::createSignal(taskManager, ObjectInitializationHint::LoadFactoryDefaults));
+	LoadStream stream(dstream);
 	loadFromStream(stream);
 	stream.close();
 }

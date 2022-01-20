@@ -230,7 +230,7 @@ void SshConnection::processState()
         return;
 
     case StateServerIsKnown:
-        switch(auto knownState = ::ssh_is_server_known(_session)) {
+        switch(auto knownState = QT_IGNORE_DEPRECATIONS(::ssh_is_server_known(_session))) {
         case SSH_SERVER_ERROR:
             setState(StateError, false);
             return;
@@ -626,7 +626,7 @@ QString SshConnection::hostPublicKeyHash()
 ******************************************************************************/
 bool SshConnection::markCurrentHostKnown()
 {
-    switch(::ssh_write_knownhost(_session)) {
+    switch(QT_IGNORE_DEPRECATIONS(::ssh_write_knownhost(_session))) {
     case SSH_OK:
         setState(StateServerIsKnown, true);
         return true;

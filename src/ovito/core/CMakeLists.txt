@@ -51,6 +51,7 @@ SET(SourceFiles
 	app/ApplicationService.cpp
 	app/PluginManager.cpp
 	app/StandaloneApplication.cpp
+	app/UserInterface.cpp
 	oo/CloneHelper.cpp
 	oo/OvitoClass.cpp
 	oo/OvitoObject.cpp
@@ -119,11 +120,8 @@ SET(SourceFiles
 	utilities/io/CompressedTextWriter.cpp
 	utilities/concurrent/TaskWatcher.cpp
 	utilities/concurrent/Task.cpp
-	utilities/concurrent/MainThreadTask.cpp
-	utilities/concurrent/ProgressiveTask.cpp
-	utilities/concurrent/ThreadSafeTask.cpp
 	utilities/concurrent/TaskManager.cpp
-	utilities/concurrent/AsynchronousTask.cpp
+	utilities/concurrent/MainThreadOperation.cpp
 	rendering/SceneRenderer.cpp
 	rendering/RenderSettings.cpp
 	rendering/FrameBuffer.cpp

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,7 +38,7 @@ class OVITO_GUI_EXPORT GuiApplicationService : public ApplicationService
 public:
 
 	/// \brief Is called when a new main window is created.
-	virtual void registerActions(ActionManager& actionManager, MainWindow* mainWindow) {}
+	virtual void registerActions(ActionManager& actionManager, MainWindow& mainWindow) {}
 
 	/// \brief Is called when the main menu is created.
 	virtual void addActionsToMenu(ActionManager& actionManager, QMenuBar* menuBar) {}

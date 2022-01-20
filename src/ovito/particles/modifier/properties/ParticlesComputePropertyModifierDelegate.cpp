@@ -235,7 +235,6 @@ void ParticlesComputePropertyModifierDelegate::Engine::perform()
 	}
 
 	setProgressMaximum(positions()->size());
-	setProgressValue(0);
 
 	// Parallelized loop over all particles.
 	parallelForChunks(positions()->size(), *this, [this, &neighborFinder](size_t startIndex, size_t count, Task& task) {

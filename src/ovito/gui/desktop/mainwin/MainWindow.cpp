@@ -47,7 +47,7 @@ namespace Ovito {
 /******************************************************************************
 * The constructor of the main window class.
 ******************************************************************************/
-MainWindow::MainWindow() : UserInterface(_datasetContainer), _datasetContainer(this)
+MainWindow::MainWindow() : UserInterface(_datasetContainer), _datasetContainer(UserInterface::taskManager(), *this)
 {
 	_baseWindowTitle = tr("%1 (Open Visualization Tool)").arg(Application::applicationName());
 #if defined(OVITO_EXPIRATION_DATE)
@@ -69,15 +69,15 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer), _datasetContainer(t
 	setContextMenuPolicy(Qt::NoContextMenu);
 
 	// Create input manager.
-	setViewportInputManager(new ViewportInputManager(this, datasetContainer(), this));
+	setViewportInputManager(new ViewportInputManager(this, *this));
 
 	// Create actions.
-	setActionManager(new WidgetActionManager(this, this));
+	setActionManager(new WidgetActionManager(this, *this));
 
 	// Let GUI application services register their actions.
 	for(const auto& service : StandaloneApplication::instance()->applicationServices()) {
 		if(auto gui_service = dynamic_object_cast<GuiApplicationService>(service))
-			gui_service->registerActions(*actionManager(), this);
+			gui_service->registerActions(*actionManager(), *this);
 	}
 
 	// Create the main menu
@@ -93,7 +93,7 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer), _datasetContainer(t
 	dataInspectorSplitter->setHandleWidth(0);
 	_viewportsPanel = new ViewportsPanel(this);
 	dataInspectorSplitter->addWidget(_viewportsPanel);
-	_dataInspector = new DataInspectorPanel(this);
+	_dataInspector = new DataInspectorPanel(*this);
 	dataInspectorSplitter->addWidget(_dataInspector);
 	dataInspectorSplitter->setStretchFactor(0, 1);
 	dataInspectorSplitter->setStretchFactor(1, 0);
@@ -198,7 +198,7 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer), _datasetContainer(t
 	viewportControlPanel->setStyleSheet("QToolBar { padding: 0px; margin: 0px; border: 0px none black; } QToolButton { padding: 0px; margin: 0px }");
 
 	// Create the command panel.
-	_commandPanel = new CommandPanel(this, this);
+	_commandPanel = new CommandPanel(*this, this);
 
 	// Create the bottom docking widget.
 	QWidget* bottomDockWidget = new QWidget();
@@ -249,16 +249,6 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer), _datasetContainer(t
 MainWindow::~MainWindow()
 {
 	_datasetContainer.setCurrentSet(nullptr);
-}
-
-/******************************************************************************
-* Returns the main window in which the given dataset is opened.
-******************************************************************************/
-MainWindow* MainWindow::fromDataset(DataSet* dataset)
-{
-	if(GuiDataSetContainer* container = qobject_cast<GuiDataSetContainer*>(dataset->container()))
-		return container->mainWindow();
-	return nullptr;
 }
 
 /******************************************************************************
@@ -442,22 +432,41 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
 void MainWindow::closeEvent(QCloseEvent* event)
 {
 	try {
-		// Save changes.
+		// Save changes made to the current dataset.
 		if(!datasetContainer().askForSaveChanges()) {
 			event->ignore();
 			return;
 		}
 
+		// Close the dataset container.
+		datasetContainer().setCurrentSet(nullptr);
+
+		// Stop all running operations.
+		taskManager().shutdown();
+
 		// Save window layout.
 		saveLayout();
 
-		// Destroy main window.
+		// Destroys the window.
 		event->accept();
 	}
 	catch(const Exception& ex) {
 		event->ignore();
 		ex.reportError();
 	}
+}
+
+/******************************************************************************
+* Closes the user interface and shuts down the entire application after displaying an error message.
+******************************************************************************/
+void MainWindow::exitWithFatalError(const Exception& ex) 
+{ 
+	if(viewportsPanel()->viewportConfiguration())
+		viewportsPanel()->viewportConfiguration()->suspendViewportUpdates();
+	QCoreApplication::removePostedEvents(nullptr, 0);
+	QMainWindow::close(); 
+	ex.reportError(true);
+	QCoreApplication::exit(1);
 }
 
 /******************************************************************************
@@ -525,8 +534,9 @@ void MainWindow::dropEvent(QDropEvent* event)
 		for(const QUrl& url : event->mimeData()->urls()) {
 			if(url.fileName().endsWith(".ovito", Qt::CaseInsensitive)) {
 				if(url.isLocalFile()) {
-					if(datasetContainer().askForSaveChanges())
-						datasetContainer().loadDataset(url.toLocalFile());
+					if(datasetContainer().askForSaveChanges()) {
+						datasetContainer().loadDataset(url.toLocalFile(), createOperation(true));
+					}
 					return;
 				}
 			}
@@ -534,7 +544,7 @@ void MainWindow::dropEvent(QDropEvent* event)
 				importUrls.push_back(url);
 			}
 		}
-		datasetContainer().importFiles(std::move(importUrls));
+		datasetContainer().importFiles(std::move(importUrls), createOperation(true));
 	}
 	catch(const Exception& ex) {
 		ex.reportError();

@@ -22,7 +22,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/UndoStack.h>
-#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include "Application.h"
 
@@ -95,7 +94,7 @@ static void qtMessageLogFile(QtMsgType type, const QMessageLogContext& context, 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Application::Application()
+Application::Application(FileManager& fileManager) : _fileManager(fileManager)
 {
 	// Set global application pointer.
 	OVITO_ASSERT(_instance == nullptr);	// Only allowed to create one Application class instance.
@@ -279,9 +278,6 @@ bool Application::initialize()
 	// Register Qt resources.
 	::registerQtResources();
 
-	// Create global FileManager object.
-	_fileManager.reset(createFileManager());
-
 	return true;
 }
 
@@ -326,22 +322,6 @@ void Application::createQtApplication(int& argc, char** argv)
 	else {
 		new QGuiApplication(argc, argv);
 	}
-}
-
-/******************************************************************************
-* Returns a pointer to the main dataset container.
-******************************************************************************/
-DataSetContainer* Application::datasetContainer() const
-{
-	return _datasetContainer;
-}
-
-/******************************************************************************
-* Creates the global FileManager class instance.
-******************************************************************************/
-FileManager* Application::createFileManager()
-{
-	return new FileManager();
 }
 
 /******************************************************************************

@@ -50,8 +50,11 @@ public:
 		return currentState().getObjectsRecursive(_dataObjectClass); 
 	}
 
+	/// Returns the main window this applet is embedded in.
+	MainWindow& mainWindow() const;
+
 	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget(MainWindow* mainWindow) = 0;
+	virtual QWidget* createWidget() = 0;
 
 	/// Creates and returns the list widget displaying the list of data object objects.
 	QListWidget* objectSelectionWidget();
@@ -60,7 +63,7 @@ public:
 	virtual void updateDisplay(const PipelineFlowState& state, PipelineSceneNode* pipeline);
 
 	/// This is called when the applet is no longer visible.
-	virtual void deactivate(MainWindow* mainWindow) {}
+	virtual void deactivate() {}
 
 	/// Selects a specific data object in this applet.
 	virtual bool selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint);

@@ -24,6 +24,8 @@
 #include <ovito/particles/import/lammps/LAMMPSDataImporter.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
+#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "LAMMPSDataImporterEditor.h"
 
 namespace Ovito::Particles {
@@ -35,14 +37,18 @@ SET_OVITO_OBJECT_EDITOR(LAMMPSDataImporter, LAMMPSDataImporterEditor);
 * This method is called by the FileSource each time a new source
 * file has been selected by the user.
 ******************************************************************************/
-bool LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, QWidget* parent)
+bool LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow)
 {
 	LAMMPSDataImporter* dataImporter = static_object_cast<LAMMPSDataImporter>(importer);
 
 	// Inspect the data file and try to detect the LAMMPS atom style.
 	Future<LAMMPSDataImporter::LAMMPSAtomStyleHints> inspectFuture = dataImporter->inspectFileHeader(FileSourceImporter::Frame(sourceFile));
-	if(!importer->dataset()->taskManager().waitForFuture(inspectFuture))
+
+	// Block UI until reading is done.
+	ProgressDialog progressDialog(&mainWindow, mainWindow, tr("Inspecting file header"));
+	if(!progressDialog.waitForFuture(inspectFuture))
 		return false;
+
 	LAMMPSDataImporter::LAMMPSAtomStyleHints detectedAtomStyleHints = inspectFuture.result();
 
 	// Show dialog to ask user for the right LAMMPS atom style if it could not be detected.
@@ -64,7 +70,7 @@ bool LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl
 			}
 		}
 
-		LAMMPSAtomStyleDialog dlg(detectedAtomStyleHints, parent);
+		LAMMPSAtomStyleDialog dlg(detectedAtomStyleHints, &mainWindow);
 		if(dlg.exec() != QDialog::Accepted)
 			return false;
 

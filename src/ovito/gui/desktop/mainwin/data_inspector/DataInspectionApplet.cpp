@@ -26,10 +26,20 @@
 #include <ovito/core/dataset/data/DataCollection.h>
 #include <ovito/core/dataset/pipeline/PipelineObject.h>
 #include "DataInspectionApplet.h"
+#include "DataInspectorPanel.h"
 
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DataInspectionApplet);
+
+/******************************************************************************
+* Returns the main window this applet is embedded in.
+******************************************************************************/
+MainWindow& DataInspectionApplet::mainWindow() const
+{
+    OVITO_ASSERT(qobject_cast<DataInspectorPanel*>(parent()));
+    return static_cast<DataInspectorPanel*>(parent())->mainWindow();
+}
 
 /******************************************************************************
 * Determines whether the given pipeline dataset contains data that can be

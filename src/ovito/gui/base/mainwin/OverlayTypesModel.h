@@ -66,7 +66,7 @@ class OVITO_GUIBASE_EXPORT OverlayTypesModel : public QAbstractListModel
 public:
 
 	/// Constructor.
-	OverlayTypesModel(QObject* parent, UserInterface* gui, OverlayListModel* overlayListModel);
+	OverlayTypesModel(QObject* parent, UserInterface& userInterface, OverlayListModel* overlayListModel);
 
 	/// Returns the number of rows in the model.
 	virtual int rowCount(const QModelIndex& parent) const override;
@@ -94,7 +94,7 @@ private:
 	std::vector<OverlayAction*> _actions;
 
 	/// The abstract user interface.
-	UserInterface* _gui;
+	UserInterface& _userInterface;
 
 	/// The model representing the viewport layers of the active viewport.
 	OverlayListModel* _overlayListModel;

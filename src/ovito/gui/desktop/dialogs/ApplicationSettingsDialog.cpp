@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/app/PluginManager.h>
 #include "ApplicationSettingsDialog.h"
 
@@ -32,7 +33,7 @@ IMPLEMENT_OVITO_CLASS(ApplicationSettingsDialogPage);
 /******************************************************************************
 * The constructor of the settings dialog class.
 ******************************************************************************/
-ApplicationSettingsDialog::ApplicationSettingsDialog(QWidget* parent, OvitoClassPtr startPage) : QDialog(parent)
+ApplicationSettingsDialog::ApplicationSettingsDialog(MainWindow& mainWindow, OvitoClassPtr startPage) : QDialog(&mainWindow), _mainWindow(mainWindow)
 {
 	setWindowTitle(tr("Application Settings"));
 
@@ -127,7 +128,7 @@ void ApplicationSettingsDialog::onCancel()
 ******************************************************************************/
 void ApplicationSettingsDialog::onHelp()
 {
-	MainWindow::openHelpTopic(QStringLiteral("manual:application_settings"));
+	ActionManager::openHelpTopic(QStringLiteral("manual:application_settings"));
 }
 
 }	// End of namespace

@@ -39,9 +39,12 @@ class OVITO_CORE_EXPORT StandaloneApplication : public Application
 public:
 
 	/// \brief Returns the one and only instance of this class.
-	inline static StandaloneApplication* instance() {
+	static StandaloneApplication* instance() {
 		return qobject_cast<StandaloneApplication*>(Application::instance());
 	}
+
+	/// Inherit constructor from base class.
+	using Application::Application;
 
 	/// \brief Initializes the application.
 	/// \param argc The number of command line arguments.
@@ -70,7 +73,7 @@ public:
 protected Q_SLOTS:
 
 	/// Is called at program startup once the event loop is running.
-	virtual void postStartupInitialization();
+	virtual void postStartupInitialization(MainThreadOperation& operation);
 
 protected:
 
@@ -81,7 +84,7 @@ protected:
 	virtual bool processCommandLineParameters();
 
 	/// Prepares application at startup.
-	virtual bool startupApplication() = 0;
+	virtual UserInterface* startupApplication() = 0;
 
 protected:
 

@@ -55,7 +55,6 @@ bool MarchingCubes::generateIsosurface(FloatType isolevel, Task& task)
     int size_z = _infiniteDomain ? (_size_z - 1) : _size_z;
 
     task.setProgressMaximum(size_z * 2);
-    task.setProgressValue(0);
     computeIntersectionPoints(isolevel, task);
     if(task.isCanceled()) return false;
 

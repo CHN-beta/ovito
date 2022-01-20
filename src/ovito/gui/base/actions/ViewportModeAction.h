@@ -37,7 +37,7 @@ class OVITO_GUIBASE_EXPORT ViewportModeAction : public QAction
 public:
 
 	/// \brief Initializes the action object.
-	ViewportModeAction(UserInterface* gui, const QString& text, QObject* parent, ViewportInputMode* inputMode, const QColor& highlightColor = QColor());
+	ViewportModeAction(UserInterface& userInterface, const QString& text, QObject* parent, ViewportInputMode* inputMode, const QColor& highlightColor = QColor());
 
 	/// Returns the highlight color for the button controls.
 	const QColor& highlightColor() const { return _highlightColor; }

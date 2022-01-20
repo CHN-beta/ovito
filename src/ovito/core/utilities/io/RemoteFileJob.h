@@ -54,6 +54,9 @@ public:
 	/// Returns the URL being accessed.
 	const QUrl& url() const { return _url; }
 
+    /// The associated asynchronous task of the job.
+    const PromiseBase& promise() const { return _promise; }
+
 protected:
 
 	/// Opens the network connection.
@@ -122,9 +125,9 @@ class DownloadRemoteFileJob : public RemoteFileJob
 public:
 
 	/// Constructor.
-	DownloadRemoteFileJob(QUrl url, TaskManager& taskManager) :
+	DownloadRemoteFileJob(QUrl url) :
 		RemoteFileJob(std::move(url), _promise), 
-		_promise(Promise<FileHandle>::createAsynchronousOperation(taskManager, false)) {}
+		_promise(Promise<FileHandle>::create(false)) {}
 
 	/// Returns a future yielding the file downloaded by this job.
 	SharedFuture<FileHandle> sharedFuture() {
@@ -193,9 +196,9 @@ class ListRemoteDirectoryJob : public RemoteFileJob
 public:
 
 	/// Constructor.
-	ListRemoteDirectoryJob(QUrl url, TaskManager& taskManager) :
+	ListRemoteDirectoryJob(QUrl url) :
 		RemoteFileJob(std::move(url), _promise), 
-		_promise(Promise<QStringList>::createAsynchronousOperation(taskManager, false)) {}
+		_promise(Promise<QStringList>::create(false)) {}
 
 	/// Returns a future yielding the file list downloaded by this job.
 	Future<QStringList> future() {

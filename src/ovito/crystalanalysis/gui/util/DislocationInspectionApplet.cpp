@@ -46,7 +46,7 @@ bool DislocationInspectionApplet::appliesTo(const DataCollection& data)
 * Lets the applet create the UI widget that is to be placed into the data
 * inspector panel.
 ******************************************************************************/
-QWidget* DislocationInspectionApplet::createWidget(MainWindow* mainWindow)
+QWidget* DislocationInspectionApplet::createWidget()
 {
 	QWidget* panel = new QWidget();
 	QGridLayout* layout = new QGridLayout(panel);
@@ -55,7 +55,7 @@ QWidget* DislocationInspectionApplet::createWidget(MainWindow* mainWindow)
 
 	_pickingMode = new PickingMode(this);
 	connect(this, &QObject::destroyed, _pickingMode, &ViewportInputMode::removeMode);
-	ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow, tr("Select in viewports"), this, _pickingMode);
+	ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow(), tr("Select in viewports"), this, _pickingMode);
 	pickModeAction->setIcon(QIcon::fromTheme("particles_select_mode"));
 
 	QToolBar* toolbar = new QToolBar();
@@ -114,7 +114,7 @@ void DislocationInspectionApplet::updateDisplay(const PipelineFlowState& state, 
 /******************************************************************************
 * This is called when the applet is no longer visible.
 ******************************************************************************/
-void DislocationInspectionApplet::deactivate(MainWindow* mainWindow)
+void DislocationInspectionApplet::deactivate()
 {
 	_pickingMode->removeMode();
 }

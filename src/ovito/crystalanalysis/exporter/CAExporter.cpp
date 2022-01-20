@@ -38,7 +38,7 @@ IMPLEMENT_OVITO_CLASS(CAExporter);
  * This is called once for every output file to be written and before
  * exportFrame() is called.
  *****************************************************************************/
-bool CAExporter::openOutputFile(const QString& filePath, int numberOfFrames, SynchronousOperation operation)
+bool CAExporter::openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation)
 {
 	OVITO_ASSERT(!_outputFile.isOpen());
 	OVITO_ASSERT(!_outputStream);
@@ -66,10 +66,10 @@ void CAExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool CAExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, SynchronousOperation operation)
+bool CAExporter::exportFrame(int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
 {
 	// Evaluate data pipeline.
-	const PipelineFlowState& state = getPipelineDataToBeExported(time, operation.subOperation());
+	const PipelineFlowState& state = getPipelineDataToBeExported(time, operation);
 	if(operation.isCanceled())
 		return false;
 

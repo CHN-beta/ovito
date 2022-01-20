@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/base/GUIBase.h>
-#include <ovito/gui/base/mainwin/UserInterface.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include "ViewportInputManager.h"
@@ -32,11 +32,14 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the viewport input manager.
 ******************************************************************************/
-ViewportInputManager::ViewportInputManager(QObject* parent, DataSetContainer& datasetContainer, UserInterface* gui) : 
+ViewportInputManager::ViewportInputManager(QObject* parent, UserInterface& userInterface) : 
 	QObject(parent),
-	_datasetContainer(datasetContainer),
-	_gui(gui)
+	_datasetContainer(userInterface.datasetContainer()),
+	_userInterface(userInterface)
 {
+	OVITO_ASSERT(_userInterface.viewportInputManager() == nullptr || _userInterface.viewportInputManager() == this);
+	_userInterface.setViewportInputManager(this);
+
 	_zoomMode = new ZoomMode(this);
 	_panMode = new PanMode(this);
 	_orbitMode = new OrbitMode(this);

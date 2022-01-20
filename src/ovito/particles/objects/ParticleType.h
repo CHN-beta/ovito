@@ -122,7 +122,7 @@ public:
 	}
 
 	/// Loads a user-defined display shape from a geometry file and assigns it to this particle type.
-	bool loadShapeMesh(const QUrl& sourceUrl, SynchronousOperation operation, const FileImporterClass* importerType = nullptr);
+	bool loadShapeMesh(const QUrl& sourceUrl, MainThreadOperation& operation, const FileImporterClass* importerType = nullptr);
 
 	//////////////////////////////////// Default parameters ////////////////////////////////
 

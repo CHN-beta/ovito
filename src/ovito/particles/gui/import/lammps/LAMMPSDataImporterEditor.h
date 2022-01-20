@@ -42,7 +42,7 @@ public:
 	Q_INVOKABLE LAMMPSDataImporterEditor() {}
 
 	/// This is called by the system when the user has selected a new file to import.
-	virtual bool inspectNewFile(FileImporter* importer, const QUrl& sourceFile, QWidget* parent) override;
+	virtual bool inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) override;
 
 protected:
 

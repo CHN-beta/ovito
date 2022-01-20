@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,13 +31,14 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DataInspectorPanel::DataInspectorPanel(MainWindow* mainWindow) :
+DataInspectorPanel::DataInspectorPanel(MainWindow& mainWindow) :
 	_mainWindow(mainWindow),
 	_waitingForSceneAnim(":/gui/mainwin/inspector/waiting.gif")
 {
 	// Create data inspection applets.
 	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(DataInspectionApplet::OOClass())) {
 		OORef<DataInspectionApplet> applet = static_object_cast<DataInspectionApplet>(clazz->createInstance());
+		applet->setParent(this);
 		_applets.push_back(std::move(applet));
 	}
 	// Give applets a fixed ordering.
@@ -84,7 +85,7 @@ DataInspectorPanel::DataInspectorPanel(MainWindow* mainWindow) :
 	label->setAlignment(Qt::AlignCenter);
 	_appletContainer->addWidget(label);
 	for(DataInspectionApplet* applet : _applets)
-		_appletContainer->insertWidget(_appletContainer->count() - 1, applet->createWidget(_mainWindow));
+		_appletContainer->insertWidget(_appletContainer->count() - 1, applet->createWidget());
 	layout->addWidget(_appletContainer, 1, 0, 1, -1);
 
 	connect(_expandCollapseButton, &QAbstractButton::clicked, this, &DataInspectorPanel::toggle);
@@ -231,7 +232,7 @@ void DataInspectorPanel::resizeEvent(QResizeEvent* event)
 		_expandCollapseButton->setIcon(_expandIcon);
 		_expandCollapseButton->setToolTip(tr("Expand"));
 		if(_activeAppletIndex >= 0 && _activeAppletIndex < _applets.size()) {
-			_applets[_activeAppletIndex]->deactivate(_mainWindow);
+			_applets[_activeAppletIndex]->deactivate();
 		}
 		_appletContainer->setEnabled(false);
 	}
@@ -331,7 +332,7 @@ void DataInspectorPanel::onCurrentTabChanged(int tabIndex)
 void DataInspectorPanel::onCurrentPageChanged(int index)
 {
 	if(_activeAppletIndex >= 0 && _activeAppletIndex < _applets.size()) {
-		_applets[_activeAppletIndex]->deactivate(_mainWindow);
+		_applets[_activeAppletIndex]->deactivate();
 	}
 
 	_activeAppletIndex = index;

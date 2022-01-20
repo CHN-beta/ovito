@@ -198,7 +198,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 					}
 
 					// Let the user select a geometry file to import.
-					ImportFileDialog fileDialog(meshImporters, ptype->dataset(), mainWindow(), tr("Load geometry file"), false, QStringLiteral("particle_shape_mesh"));
+					ImportFileDialog fileDialog(meshImporters, ptype->dataset(), &mainWindow(), tr("Load geometry file"), false, QStringLiteral("particle_shape_mesh"));
 					if(fileDialog.exec() != QDialog::Accepted)
 						return;
 
@@ -206,8 +206,8 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 					fileImporterType = fileDialog.selectedFileImporterType();
 				}
 				// Load the geometry from the selected file.
-				ProgressDialog progressDialog(container(), ptype->dataset()->taskManager(), tr("Loading geometry file"));
-				ptype->loadShapeMesh(selectedFile, progressDialog.createOperation(), fileImporterType);
+				ProgressDialog progressDialog(container(), mainWindow(), tr("Loading geometry file"));
+				ptype->loadShapeMesh(selectedFile, progressDialog, fileImporterType);
 			});
 		}
 	});
@@ -258,7 +258,7 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
 			undoableTransaction(tr("Reset particle type %1").arg(parameterName), [&]() {
 				resetFunc(ptype);
-				mainWindow()->showStatusBarMessage(tr("Reset %1 of particle type '%2' to default value.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
+				mainWindow().showStatusBarMessage(tr("Reset %1 of particle type '%2' to default value.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
 			});
 		}
 	});
@@ -268,7 +268,7 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
 		if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
 			setDefaultFunc(ptype);
 			Q_EMIT contentsChanged(editObject());
-			mainWindow()->showStatusBarMessage(tr("Stored current %1 as default for particle type '%2'.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
+			mainWindow().showStatusBarMessage(tr("Stored current %1 as default for particle type '%2'.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
 		}
 	});
 	presetsMenu->addSeparator();

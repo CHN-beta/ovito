@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,14 +22,13 @@
 
 /**
  * \file
- * \brief Contains the definition of the Ovito::IO::LoadStream class.
+ * \brief Contains the definition of the Ovito::LoadStream class.
  */
 
 #pragma once
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/utilities/concurrent/Promise.h>
 
 namespace Ovito {
 
@@ -50,9 +49,8 @@ public:
 	/// \brief Opens the stream for reading.
 	/// \param source The data stream from which the binary data will be read. This must be
 	///               stream that supports random access.
-	/// \param operation The task handle that allows to cancel the load process.
 	/// \throw Exception if the QDataStream supports only sequential access or if an I/O error occurs.
-	LoadStream(QDataStream& source, SynchronousOperation operation);
+	LoadStream(QDataStream& source);
 
 	/// Automatically calls close() to close the LoadStream.
 	/// \sa close()
@@ -172,9 +170,6 @@ public:
 	/// \brief Returns the revision version number of the program that wrote the current file.
 	quint32 applicationRevisionVersion() const { return _applicationRevisionVersion; }
 
-	/// Returns the task object that represent the load operation.
-	SynchronousOperation& operation() { return _operation; }
-
 private:
 
 	/// Checks the status of the underlying input stream and throws an exception if an error has occurred.
@@ -201,14 +196,11 @@ private:
 
 private:
 
-	/// Indicates the input stream is still open.
-	bool _isOpen = false;
-
 	/// The internal input stream.
 	QDataStream& _is;
 
-	/// The task object.
-	SynchronousOperation _operation;
+	/// Indicates the input stream is still open.
+	bool _isOpen = false;
 
 	/// The version of the file format.
 	quint32 _fileFormat;

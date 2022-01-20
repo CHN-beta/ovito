@@ -129,7 +129,6 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 	PropertyAccess<int> coordinationData(coordinationNumbers());
 	ConstPropertyAccess<int> particleTypeData(particleTypes());
 	ConstPropertyAccess<int> selectionData(selection());
-	setProgressValue(0);
 	setProgressMaximum(particleCount);
 
 	// Parallel calculation loop:

@@ -24,22 +24,25 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/utilities/io/GuiFileManager.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/utilities/Exception.h>
 #include <ovito/core/app/StandaloneApplication.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 
 namespace Ovito {
 
 /**
  * \brief The main application with a graphical user interface.
  */
-class OVITO_GUI_EXPORT GuiApplication : public StandaloneApplication
+class OVITO_GUI_EXPORT GuiApplication : public StandaloneApplication, private UserInterface
 {
 	Q_OBJECT
 
 public:
 
 	/// Returns the one and only instance of this class.
-	inline static GuiApplication* instance() { return static_cast<GuiApplication*>(Application::instance()); }
+	static GuiApplication* instance() { return static_cast<GuiApplication*>(Application::instance()); }
 
 	/// Constructor.
 	GuiApplication();
@@ -59,13 +62,10 @@ protected:
 	virtual bool processCommandLineParameters() override;
 
 	/// Prepares application to start running.
-	virtual bool startupApplication() override;
+	virtual UserInterface* startupApplication() override;
 
 	/// Is called at program startup once the event loop is running.
-	virtual void postStartupInitialization() override;
-
-	/// Creates the global FileManager class instance.
-	virtual FileManager* createFileManager() override;
+	virtual void postStartupInitialization(MainThreadOperation& operation) override;
 
 	/// Handles events sent to the Qt application object.
 	virtual bool eventFilter(QObject* watched, QEvent* event) override;
@@ -82,6 +82,12 @@ private:
 
 	/// List of errors to be displayed by showErrorMessages().
 	std::deque<Exception> _errorList;
+
+	/// The global file manager.
+	GuiFileManager _fileManager;
+
+	/// The global dataset container (only used in command line mode).
+	DataSetContainer _globalDatasetContainer;
 };
 
 }	// End of namespace

@@ -97,6 +97,9 @@
 #include <QPair>
 #include <QVariant>
 #include <QMap>
+#ifndef OVITO_DISABLE_THREADING
+    #include <QThreadPool>
+#endif
 #ifndef OVITO_DISABLE_QSETTINGS
     #include <QSettings>
 #endif
@@ -139,7 +142,9 @@
 #include <ovito/core/utilities/Color.h>
 #include <ovito/core/utilities/concurrent/Future.h>
 #include <ovito/core/utilities/concurrent/SharedFuture.h>
+#include <ovito/core/utilities/concurrent/WeakSharedFuture.h>
 #include <ovito/core/utilities/concurrent/Promise.h>
+#include <ovito/core/utilities/concurrent/MainThreadOperation.h>
 #include <ovito/core/oo/OvitoObject.h>
 
 #endif // __OVITO_CORE_

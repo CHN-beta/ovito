@@ -243,9 +243,9 @@ void WasmApplication::postStartupInitialization()
 
 		// Import sample data.
 		try {
-//			datasetContainer()->importFile(Application::instance()->fileManager()->urlFromUserInput(":/gui/samples/test.data"));
-//			datasetContainer()->importFile(Application::instance()->fileManager()->urlFromUserInput(":/gui/samples/animation.dump"));
-			datasetContainer()->importFile(Application::instance()->fileManager()->urlFromUserInput(":/gui/samples/trajectory.xyz"));
+//			datasetContainer()->importFile(Application::instance()->fileManager().urlFromUserInput(":/gui/samples/test.data"));
+//			datasetContainer()->importFile(Application::instance()->fileManager().urlFromUserInput(":/gui/samples/animation.dump"));
+			datasetContainer()->importFile(Application::instance()->fileManager().urlFromUserInput(":/gui/samples/trajectory.xyz"));
 		}
 		catch(const Exception& ex) {
 			ex.reportError();

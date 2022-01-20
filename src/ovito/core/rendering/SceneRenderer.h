@@ -125,7 +125,7 @@ public:
 	/// \param time The time at which the bounding box should be computed.
 	/// \return An axis-aligned box in the world coordinate system that contains
 	///         everything to be rendered.
-	Box3 computeSceneBoundingBox(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, SynchronousOperation operation);
+	Box3 computeSceneBoundingBox(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, MainThreadOperation& operation);
 
 	/// Sets the view projection parameters, the animation frame to render,
 	/// and the viewport being rendered.
@@ -133,11 +133,11 @@ public:
 
 	/// Renders the current animation frame.
 	/// Returns false if the operation has been canceled by the user.
-	virtual bool renderFrame(const QRect& viewportRect, SynchronousOperation operation) = 0;
+	virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) = 0;
 
 	/// Renders the overlays/underlays of the viewport into the framebuffer.
 	/// Returns false if the operation has been canceled by the user.
-	virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation);
+	virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation);
 
 	/// This method is called after renderFrame() has been called.
 	virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) {}
@@ -232,10 +232,10 @@ protected:
 	SceneRenderer(DataSet* dataset);
 
 	/// \brief Renders all nodes in the scene.
-	virtual bool renderScene(SynchronousOperation operation);
+	virtual bool renderScene(MainThreadOperation& operation);
 
 	/// \brief Render a scene node (and all its children).
-	virtual bool renderNode(SceneNode* node, SynchronousOperation operation);
+	virtual bool renderNode(SceneNode* node, MainThreadOperation& operation);
 
 	/// \brief This virtual method is responsible for rendering additional content that is only
 	///       visible in the interactive viewports.

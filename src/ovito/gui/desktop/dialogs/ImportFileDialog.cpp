@@ -71,7 +71,7 @@ QString ImportFileDialog::fileToImport() const
 ******************************************************************************/
 QUrl ImportFileDialog::urlToImport() const
 {
-	return Application::instance()->fileManager()->urlFromUserInput(fileToImport());
+	return Application::instance()->fileManager().urlFromUserInput(fileToImport());
 }
 
 /******************************************************************************
@@ -81,7 +81,7 @@ std::vector<QUrl> ImportFileDialog::urlsToImport() const
 {
 	std::vector<QUrl> list;
 	for(const QString& file : selectedFiles()) {
-		list.push_back(Application::instance()->fileManager()->urlFromUserInput(file));
+		list.push_back(Application::instance()->fileManager().urlFromUserInput(file));
 	}
 	return list;
 }

@@ -30,8 +30,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the panel.
 ******************************************************************************/
-PropertiesPanel::PropertiesPanel(QWidget* parent, MainWindow* mainWindow) :
-	RolloutContainer(parent, mainWindow), _mainWindow(mainWindow)
+PropertiesPanel::PropertiesPanel(QWidget* parent, MainWindow& mainWindow) :
+	RolloutContainer(parent, &mainWindow), _mainWindow(mainWindow)
 {
 }
 
@@ -70,9 +70,9 @@ void PropertiesPanel::setEditObject(RefTarget* newEditObject, OORef<PropertiesEd
 	if(newEditObject) {
 		// Open new properties editor.
 		_editor = newEditor ? std::move(newEditor) : PropertiesEditor::create(newEditObject);
-		if(editor() && _mainWindow) {
+		if(editor()) {
 			if(!editor()->container())
-				editor()->initialize(this, _mainWindow, RolloutInsertionParameters(), nullptr);
+				editor()->initialize(this, RolloutInsertionParameters(), nullptr);
 			editor()->setEditObject(newEditObject);
 		}
 	}

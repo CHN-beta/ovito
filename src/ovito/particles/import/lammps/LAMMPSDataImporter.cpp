@@ -1138,7 +1138,7 @@ ParticleInputColumnMapping LAMMPSDataImporter::createColumnMapping(LAMMPSAtomSty
 Future<LAMMPSDataImporter::LAMMPSAtomStyleHints> LAMMPSDataImporter::inspectFileHeader(const Frame& frame)
 {
 	// Retrieve file.
-	return Application::instance()->fileManager()->fetchUrl(dataset()->taskManager(), frame.sourceFile)
+	return Application::instance()->fileManager().fetchUrl(frame.sourceFile)
 		.then([](const FileHandle& fileHandle) -> LAMMPSAtomStyleHints {
 			using namespace std;
 

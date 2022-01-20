@@ -240,7 +240,7 @@ bool ColorCodingModifier::adjustRange(ObjectInitializationHints initializationHi
 * Sets the start and end value to the minimum and maximum value of the selected
 * particle or bond property determined over the entire animation sequence.
 ******************************************************************************/
-bool ColorCodingModifier::adjustRangeGlobal(ObjectInitializationHints initializationHints, Promise<>&& operation)
+bool ColorCodingModifier::adjustRangeGlobal(ObjectInitializationHints initializationHints, MainThreadOperation& operation)
 {
 	ViewportSuspender noVPUpdates(this);
 

@@ -52,13 +52,13 @@ public:
 	virtual int orderingKey() const override { return 10; }
 
 	/// Lets the applet create the UI widget that is to be placed into the data inspector panel.
-	virtual QWidget* createWidget(MainWindow* mainWindow) override;
+	virtual QWidget* createWidget() override;
 
 	/// Lets the applet update the contents displayed in the inspector.
 	virtual void updateDisplay(const PipelineFlowState& state, PipelineSceneNode* pipeline) override;
 
 	/// This is called when the applet is no longer visible.
-	virtual void deactivate(MainWindow* mainWindow) override;
+	virtual void deactivate() override;
 
 protected:
 

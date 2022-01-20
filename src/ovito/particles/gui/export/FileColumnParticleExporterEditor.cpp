@@ -116,8 +116,8 @@ void FileColumnParticleExporterEditor::updateParticlePropertiesList()
 
 	try {
 		// Determine the data that is available for export.
-		ProgressDialog progressDialog(container(), exporter->dataset()->taskManager());
-		PipelineFlowState state = exporter->getParticleData(exporter->dataset()->animationSettings()->time(), progressDialog.createOperation());
+		ProgressDialog progressDialog(container(), mainWindow());
+		PipelineFlowState state = exporter->getParticleData(exporter->dataset()->animationSettings()->time(), progressDialog);
 		if(!state)
 			throw Exception(tr("Operation has been canceled by the user."));
 
@@ -211,7 +211,7 @@ void FileColumnParticleExporterEditor::onParticlePropertyItemChanged()
 	// Remember the output column mapping for the next time.
 	QSettings settings;
 	settings.beginGroup("exporter/particles/");
-	settings.setValue("columnmapping", particleExporter->columnMapping().toByteArray(particleExporter->dataset()->taskManager()));
+	settings.setValue("columnmapping", particleExporter->columnMapping().toByteArray());
 	settings.endGroup();
 }
 

@@ -51,7 +51,7 @@ GSDExporter::~GSDExporter()
  * This is called once for every output file to be written and before
  * exportFrame() is called.
  *****************************************************************************/
-bool GSDExporter::openOutputFile(const QString& filePath, int numberOfFrames, SynchronousOperation operation)
+bool GSDExporter::openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation)
 {
     OVITO_ASSERT(!outputFile().isOpen());
     outputFile().setFileName(filePath);
@@ -80,7 +80,7 @@ void GSDExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
 ******************************************************************************/
-bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, TimePoint time, const QString& filePath, SynchronousOperation operation)
+bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, TimePoint time, const QString& filePath, MainThreadOperation& operation)
 {
     // Get particles.
     const ParticlesObject* particles = state.expectObject<ParticlesObject>();

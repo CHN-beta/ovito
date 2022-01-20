@@ -119,10 +119,10 @@ public:
 	PropertyContainerClassPtr containerClass() const { return _containerClass; }
 
 	/// \brief Saves the mapping into a byte array.
-	QByteArray toByteArray(TaskManager& taskManager) const;
+	QByteArray toByteArray() const;
 
 	/// \brief Loads the mapping from a byte array.
-	void fromByteArray(const QByteArray& array, TaskManager& taskManager);
+	void fromByteArray(const QByteArray& array);
 
 	/// \brief Checks if the mapping is valid; throws an exception if not.
 	void validate() const;

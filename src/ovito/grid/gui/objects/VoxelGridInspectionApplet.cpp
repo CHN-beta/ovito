@@ -32,10 +32,9 @@ IMPLEMENT_OVITO_CLASS(VoxelGridInspectionApplet);
 * Lets the applet create the UI widget that is to be placed into the data
 * inspector panel.
 ******************************************************************************/
-QWidget* VoxelGridInspectionApplet::createWidget(MainWindow* mainWindow)
+QWidget* VoxelGridInspectionApplet::createWidget()
 {
 	createBaseWidgets();
-	_mainWindow = mainWindow;
 
 	QSplitter* splitter = new QSplitter();
 	splitter->addWidget(objectSelectionWidget());

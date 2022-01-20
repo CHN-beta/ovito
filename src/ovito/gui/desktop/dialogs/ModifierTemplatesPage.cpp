@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/mainwin/cmdpanel/CommandPanel.h>
 #include <ovito/gui/desktop/mainwin/cmdpanel/ModifyCommandPage.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/gui/base/mainwin/PipelineListModel.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include "ModifierTemplatesPage.h"
@@ -95,10 +96,6 @@ void ModifierTemplatesPage::insertSettingsDialogPage(ApplicationSettingsDialog* 
 void ModifierTemplatesPage::onCreateTemplate()
 {
 	try {
-		// Access current dataset container.
-		MainWindow* mainWindow = qobject_cast<MainWindow*>(_settingsDialog->parentWidget());
-		if(!mainWindow) throw Exception(tr("Creating a new template is not possible in this context."));
-
 		QDialog dlg(_settingsDialog);
 		dlg.setWindowTitle(tr("Create Modifier Template"));
 		QVBoxLayout* mainLayout = new QVBoxLayout(&dlg);
@@ -109,7 +106,7 @@ void ModifierTemplatesPage::onCreateTemplate()
 		modifierListWidget->setUniformRowHeights(true);
 		modifierListWidget->setRootIsDecorated(false);
 		modifierListWidget->header()->hide();
-		PipelineListModel* pipelineModel = mainWindow->commandPanel()->modifyPage()->pipelineListModel();
+		PipelineListModel* pipelineModel = _settingsDialog->mainWindow().commandPanel()->modifyPage()->pipelineListModel();
 		QVector<RefTarget*> selectedPipelineObjects = pipelineModel->selectedObjects();
 		QVector<QTreeWidgetItem*> itemList;
 		int rowCount = 0;
@@ -201,8 +198,8 @@ void ModifierTemplatesPage::onCreateTemplate()
 		connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
 
 		// Implement Help button.
-		connect(buttonBox, &QDialogButtonBox::helpRequested, [mainWindow]() {
-			mainWindow->openHelpTopic(QStringLiteral("manual:modifier_templates"));
+		connect(buttonBox, &QDialogButtonBox::helpRequested, []() {
+			ActionManager::openHelpTopic(QStringLiteral("manual:modifier_templates"));
 		});
 
 		mainLayout->addWidget(buttonBox);
@@ -214,7 +211,7 @@ void ModifierTemplatesPage::onCreateTemplate()
 				}
 			}
 			OVITO_ASSERT(!selectedModifierList.empty());
-			int idx = ModifierTemplates::get()->createTemplate(nameBox->currentText().trimmed(), selectedModifierList);
+			int idx = ModifierTemplates::get()->createTemplate(nameBox->currentText().trimmed(), selectedModifierList, _settingsDialog->mainWindow());
 			_listWidget->setCurrentIndex(_listWidget->model()->index(idx, 0));
 			_dirtyFlag = true;
 		}

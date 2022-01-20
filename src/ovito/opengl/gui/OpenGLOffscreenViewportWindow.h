@@ -25,6 +25,8 @@
 
 #include <ovito/gui/base/GUIBase.h>
 #include <ovito/gui/base/viewport/BaseViewportWindow.h>
+#include <ovito/core/app/UserInterface.h>
+#include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/opengl/PickingOpenGLSceneRenderer.h>
 
 namespace Ovito {
@@ -32,14 +34,14 @@ namespace Ovito {
 /**
  * \brief The internal render window/widget used by the Viewport class.
  */
-class OVITO_OPENGLRENDERERGUI_EXPORT OpenGLOffscreenViewportWindow : public QObject, public BaseViewportWindow
+class OVITO_OPENGLRENDERERGUI_EXPORT OpenGLOffscreenViewportWindow : public QObject, public BaseViewportWindow, public UserInterface
 {
 	Q_OBJECT
 
 public:
 
 	/// Constructor.
-	OpenGLOffscreenViewportWindow(Viewport* vp, ViewportInputManager* inputManager, UserInterface* gui, const QSize& initialSize, std::function<void(QImage)> imageCallback);
+	OpenGLOffscreenViewportWindow(Viewport* vp, const QSize& initialSize, std::function<void(QImage)> imageCallback);
 
 	/// Destructor.
 	virtual ~OpenGLOffscreenViewportWindow();
@@ -95,6 +97,9 @@ public:
 	/// Controls whether processViewportUpdate() causes an immediate repaint or not.
 	void setImmediateViewportUpdatesEnabled(bool enabled) { _immediateViewportUpdatesEnabled = enabled; }
 
+	/// Returns a reference to this window's input mode manager.
+	ViewportInputManager& inputManager() { return _inputManager; }
+
 protected:
 
 	/// Handles timer events of the object.
@@ -136,6 +141,9 @@ private:
 
 	/// Controls whether processViewportUpdate() causes an immediate repaint or not.
 	bool _immediateViewportUpdatesEnabled = true;
+
+	/// Handles mouse input for the window.
+	ViewportInputManager _inputManager;
 };
 
 }	// End of namespace

@@ -40,7 +40,7 @@ class OVITO_GUI_EXPORT PropertiesPanel : public RolloutContainer
 public:
 
 	/// Constructs the panel.
-	PropertiesPanel(QWidget* parent, MainWindow* mainWindow);
+	PropertiesPanel(QWidget* parent, MainWindow& mainWindow);
 
 	/// Destructs the panel.
 	virtual ~PropertiesPanel();
@@ -54,13 +54,16 @@ public:
 	/// Returns the editor that is responsible for the object being edited.
 	PropertiesEditor* editor() const { return _editor; }
 
+	/// Returns the main window this properties panel is associated with.
+	MainWindow& mainWindow() const { return _mainWindow; }
+
 protected:
 
 	/// The editor for the current object.
 	OORef<PropertiesEditor> _editor;
 
 	/// The main window this properties panel is associated with.
-	MainWindow* _mainWindow;
+	MainWindow& _mainWindow;
 };
 
 }	// End of namespace
