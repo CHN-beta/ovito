@@ -40,7 +40,7 @@ public:
 
 	/// Creates a promise that represents an asynchronous operation running in the main thread.
 	static MainThreadOperation create(UserInterface& userInterface, ObjectInitializationHints initializationHints, bool visibleInUserInterface = false) {
-		return MainThreadOperation(std::make_shared<Task>(Task::Started), userInterface, initializationHints, visibleInUserInterface);
+		return MainThreadOperation(std::make_shared<ProgressingTask>(Task::Started), userInterface, initializationHints, visibleInUserInterface);
 	}
 
 	/// No copy constructor.
@@ -70,6 +70,13 @@ public:
 			OVITO_ASSERT(task->isStarted());
 			task->setFinished();
 		}
+	}
+
+	/// Returns the shared task, casting it to the ProgressingTask subclass.
+	ProgressingTask& progressingTask() const { 
+		OVITO_ASSERT(isValid());
+		OVITO_ASSERT(task()->isProgressingTask());
+		return static_cast<ProgressingTask&>(*task());
 	}
 
 	/// Override this method from the Promise class to keep the UI responsive during long-running tasks.
@@ -128,7 +135,8 @@ class OVITO_CORE_EXPORT MainThreadTaskWrapper : public MainThreadOperation
 public:
 
 	/// Constructor.
-	MainThreadTaskWrapper(TaskPtr task, UserInterface& userInterface, ObjectInitializationHints initializationHints) : MainThreadOperation(std::move(task), userInterface, initializationHints, false) {}
+	MainThreadTaskWrapper(TaskPtr task, UserInterface& userInterface, ObjectInitializationHints initializationHints) : 
+		MainThreadOperation(std::move(task), userInterface, initializationHints, false) {}
 
 	/// Destructor.
 	~MainThreadTaskWrapper() { 

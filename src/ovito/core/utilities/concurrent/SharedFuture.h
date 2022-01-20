@@ -117,7 +117,7 @@ SharedFuture<R...>::then(Executor&& executor, Function&& f)
 	// Infer the exact future/promise/task types to create.
 	using result_future_type = detail::continuation_future_type<Function,SharedFuture<R...>>;
 	using result_promise_type = typename result_future_type::promise_type;
-	using continuation_task_type = detail::ContinuationTask<typename result_promise_type::tuple_type>;
+	using continuation_task_type = detail::ContinuationTask<typename result_promise_type::tuple_type, Task>;
 
 	// This future must be valid for then() to work.
 	OVITO_ASSERT_MSG(isValid(), "SharedFuture::then()", "Future must be valid.");
@@ -156,10 +156,12 @@ SharedFuture<R...>::then(Executor&& executor, Function&& f)
 
 		// Don't execute continuation function in case an error occurred in the preceding task.
 		// In such a case, copy the exception state to the continuation promise.
-		if(finishedTask->exceptionStore()) {
-			continuationTask->exceptionLocked(finishedTask->copyExceptionStore());
-			continuationTask->finishLocked(locker);
-			return;
+		if constexpr(!std::is_invocable_v<Function, SharedFuture<R...>>) {
+			if(finishedTask->exceptionStore()) {
+				continuationTask->exceptionLocked(finishedTask->copyExceptionStore());
+				continuationTask->finishLocked(locker);
+				return;
+			}
 		}
 
 		// Now it's time to execute the continuation function.

@@ -68,13 +68,13 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
 	}
 
 	// Asynchrounous task managing the execution of the compute engine(s).
-	class EngineExecutionTask : public detail::ContinuationTask<std::tuple<PipelineFlowState>>
+	class EngineExecutionTask : public detail::ContinuationTask<std::tuple<PipelineFlowState>, Task>
 	{
 	public:
 
 		/// Constructor.
 		EngineExecutionTask(const ModifierEvaluationRequest& request, EnginePtr engine, const PipelineFlowState& state, std::vector<EnginePtr> validStages = {}) : 
-				detail::ContinuationTask<std::tuple<PipelineFlowState>>(Task::Started, std::forward_as_tuple(state)),
+				detail::ContinuationTask<std::tuple<PipelineFlowState>, Task>(Task::Started, std::forward_as_tuple(state)),
 				_request(request),
 				_modApp(static_object_cast<AsynchronousModifierApplication>(request.modApp())),
 				_engine(std::move(engine)),

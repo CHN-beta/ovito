@@ -63,7 +63,7 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath, MainThreadOp
 
     // Load filter file header (i.e. list of structure types).
     std::shared_ptr<Filter> filter = std::make_shared<Filter>();
-    if(!filter->load(stream, true, *operation.task()))
+    if(!filter->load(stream, true, operation.progressingTask()))
         return false;
 
     // Rebuild structure types list.

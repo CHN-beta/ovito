@@ -26,7 +26,6 @@
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include <ovito/core/utilities/concurrent/Task.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -197,7 +196,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
 
 	// Pre-order neighbors of each particle.
 	std::vector<uint64_t> cachedNeighbors(positions()->size());
-	parallelForChunks(positions()->size(), *this, [&](size_t startIndex, size_t count, Task& task) {
+	parallelForChunks(positions()->size(), *this, [&](size_t startIndex, size_t count, ProgressingTask& operation) {
 		// Create a thread-local kernel for the PTM algorithm.
 		PTMAlgorithm::Kernel kernel(*_algorithm);
 
@@ -207,10 +206,10 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
 
 			// Update progress indicator.
 			if((index % 256) == 0)
-				task.incrementProgressValue(256);
+				operation.incrementProgressValue(256);
 
 			// Break out of loop when operation was canceled.
-			if(task.isCanceled())
+			if(operation.isCanceled())
 				break;
 
 			// Skip particles that are not included in the analysis.
@@ -237,7 +236,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
 	PropertyAccess<qlonglong> correspondencesArray(correspondences());
 
 	// Perform analysis on each particle.
-	parallelForChunks(positions()->size(), *this, [&](size_t startIndex, size_t count, Task& task) {
+	parallelForChunks(positions()->size(), *this, [&](size_t startIndex, size_t count, ProgressingTask& operation) {
 
 		// Create a thread-local kernel for the PTM algorithm.
 		PTMAlgorithm::Kernel kernel(*_algorithm);
@@ -248,10 +247,10 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
 
 			// Update progress indicator.
 			if((index % 256) == 0)
-				task.incrementProgressValue(256);
+				operation.incrementProgressValue(256);
 
 			// Break out of loop when operation was canceled.
-			if(task.isCanceled())
+			if(operation.isCanceled())
 				break;
 
 			// Skip particles that are not included in the analysis.

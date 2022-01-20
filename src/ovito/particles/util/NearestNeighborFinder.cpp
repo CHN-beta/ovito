@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/core/utilities/concurrent/Task.h>
+#include <ovito/core/utilities/concurrent/ProgressingTask.h>
 #include "NearestNeighborFinder.h"
 
 namespace Ovito::Particles {
@@ -31,11 +31,11 @@ namespace Ovito::Particles {
 /******************************************************************************
 * Prepares the neighbor list builder.
 ******************************************************************************/
-bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, const SimulationCellObject* cellData, ConstPropertyAccess<int> selectionProperty, Task* promise)
+bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, const SimulationCellObject* cellData, ConstPropertyAccess<int> selectionProperty, ProgressingTask* operation)
 {
 	OVITO_ASSERT(posProperty);
 	OVITO_ASSERT(cellData);
-	if(promise) promise->setProgressMaximum(0);
+	if(operation) operation->setProgressMaximum(0);
 
 	simCell = cellData;
 
@@ -116,7 +116,7 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
 	const int* sel = selectionProperty ? selectionProperty.cbegin() : nullptr;
 	atoms.resize(posProperty.size());
 	for(NeighborListAtom& a : atoms) {
-		if(promise && promise->isCanceled())
+		if(operation && operation->isCanceled())
 			return false;
 		a.pos = *p;
 		// Wrap atomic positions back into simulation box.

@@ -104,7 +104,7 @@ void BondsComputePropertyModifierDelegate::Engine::perform()
 	setProgressMaximum(outputProperty()->size());
 
 	// Parallelized loop over all bonds.
-	parallelForChunks(outputProperty()->size(), *this, [this](size_t startIndex, size_t count, Task& promise) {
+	parallelForChunks(outputProperty()->size(), *this, [this](size_t startIndex, size_t count, ProgressingTask& operation) {
 		BondExpressionEvaluator::Worker worker(*_evaluator);
 
 		size_t endIndex = startIndex + count;
@@ -113,10 +113,10 @@ void BondsComputePropertyModifierDelegate::Engine::perform()
 
 			// Update progress indicator.
 			if((bondIndex % 1024) == 0)
-				promise.incrementProgressValue(1024);
+				operation.incrementProgressValue(1024);
 
 			// Exit if operation was canceled.
-			if(promise.isCanceled())
+			if(operation.isCanceled())
 				return;
 
 			// Skip unselected bonds if requested.

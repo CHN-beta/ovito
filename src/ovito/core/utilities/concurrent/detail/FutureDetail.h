@@ -108,7 +108,7 @@ inline constexpr bool returns_future_v = is_future_v<callable_result_t<F, Future
 	* For some type T, which may be void, returns the corresponding Future<> type.
 	*/
 template<typename T>
-using future_for_t = std::conditional_t<std::is_void_v<T>, Future<>, Future<T>>;
+using future_for_t = std::conditional_t<std::is_void_v<T>, Future<>, Future<std::decay_t<T>>>;
 
 /// Determines the Future type that results from a continuation function.
 ///

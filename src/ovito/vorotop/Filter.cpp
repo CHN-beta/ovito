@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,7 +31,7 @@ namespace Ovito::VoroTop {
 /******************************************************************************
 * Loads the filter definition from the given input stream.
 ******************************************************************************/
-bool Filter::load(CompressedTextReader& stream, bool readHeaderOnly, Task& operation)
+bool Filter::load(CompressedTextReader& stream, bool readHeaderOnly, ProgressingTask& operation)
 {
 	// Parse comment lines starting with '#':
 	_filterDescription.clear();

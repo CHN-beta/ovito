@@ -23,6 +23,7 @@
 #include <ovito/core/Core.h>
 #include "TaskWatcher.h"
 #include "Task.h"
+#include "ProgressingTask.h"
 
 namespace Ovito {
 
@@ -108,7 +109,7 @@ void TaskWatcher::taskProgressChanged(qlonglong progress, qlonglong maximum)
 void TaskWatcher::taskTextChanged()
 {
 	if(isWatching() && !task()->isCanceled())
-		Q_EMIT progressTextChanged(task()->progressText());
+		Q_EMIT progressTextChanged(static_cast<ProgressingTask*>(task().get())->progressText());
 }
 
 bool TaskWatcher::isCanceled() const
@@ -123,17 +124,17 @@ bool TaskWatcher::isFinished() const
 
 qlonglong TaskWatcher::progressMaximum() const
 {
-	return isWatching() ? task()->progressMaximum() : 0;
+	return (isWatching() && task()->isProgressingTask()) ? static_cast<ProgressingTask*>(task().get())->progressMaximum() : 0;
 }
 
 qlonglong TaskWatcher::progressValue() const
 {
-	return isWatching() ? task()->progressValue() : 0;
+	return (isWatching() && task()->isProgressingTask()) ? static_cast<ProgressingTask*>(task().get())->progressValue() : 0;
 }
 
 QString TaskWatcher::progressText() const
 {
-	return isWatching() ? task()->progressText() : QString();
+	return (isWatching() && task()->isProgressingTask()) ? static_cast<ProgressingTask*>(task().get())->progressText() : QString();
 }
 
 }	// End of namespace

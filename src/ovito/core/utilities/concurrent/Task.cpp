@@ -27,8 +27,6 @@
 
 namespace Ovito {
 
-constexpr static int MaxProgressEmitsPerSecond = 20;
-
 #ifdef OVITO_DEBUG
 std::atomic_size_t Task::_globalTaskCounter{0};
 #endif
@@ -57,175 +55,6 @@ Task::~Task()
 	_globalTaskCounter.fetch_sub(1);
 }
 #endif
-
-/******************************************************************************
-* Sets the current maximum value for progress reporting.
-* The current progress value is reset to zero.
-******************************************************************************/
-void Task::setProgressMaximum(qlonglong maximum)
-{
-    const QMutexLocker locker(&_mutex);
-
-    _progressMaximum = maximum;
-	_progressValue = 0;
-
-    updateTotalProgress();
-
-	for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
-		cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
-}
-
-/******************************************************************************
-* Sets the current progress value of the task.
-******************************************************************************/
-bool Task::setProgressValue(qlonglong value)
-{
-    const QMutexLocker locker(&_mutex);
-
-	auto state = _state.loadRelaxed();
-    if(state & (Canceled | Finished) || value == _progressValue)
-        return !(state & Canceled);
-
-    _progressValue = value;
-    updateTotalProgress();
-
-    if(!_progressTime.isValid() || _totalProgressValue >= _totalProgressMaximum || _progressTime.elapsed() >= (1000 / MaxProgressEmitsPerSecond)) {
-		_progressTime.start();
-
-		for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
-			cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
-    }
-
-    return !(state & Canceled);
-}
-
-/******************************************************************************
-* Increments the progress value of the task.
-******************************************************************************/
-bool Task::incrementProgressValue(qlonglong increment)
-{
-    const QMutexLocker locker(&_mutex);
-
-	auto state = _state.loadRelaxed();
-    if(state & (Canceled | Finished))
-        return !(state & Canceled);
-
-    _progressValue += increment;
-    updateTotalProgress();
-
-    if(!_progressTime.isValid() || _totalProgressValue >= _totalProgressMaximum || _progressTime.elapsed() >= (1000 / MaxProgressEmitsPerSecond)) {
-		_progressTime.start();
-
-		for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
-			cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
-    }
-
-    return !(state & Canceled);
-}
-
-/******************************************************************************
-* Sets the current progress value of the task, generating update events only occasionally.
-******************************************************************************/
-bool Task::setProgressValueIntermittent(qlonglong progressValue, int updateEvery)
-{
-	if(_intermittentUpdateCounter >= updateEvery) {
-		_intermittentUpdateCounter = 0;
-		return setProgressValue(progressValue);
-	}
-	else {
-		_intermittentUpdateCounter++;
-		return !isCanceled();
-	}
-}
-
-/******************************************************************************
-* Changes the description of this task to be displayed in the GUI.
-******************************************************************************/
-void Task::setProgressText(const QString& progressText)
-{
-    const QMutexLocker locker(&_mutex);
-
-    if(auto state = _state.loadRelaxed(); state & (Canceled | Finished))
-        return;
-
-    _progressText = progressText;
-
-	for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
-		cb->callTextChanged();
-}
-
-/******************************************************************************
-* Recomputes the total progress made so far based on the progress of the current sub-task.
-******************************************************************************/
-void Task::updateTotalProgress()
-{
-	if(_subTaskProgressStack.empty()) {
-		_totalProgressMaximum = _progressMaximum;
-		_totalProgressValue = _progressValue;
-	}
-	else {
-		double percentage;
-		if(_progressMaximum > 0)
-			percentage = (double)_progressValue / _progressMaximum;
-		else
-			percentage = 0;
-		for(auto level = _subTaskProgressStack.crbegin(); level != _subTaskProgressStack.crend(); ++level) {
-			OVITO_ASSERT(level->first >= 0 && level->first <= level->second.size());
-			int weightSum1 = std::accumulate(level->second.cbegin(), level->second.cbegin() + level->first, 0);
-			int weightSum2 = std::accumulate(level->second.cbegin() + level->first, level->second.cend(), 0);
-			percentage = ((double)weightSum1 + percentage * (level->first < level->second.size() ? level->second[level->first] : 0)) / (weightSum1 + weightSum2);
-		}
-		_totalProgressMaximum = 1000;
-		_totalProgressValue = (qlonglong)(percentage * 1000.0);
-	}
-}
-
-/******************************************************************************
-* Starts a sequence of sub-steps in the progress range of this task.
-******************************************************************************/
-void Task::beginProgressSubStepsWithWeights(std::vector<int> weights)
-{
-    OVITO_ASSERT(std::accumulate(weights.cbegin(), weights.cend(), 0) > 0);
-
-    _subTaskProgressStack.emplace_back(0, std::move(weights));
-    _progressMaximum = 0;
-    _progressValue = 0;
-}
-
-/******************************************************************************
-* Completes the current sub-step in the sequence started with beginProgressSubSteps() 
-* or beginProgressSubStepsWithWeights() and moves to the next one.
-******************************************************************************/
-void Task::nextProgressSubStep()
-{
-    const QMutexLocker locker(&_mutex);
-
-    if(auto state = _state.loadRelaxed(); state & (Canceled | Finished))
-        return;
-
-	OVITO_ASSERT(!_subTaskProgressStack.empty());
-	OVITO_ASSERT(_subTaskProgressStack.back().first < _subTaskProgressStack.back().second.size());
-	_subTaskProgressStack.back().first++;
-
-    _progressMaximum = 0;
-    _progressValue = 0;
-    updateTotalProgress();
-
-	for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
-		cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
-}
-
-/******************************************************************************
-* Completes a sub-step sequence started with beginProgressSubSteps() or 
-* beginProgressSubStepsWithWeights().
-******************************************************************************/
-void Task::endProgressSubSteps()
-{
-	OVITO_ASSERT(!_subTaskProgressStack.empty());
-	_subTaskProgressStack.pop_back();
-    _progressMaximum = 0;
-    _progressValue = 0;
-}
 
 /******************************************************************************
 * Switches the task into the 'started' state.
@@ -280,7 +109,8 @@ void Task::finishLocked(QMutexLocker<QMutex>& locker) noexcept
 	// Make sure that the result has been set (if not in canceled or error state).
 	OVITO_ASSERT_MSG(_exceptionStore || isCanceled() || _hasResultsStored.load() || !_resultsStorage,
 		"Task::finishLocked()",
-		qPrintable(QStringLiteral("Result has not been set for the task. Please check program code setting the task to finished. Task's last progress text: %1").arg(progressText())));
+		qPrintable(QStringLiteral("Result has not been set for the task. Please check program code setting the task to finished. Task's last progress text: %1")
+			.arg(isProgressingTask() ? static_cast<ProgressingTask*>(this)->progressText() : QStringLiteral("<non-progress task>"))));
 
 	// Inform the registered task watchers.
 	for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
@@ -398,13 +228,6 @@ void Task::removeCallback(detail::TaskCallbackBase* cb) noexcept
 		}
 		OVITO_ASSERT(false); // Callback was not found in linked list. Did you try to remove a callback that was never added?
 	}
-}
-
-/******************************************************************************
-* Puts this task into the 'canceled' and 'finished' states (without newly locking the task).
-******************************************************************************/
-void Task::cancelAndFinishLocked(QMutexLocker<QMutex>& locker) noexcept
-{
 }
 
 }	// End of namespace

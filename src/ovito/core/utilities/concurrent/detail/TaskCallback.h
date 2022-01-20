@@ -82,7 +82,8 @@ protected:
     /// Linked list of callbacks (pointer to next callback object).
     TaskCallbackBase* _nextInList = nullptr;
     
-    friend Task;
+    friend class Ovito::Task;
+    friend class Ovito::ProgressingTask;
 };
 
 template<typename Derived>

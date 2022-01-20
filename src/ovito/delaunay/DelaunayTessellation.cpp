@@ -32,9 +32,9 @@ namespace Ovito::Delaunay {
 /******************************************************************************
 * Generates the tessellation.
 ******************************************************************************/
-bool DelaunayTessellation::generateTessellation(const SimulationCellObject* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const int* selectedPoints, Task& promise)
+bool DelaunayTessellation::generateTessellation(const SimulationCellObject* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const int* selectedPoints, ProgressingTask& operation)
 {
-	promise.setProgressMaximum(0);
+	operation.setProgressMaximum(0);
 
 	// Initialize the Geogram library.
 	GEO::initialize(GEO::GEOGRAM_NO_HANDLER);
@@ -80,7 +80,7 @@ bool DelaunayTessellation::generateTessellation(const SimulationCellObject* simC
 
 		_particleIndices.push_back(i);
 
-		if(promise.isCanceled())
+		if(operation.isCanceled())
 			return false;
 	}
 	_primaryVertexCount = _particleIndices.size();
@@ -116,7 +116,7 @@ bool DelaunayTessellation::generateTessellation(const SimulationCellObject* simC
 
 					Vector3 shift = simCell->reducedToAbsolute(Vector3(ix,iy,iz));
 					for(size_t vertexIndex = 0; vertexIndex < _primaryVertexCount; vertexIndex++) {
-						if(promise.isCanceled())
+						if(operation.isCanceled())
 							return false;
 
 						Point3 pimage = _pointData[vertexIndex] + shift;
@@ -169,9 +169,9 @@ bool DelaunayTessellation::generateTessellation(const SimulationCellObject* simC
 	GEO::Numeric::random_reset();
 
 	// Construct Delaunay tessellation.
-	bool result = _dt->set_vertices(_pointData.size(), reinterpret_cast<const double*>(_pointData.data()), [&promise](size_t value, size_t maxProgress) {
-		if(maxProgress != promise.progressMaximum()) promise.setProgressMaximum(maxProgress);
-		return promise.setProgressValueIntermittent(value);
+	bool result = _dt->set_vertices(_pointData.size(), reinterpret_cast<const double*>(_pointData.data()), [&operation](size_t value, size_t maxProgress) {
+		if(maxProgress != operation.progressMaximum()) operation.setProgressMaximum(maxProgress);
+		return operation.setProgressValueIntermittent(value);
 	});
 	if(!result) return false;
 

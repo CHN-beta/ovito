@@ -45,10 +45,10 @@ bool PTMNeighborFinder::prepare(ConstPropertyAccess<Point3> positions, const Sim
 								ConstPropertyPtr structuresArray,
 								ConstPropertyPtr orientationsArray,
 								ConstPropertyPtr correspondencesArray,
-								Task* task)
+								ProgressingTask* operation)
 {
 	// Initialize the internal NearestNeighborFinder.
-	if(!NearestNeighborFinder::prepare(std::move(positions), cell, std::move(selection), task))
+	if(!NearestNeighborFinder::prepare(std::move(positions), cell, std::move(selection), operation))
 		return false;
 
 	OVITO_ASSERT(structuresArray);

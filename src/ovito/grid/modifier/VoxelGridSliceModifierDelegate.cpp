@@ -137,7 +137,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 					return planeGridSpace.pointDistance(Point3(i,j,k));
 				};
 
-				TaskPtr localOperation = std::make_shared<Task>(Task::Started);
+				auto localOperation = std::make_shared<ProgressingTask>(Task::Started);
 				MarchingCubes mc(mesh, gridShape[0]*resolution, gridShape[1]*resolution, gridShape[2]*resolution, false, std::move(getFieldValue), true);
 				mc.generateIsosurface(0.0, *localOperation);
 				localOperation->setFinished();
@@ -167,7 +167,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 				fieldProperties.push_back(property);
 
 			// Copy field values from voxel grid to surface mesh vertices.
-			TaskPtr localOperation = std::make_shared<Task>();
+			auto localOperation = std::make_shared<ProgressingTask>();
 			CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(*localOperation, mesh, fieldProperties, gridShape, request.initializationHints());
 			localOperation->setFinished();
 

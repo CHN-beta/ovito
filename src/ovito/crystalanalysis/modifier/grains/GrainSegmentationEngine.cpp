@@ -106,7 +106,7 @@ bool GrainSegmentationEngine1::createNeighborBonds()
 	std::mutex bondsMutex;
 
 	// Perform analysis on each particle.
-	parallelForChunks(_numParticles, *this, [&](size_t startIndex, size_t count, Task& task) {
+	parallelForChunks(_numParticles, *this, [&](size_t startIndex, size_t count, ProgressingTask& operation) {
 
 		// Construct thread-local neighbor finder.
 		PTMNeighborFinder::Query neighQuery(neighFinder);
@@ -119,10 +119,10 @@ bool GrainSegmentationEngine1::createNeighborBonds()
 
 			// Update progress indicator (only occasionally).
 			if((index % 256) == 0)
-				task.incrementProgressValue(256);
+				operation.incrementProgressValue(256);
 
 			// Break out of loop when computation was canceled.
-			if(task.isCanceled())
+			if(operation.isCanceled())
 				break;
 
 			// Get PTM information.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -283,7 +283,7 @@ public:
 	void discardSegment(DislocationSegment* segment);
 
 	/// Smoothens and coarsens the dislocation lines.
-	bool smoothDislocationLines(int lineSmoothingLevel, FloatType linePointInterval, Task& promise);
+	bool smoothDislocationLines(int lineSmoothingLevel, FloatType linePointInterval, ProgressingTask& operation);
 
 private:
 

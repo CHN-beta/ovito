@@ -30,7 +30,7 @@
 #include <ovito/core/utilities/concurrent/ForEach.h>
 #include "UnwrapTrajectoriesModifier.h"
 
-#include <boost/range/counting_range.hpp>
+#include <boost/range/irange.hpp>
 
 namespace Ovito::Particles {
 
@@ -101,14 +101,14 @@ void UnwrapTrajectoriesModifier::evaluateSynchronous(const ModifierEvaluationReq
 ******************************************************************************/
 SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(const ModifierEvaluationRequest& request)
 {
-	if(_unwrapOperation.isValid() == false) {
+	if(_unwrapOperation.isValid() == false || _unwrapOperation.isCanceled()) {
 
 		// Determine the range of animation frames to be processed.
 		int startFrame = 0;
 		if(unwrappedUpToTime() != TimeNegativeInfinity())
 			startFrame = animationTimeToSourceFrame(unwrappedUpToTime());
 		int endFrame = std::max(numberOfSourceFrames(), startFrame);
-		auto inputFrameRange = boost::counting_range(startFrame, endFrame);
+		auto inputFrameRange = boost::irange(startFrame, endFrame);
 
 		// Iterate over all frames of the input range in sequential order.
 		_unwrapOperation = for_each_sequential(
@@ -122,15 +122,10 @@ SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(co
 			WorkingData{this});
 
 		// Display progress in the UI.
-		_unwrapOperation.task()->setProgressText(tr("Unwrapping particle trajectories"));
+		OVITO_ASSERT(_unwrapOperation.task()->isProgressingTask());
+		static_cast<ProgressingTask*>(_unwrapOperation.task().get())->setProgressText(tr("Unwrapping particle trajectories"));
 		taskManager().registerFuture(_unwrapOperation);
 		registerActiveFuture(_unwrapOperation);
-
-		// Automatically reset the reference to the async operation once it gets canceled by the system.
-		_unwrapOperation.finally(executor(), [this](Task& task) { 
-			if(task.isCanceled())
-				_unwrapOperation.reset(); 
-		});
 	}
 	return _unwrapOperation;
 }
@@ -144,9 +139,7 @@ void UnwrapTrajectoriesModifierApplication::invalidateUnwrapData()
 	_unwrappedUpToTime = TimeNegativeInfinity();
 	_unwrapRecords.clear();
 	_unflipRecords.clear();
-	if(_unwrapOperation.isValid()) {
-		_unwrapOperation.reset();
-	}
+	_unwrapOperation.reset();
 }
 
 /******************************************************************************

@@ -295,7 +295,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::applyResults(const Modif
 /******************************************************************************
 * Transfers voxel grid properties to the vertices of a surfaces mesh.
 ******************************************************************************/
-bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(Task& task, SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape, ObjectInitializationHints initializationHints)
+bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(ProgressingTask& operation, SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape, ObjectInitializationHints initializationHints)
 {
 	// Create destination properties for transferring voxel values to the surface vertices.
 	std::vector<std::pair<ConstPropertyAccess<void,true>, PropertyAccess<void,true>>> propertyMapping;
@@ -322,7 +322,7 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(Task& task, Surf
 
 	// Transfer values of field properties to the created mesh vertices.
 	if(!propertyMapping.empty()) {
-		parallelFor(mesh.vertexCount(), task, [&](size_t vertexIndex) {
+		parallelFor(mesh.vertexCount(), operation, [&](size_t vertexIndex) {
 			// Trilinear interpolation scheme.
 			size_t cornerIndices[8];
 			FloatType cornerWeights[8];
@@ -371,7 +371,7 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(Task& task, Surf
 			}
 		});
 	}
-	return !task.isCanceled();
+	return !operation.isCanceled();
 }
 
 }	// End of namespace

@@ -108,11 +108,11 @@ frames from the input trajectory.
 A n:1 mapping is useful if the loaded simulation trajectory consists of excessively many snapshots
 and you want to render a short movie showing the whole trajectory but having fewer frames. 
 
-The option :guilabel:`Static frame` allows you to extract a single static frame from the 
+The :guilabel:`Static frame` option lets you extract a single snapshot frame from the 
 loaded simulation trajectory. This is useful for rendering a camera animation 
-of a static snapshot as shown in :ref:`this tutorial <tutorials.turntable_animation>`.
+depicting an otherwise static model as shown in :ref:`this tutorial <tutorials.turntable_animation>`.
 
-See the :ref:`advanced animations <usage.animation>` section for further information on
+See the :ref:`advanced animations <usage.animation>` section to learn more on
 the difference between simulation and animation frames in OVITO.
 
 .. seealso::

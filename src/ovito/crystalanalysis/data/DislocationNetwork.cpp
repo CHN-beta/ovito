@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -205,12 +205,12 @@ void DislocationNetwork::discardSegment(DislocationSegment* segment)
 /******************************************************************************
 * Smoothens and coarsens the dislocation lines.
 ******************************************************************************/
-bool DislocationNetwork::smoothDislocationLines(int lineSmoothingLevel, FloatType linePointInterval, Task& promise)
+bool DislocationNetwork::smoothDislocationLines(int lineSmoothingLevel, FloatType linePointInterval, ProgressingTask& operation)
 {
-	promise.setProgressMaximum(segments().size());
+	operation.setProgressMaximum(segments().size());
 
 	for(DislocationSegment* segment : segments()) {
-		if(!promise.incrementProgressValue())
+		if(!operation.incrementProgressValue())
 			return false;
 		if(segment->coreSize.empty())
 			continue;
@@ -222,7 +222,7 @@ bool DislocationNetwork::smoothDislocationLines(int lineSmoothingLevel, FloatTyp
 		segment->coreSize.clear();
 	}
 
-	return !promise.isCanceled();
+	return !operation.isCanceled();
 }
 
 /******************************************************************************

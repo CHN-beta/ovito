@@ -103,16 +103,16 @@ public:
 			bool identifyPlanarDefects = true);
 
 	/// Identifies the atomic structures.
-	bool identifyStructures(Task& promise);
+	bool identifyStructures(ProgressingTask& operation);
 
 	/// Combines adjacent atoms to clusters.
-	bool buildClusters(Task& promise);
+	bool buildClusters(ProgressingTask& operation);
 
 	/// Determines the transition matrices between clusters.
-	bool connectClusters(Task& promise);
+	bool connectClusters(ProgressingTask& operation);
 
 	/// Combines clusters to super clusters.
-	bool formSuperClusters(Task& promise);
+	bool formSuperClusters(ProgressingTask& operation);
 
 	/// Returns the number of input atoms.
 	int atomCount() const { return positions()->size(); }

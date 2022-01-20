@@ -43,7 +43,12 @@ auto for_each_sequential(
 	// The output tuple produced by the task.
 	using task_tuple_type = std::tuple<std::decay_t<ResultType>...>;
 
-	class ForEachTask : public detail::ContinuationTask<task_tuple_type>
+	// Can we report progress because the total number of rerquired iterations is known?
+	constexpr bool is_with_progress = std::is_same_v<typename std::iterator_traits<typename InputRange::iterator>::iterator_category, std::random_access_iterator_tag>;
+
+	using task_base_class = std::conditional_t<is_with_progress, ProgressingTask, Task>;
+
+	class ForEachTask : public detail::ContinuationTask<task_tuple_type, task_base_class>
     {
     public:
 
@@ -54,7 +59,7 @@ auto for_each_sequential(
 			StartIterFunc&& startFunc, 
 			CompleteIterFunc&& completeFunc, 
 			ResultType&&... initialResult) : 
-				detail::ContinuationTask<task_tuple_type>(Task::Started, std::forward_as_tuple(std::forward<ResultType>(initialResult)...)),
+				detail::ContinuationTask<task_tuple_type, task_base_class>(Task::Started, std::forward_as_tuple(std::forward<ResultType>(initialResult)...)),
 				_range(std::forward<InputRange>(inputRange)),
 				_executor(std::forward<Executor>(executor)),
 				_startFunc(std::forward<StartIterFunc>(startFunc)),
@@ -62,7 +67,7 @@ auto for_each_sequential(
 				_iterator(std::begin(_range)) 
 		{
 			// Determine the number of iterations we are going to perform.
-			if constexpr(std::is_same_v<typename std::iterator_traits<typename InputRange::iterator>::iterator_category, std::random_access_iterator_tag>)
+			if constexpr(is_with_progress)
 				this->setProgressMaximum(std::distance(_iterator, std::end(_range)));
 		}
 
@@ -76,12 +81,12 @@ auto for_each_sequential(
 		}
 
 		/// Method that provides public read/write access to the internal results storage of this task.
-		using detail::ContinuationTask<task_tuple_type>::resultsStorage;
+		using detail::ContinuationTask<task_tuple_type, task_base_class>::resultsStorage;
 
 		/// Performs the next iteration of the mapping process.
 		void iteration_begin() noexcept {
 			// Report the number of iterations we have performed so far.
-			if constexpr(std::is_same_v<typename std::iterator_traits<typename InputRange::iterator>::iterator_category, std::random_access_iterator_tag>)
+			if constexpr(is_with_progress)
 				this->setProgressValue(std::distance(std::begin(_range), _iterator));
 
 			// Did we already reach the end of the input range?

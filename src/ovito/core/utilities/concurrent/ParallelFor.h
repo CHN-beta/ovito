@@ -25,7 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/app/Application.h>
-#include "Task.h"
+#include "ProgressingTask.h"
 
 #ifndef OVITO_DISABLE_THREADING
 	#include <future>
@@ -36,7 +36,7 @@ namespace Ovito {
 template<class Function, typename T>
 bool parallelFor(
 		T loopCount,
-		Task& promise,
+		ProgressingTask& promise,
 		Function kernel,
 		T progressChunkSize = 1024)
 {
@@ -140,7 +140,7 @@ void parallelFor(T loopCount, Function kernel)
 }
 
 template<class Function>
-bool parallelForChunks(size_t loopCount, Task& promise, Function kernel)
+bool parallelForChunks(size_t loopCount, ProgressingTask& operation, Function kernel)
 {
 #ifndef OVITO_DISABLE_THREADING
 	std::vector<std::future<void>> workers;
@@ -155,11 +155,11 @@ bool parallelForChunks(size_t loopCount, Task& promise, Function kernel)
 		if(t == num_threads - 1) {
 			chunkSize += loopCount % num_threads;
 			OVITO_ASSERT(startIndex + chunkSize == loopCount);
-			kernel(startIndex, chunkSize, promise);
+			kernel(startIndex, chunkSize, operation);
 		}
 		else {
-			workers.push_back(std::async(std::launch::async, [&kernel, startIndex, chunkSize, &promise]() {
-				kernel(startIndex, chunkSize, promise);
+			workers.push_back(std::async(std::launch::async, [&kernel, startIndex, chunkSize, &operation]() {
+				kernel(startIndex, chunkSize, operation);
 			}));
 		}
 		startIndex += chunkSize;
@@ -172,7 +172,7 @@ bool parallelForChunks(size_t loopCount, Task& promise, Function kernel)
 	kernel(0, loopCount, promise);
 #endif
 
-	return !promise.isCanceled();
+	return !operation.isCanceled();
 }
 
 template<class Function>
@@ -210,7 +210,7 @@ void parallelForChunks(size_t loopCount, Function kernel)
 }
 
 template<typename ResultObject, class Function>
-std::vector<ResultObject> parallelForCollect(size_t loopCount, Task& task, Function&& kernel, size_t progressChunkSize = 1024)
+std::vector<ResultObject> parallelForCollect(size_t loopCount, ProgressingTask& task, Function&& kernel, size_t progressChunkSize = 1024)
 {
 	task.setProgressMaximum(loopCount / progressChunkSize);
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,7 +44,7 @@ public:
 public:
 
 	/// Loads the filter definition from the given input stream.
-	bool load(CompressedTextReader& stream, bool readHeaderOnly, Task& operation);
+	bool load(CompressedTextReader& stream, bool readHeaderOnly, ProgressingTask& operation);
 
 	/// Returns the comment text loaded from the filter definition file.
 	const QString& filterDescription() const { return _filterDescription; }

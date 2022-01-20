@@ -48,17 +48,17 @@ MarchingCubes::MarchingCubes(SurfaceMeshAccess& outputMesh, int size_x, int size
 /******************************************************************************
 * Main method that constructs the isosurface mesh.
 ******************************************************************************/
-bool MarchingCubes::generateIsosurface(FloatType isolevel, Task& task)
+bool MarchingCubes::generateIsosurface(FloatType isolevel, ProgressingTask& operation)
 {
     int size_x = _infiniteDomain ? (_size_x - 1) : _size_x;
     int size_y = _infiniteDomain ? (_size_y - 1) : _size_y;
     int size_z = _infiniteDomain ? (_size_z - 1) : _size_z;
 
-    task.setProgressMaximum(size_z * 2);
-    computeIntersectionPoints(isolevel, task);
-    if(task.isCanceled()) return false;
+    operation.setProgressMaximum(size_z * 2);
+    computeIntersectionPoints(isolevel, operation);
+    if(operation.isCanceled()) return false;
 
-    for(int k = 0; k < size_z && !task.isCanceled(); k++, task.incrementProgressValue()) {
+    for(int k = 0; k < size_z && !operation.isCanceled(); k++, operation.incrementProgressValue()) {
         for(int j = 0; j < size_y; j++) {
             for(int i = 0; i < size_x; i++) {
                 _lut_entry = 0;
@@ -71,17 +71,17 @@ bool MarchingCubes::generateIsosurface(FloatType isolevel, Task& task)
             }
         }
     }
-    return !task.isCanceled();
+    return !operation.isCanceled();
 }
 
 /******************************************************************************
 * Compute the intersection points with the isosurface along the cube edges.
 ******************************************************************************/
-void MarchingCubes::computeIntersectionPoints(FloatType isolevel, Task& task)
+void MarchingCubes::computeIntersectionPoints(FloatType isolevel, ProgressingTask& operation)
 {
     if(_pbcFlags[0] && _pbcFlags[1] && _pbcFlags[2])
         _outputMesh.setSpaceFillingRegion(0);
-    for(int k = 0; k < _size_z && !task.isCanceled(); k++, task.incrementProgressValue()) {
+    for(int k = 0; k < _size_z && !operation.isCanceled(); k++, operation.incrementProgressValue()) {
         for(int j = 0; j < _size_y; j++) {
             for(int i = 0; i < _size_x; i++) {
                 FloatType cube[8];

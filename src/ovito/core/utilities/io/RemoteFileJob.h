@@ -127,7 +127,7 @@ public:
 	/// Constructor.
 	DownloadRemoteFileJob(QUrl url) :
 		RemoteFileJob(std::move(url), _promise), 
-		_promise(Promise<FileHandle>::create(false)) {}
+		_promise(Promise<FileHandle>::create<ProgressingTask>(false)) {}
 
 	/// Returns a future yielding the file downloaded by this job.
 	SharedFuture<FileHandle> sharedFuture() {
@@ -198,7 +198,7 @@ public:
 	/// Constructor.
 	ListRemoteDirectoryJob(QUrl url) :
 		RemoteFileJob(std::move(url), _promise), 
-		_promise(Promise<QStringList>::create(false)) {}
+		_promise(Promise<QStringList>::create<ProgressingTask>(false)) {}
 
 	/// Returns a future yielding the file list downloaded by this job.
 	Future<QStringList> future() {

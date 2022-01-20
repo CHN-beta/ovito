@@ -502,12 +502,12 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
 		// Perform analysis, particle-wise parallel.
 		setProgressMaximum(_positions->size());
-		parallelForChunks(_positions->size(), *this, [&](size_t startIndex, size_t chunkSize, Task& promise) {
+		parallelForChunks(_positions->size(), *this, [&](size_t startIndex, size_t chunkSize, ProgressingTask& operation) {
 			std::vector<int> localVoronoiBuffer;
 			std::vector<size_t> localVoronoiBufferIndex;
 			for(size_t index = startIndex; chunkSize--; index++) {
-				if(promise.isCanceled()) return;
-				if((index % 256) == 0) promise.incrementProgressValue(256);
+				if(operation.isCanceled()) return;
+				if((index % 256) == 0) operation.incrementProgressValue(256);
 
 				// Skip unselected particles (if requested).
 				if(selectionArray && selectionArray[index] == 0)

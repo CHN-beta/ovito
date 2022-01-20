@@ -306,7 +306,7 @@ SharedFuture<> DataSet::whenSceneReady()
 
 	// Create a new promise to represent the process of making the scene ready.
 	if(!_sceneReadyPromise.isValid()) {
-		_sceneReadyPromise = Promise<>::create();
+		_sceneReadyPromise = Promise<>::create<Task>(true);
 
 		/// Reset the promise to the null state as soon as it gets canceled.
 		_sceneReadyPromise.finally(executor(), [this]() {
@@ -554,7 +554,7 @@ bool DataSet::renderScene(RenderSettings* renderSettings, const std::vector<std:
 					int frameNumber = firstFrameNumber + frameIndex * renderSettings->everyNthFrame() + renderSettings->fileNumberBase();
 
 					operation.setProgressValue(frameIndex);
-					operation.setProgressText(tr("Rendering animation (frame %1 of %2)").arg(frameIndex+1).arg(numberOfFrames));
+					operation.setProgressText(tr("Rendering animation frame %1 of %2").arg(frameIndex+1).arg(numberOfFrames));
 
 					MainThreadOperation frameOperation = operation.createSubTask(true);
 					notCanceled = renderFrame(renderTime, frameNumber, renderSettings, renderer, frameBuffer, viewportLayout, videoEncoder, frameOperation);

@@ -44,10 +44,11 @@ public:
 
     /// The different states a task can be in.
     enum State {
-        NoState    = 0,
-        Started    = (1<<0),
-        Finished   = (1<<1),
-        Canceled   = (1<<2)
+        NoState       = 0,
+        Started       = (1<<0),
+        Finished      = (1<<1),
+        Canceled      = (1<<2),
+        IsProgressing = (1<<3) // Indicates that the task's class is derived from ProgressingTask and can report its progress
     };
 
     /// Constructor.
@@ -73,70 +74,8 @@ public:
     /// Returns true if the promise is in the 'finished' state.
     bool isFinished() const { return (_state.loadRelaxed() & Finished); }
 
-    /// Returns the maximum value for progress reporting.
-    qlonglong progressMaximum() const {
-        const QMutexLocker lock(&_mutex);
-        return _totalProgressMaximum;
-    }
-
-    /// \brief Returns the current progress of the task.
-    /// \return A value in the range 0 to progressMaximum().
-    qlonglong progressValue() const {
-        const QMutexLocker lock(&_mutex);
-        return _totalProgressValue;
-    }
-
-    /// \brief Returns the current status text of this task.
-    /// \return A string describing the ongoing operation, which is displayed in the user interface.
-    QString progressText() const {
-        const QMutexLocker lock(&_mutex);
-        return _progressText;
-    }
-
-    /// \brief Sets the current maximum value for progress reporting. The current progress value is reset to zero.
-    void setProgressMaximum(qlonglong maximum);
-
-    /// \brief Sets the current progress value of the task.
-    /// \param progressValue The new value, which must be in the range 0 to progressMaximum().
-    /// \return false if the task has been canceled.
-    bool setProgressValue(qlonglong progressValue);
-
-    /// \brief Increments the progress value of the task.
-    /// \param increment The number of progress units to add to the current progress value.
-    /// \return false if the task has been canceled.
-    bool incrementProgressValue(qlonglong increment = 1);
-
-    /// \brief Sets the current progress value of the task, generating update events only occasionally.
-    /// \param progressValue The new value, which must be in the range 0 to progressMaximum().
-    /// \param updateEvery Generate an update event only after the method has been called this many times.
-    /// \return false if the task has been canceled.
-    bool setProgressValueIntermittent(qlonglong progressValue, int updateEvery = 2000);
-
-    /// \brief Changes the description of this task to be displayed in the GUI.
-    /// \param progressText The text string that will be displayed in the user interface to describe the operation in progress.
-    void setProgressText(const QString& progressText);
-
-    /// \brief Starts a sequence of sub-steps in the progress range of this task.
-    ///
-    /// This is used for long and complex operation, which consist of several logical sub-steps, each with a separate
-    /// duration.
-    ///
-    /// \param weights A vector of relative weights, one for each sub-step, which will be used to calculate the
-    ///                the total progress as sub-steps are completed.
-    void beginProgressSubStepsWithWeights(std::vector<int> weights);
-
-    /// \brief Convenience version of the function above, which creates *N* substeps, all with the same weight.
-    /// \param nsteps The number of sub-steps in the sequence.
-    void beginProgressSubSteps(int nsteps) { beginProgressSubStepsWithWeights(std::vector<int>(nsteps, 1)); }
-
-    /// \brief Completes the current sub-step in the sequence started with beginProgressSubSteps() or
-    ///        beginProgressSubStepsWithWeights() and moves to the next one.
-    void nextProgressSubStep();
-
-    /// \brief Completes a sub-step sequence started with beginProgressSubSteps() or beginProgressSubStepsWithWeights().
-    ///
-    /// Call this method after the last sub-step has been completed.
-    void endProgressSubSteps();
+    /// Indicates whether this task's class is derived from the ProgressingTask base class.
+    bool isProgressingTask() const { return (_state.loadRelaxed() & IsProgressing); }
 
     /// \brief Requests cancellation of the task.
     void cancel() noexcept;
@@ -343,9 +282,6 @@ protected:
     /// Returns the mutex that is used to manage concurrent access to this task.
     QMutex& taskMutex() const { return _mutex; }
 
-    /// Recomputes the total progress made so far based on the progress of the current sub-task.
-    void updateTotalProgress();
-
     /// The current state this task is in.
     QAtomicInt _state;
 
@@ -366,28 +302,6 @@ protected:
 
     /// Pointer to a std::tuple<...> storing the result value(s) of this task.
     void* _resultsStorage = nullptr;
-
-    /// The progress value of the current sub-task.
-    qlonglong _progressValue = 0;
-    
-    /// The maximum progress value of the current sub-task.
-    qlonglong _progressMaximum = 0;
-
-    /// The progress value of the task.
-	qlonglong _totalProgressValue = 0;
-
-    /// The maximum progress value of the task.
-	qlonglong _totalProgressMaximum = 0;
-
-    /// A description of what this task is currently doing, to be displayed in the GUI.
-    QString _progressText;
-
-    /// Keeps track of nested sub-tasks and their current progress.
-    std::vector<std::pair<int, std::vector<int>>> _subTaskProgressStack;
-    
-    int _intermittentUpdateCounter = 0;
-    
-    QElapsedTimer _progressTime;
 
 #ifdef OVITO_DEBUG
     /// Indicates whether the result value of the task has been set.

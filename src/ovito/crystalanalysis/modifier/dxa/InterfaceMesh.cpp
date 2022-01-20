@@ -62,11 +62,11 @@ ForwardIterator most_common(ForwardIterator first, ForwardIterator last)
 /******************************************************************************
 * Creates the mesh facets separating good and bad tetrahedra.
 ******************************************************************************/
-bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstPropertyAccess<qlonglong> crystalClusters, Task& promise)
+bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstPropertyAccess<qlonglong> crystalClusters, ProgressingTask& operation)
 {
 	OVITO_ASSERT(!crystalClusters); // This option is currently not supported.
 
-	promise.beginProgressSubSteps(2);
+	operation.beginProgressSubSteps(2);
 
 	// Determines if a tetrahedron belongs to the good or bad crystal region.
 	auto tetrahedronRegion = [this,&crystalClusters](DelaunayTessellation::CellHandle cell) {
@@ -121,10 +121,10 @@ bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstPropertyA
 
 	// Construct a one-sided surface mesh.
 	ManifoldConstructionHelper manifoldConstructor(ObjectInitializationHint::LoadFactoryDefaults, tessellation(), *this, alpha, false, structureAnalysis().positions());
-	if(!manifoldConstructor.construct(tetrahedronRegion, promise, prepareMeshFace))
+	if(!manifoldConstructor.construct(tetrahedronRegion, operation, prepareMeshFace))
 		return false;
 
-	promise.nextProgressSubStep();
+	operation.nextProgressSubStep();
 
 	// Make sure each vertex is only part of a single manifold.
 	makeManifold();
@@ -185,14 +185,14 @@ bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstPropertyA
 	}
 #endif
 
-	promise.endProgressSubSteps();
-	return !promise.isCanceled();
+	operation.endProgressSubSteps();
+	return !operation.isCanceled();
 }
 
 /******************************************************************************
 * Generates the nodes and facets of the defect mesh based on the interface mesh.
 ******************************************************************************/
-bool InterfaceMesh::generateDefectMesh(const DislocationTracer& tracer, SurfaceMeshAccess& defectMesh, Task& progress)
+bool InterfaceMesh::generateDefectMesh(const DislocationTracer& tracer, SurfaceMeshAccess& defectMesh, ProgressingTask& operation)
 {
 	// Adopt all vertices from the interface mesh to the defect mesh.
 	defectMesh.createVertices(std::begin(vertexPositions()), std::end(vertexPositions()));

@@ -105,13 +105,13 @@ public:
 	const std::shared_ptr<ClusterGraph>& clusterGraph() const { return _clusterGraph; }
 
 	/// Builds the list of edges in the tetrahedral tessellation.
-	bool generateTessellationEdges(Task& promise);
+	bool generateTessellationEdges(ProgressingTask& operation);
 
 	/// Assigns each tessellation vertex to a cluster.
-	bool assignVerticesToClusters(Task& promise);
+	bool assignVerticesToClusters(ProgressingTask& operation);
 
 	/// Determines the ideal vector corresponding to each edge of the tessellation.
-	bool assignIdealVectorsToEdges(int crystalPathSteps, Task& promise);
+	bool assignIdealVectorsToEdges(int crystalPathSteps, ProgressingTask& operation);
 
 	/// Determines whether the elastic mapping from the physical configuration
 	/// of the crystal to the imaginary, stress-free configuration is compatible

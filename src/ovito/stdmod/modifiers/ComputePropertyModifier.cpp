@@ -294,7 +294,7 @@ void ComputePropertyModifierDelegate::PropertyComputeEngine::perform()
 	setProgressMaximum(outputProperty()->size());
 
 	// Parallelized loop over all data elements.
-	parallelForChunks(outputProperty()->size(), *this, [this](size_t startIndex, size_t count, Task& promise) {
+	parallelForChunks(outputProperty()->size(), *this, [this](size_t startIndex, size_t count, ProgressingTask& operation) {
 		PropertyExpressionEvaluator::Worker worker(*_evaluator);
 
 		size_t endIndex = startIndex + count;
@@ -303,10 +303,10 @@ void ComputePropertyModifierDelegate::PropertyComputeEngine::perform()
 
 			// Update progress indicator.
 			if((elementIndex % 1024) == 0)
-				promise.incrementProgressValue(1024);
+				operation.incrementProgressValue(1024);
 
 			// Exit if operation was canceled.
-			if(promise.isCanceled())
+			if(operation.isCanceled())
 				return;
 
 			// Skip unselected particles if requested.

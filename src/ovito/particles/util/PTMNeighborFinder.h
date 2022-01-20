@@ -55,7 +55,7 @@ public:
 				 ConstPropertyPtr structuresArray,
 				 ConstPropertyPtr orientationsArray,
 				 ConstPropertyPtr correspondencesArray,
-				 Task* task);
+				 ProgressingTask* operation);
 
 	/// Stores information about a single neighbor of the central particle.
 	struct Neighbor : public NearestNeighborFinder::Neighbor

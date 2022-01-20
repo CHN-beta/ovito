@@ -76,11 +76,11 @@ public:
 	/// \param positions The property containing the particle coordinates.
 	/// \param simCell The input simulation cell geometry and boundary conditions.
 	/// \param selectionProperty Determines which particles are included in the neighbor search (optional).
-	/// \param promis An optional callback object that is used to the report progress.
+	/// \param operation An optional callback object that is used to the report progress.
 	/// \return \c false when the operation has been canceled by the user;s
 	///         \c true on success.
 	/// \throw Exception on error.
-	bool prepare(FloatType cutoffRadius, ConstPropertyAccess<Point3> positions, const SimulationCellObject* simCell, ConstPropertyAccess<int> selectionProperty, Task* promise);
+	bool prepare(FloatType cutoffRadius, ConstPropertyAccess<Point3> positions, const SimulationCellObject* simCell, ConstPropertyAccess<int> selectionProperty, ProgressingTask* operation);
 
 	/// Returns the cutoff radius set via prepare().
 	FloatType cutoffRadius() const { return _cutoffRadius; }

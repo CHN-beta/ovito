@@ -133,7 +133,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 
 	// Parallel calculation loop:
 	std::mutex mutex;
-	parallelForChunks(particleCount, *this, [&](size_t startIndex, size_t chunkSize, Task& promise) {
+	parallelForChunks(particleCount, *this, [&](size_t startIndex, size_t chunkSize, ProgressingTask& operation) {
 		size_t typeCount = _computePartialRdfs ? uniqueTypeIds().size() : 1;
 		size_t binCount = rdfY()->size();
 		size_t rdfCount = rdfY()->componentCount();
@@ -170,9 +170,9 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 
 			// Update progress indicator.
 			if((i % 1024ll) == 0)
-				promise.incrementProgressValue(1024);
+				operation.incrementProgressValue(1024);
 			// Abort loop when operation was canceled by the user.
-			if(promise.isCanceled())
+			if(operation.isCanceled())
 				return;
 		}
 		// Combine per-thread RDFs into a set of master histograms.

@@ -41,6 +41,7 @@ MainThreadOperation::MainThreadOperation(TaskPtr p, UserInterface& userInterface
 {
 	OVITO_ASSERT(isValid());
 	OVITO_ASSERT(isStarted());
+	OVITO_ASSERT(task()->isProgressingTask());
 
 	// Register the container MainThreadOperation with the TaskManager to display its progress in the UI.
 	if(visibleInUserInterface)
@@ -55,10 +56,10 @@ MainThreadOperation MainThreadOperation::createSubTask(bool visibleInUserInterfa
 {
 	OVITO_ASSERT(isValid());
 
-	class MainThreadSubTask : public Task, public detail::TaskCallback<MainThreadSubTask>
+	class MainThreadSubTask : public ProgressingTask, public detail::TaskCallback<MainThreadSubTask>
 	{
 	public:
-		MainThreadSubTask(const TaskPtr& parentTask) noexcept : Task(Task::Started) {
+		MainThreadSubTask(const TaskPtr& parentTask) noexcept : ProgressingTask(Task::Started) {
 			// Register a callback function to get notified when the parent task gets canceled.
 			registerCallback(parentTask.get(), true);
 		}

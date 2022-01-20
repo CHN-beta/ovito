@@ -120,6 +120,8 @@ SET(SourceFiles
 	utilities/io/CompressedTextWriter.cpp
 	utilities/concurrent/TaskWatcher.cpp
 	utilities/concurrent/Task.cpp
+	utilities/concurrent/ProgressingTask.cpp
+	utilities/concurrent/AsynchronousTask.cpp
 	utilities/concurrent/TaskManager.cpp
 	utilities/concurrent/MainThreadOperation.cpp
 	rendering/SceneRenderer.cpp

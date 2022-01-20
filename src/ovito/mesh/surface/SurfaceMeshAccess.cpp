@@ -83,7 +83,7 @@ OORef<const SurfaceMesh> SurfaceMeshAccess::reset(const SurfaceMesh* newMesh) no
 /******************************************************************************
 * Fairs a closed triangle mesh.
 ******************************************************************************/
-bool SurfaceMeshAccess::smoothMesh(int numIterations, Task& task, FloatType k_PB, FloatType lambda)
+bool SurfaceMeshAccess::smoothMesh(int numIterations, ProgressingTask& task, FloatType k_PB, FloatType lambda)
 {
 	// This is the implementation of the mesh smoothing algorithm:
 	//

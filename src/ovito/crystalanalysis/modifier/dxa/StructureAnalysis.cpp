@@ -451,18 +451,18 @@ void StructureAnalysis::initializeListOfStructures()
 /******************************************************************************
 * Identifies the atomic structures.
 ******************************************************************************/
-bool StructureAnalysis::identifyStructures(Task& promise)
+bool StructureAnalysis::identifyStructures(ProgressingTask& operation)
 {
 	// Prepare the neighbor list.
 	int maxNeighborListSize = std::min((int)_neighborListsSize + 1, (int)MAX_NEIGHBORS);
 	NearestNeighborFinder neighFinder(maxNeighborListSize);
-	if(!neighFinder.prepare(positions(), cell(), _particleSelection.buffer(), &promise))
+	if(!neighFinder.prepare(positions(), cell(), _particleSelection.buffer(), &operation))
 		return false;
 
 	// Identify local structure around each particle.
 	_maximumNeighborDistance = 0;
 
-	return parallelFor(positions()->size(), promise, [this, &neighFinder](size_t index) {
+	return parallelFor(positions()->size(), operation, [this, &neighFinder](size_t index) {
 		determineLocalStructure(neighFinder, index);
 	});
 }
@@ -761,9 +761,9 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
 /******************************************************************************
 * Combines adjacent atoms to clusters.
 ******************************************************************************/
-bool StructureAnalysis::buildClusters(Task& promise)
+bool StructureAnalysis::buildClusters(ProgressingTask& operation)
 {
-	promise.setProgressMaximum(positions()->size());
+	operation.setProgressMaximum(positions()->size());
 	int progressCounter = 0;
 	ConstPropertyAccess<Point3> positionsArray(positions());
 
@@ -798,7 +798,7 @@ bool StructureAnalysis::buildClusters(Task& promise)
 			atomsToVisit.pop_front();
 
 			// Update progress indicator.
-			if(!promise.setProgressValueIntermittent(++progressCounter))
+			if(!operation.setProgressValueIntermittent(++progressCounter))
 				return false;
 
 			// Look up symmetry permutation of current atom.
@@ -926,15 +926,15 @@ bool StructureAnalysis::buildClusters(Task& promise)
 
 //	qInfo() << "Number of clusters:" << (clusterGraph()->clusters().size() - 1);
 
-	return !promise.isCanceled();
+	return !operation.isCanceled();
 }
 
 /******************************************************************************
 * Determines the transition matrices between clusters.
 ******************************************************************************/
-bool StructureAnalysis::connectClusters(Task& promise)
+bool StructureAnalysis::connectClusters(ProgressingTask& operation)
 {
-	promise.setProgressMaximum(positions()->size());
+	operation.setProgressMaximum(positions()->size());
 
 	for(size_t atomIndex = 0; atomIndex < positions()->size(); atomIndex++) {
 		int clusterId = _atomClustersArray[atomIndex];
@@ -943,7 +943,7 @@ bool StructureAnalysis::connectClusters(Task& promise)
 		OVITO_ASSERT(cluster1);
 
 		// Update progress indicator.
-		if(!promise.setProgressValueIntermittent(atomIndex))
+		if(!operation.setProgressValueIntermittent(atomIndex))
 			return false;
 
 		// Look up symmetry permutation of current atom.
@@ -1030,13 +1030,13 @@ bool StructureAnalysis::connectClusters(Task& promise)
 
 //	qInfo() << "Number of cluster transitions:" << clusterGraph()->clusterTransitions().size();
 
-	return !promise.isCanceled();
+	return !operation.isCanceled();
 }
 
 /******************************************************************************
 * Combines clusters to super clusters.
 ******************************************************************************/
-bool StructureAnalysis::formSuperClusters(Task& promise)
+bool StructureAnalysis::formSuperClusters(ProgressingTask& operation)
 {
 	size_t oldTransitionCount = clusterGraph()->clusterTransitions().size();
 
@@ -1045,7 +1045,7 @@ bool StructureAnalysis::formSuperClusters(Task& promise)
 		cluster->rank = 0;
 		if(cluster->id == 0) continue;
 
-		if(promise.isCanceled())
+		if(operation.isCanceled())
 			return false;
 
 		OVITO_ASSERT(cluster->parentTransition == nullptr);
@@ -1108,7 +1108,7 @@ bool StructureAnalysis::formSuperClusters(Task& promise)
 		Cluster* parentCluster2 = getParentGrain(t->cluster2);
 		if(parentCluster1 == parentCluster2) continue;
 
-		if(promise.isCanceled())
+		if(operation.isCanceled())
 			return false;
 
 		ClusterTransition* parentTransition = t;
@@ -1136,7 +1136,7 @@ bool StructureAnalysis::formSuperClusters(Task& promise)
 		getParentGrain(cluster);
 	}
 
-	return !promise.isCanceled();
+	return !operation.isCanceled();
 }
 
 }	// End of namespace

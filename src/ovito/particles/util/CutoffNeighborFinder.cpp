@@ -29,11 +29,11 @@ namespace Ovito::Particles {
 /******************************************************************************
 * Initialization function.
 ******************************************************************************/
-bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selectionProperty, Task* promise)
+bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selectionProperty, ProgressingTask* operation)
 {
 	OVITO_ASSERT(positions);
 	OVITO_ASSERT(cell);
-	if(promise) promise->setProgressMaximum(0);
+	if(operation) operation->setProgressMaximum(0);
 
 	_cutoffRadius = cutoffRadius;
 	_cutoffRadiusSquared = cutoffRadius * cutoffRadius;
@@ -133,7 +133,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 				for(int iz = -stencilRadiusZ; iz <= stencilRadiusZ; iz++) {
 					if(std::abs(ix) < stencilRadius && std::abs(iy) < stencilRadius && std::abs(iz) < stencilRadius)
 						continue;
-					if(promise && promise->isCanceled())
+					if(operation && operation->isCanceled())
 						return false;
 					FloatType shortestDistance = FLOATTYPE_MAX;
 					for(int dx = -1; dx <= 1; dx++) {
@@ -163,7 +163,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 	const Point3* p = positions.cbegin();
 	for(size_t pindex = 0; pindex < particles.size(); pindex++, ++p) {
 
-		if(promise && promise->isCanceled())
+		if(operation && operation->isCanceled())
 			return false;
 
 		NeighborListParticle& a = particles[pindex];

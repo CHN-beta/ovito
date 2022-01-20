@@ -35,14 +35,14 @@ namespace Ovito::detail {
  *
  * The task gets automatically configured to use the internal results storage provided by this class.
  */
-template<class Tuple>
-class TaskWithStorage : public Task, private Tuple
+template<class Tuple, class TaskBase>
+class TaskWithStorage : public TaskBase, private Tuple
 {
 public:
     /// \brief Constructor assigning the task's results storage and forwarding any extra arguments to the task class constructor.
     /// \param initialResult The value to assign to the results storage tuple.
     template<typename InitialValue>
-    explicit TaskWithStorage(State initialState, InitialValue&& initialResult) : Task(initialState, static_cast<Tuple*>(this)), Tuple(std::forward<InitialValue>(initialResult)) {
+    explicit TaskWithStorage(Task::State initialState, InitialValue&& initialResult) : TaskBase(initialState, static_cast<Tuple*>(this)), Tuple(std::forward<InitialValue>(initialResult)) {
 #ifdef OVITO_DEBUG
         // This is used in debug builds to detect programming errors and explicitly keep track of whether a result has been assigned to the task.
         this->_hasResultsStored = true;
@@ -50,7 +50,7 @@ public:
     }
 
     /// \brief Constructor which leaves results storage uninitialized.
-    explicit TaskWithStorage(State initialState = Task::NoState) noexcept : Task(initialState, std::tuple_size_v<Tuple> != 0 ? static_cast<Tuple*>(this) : nullptr) {}
+    explicit TaskWithStorage(Task::State initialState = Task::NoState) noexcept : TaskBase(initialState, std::tuple_size_v<Tuple> != 0 ? static_cast<Tuple*>(this) : nullptr) {}
 
 protected:
 

@@ -261,7 +261,7 @@ Future<R...>::then(Executor&& executor, Function&& f)
 	// Infer the exact future/promise/task types to create.
 	using result_future_type = detail::continuation_future_type<Function,Future<R...>>;
 	using result_promise_type = typename result_future_type::promise_type;
-	using continuation_task_type = detail::ContinuationTask<typename result_promise_type::tuple_type>;
+	using continuation_task_type = detail::ContinuationTask<typename result_promise_type::tuple_type, Task>;
 
 	// This future must be valid for then() to work.
 	OVITO_ASSERT_MSG(isValid(), "Future::then()", "Future must be valid.");
@@ -298,12 +298,14 @@ Future<R...>::then(Executor&& executor, Function&& f)
 		// Put the continuation task into the 'started' state.
 		continuationTask->startLocked();
 
-		// Don't execute continuation function in case an error occurred in the preceding task.
-		// In such a case, forward the preceding exception state to the continuation task.
-		if(finishedTask->exceptionStore()) {
-			continuationTask->exceptionLocked(finishedTask->copyExceptionStore());
-			continuationTask->finishLocked(locker);
-			return;
+		// Don't execute continuation function in case an error occurred in the preceding task and unless the continuation function takes a Future.
+		// Forward any preceding exception state directly to the continuation task.
+		if constexpr(!std::is_invocable_v<Function, Future<R...>>) {
+			if(finishedTask->exceptionStore()) {
+				continuationTask->exceptionLocked(finishedTask->copyExceptionStore());
+				continuationTask->finishLocked(locker);
+				return;
+			}
 		}
 
 		// Now it's time to execute the continuation function supplied by the user.

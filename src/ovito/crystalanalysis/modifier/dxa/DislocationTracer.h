@@ -66,7 +66,7 @@ public:
 	/// Performs a dislocation search on the interface mesh by generating
 	/// trial Burgers circuits. Identified dislocation segments are converted to
 	/// a continuous line representation
-	bool traceDislocationSegments(Task& promise);
+	bool traceDislocationSegments(ProgressingTask& operation);
 
 	/// After dislocation segments have been extracted, this method trims
 	/// dangling lines and finds the optimal cluster to express each segment's
@@ -80,7 +80,7 @@ private:
 
 	BurgersCircuit* allocateCircuit();
 	void discardCircuit(BurgersCircuit* circuit);
-	bool findPrimarySegments(int maxBurgersCircuitSize, Task& promise);
+	bool findPrimarySegments(int maxBurgersCircuitSize, ProgressingTask& operation);
 	bool createBurgersCircuit(InterfaceMesh::Edge* edge, int maxBurgersCircuitSize);
 	void createAndTraceSegment(const ClusterVector& burgersVector, BurgersCircuit* forwardCircuit, int maxCircuitLength);
 	bool intersectsOtherCircuits(BurgersCircuit* circuit);

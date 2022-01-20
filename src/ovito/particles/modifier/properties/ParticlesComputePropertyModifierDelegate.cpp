@@ -237,7 +237,7 @@ void ParticlesComputePropertyModifierDelegate::Engine::perform()
 	setProgressMaximum(positions()->size());
 
 	// Parallelized loop over all particles.
-	parallelForChunks(positions()->size(), *this, [this, &neighborFinder](size_t startIndex, size_t count, Task& task) {
+	parallelForChunks(positions()->size(), *this, [this, &neighborFinder](size_t startIndex, size_t count, ProgressingTask& operation) {
 		ParticleExpressionEvaluator::Worker worker(*_evaluator);
 		ParticleExpressionEvaluator::Worker neighborWorker(*_neighborEvaluator);
 
@@ -266,10 +266,10 @@ void ParticlesComputePropertyModifierDelegate::Engine::perform()
 
 			// Update progress indicator.
 			if((particleIndex % 1024) == 0)
-				task.incrementProgressValue(1024);
+				operation.incrementProgressValue(1024);
 
 			// Exit if operation was canceled.
-			if(task.isCanceled())
+			if(operation.isCanceled())
 				return;
 
 			// Skip unselected particles if requested.

@@ -35,9 +35,9 @@ static const int edgeVertices[6][2] = {{0,1},{0,2},{0,3},{1,2},{1,3},{2,3}};
 /******************************************************************************
 * Builds the list of edges in the tetrahedral tessellation.
 ******************************************************************************/
-bool ElasticMapping::generateTessellationEdges(Task& promise)
+bool ElasticMapping::generateTessellationEdges(ProgressingTask& operation)
 {
-	promise.setProgressMaximum(tessellation().numberOfPrimaryTetrahedra());
+	operation.setProgressMaximum(tessellation().numberOfPrimaryTetrahedra());
 
 	// Generate list of tessellation edges.
 	for(DelaunayTessellation::CellIterator cellIter = tessellation().begin_cells(); cellIter != tessellation().end_cells(); ++cellIter) {
@@ -47,7 +47,7 @@ bool ElasticMapping::generateTessellationEdges(Task& promise)
 		if(tessellation().isGhostCell(cell)) continue;
 
 		// Update progress indicator.
-		if(!promise.setProgressValueIntermittent(tessellation().getCellIndex(cell)))
+		if(!operation.setProgressValueIntermittent(tessellation().getCellIndex(cell)))
 			return false;
 
 		// Create edge data structure for each of the six edges of the cell.
@@ -73,16 +73,16 @@ bool ElasticMapping::generateTessellationEdges(Task& promise)
 		}
 	}
 
-	return !promise.isCanceled();
+	return !operation.isCanceled();
 }
 
 /******************************************************************************
 * Assigns each tessellation vertex to a cluster.
 ******************************************************************************/
-bool ElasticMapping::assignVerticesToClusters(Task& promise)
+bool ElasticMapping::assignVerticesToClusters(ProgressingTask& operation)
 {
 	// Unknown runtime length.
-	promise.setProgressMaximum(0);
+	operation.setProgressMaximum(0);
 
 	// Assign a cluster to each vertex of the tessellation, which will be used to express
 	// reference vectors assigned to the edges leaving the vertex.
@@ -97,7 +97,7 @@ bool ElasticMapping::assignVerticesToClusters(Task& promise)
 	// from an already assigned vertex to all its unassigned neighbors.
 	bool notDone;
 	do {
-		if(promise.isCanceled())
+		if(operation.isCanceled())
 			return false;
 
 		notDone = false;
@@ -124,22 +124,22 @@ bool ElasticMapping::assignVerticesToClusters(Task& promise)
 	}
 	while(notDone);
 
-	return !promise.isCanceled();
+	return !operation.isCanceled();
 }
 
 /******************************************************************************
 * Determines the ideal vector corresponding to each edge of the tessellation.
 ******************************************************************************/
-bool ElasticMapping::assignIdealVectorsToEdges(int crystalPathSteps, Task& promise)
+bool ElasticMapping::assignIdealVectorsToEdges(int crystalPathSteps, ProgressingTask& operation)
 {
 	CrystalPathFinder pathFinder(_structureAnalysis, crystalPathSteps);
 
 	// Try to assign a reference vector to the tessellation edges.
-	promise.setProgressMaximum(_vertexEdges.size());
+	operation.setProgressMaximum(_vertexEdges.size());
 	size_t progressCounter = 0;
 	for(const auto& firstEdge : _vertexEdges) {
 
-		if(!promise.setProgressValueIntermittent(progressCounter++))
+		if(!operation.setProgressValueIntermittent(progressCounter++))
 			return false;
 
 		for(TessellationEdge* edge = firstEdge.first; edge != nullptr; edge = edge->nextLeavingEdge) {
@@ -189,7 +189,7 @@ bool ElasticMapping::assignIdealVectorsToEdges(int crystalPathSteps, Task& promi
 	}
 #endif
 
-	return !promise.isCanceled();
+	return !operation.isCanceled();
 }
 
 /******************************************************************************

@@ -113,11 +113,11 @@ public:
 	/// \param posProperty The positions of the particles.
 	/// \param cellData The simulation cell data.
 	/// \param selectionProperty Determines which particles are included in the neighbor search (optional).
-	/// \param promis A callback object that will be used to the report progress.
+	/// \param operation A callback object that will be used to the report progress.
 	/// \return \c false when the operation has been canceled by the user;
 	///         \c true on success.
 	/// \throw Exception on error.
-	bool prepare(ConstPropertyAccess<Point3> posProperty, const SimulationCellObject* cellData, ConstPropertyAccess<int> selectionProperty, Task* promise);
+	bool prepare(ConstPropertyAccess<Point3> posProperty, const SimulationCellObject* cellData, ConstPropertyAccess<int> selectionProperty, ProgressingTask* operation);
 
 	/// Returns the number of input particles in the system for which the NearestNeighborFinder was created.
 	size_t particleCount() const {

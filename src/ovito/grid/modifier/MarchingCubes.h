@@ -25,7 +25,7 @@
 
 #include <ovito/grid/Grid.h>
 #include <ovito/mesh/surface/SurfaceMeshAccess.h>
-#include <ovito/core/utilities/concurrent/Task.h>
+#include <ovito/core/utilities/concurrent/ProgressingTask.h>
 
 namespace Ovito::Grid {
 
@@ -39,7 +39,7 @@ public:
     // Constructor
     MarchingCubes(SurfaceMeshAccess& outputMesh, int size_x, int size_y, int size_z, bool lowerIsSolid, std::function<FloatType(int i, int j, int k)> field, bool infiniteDomain = false);
 
-    bool generateIsosurface(FloatType iso, Task& task);
+    bool generateIsosurface(FloatType iso, ProgressingTask& operation);
 
     /// Returns the generated surface mesh.
     const SurfaceMeshAccess& mesh() const { return _outputMesh; }
@@ -58,7 +58,7 @@ private:
     bool testInterior(signed char s);
 
     /// Computes almost all the vertices of the mesh by interpolation along the cubes edges.
-    void computeIntersectionPoints(FloatType iso, Task& promise);
+    void computeIntersectionPoints(FloatType iso, ProgressingTask& operation);
 
     /// Adds triangles to the mesh.
     void addTriangle(int i, int j, int k, const signed char* trig, signed char n, SurfaceMeshAccess::vertex_index v12 = SurfaceMeshAccess::InvalidIndex);

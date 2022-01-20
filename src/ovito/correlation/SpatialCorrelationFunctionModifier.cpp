@@ -647,7 +647,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
 	size_t vecComponent2 = _vecComponent2;
 	setProgressMaximum(particleCount);
 	std::mutex mutex;
-	parallelForChunks(particleCount, *this, [&,this](size_t startIndex, size_t chunkSize, Task& promise) {
+	parallelForChunks(particleCount, *this, [&,this](size_t startIndex, size_t chunkSize, ProgressingTask& operation) {
 		FloatType gridSpacing = (neighCutoff() + FLOATTYPE_EPSILON) / neighCorrelation()->size();
 		std::vector<FloatType> threadLocalCorrelation(neighCorrelation()->size(), 0);
 		std::vector<int> threadLocalRDF(neighCorrelation()->size(), 0);
@@ -671,9 +671,9 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
 			}
 			// Update progress indicator.
 			if((i % 1024ll) == 0)
-				promise.incrementProgressValue(1024);
+				operation.incrementProgressValue(1024);
 			// Abort loop when operation was canceled by the user.
-			if(promise.isCanceled())
+			if(operation.isCanceled())
 				return;
 		}
 		std::lock_guard<std::mutex> lock(mutex);
