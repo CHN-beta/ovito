@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include "detail/TaskWithStorage.h"
 #include "Future.h"
+#include "TaskManager.h"
 
 namespace Ovito {
 
@@ -34,47 +35,35 @@ class OVITO_CORE_EXPORT AsynchronousTaskBase : public ProgressingTask, public QR
 public:
 
 	/// Constructor.
-	AsynchronousTaskBase(State initialState = NoState, void* resultsStorage = nullptr) noexcept : ProgressingTask(initialState, resultsStorage) {
-		QRunnable::setAutoDelete(false);
-	}
+	AsynchronousTaskBase(State initialState = NoState, void* resultsStorage = nullptr) noexcept;
 
 	/// Destructor.
-	~AsynchronousTaskBase() {
-		// If task was never submitted for execution, cancel and finish it.
-		if(!isFinished()) {
-			cancel();
-			setFinished();
-		}
-	}
+	~AsynchronousTaskBase();
 
     /// \brief Blocks execution until another future is complete. 
 	/// \param future The future to wait for.
 	/// \return false if either the future or this task have been canceled.
-    bool waitForFuture(const FutureBase& future);
+    [[nodiscard]] bool waitForFuture(const FutureBase& future);
 	
 	/// This virtual function is responsible for computing the results of the task.
 	virtual void perform() = 0;
 
-protected:
+private:
 
 	/// Implementation of QRunnable.
-	virtual void run() override {
-		OVITO_ASSERT(isStarted());
-		try {
-			perform();
-		}
-		catch(...) {
-			captureException();
-		}
-		setFinished();
-		_thisTask.reset(); // No need to keep the task object alive any longer.
-	}
+	virtual void run() override ;
+
+	/// Submits the task for execution to a thread pool.
+	void startInThreadPool(QThreadPool* pool);
+
+	/// Runs the task's work function immediately in the current thread.
+	void startInThisThread();
 
 	/// A shared pointer to the task itself, which is used to keep the C++ object alive
 	/// while the task is running in a thread pool.
 	TaskPtr _thisTask;
 
-	friend class TaskManager;
+	template<typename... R> friend class AsynchronousTask;
 };
 
 template<typename... R>
@@ -82,27 +71,35 @@ class AsynchronousTask : public detail::TaskWithStorage<std::tuple<R...>, Asynch
 {
 public:
 
+	/// Schedules the task for execution in the global thread pool, registers it with the given TaskManager, 
+	/// and returns a future for the task's results.
+	Future<R...> runAsync(TaskManager& taskManager) {
+		taskManager.registerTask(*this);
+		return runAsync();
+	}
+
+	/// Schedules the task for execution in the global thread pool and returns a future for the task's results.
+	Future<R...> runAsync() {
+#ifndef OVITO_DISABLE_THREADING
+		// Submit the task for execution in a background thread.
+		return runAsync(QThreadPool::globalInstance());
+#else
+		// If multi-threading is not available, run the task immediately.
+		return runImmediately();
+#endif
+	}
+
 #ifndef OVITO_DISABLE_THREADING
 	/// Submits the task to a thread pool for execution and returns a future for the task's results.
-	Future<R...> submit(QThreadPool* pool) {
-		OVITO_ASSERT(!this->_thisTask);
-		OVITO_ASSERT(!this->isStarted());
-
-		// Store a shared_ptr to this task to keep it alive while running.
-		this->_thisTask = this->shared_from_this();
-		this->setStarted();
-		pool->start(this);
-		return Future<R...>::createFromTask(this->_thisTask);
+	Future<R...> runAsync(QThreadPool* pool) {
+		this->startInThreadPool(pool);
+		return Future<R...>::createFromTask(this->shared_from_this());
 	}
 #endif
 
 	/// Runs the task in place and returns a future for the task's results.
 	Future<R...> runImmediately() {
-		OVITO_ASSERT(!this->_thisTask);
-		OVITO_ASSERT(!this->isStarted());
-
-		this->setStarted();
-		this->run();
+		this->startInThisThread();
 		return Future<R...>::createFromTask(this->shared_from_this());
 	}
 

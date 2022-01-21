@@ -314,6 +314,7 @@ protected:
     friend class FutureBase;
     friend class PromiseBase;
     friend class MainThreadOperation;
+    friend class AsynchronousTaskBase;
     friend class detail::TaskReference;
     friend class detail::TaskCallbackBase;
     template<typename Derived> friend class detail::TaskCallback;

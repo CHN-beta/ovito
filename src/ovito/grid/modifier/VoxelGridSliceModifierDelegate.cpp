@@ -167,7 +167,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 				fieldProperties.push_back(property);
 
 			// Copy field values from voxel grid to surface mesh vertices.
-			auto localOperation = std::make_shared<ProgressingTask>();
+			auto localOperation = std::make_shared<ProgressingTask>(Task::Started);
 			CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(*localOperation, mesh, fieldProperties, gridShape, request.initializationHints());
 			localOperation->setFinished();
 

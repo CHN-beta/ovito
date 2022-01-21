@@ -49,6 +49,17 @@ MainThreadOperation::MainThreadOperation(TaskPtr p, UserInterface& userInterface
 }
 
 /******************************************************************************
+* Puts the promise into the 'finished' state and detaches it from the underlying task object.
+******************************************************************************/
+void MainThreadOperation::reset() 
+{
+	if(TaskPtr task = std::move(_task)) {
+		OVITO_ASSERT(task->isStarted());
+		task->setFinished();
+	}
+}
+
+/******************************************************************************
 * Creates a separate MainThreadOperation that represents a sub-task of the running operation.
 * If the parent task gets canceled, the sub-task is canceled as well, and vice versa.
 ******************************************************************************/

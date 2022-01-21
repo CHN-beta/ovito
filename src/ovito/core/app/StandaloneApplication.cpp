@@ -152,7 +152,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 				MainThreadOperation operation = startupUserInterface->createOperation(true);
 				postStartupInitialization(operation);
 				if(operation.isCanceled()) 
-					throw Exception(tr("Program initialization was interrupted."));
+					QCoreApplication::exit(1);
 			}
 			catch(const Exception& ex) {
 				// Shutdown with error exit code when running in scripting mode.

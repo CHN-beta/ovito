@@ -65,12 +65,7 @@ public:
 	UserInterface& userInterface() const { return _userInterface; }
 
 	/// Puts the promise into the 'finished' state and detaches it from the underlying task object.
-	void reset() {
-		if(TaskPtr task = std::move(_task)) {
-			OVITO_ASSERT(task->isStarted());
-			task->setFinished();
-		}
-	}
+	void reset();
 
 	/// Returns the shared task, casting it to the ProgressingTask subclass.
 	ProgressingTask& progressingTask() const { 
@@ -108,12 +103,12 @@ public:
 	///        If the awaited task gets canceled while waiting, this task gets canceled too.
     /// \param task The task to wait for.
     /// \return false if either \a task or this operation have been canceled.
-	bool waitForTask(const TaskPtr& awaitedTask);
+	[[nodiscard]] bool waitForTask(const TaskPtr& awaitedTask);
 
     /// \brief Blocks execution until a future is fulfilled. 
     /// \param future The future to wait for.
     /// \return false if either \a future or this operation have been canceled.
-    bool waitForFuture(const FutureBase& future) { return waitForTask(future.task()); }
+    [[nodiscard]] bool waitForFuture(const FutureBase& future) { return waitForTask(future.task()); }
 
 protected:
 

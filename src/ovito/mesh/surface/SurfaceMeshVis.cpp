@@ -167,7 +167,7 @@ Future<PipelineFlowState> SurfaceMeshVis::transformDataImpl(const PipelineEvalua
 	auto engine = createSurfaceEngine(surfaceMesh);
 
 	// Submit engine for execution and post-process results.
-	return taskManager().runTaskAsync(std::move(engine))
+	return engine->runAsync(taskManager())
 		.then(executor(), [this, flowState = std::move(flowState), dataObject = OORef<DataObject>(dataObject)](DataOORef<const TriMeshObject>&& surfaceMesh, DataOORef<const TriMeshObject>&& capPolygonsMesh, std::vector<ColorA>&& materialColors, std::vector<size_t>&& originalFaceMap, bool renderFacesTwoSided, PipelineStatus&& status) mutable {
 			// Output the computed mesh as a RenderableSurfaceMesh.
 			DataOORef<RenderableSurfaceMesh> renderableMesh = DataOORef<RenderableSurfaceMesh>::create(dataset(), 

@@ -48,31 +48,6 @@ public:
     /// \note This method is *not* thread-safe and may only be called from the main thread.
 	const std::vector<TaskWatcher*>& runningTasks() const { return _runningTaskStack; }
 
-	/// \brief Executes an asynchronous task in a background thread.
-	///
-	/// This function is thread-safe. It returns a Future that is fulfilled when the task completed.
-	template<class TaskType>
-	auto runTaskAsync(const std::shared_ptr<TaskType>& task) {
-		OVITO_ASSERT(task);
-		// Associate the task with this TaskManager.
-		registerTask(task);
-#ifndef OVITO_DISABLE_THREADING
-		// Submit the task for execution in a background thread.
-		return task->submit(QThreadPool::globalInstance());
-#else
-		// If multi-threading is not available, run the task immediately.
-		return task->runImmediately();
-#endif
-	}
-
-	/// \brief Executes an task in the current thread.
-	template<class TaskType>
-	auto runTaskSync(const std::shared_ptr<TaskType>& task) {
-		OVITO_ASSERT(task);
-		registerTask(task);
-		return task->runImmediately();
-	}
-
     /// \brief Registers a future with the TaskManager, which will subsequently track the progress of the associated operation.
     /// \param future The Future whose shared state should be registered.
     /// \note This function is thread-safe.
@@ -90,6 +65,10 @@ public:
     /// \brief Registers a Task with the TaskManager, which will subsequently track the progress of the associated operation.
     /// \note This function is thread-safe.
 	void registerTask(const TaskPtr& task);
+
+    /// \brief Registers a Task with the TaskManager, which will subsequently track the progress of the associated operation.
+    /// \note This function is thread-safe.
+	void registerTask(Task& task);
 
 	/// \brief Returns whether printing of task status messages to the console is currently enabled.
 	bool consoleLoggingEnabled() const { return _consoleLoggingEnabled; }

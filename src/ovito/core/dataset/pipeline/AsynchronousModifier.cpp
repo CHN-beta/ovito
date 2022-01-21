@@ -93,8 +93,8 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
 
 			auto future = 
 				_engine->preferSynchronousExecution() 
-				? _modApp->taskManager().runTaskSync(_engine)
-				: _modApp->taskManager().runTaskAsync(_engine);
+				? _engine->runImmediately()
+				: _engine->runAsync(_modApp->taskManager());
 
 			// Schedule next iteration upon completion of the future returned by the user function.
 			this->whenTaskFinishes(std::move(future), _modApp->executor(), 

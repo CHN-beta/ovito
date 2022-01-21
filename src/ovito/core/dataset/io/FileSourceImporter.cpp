@@ -324,7 +324,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 			.then(executor(), [this](const FileHandle& file) {
 				// Scan file.
 				if(FrameFinderPtr frameFinder = createFrameFinder(file))
-					return taskManager().runTaskAsync(frameFinder);
+					return frameFinder->runAsync(taskManager());
 				else
 					return Future<QVector<Frame>>::createImmediateEmplace();
 			});
@@ -366,7 +366,7 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
 	OVITO_ASSERT(frameLoader);
 
 	// Execute the loader in a background thread.
-	Future<PipelineFlowState> future = taskManager().runTaskAsync(std::move(frameLoader));
+	Future<PipelineFlowState> future = frameLoader->runAsync(taskManager());
 
 	// If the parser has detects additional frames following the first frame in the 
 	// input file being loaded, automatically turn on scanning of the input file.

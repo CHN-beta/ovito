@@ -65,12 +65,21 @@ void TaskManager::registerPromise(const PromiseBase& promise)
 }
 
 /******************************************************************************
-* Registers a promise with the task manager.
+* Registers an asynchronous task with the task manager.
 ******************************************************************************/
 void TaskManager::registerTask(const TaskPtr& task)
 {
 	// Execute the function call in the main thread.
 	QMetaObject::invokeMethod(this, "addTaskInternal", Q_ARG(TaskPtr, task));
+}
+
+/******************************************************************************
+* Registers an asynchronous task with the task manager.
+******************************************************************************/
+void TaskManager::registerTask(Task& task)
+{
+	// Execute the function call in the main thread.
+	QMetaObject::invokeMethod(this, "addTaskInternal", Q_ARG(TaskPtr, task.shared_from_this()));
 }
 
 /******************************************************************************
