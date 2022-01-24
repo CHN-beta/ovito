@@ -240,7 +240,7 @@ void ScatterPlotModifierEditor::plotScatterPlot()
 
 	if(modifier && modifierApplication()) {
 		// Request the modifier's pipeline output.
-		const PipelineFlowState& state = getPipelineInput();
+		const PipelineFlowState& state = getPipelineOutput();
 
 		// Look up the generated data table in the modifier's pipeline output.
 		const DataTable* table = state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("scatter"));
