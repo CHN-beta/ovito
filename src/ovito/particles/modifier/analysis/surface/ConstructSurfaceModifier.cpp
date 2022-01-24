@@ -150,7 +150,7 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
 	}
 	
 	// Create an empty surface mesh.
-	DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(dataset(), request.initializationHints() | ObjectInitializationHint::WithoutVisElement, tr("Surface"));
+	DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(dataset(), ObjectInitializationHint::WithoutVisElement, tr("Surface"));
 	mesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("surface")));
 	mesh->setDataSource(request.modApp());
 	mesh->setDomain(simCell);
@@ -293,7 +293,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 		OVITO_ASSERT(mesh.regionCount() == 1);
 
 		// Just construct a one-sided surface mesh without caring about spatial regions.
-		ManifoldConstructionHelper manifoldConstructor(initializationHints(), tessellation, mesh, alpha, false, positions());
+		ManifoldConstructionHelper manifoldConstructor(tessellation, mesh, alpha, false, positions());
 		if(!manifoldConstructor.construct(tetrahedronRegion, *this, std::move(prepareMeshFace), std::move(prepareMeshVertex)))
 			return;
 	}
@@ -301,7 +301,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 		beginProgressSubStepsWithWeights({ 2, 1 });
 
 		// Construct a two-sided surface mesh with mesh faces associated with spatial regions (filled or solid).
-		ManifoldConstructionHelper manifoldConstructor(initializationHints(), tessellation, mesh, alpha, true, positions());
+		ManifoldConstructionHelper manifoldConstructor(tessellation, mesh, alpha, true, positions());
 		if(!manifoldConstructor.construct(tetrahedronRegion, *this, std::move(prepareMeshFace), std::move(prepareMeshVertex)))
 			return;
 
@@ -315,7 +315,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 		_emptyRegionCount = manifoldConstructor.emptyRegionCount();
 
 		// Output auxiliary per-region information.
-		PropertyAccess<int> filledProperty(mesh.createRegionProperty(SurfaceMeshRegions::IsFilledProperty, false, initializationHints()));
+		PropertyAccess<int> filledProperty(mesh.createRegionProperty(SurfaceMeshRegions::IsFilledProperty));
 		std::fill(filledProperty.begin(), filledProperty.begin() + _filledRegionCount, 1);
 		std::fill(filledProperty.begin() + _filledRegionCount, filledProperty.end(), 0);
 
@@ -327,7 +327,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 		PropertyPtr vertexProperty;
 		if(SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
 			// Input property is also a standard property for mesh vertices.
-			vertexProperty = mesh.createVertexProperty(static_cast<SurfaceMeshVertices::Type>(particleProperty->type()), false, initializationHints());
+			vertexProperty = mesh.createVertexProperty(static_cast<SurfaceMeshVertices::Type>(particleProperty->type()));
 			OVITO_ASSERT(vertexProperty->dataType() == particleProperty->dataType());
 			OVITO_ASSERT(vertexProperty->stride() == particleProperty->stride());
 		}
@@ -335,11 +335,11 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 			// Input property name is that of a standard property for mesh vertices.
 			// Must rename the property to avoid conflict, because user properties may not have a standard property name.
 			QString newPropertyName = particleProperty->name() + tr("_particles");
-			vertexProperty = mesh.createVertexProperty(newPropertyName, particleProperty->dataType(), particleProperty->componentCount(), particleProperty->stride(), false, particleProperty->componentNames());
+			vertexProperty = mesh.createVertexProperty(newPropertyName, particleProperty->dataType(), particleProperty->componentCount(), DataBuffer::NoFlags, particleProperty->componentNames());
 		}
 		else {
 			// Input property is a user property for mesh vertices.
-			vertexProperty = mesh.createVertexProperty(particleProperty->name(), particleProperty->dataType(), particleProperty->componentCount(), particleProperty->stride(), false, particleProperty->componentNames());
+			vertexProperty = mesh.createVertexProperty(particleProperty->name(), particleProperty->dataType(), particleProperty->componentCount(), DataBuffer::NoFlags, particleProperty->componentNames());
 		}
 		// Copy particle property values to mesh vertices using precomputed index mapping.
 		particleProperty->mappedCopyTo(*vertexProperty, vertexToParticleMap);
@@ -358,7 +358,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
 	if(_identifyRegions) {
 		// Create the 'Surface area' region property.
-		PropertyAccess<FloatType> surfaceAreaProperty = mesh.createRegionProperty(SurfaceMeshRegions::SurfaceAreaProperty, true, initializationHints());
+		PropertyAccess<FloatType> surfaceAreaProperty = mesh.createRegionProperty(SurfaceMeshRegions::SurfaceAreaProperty, DataBuffer::InitializeMemory);
 
 		// Compute surface area (total and per region) by summing up the triangle face areas.
 		setProgressMaximum(mesh.faceCount());
@@ -574,7 +574,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 			PropertyPtr vertexProperty;
 			if(SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
 				// Input property is also a standard property for mesh vertices.
-				vertexProperty = mesh.createVertexProperty(static_cast<SurfaceMeshVertices::Type>(particleProperty->type()), true, initializationHints());
+				vertexProperty = mesh.createVertexProperty(static_cast<SurfaceMeshVertices::Type>(particleProperty->type()), DataBuffer::InitializeMemory);
 				OVITO_ASSERT(vertexProperty->dataType() == particleProperty->dataType());
 				OVITO_ASSERT(vertexProperty->stride() == particleProperty->stride());
 			}
@@ -582,11 +582,11 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 				// Input property name is that of a standard property for mesh vertices.
 				// Must rename the property to avoid conflict, because user properties may not have a standard property name.
 				QString newPropertyName = particleProperty->name() + tr("_particles");
-				vertexProperty = mesh.createVertexProperty(newPropertyName, particleProperty->dataType(), particleProperty->componentCount(), particleProperty->stride(), true, particleProperty->componentNames());
+				vertexProperty = mesh.createVertexProperty(newPropertyName, particleProperty->dataType(), particleProperty->componentCount(), DataBuffer::InitializeMemory, particleProperty->componentNames());
 			}
 			else {
 				// Input property is a user property for mesh vertices.
-				vertexProperty = mesh.createVertexProperty(particleProperty->name(), particleProperty->dataType(), particleProperty->componentCount(), particleProperty->stride(), true, particleProperty->componentNames());
+				vertexProperty = mesh.createVertexProperty(particleProperty->name(), particleProperty->dataType(), particleProperty->componentCount(), DataBuffer::InitializeMemory, particleProperty->componentNames());
 			}
 			propertyMapping.emplace_back(particleProperty, std::move(vertexProperty));
 		}

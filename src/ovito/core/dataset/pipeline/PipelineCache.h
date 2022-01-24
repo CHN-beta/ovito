@@ -96,7 +96,7 @@ private:
 	void startFramePrecomputation(const PipelineEvaluationRequest& request);
 
 	/// Requests the next frame from the pipeline that needs to be precomputed.
-	void precomputeNextAnimationFrame(ObjectInitializationHints initializationHints);
+	void precomputeNextAnimationFrame();
 
 	/// The contents of the cache.
 	std::vector<PipelineFlowState> _cachedStates;

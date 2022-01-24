@@ -124,6 +124,10 @@ public Q_SLOTS:
 	/// \brief Zooms to the extents of the scene.
 	void zoomToSceneExtents();
 
+	/// \brief Zooms all viewports to the extents of the currently selected nodes 
+	///        when the pipeline has been fully evaluated and the extents are known.
+	void zoomToSelectionExtentsWhenReady();
+
 	/// \brief This will flag all viewports for redrawing.
 	///
 	/// This function does not cause an immediate repaint of the viewports; instead it schedules a

@@ -35,11 +35,11 @@ void Microstructure::initializeObject(ObjectInitializationHints hints)
 {
 	SurfaceMesh::initializeObject(hints);
 
-    makeFacesMutable()->createProperty(SurfaceMeshFaces::RegionProperty, false, hints);
-    makeFacesMutable()->createProperty(SurfaceMeshFaces::BurgersVectorProperty, false, hints);
-    makeFacesMutable()->createProperty(SurfaceMeshFaces::FaceTypeProperty, false, hints);
-    makeFacesMutable()->createProperty(SurfaceMeshFaces::CrystallographicNormalProperty, false, hints);
-    makeRegionsMutable()->createProperty(SurfaceMeshRegions::PhaseProperty, false, hints);
+    makeFacesMutable()->createProperty(SurfaceMeshFaces::RegionProperty);
+    makeFacesMutable()->createProperty(SurfaceMeshFaces::BurgersVectorProperty);
+    makeFacesMutable()->createProperty(SurfaceMeshFaces::FaceTypeProperty);
+    makeFacesMutable()->createProperty(SurfaceMeshFaces::CrystallographicNormalProperty);
+    makeRegionsMutable()->createProperty(SurfaceMeshRegions::PhaseProperty);
 }
 
 /******************************************************************************

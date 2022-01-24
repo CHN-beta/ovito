@@ -128,6 +128,13 @@ public:
 	/// \param dataset The dataset the newly created object will belong to.
 	/// \return The new instance of the class. The pointer can be safely cast to the corresponding C++ class type.
 	/// \throw Exception if a required plugin failed to load, or if the instantiation failed for some other reason.
+	OORef<RefTarget> createInstance(DataSet* dataset) const;
+
+	/// \brief Creates an instance of a RefTarget-derived class.
+	/// \param dataset The dataset the newly created object will belong to.
+	/// \param hints Controls how the parameters of the new object get initialized. 
+	/// \return The new instance of the class. The pointer can be safely cast to the corresponding C++ class type.
+	/// \throw Exception if a required plugin failed to load, or if the instantiation failed for some other reason.
 	OORef<RefTarget> createInstance(DataSet* dataset, ObjectInitializationHints hints) const;
 
 	/// Compares two types.

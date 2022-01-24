@@ -83,9 +83,6 @@ public:
 		/// Changes the validity interval of the computation results.
 		void setValidityInterval(const TimeInterval& iv) { _validityInterval = iv; }
 
-		/// Returns the way new objects created by the engine should be initialized (depends on whether we are running in the GUI or a script context).
-		ObjectInitializationHints initializationHints() const { return _request.initializationHints(); }
-
 		/// Returns the object to be set as data source of data objects newly created by the engine.
 		const PipelineObject* dataSource() const { return _request.modApp(); }
 

@@ -102,7 +102,7 @@ void VTKFileImporter::FrameLoader::loadFile()
 	// Add mesh to the data collection.
 	TriMeshObject* mesh = state().getMutableObject<TriMeshObject>();
 	if(!mesh)
-		mesh = state().createObject<TriMeshObject>(dataSource(), initializationHints());
+		mesh = state().createObject<TriMeshObject>(dataSource());
 	else
 		mesh->clear();
 

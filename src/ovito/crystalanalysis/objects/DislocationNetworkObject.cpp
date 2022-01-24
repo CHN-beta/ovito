@@ -112,7 +112,7 @@ void DislocationNetworkObject::updateEditableProxies(PipelineFlowState& state, C
 	else {
 		// Create and initialize a new proxy object. 
 		// Note: We avoid copying the actual dislocation data here by constructing the proxy DislocationNetworkObject from scratch instead of cloning the original data object.
-		OORef<DislocationNetworkObject> newProxy = OORef<DislocationNetworkObject>::create(self->dataset(), ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement);
+		OORef<DislocationNetworkObject> newProxy = OORef<DislocationNetworkObject>::create(self->dataset(), ObjectInitializationHint::WithoutVisElement);
 		newProxy->setTitle(self->title());
 		while(!newProxy->crystalStructures().empty())
 			newProxy->removeCrystalStructure(0);

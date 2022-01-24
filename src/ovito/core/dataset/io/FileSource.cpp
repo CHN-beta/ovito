@@ -404,7 +404,7 @@ Future<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvaluationR
 	OVITO_ASSERT(frameTimeInterval(frame).contains(request.time()));
 
 	// Call implementation routine.
-	return requestFrameInternal(frame, request.initializationHints());
+	return requestFrameInternal(frame);
 }
 
 /******************************************************************************
@@ -472,11 +472,11 @@ TimeInterval FileSource::frameTimeInterval(int frame) const
 /******************************************************************************
 * Requests a source frame from the input sequence.
 ******************************************************************************/
-Future<PipelineFlowState> FileSource::requestFrameInternal(int frame, ObjectInitializationHints initializationHints)
+Future<PipelineFlowState> FileSource::requestFrameInternal(int frame)
 {
 	// First request the list of source frames and wait until it becomes available.
 	Future<PipelineFlowState> stateFuture = requestFrameList(false)
-		.then(executor(), [this, frame, initializationHints](const QVector<FileSourceImporter::Frame>& sourceFrames) -> Future<PipelineFlowState> {
+		.then(executor(), [this, frame](const QVector<FileSourceImporter::Frame>& sourceFrames) -> Future<PipelineFlowState> {
 
 			// Is the requested frame out of range?
 			if(frame >= sourceFrames.size()) {
@@ -493,7 +493,7 @@ Future<PipelineFlowState> FileSource::requestFrameInternal(int frame, ObjectInit
 
 			// Retrieve the file.
 			Future<PipelineFlowState> loadFrameFuture = Application::instance()->fileManager().fetchUrl(sourceFrames[frame].sourceFile)
-				.then(executor(), [this, frame, initializationHints](const FileHandle& fileHandle) -> Future<PipelineFlowState> {
+				.then(executor(), [this, frame](const FileHandle& fileHandle) -> Future<PipelineFlowState> {
 
 					// Without an importer object we have to give up immediately.
 					if(!importer()) {
@@ -513,11 +513,10 @@ Future<PipelineFlowState> FileSource::requestFrameInternal(int frame, ObjectInit
 					loadRequest.dataSource = this;
 					loadRequest.fileHandle = fileHandle;
 					loadRequest.frame = frameInfo;
-					loadRequest.initializationHints = initializationHints;
 					loadRequest.isNewlyImportedFile = (dataCollection() == nullptr);
 					loadRequest.state.setData(dataCollection() 
 						? DataOORef<const DataCollection>(dataCollection()) 
-						: DataOORef<const DataCollection>::create(dataset(), loadRequest.initializationHints));
+						: DataOORef<const DataCollection>::create(dataset()));
 
 					// Add some standard global attributes to the pipeline state to indicate where it is coming from.
 					loadRequest.state.setAttribute(QStringLiteral("SourceFrame"), frame, this);
@@ -537,7 +536,7 @@ Future<PipelineFlowState> FileSource::requestFrameInternal(int frame, ObjectInit
 		});
 
 	// Post-process the results of the loading operation before returning them to the caller.
-	return postprocessDataCollection(frame, initializationHints, frameTimeInterval(frame), std::move(stateFuture));
+	return postprocessDataCollection(frame, frameTimeInterval(frame), std::move(stateFuture));
 }
 
 /******************************************************************************

@@ -118,7 +118,7 @@ ColorLegendOverlay::ColorLegendOverlay(DataSet* dataset) : ViewportOverlay(datas
 ******************************************************************************/
 void ColorLegendOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
+	if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
 		// Automatically reset offset to zero when user changes the alignment of the overlay in the viewport.
 		setOffsetX(0);
 		setOffsetY(0);
@@ -170,7 +170,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 
 			// Evaulate pipeline and obtain output data collection.
 			if(!renderer->isInteractive()) {
-				PipelineEvaluationFuture pipelineEvaluation = pipeline->evaluatePipeline(PipelineEvaluationRequest(operation.initializationHints(), renderer->time()));
+				PipelineEvaluationFuture pipelineEvaluation = pipeline->evaluatePipeline(PipelineEvaluationRequest(renderer->time()));
 				if(!operation.waitForFuture(pipelineEvaluation))
 					return false;
 				// Look up the typed property.
@@ -265,7 +265,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 			endValue = std::numeric_limits<FloatType>::quiet_NaN();
 			if(ModifierApplication* modApp = modifier()->someModifierApplication()) {
 				QVariant minValue, maxValue;
-				PipelineEvaluationRequest request(operation.initializationHints(), renderer->time());
+				PipelineEvaluationRequest request(renderer->time());
 				if(!renderer->isInteractive()) {
 					SharedFuture<PipelineFlowState> stateFuture = modApp->evaluate(request);
 					if(!operation.waitForFuture(stateFuture))

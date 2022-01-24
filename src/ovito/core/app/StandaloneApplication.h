@@ -84,7 +84,7 @@ protected:
 	virtual bool processCommandLineParameters();
 
 	/// Prepares application at startup.
-	virtual UserInterface* startupApplication() = 0;
+	virtual MainThreadOperation startupApplication() = 0;
 
 protected:
 

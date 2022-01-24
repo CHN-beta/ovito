@@ -25,6 +25,7 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/data/DataObject.h>
+#include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 
 namespace Ovito::StdObj {
@@ -49,14 +50,14 @@ public:
 	const QString& pythonName() const { return _pythonName; }
 
 	/// Creates a new property storage for one of the registered standard properties.
-	virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const { return {}; }
+	virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const { return {}; }
 
 	/// Creates a new property object for a standard property of this container class.
-	PropertyPtr createStandardProperty(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath = ConstDataObjectPath{}) const;
+	PropertyPtr createStandardProperty(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, const ConstDataObjectPath& containerPath = ConstDataObjectPath{}) const;
 
 	/// Creates a new property object for a user-defined property.
-	PropertyPtr createUserProperty(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, size_t stride, const QString& name, bool initializeMemory, int type = 0, QStringList componentNames = QStringList()) const {
-		return PropertyPtr::create(dataset, elementCount, dataType, componentCount, stride, name, initializeMemory, type, std::move(componentNames));
+	PropertyPtr createUserProperty(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, const QString& name, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, int type = 0, QStringList componentNames = QStringList()) const {
+		return PropertyPtr::create(dataset, elementCount, dataType, componentCount, name, flags, type, std::move(componentNames));
 	}
 
 	/// Indicates whether this kind of property container supports picking of individual elements in the viewports.

@@ -86,7 +86,7 @@ private:
 	private:
 
 		/// Creates the right kind of OVITO property object that will receive the data read from a <DataArray> element.
-		PropertyObject* createGridPropertyForDataArray(VoxelGrid* gridObj, QXmlStreamReader& xml, int& vectorComponent);
+		PropertyObject* createGridPropertyForDataArray(VoxelGrid* gridObj, QXmlStreamReader& xml);
 	};
 };
 

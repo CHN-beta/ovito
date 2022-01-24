@@ -111,7 +111,7 @@ protected:
 private:
 
 	/// Transfer the particle positions from the trajectory frame to the current pipeline input state.
-	void applyTrajectoryState(PipelineFlowState& state, const PipelineFlowState& trajState, ObjectInitializationHints initializationHints);
+	void applyTrajectoryState(PipelineFlowState& state, const PipelineFlowState& trajState);
 
 	/// The source for trajectory data.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineObject>, trajectorySource, setTrajectorySource, PROPERTY_FIELD_NO_SUB_ANIM);

@@ -171,8 +171,7 @@ Future<PipelineFlowState> SurfaceMeshVis::transformDataImpl(const PipelineEvalua
 		.then(executor(), [this, flowState = std::move(flowState), dataObject = OORef<DataObject>(dataObject)](DataOORef<const TriMeshObject>&& surfaceMesh, DataOORef<const TriMeshObject>&& capPolygonsMesh, std::vector<ColorA>&& materialColors, std::vector<size_t>&& originalFaceMap, bool renderFacesTwoSided, PipelineStatus&& status) mutable {
 			// Output the computed mesh as a RenderableSurfaceMesh.
 			DataOORef<RenderableSurfaceMesh> renderableMesh = DataOORef<RenderableSurfaceMesh>::create(dataset(), 
-				ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement, 
-				this, dataObject, std::move(surfaceMesh), std::move(capPolygonsMesh), !renderFacesTwoSided);
+				ObjectInitializationHint::WithoutVisElement, this, dataObject, std::move(surfaceMesh), std::move(capPolygonsMesh), !renderFacesTwoSided);
             renderableMesh->setVisElement(this);
 			renderableMesh->setMaterialColors(std::move(materialColors));
             renderableMesh->setOriginalFaceMap(std::move(originalFaceMap));
@@ -628,7 +627,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 	const SurfaceMeshAccess inputMeshData(inputMesh());
 
 	// Transfer vertices and faces from half-edge mesh structure to triangle mesh structure.
-	_surfaceMesh = DataOORef<TriMeshObject>::create(_inputMesh->dataset(), ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement);
+	_surfaceMesh = DataOORef<TriMeshObject>::create(_inputMesh->dataset(), ObjectInitializationHint::WithoutVisElement);
 	inputMeshData.convertToTriMesh(*_surfaceMesh, _smoothShading, _faceSubset, &_originalFaceMap, !_renderFacesTwoSided);
 
 	// Check for early abortion.
@@ -971,7 +970,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 	OVITO_ASSERT(cell());
 
 	// Create the output mesh object.
-	_capPolygonsMesh = DataOORef<TriMeshObject>::create(_inputMesh->dataset(), ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement);
+	_capPolygonsMesh = DataOORef<TriMeshObject>::create(_inputMesh->dataset(), ObjectInitializationHint::WithoutVisElement);
 
 	// Create accessor for the input mesh data.
 	const SurfaceMeshAccess inputMeshData(inputMesh());

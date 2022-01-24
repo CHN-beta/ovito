@@ -279,8 +279,9 @@ void ManualSelectionModifierEditor::resetSelection()
 	if(!mod) return;
 
 	undoableTransaction(tr("Reset selection"), [this,mod]() {
+		PipelineEvaluationRequest request(ExecutionContext::Interactive, dataset()->animationSettings()->time());
 		for(ModifierApplication* modApp : modifierApplications()) {
-			mod->resetSelection(modApp, modApp->evaluateInputSynchronousAtCurrentTime());
+			mod->resetSelection(modApp, modApp->evaluateInputSynchronous(request));
 		}
 	});
 }
@@ -294,8 +295,9 @@ void ManualSelectionModifierEditor::selectAll()
 	if(!mod) return;
 
 	undoableTransaction(tr("Select all"), [this,mod]() {
+		PipelineEvaluationRequest request(ExecutionContext::Interactive, dataset()->animationSettings()->time());
 		for(ModifierApplication* modApp : modifierApplications()) {
-			mod->selectAll(modApp, modApp->evaluateInputSynchronousAtCurrentTime());
+			mod->selectAll(modApp, modApp->evaluateInputSynchronous(request));
 		}
 	});
 }
@@ -309,8 +311,9 @@ void ManualSelectionModifierEditor::clearSelection()
 	if(!mod) return;
 
 	undoableTransaction(tr("Clear selection"), [this,mod]() {
+		PipelineEvaluationRequest request(ExecutionContext::Interactive, dataset()->animationSettings()->time());
 		for(ModifierApplication* modApp : modifierApplications()) {
-			mod->clearSelection(modApp, modApp->evaluateInputSynchronousAtCurrentTime());
+			mod->clearSelection(modApp, modApp->evaluateInputSynchronous(request));
 		}
 	});
 }
@@ -324,8 +327,9 @@ void ManualSelectionModifierEditor::invertSelection()
 	if(!mod) return;
 
 	undoableTransaction(tr("Invert selection"), [this,mod]() {
+		PipelineEvaluationRequest request(ExecutionContext::Interactive, dataset()->animationSettings()->time());
 		for(ModifierApplication* modApp : modifierApplications()) {
-			mod->invertSelection(modApp, modApp->evaluateInputSynchronousAtCurrentTime());
+			mod->invertSelection(modApp, modApp->evaluateInputSynchronous(request));
 		}
 	});
 }
@@ -339,6 +343,7 @@ void ManualSelectionModifierEditor::onElementPicked(const ViewportPickResult& pi
 	if(!mod || !mod->subject()) return;
 
 	undoableTransaction(tr("Toggle selection"), [this, mod, elementIndex, &pickedObjectPath, &pickResult]() {
+		PipelineEvaluationRequest request(ExecutionContext::Interactive, dataset()->animationSettings()->time());
 		for(ModifierApplication* modApp : modifierApplications()) {
 
 			// Make sure we are in the right data pipeline.
@@ -346,7 +351,7 @@ void ManualSelectionModifierEditor::onElementPicked(const ViewportPickResult& pi
 				continue;
 
 			// Get the modifier's input data.
-			const PipelineFlowState& modInput = modApp->evaluateInputSynchronousAtCurrentTime();
+			const PipelineFlowState& modInput = modApp->evaluateInputSynchronous(request);
 			const ConstDataObjectPath& inputObjectPath = modInput.expectObject(mod->subject());
 
 			// Look up the right element in the modifier's input.
@@ -374,10 +379,11 @@ void ManualSelectionModifierEditor::onFence(const QVector<Point2>& fence, Viewpo
 	if(!mod || !mod->subject()) return;
 
 	undoableTransaction(tr("Select"), [this, mod, &fence, viewport, mode]() {
+		PipelineEvaluationRequest request(ExecutionContext::Interactive, dataset()->animationSettings()->time());
 		for(ModifierApplication* modApp : modifierApplications()) {
 
 			// Get the modifier's input data.
-			const PipelineFlowState& modInput = modApp->evaluateInputSynchronousAtCurrentTime();
+			const PipelineFlowState& modInput = modApp->evaluateInputSynchronous(request);
 			const ConstDataObjectPath& inputObjectPath = modInput.expectObject(mod->subject());
 
 			// Iterate of the nodes that use this pipeline.

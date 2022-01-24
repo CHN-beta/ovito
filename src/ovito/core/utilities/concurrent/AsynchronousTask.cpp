@@ -57,6 +57,8 @@ void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool)
 	OVITO_ASSERT(!this->isStarted());
 	// Store a shared_ptr to this task to keep it alive while running.
 	this->_thisTask = this->shared_from_this();
+	// Inherit execution context from parent task.
+	_executionContext = ExecutionContext::current();
 	this->setStarted();
 	pool->start(this);
 }
@@ -68,6 +70,8 @@ void AsynchronousTaskBase::startInThisThread()
 {
 	OVITO_ASSERT(!this->_thisTask);
 	OVITO_ASSERT(!this->isStarted());
+	// Inherit execution context from parent task.
+	_executionContext = ExecutionContext::current();
 	this->setStarted();
 	this->run();
 }
@@ -78,6 +82,7 @@ void AsynchronousTaskBase::startInThisThread()
 void AsynchronousTaskBase::run() 
 {
 	OVITO_ASSERT(isStarted());
+	ExecutionContext::Scope execScope(_executionContext);
 	try {
 		perform();
 	}
@@ -142,6 +147,7 @@ bool AsynchronousTaskBase::waitForFuture(const FutureBase& future)
 				alreadyDone.storeRelaxed(true);
 				wc.wakeAll();
 			}
+			return true;
 		});
 
 		// Register a callback function with the awaited task, which sets the wait condition when the task gets canceled or finishes.
@@ -151,6 +157,7 @@ bool AsynchronousTaskBase::waitForFuture(const FutureBase& future)
 				alreadyDone.storeRelaxed(true);
 				wc.wakeAll();
 			}
+			return true;
 		});
 
 		// Wait now until one of the tasks are done.
@@ -184,7 +191,7 @@ bool AsynchronousTaskBase::waitForFuture(const FutureBase& future)
 		// The current task is executing synchronously in the main thread. 
 		// Perform a wait using a local QEventLoop, similar to a MainThreadOperation.
 		UserInterface* nullUserInterface = nullptr;
-		return MainThreadTaskWrapper(this->shared_from_this(), *nullUserInterface, ObjectInitializationHint::LoadFactoryDefaults).waitForFuture(future);
+		return MainThreadTaskWrapper(this->shared_from_this(), *nullUserInterface).waitForFuture(future);
 	}
 }
 

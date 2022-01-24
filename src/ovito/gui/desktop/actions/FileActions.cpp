@@ -120,7 +120,7 @@ void WidgetActionManager::on_FileNewWindow_triggered()
 		QString defaultsFilePath = QStandardPaths::locate(QStandardPaths::AppDataLocation, QStringLiteral("defaults.ovito"));
 		if(!defaultsFilePath.isEmpty()) {
 			try {
-				mainWin->datasetContainer().loadDataset(defaultsFilePath, mainWin->createOperation(true));
+				mainWin->datasetContainer().loadDataset(defaultsFilePath, MainThreadOperation::create(*mainWin));
 				mainWin->datasetContainer().currentSet()->setFilePath({});
 			}
 			catch(Exception& ex) {
@@ -166,7 +166,7 @@ void WidgetActionManager::on_FileOpen_triggered()
 		// Remember directory for the next time...
 		settings.setValue("last_directory", QFileInfo(filename).absolutePath());
 
-		mainWindow().datasetContainer().loadDataset(filename, mainWindow().createOperation(true));
+		mainWindow().datasetContainer().loadDataset(filename, MainThreadOperation::create(mainWindow(), true));
 	}
 	catch(const Exception& ex) {
 		ex.reportError();
@@ -226,7 +226,7 @@ void WidgetActionManager::on_FileImport_triggered()
 		// Import file(s).
 		mainWindow().datasetContainer().importFiles(
 			dialog.urlsToImport(), 
-			mainWindow().createOperation(true),
+			MainThreadOperation::create(mainWindow(), true),
 			dialog.selectedFileImporterType());
 	}
 	catch(const Exception& ex) {
@@ -248,7 +248,7 @@ void WidgetActionManager::on_FileRemoteImport_triggered()
 		// Import URL.
 		mainWindow().datasetContainer().importFiles(
 			{ dialog.urlToImport() }, 
-			mainWindow().createOperation(true),
+			MainThreadOperation::create(mainWindow(), true),
 			dialog.selectedFileImporterType());
 	}
 	catch(const Exception& ex) {

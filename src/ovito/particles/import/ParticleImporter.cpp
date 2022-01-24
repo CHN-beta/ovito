@@ -68,7 +68,7 @@ ParticlesObject* ParticleImporter::FrameLoader::particles()
 	if(!_particles) {
 		_particles = state().getMutableObject<ParticlesObject>();
 		if(!_particles) {
-			_particles = state().createObject<ParticlesObject>(dataSource(), initializationHints());
+			_particles = state().createObject<ParticlesObject>(dataSource());
 			_areParticlesNewlyCreated = true;
 		}
 	}
@@ -85,7 +85,7 @@ BondsObject* ParticleImporter::FrameLoader::bonds()
 			_bonds = particles()->makeBondsMutable();
 		}
 		else {
-			particles()->setBonds(DataOORef<BondsObject>::create(dataset(), initializationHints()));
+			particles()->setBonds(DataOORef<BondsObject>::create(dataset()));
 			_bonds = particles()->makeBondsMutable();
 			_bonds->setDataSource(dataSource());
 			_areBondsNewlyCreated = true;
@@ -104,7 +104,7 @@ AnglesObject* ParticleImporter::FrameLoader::angles()
 			_angles = particles()->makeAnglesMutable();
 		}
 		else {
-			particles()->setAngles(DataOORef<AnglesObject>::create(dataset(), initializationHints()));
+			particles()->setAngles(DataOORef<AnglesObject>::create(dataset()));
 			_angles = particles()->makeAnglesMutable();
 			_angles->setDataSource(dataSource());
 			_areAnglesNewlyCreated = true;
@@ -123,7 +123,7 @@ DihedralsObject* ParticleImporter::FrameLoader::dihedrals()
 			_dihedrals = particles()->makeDihedralsMutable();
 		}
 		else {
-			particles()->setDihedrals(DataOORef<DihedralsObject>::create(dataset(), initializationHints()));
+			particles()->setDihedrals(DataOORef<DihedralsObject>::create(dataset()));
 			_dihedrals = particles()->makeDihedralsMutable();
 			_dihedrals->setDataSource(dataSource());
 			_areDihedralsNewlyCreated = true;
@@ -142,7 +142,7 @@ ImpropersObject* ParticleImporter::FrameLoader::impropers()
 			_impropers = particles()->makeImpropersMutable();
 		}
 		else {
-			particles()->setImpropers(DataOORef<ImpropersObject>::create(dataset(), initializationHints()));
+			particles()->setImpropers(DataOORef<ImpropersObject>::create(dataset()));
 			_impropers = particles()->makeImpropersMutable();
 			_impropers->setDataSource(dataSource());
 			_areImpropersNewlyCreated = true;
@@ -246,7 +246,7 @@ void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
 	ConstPropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds()->getProperty(BondsObject::TopologyProperty);
 	if(!bondTopologyProperty) return;
 
-	PropertyAccess<Vector3I> bondPeriodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty, false, initializationHints());
+	PropertyAccess<Vector3I> bondPeriodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty);
 
 	if(!hasSimulationCell() || !simulationCell()->hasPbcCorrected()) {
 		bondPeriodicImageProperty.take()->fill(Vector3I::Zero());
@@ -339,9 +339,9 @@ void ParticleImporter::FrameLoader::generateBonds()
 
 	// Create BondsObject.
 	setBondCount(boost::accumulate(partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); }));
-	PropertyAccess<ParticleIndexPair> bondTopologyProperty = this->bonds()->createProperty(BondsObject::TopologyProperty, false, initializationHints());
-	PropertyAccess<int> bondTypeProperty = this->bonds()->createProperty(BondsObject::TypeProperty, false, initializationHints());
-	PropertyAccess<Vector3I> bondPeriodicImageProperty = this->bonds()->createProperty(BondsObject::PeriodicImageProperty, false, initializationHints());
+	PropertyAccess<ParticleIndexPair> bondTopologyProperty = this->bonds()->createProperty(BondsObject::TopologyProperty);
+	PropertyAccess<int> bondTypeProperty = this->bonds()->createProperty(BondsObject::TypeProperty);
+	PropertyAccess<Vector3I> bondPeriodicImageProperty = this->bonds()->createProperty(BondsObject::PeriodicImageProperty);
 
 	// Create bond type.
 	addNumericType(BondsObject::OOClass(), bondTypeProperty.buffer(), 1, {});
@@ -370,7 +370,7 @@ void ParticleImporter::FrameLoader::computeVelocityMagnitude()
 
 	if(ConstPropertyAccess<Vector3> velocityVectors = _particles->getProperty(ParticlesObject::VelocityProperty)) {
 		auto v = velocityVectors.cbegin();
-		PropertyObject* magnitudeProperty = particles()->createProperty(ParticlesObject::VelocityMagnitudeProperty, false, initializationHints());
+		PropertyObject* magnitudeProperty = particles()->createProperty(ParticlesObject::VelocityMagnitudeProperty);
 		for(FloatType& mag : PropertyAccess<FloatType>(magnitudeProperty)) {
 			mag = v->length();
 			++v;
@@ -483,14 +483,14 @@ void ParticleImporter::FrameLoader::loadFile()
 /******************************************************************************
 * Is called when importing multiple files of different formats.
 ******************************************************************************/
-bool ParticleImporter::importFurtherFiles(std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, ObjectInitializationHints initializationHints, PipelineSceneNode* pipeline)
+bool ParticleImporter::importFurtherFiles(std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, PipelineSceneNode* pipeline)
 {
 	OVITO_ASSERT(!sourceUrlsAndImporters.empty());
 	OORef<ParticleImporter> nextImporter = dynamic_object_cast<ParticleImporter>(sourceUrlsAndImporters.front().second);
 	if(this->isTrajectoryFormat() == false && nextImporter && nextImporter->isTrajectoryFormat() == true) {
 
 		// Create a new file source for loading the trajectory.
-		OORef<FileSource> fileSource = OORef<FileSource>::create(dataset(), initializationHints);
+		OORef<FileSource> fileSource = OORef<FileSource>::create(dataset());
 
 		// Concatenate all files from the input list having the same file format into one sequence,
 		// which gets handled by the trajectory importer.
@@ -511,12 +511,12 @@ bool ParticleImporter::importFurtherFiles(std::vector<std::pair<QUrl, OORef<File
 		// Create a modifier for injecting the trajectory data into the existing pipeline.
 		OORef<LoadTrajectoryModifier> loadTrjMod = new LoadTrajectoryModifier(dataset());
 		loadTrjMod->setTrajectorySource(std::move(fileSource));
-		pipeline->applyModifier(loadTrjMod, initializationHints);
+		pipeline->applyModifier(loadTrjMod);
 
 		if(sourceUrlsAndImporters.empty())
 			return true;
 	}
-	return FileSourceImporter::importFurtherFiles(std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, initializationHints, pipeline);
+	return FileSourceImporter::importFurtherFiles(std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, pipeline);
 }
 
 }	// End of namespace

@@ -395,7 +395,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 	}
 
 	// Parse particle data.
-	InputColumnReader columnParser(_columnMapping, particles(), initializationHints());
+	InputColumnReader columnParser(_columnMapping, particles());
 	try {
 		QVector<double> chunkData;
 		int i = 0;

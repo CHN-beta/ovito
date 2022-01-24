@@ -63,6 +63,9 @@ private:
 	/// while the task is running in a thread pool.
 	TaskPtr _thisTask;
 
+	/// The type of execution context that this task inherits from its parent task.
+	ExecutionContext::Type _executionContext;
+
 	template<typename... R> friend class AsynchronousTask;
 };
 

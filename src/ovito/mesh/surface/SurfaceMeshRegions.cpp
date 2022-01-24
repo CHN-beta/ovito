@@ -31,40 +31,34 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshRegions);
 /******************************************************************************
 * Creates a storage object for standard region properties.
 ******************************************************************************/
-PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t regionCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const
+PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
-	size_t stride;
 
 	switch(type) {
 	case SelectionProperty:
 		dataType = PropertyObject::Int;
 		componentCount = 1;
-		stride = sizeof(int);
 		break;
 	case ColorProperty:
 		dataType = PropertyObject::Float;
 		componentCount = 3;
-		stride = componentCount * sizeof(FloatType);
-		OVITO_ASSERT(stride == sizeof(Color));
+		OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Color));
 		break;
 	case PhaseProperty:
 	case IsFilledProperty:
 		dataType = PropertyObject::Int;
 		componentCount = 1;
-		stride = sizeof(int);
 		break;
 	case VolumeProperty:
 	case SurfaceAreaProperty:
 		dataType = PropertyObject::Float;
 		componentCount = 1;
-		stride = sizeof(FloatType);
 		break;
 	case LatticeCorrespondenceProperty:
 		dataType = PropertyObject::Float;
 		componentCount = 9;
-		stride = sizeof(Matrix3);
 		break;
 	default:
 		OVITO_ASSERT_MSG(false, "SurfaceMeshRegions::createStandardPropertyInternal", "Invalid standard property type");
@@ -75,23 +69,22 @@ PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardPropertyInternal(Data
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, initializationHints, regionCount, dataType, componentCount, stride,
-								propertyName, false, type, componentNames);
+	PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
 
 	// Initialize memory if requested.
-	if(initializeMemory && containerPath.size() >= 2) {
+	if(flags.testFlag(DataBuffer::InitializeMemory) && containerPath.size() >= 2) {
 		// Certain standard properties need to be initialized with default values determined by the attached visual elements.
 		if(type == ColorProperty) {
 			if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(containerPath[containerPath.size()-2])) {
 				if(SurfaceMeshVis* vis = surfaceMesh->visElement<SurfaceMeshVis>()) {
 					property->fill(vis->surfaceColor());
-					initializeMemory = false;
+					flags.setFlag(DataBuffer::InitializeMemory, false);
 				}
 			}
 		}
 	}
 
-	if(initializeMemory) {
+	if(flags.testFlag(DataBuffer::InitializeMemory)) {
 		// Default-initialize property values with zeros.
 		property->fillZero();
 	}

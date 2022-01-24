@@ -317,7 +317,7 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
 
 		// Generate pair-wise line elements.
 		size_t n = std::distance(vertices.begin(), outVertex); 
-		DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(vp->dataset(), ObjectInitializationHint::LoadFactoryDefaults, n * (n - 1), DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(vp->dataset(), n * (n - 1), DataBuffer::Float, 3);
 		auto iter = lines.begin();
 		for(auto v1 = vertices.begin(); v1 != outVertex; ++v1) {
 			for(auto v2 = v1 + 1; v2 != outVertex; ++v2) {

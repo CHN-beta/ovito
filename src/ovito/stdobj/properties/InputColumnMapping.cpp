@@ -189,8 +189,8 @@ void InputColumnMapping::validate() const
 /******************************************************************************
  * Initializes the object.
  *****************************************************************************/
-InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, PropertyContainer* container, ObjectInitializationHints initializationHints, bool removeExistingProperties)
-	: _mapping(mapping), _container(container), _initializationHints(initializationHints)
+InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, PropertyContainer* container, bool removeExistingProperties)
+	: _mapping(mapping), _container(container)
 {
 	mapping.validate();
 
@@ -212,7 +212,7 @@ InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, Property
 			PropertyObject* property;
 			if(pref.type() != PropertyObject::GenericUserProperty) {
 				// Create standard property.
-				property = container->createProperty(pref.type(), true, initializationHints);
+				property = container->createProperty(pref.type(), DataBuffer::InitializeMemory);
 				// File reader may be overriden the property name.
 				property->setName(pref.name());
 				rec.elementTypeClass = container->getOOMetaClass().typedPropertyElementClass(pref.type());
@@ -232,7 +232,7 @@ InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, Property
 				}
 
 				// Create a new user-defined property for the column.
-				property = container->createProperty(pref.name(), dataType, componentCount, 0, true);
+				property = container->createProperty(pref.name(), dataType, componentCount, DataBuffer::InitializeMemory);
 			}
 
 			OVITO_ASSERT(vectorComponent < (int)property->componentCount());
@@ -403,9 +403,9 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 			if(ok) {
 				// Instantiate a new element type with a numeric ID and add it to the property's type list.
 				if(!prec.property->elementType(d)) {
-					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset(), _initializationHints));
+					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset()));
 					elementType->setNumericId(d);
-					elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec.property), _initializationHints);
+					elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec.property));
 					prec.property->addElementType(std::move(elementType));
 				}
 			}
@@ -416,10 +416,10 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 					d = t->numericId();
 				}
 				else {
-					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset(), _initializationHints));
+					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset()));
 					elementType->setName(typeName);
 					elementType->setNumericId(prec.property->generateUniqueElementTypeId());
-					elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec.property), _initializationHints);
+					elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec.property));
 
 					// Log in type name assigned by the file reader as default value for the element type.
 					// This is needed for the Python code generator to detect manual changes subsequently made by the user.
@@ -468,9 +468,9 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
 				if(prec->elementTypeClass) {
 					// Instantiate a new element type with a numeric ID and add it to the property's type list.
 					if(!prec->property->elementType(ival)) {
-						DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec->elementTypeClass->createInstance(_container->dataset(), _initializationHints));
+						DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec->elementTypeClass->createInstance(_container->dataset()));
 						elementType->setNumericId(ival);
-						elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec->property), _initializationHints);
+						elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec->property));
 						prec->property->addElementType(std::move(elementType));
 					}
 				}

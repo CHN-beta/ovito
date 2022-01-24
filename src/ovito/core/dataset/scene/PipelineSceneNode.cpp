@@ -69,17 +69,8 @@ PipelineSceneNode::~PipelineSceneNode() // NOLINT
 * Performs a synchronous evaluation of the pipeline yielding only preliminary results.
 ******************************************************************************/
 const PipelineFlowState& PipelineSceneNode::evaluatePipelineSynchronous(bool includeVisElements)
-{
-	return evaluatePipelineSynchronous(includeVisElements, 
-		Application::instance()->executionContext() == ExecutionContext::Interactive ? LoadUserDefaults : LoadFactoryDefaults);
-}
-
-/******************************************************************************
-* Performs a synchronous evaluation of the pipeline yielding only preliminary results.
-******************************************************************************/
-const PipelineFlowState& PipelineSceneNode::evaluatePipelineSynchronous(bool includeVisElements, ObjectInitializationHints initializationHints)
 {	
-	PipelineEvaluationRequest request(initializationHints, dataset()->animationSettings()->time());
+	PipelineEvaluationRequest request(dataset()->animationSettings()->time());
 	return includeVisElements ? 
 		_pipelineRenderingCache.evaluatePipelineSynchronous(request) : 
 		_pipelineCache.evaluatePipelineSynchronous(request);
@@ -332,14 +323,14 @@ QString PipelineSceneNode::objectTitle() const
 * Applies a modifier by appending it to the end of the node's modification
 * pipeline.
 ******************************************************************************/
-ModifierApplication* PipelineSceneNode::applyModifier(Modifier* modifier, ObjectInitializationHints initializationHints)
+ModifierApplication* PipelineSceneNode::applyModifier(Modifier* modifier)
 {
 	OVITO_ASSERT(modifier);
 
 	OORef<ModifierApplication> modApp = modifier->createModifierApplication();
 	modApp->setModifier(modifier);
 	modApp->setInput(dataProvider());
-	modifier->initializeModifier(ModifierInitializationRequest(initializationHints, dataset()->animationSettings()->time(), modApp));
+	modifier->initializeModifier(ModifierInitializationRequest(dataset()->animationSettings()->time(), modApp));
 	setDataProvider(modApp);
 	return modApp;
 }

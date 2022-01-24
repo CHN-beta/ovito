@@ -117,10 +117,6 @@ public:
 
 		/// Indicates whether the file is being loaded for the first time or a subsequent frame is being loaded. 
 		bool isNewlyImportedFile = true;
-
-		/// Hints controlling how new object are initialized. 
-		/// This depends on the type of execution context (interactive/scripting) in which the load operation runs.
-		ObjectInitializationHints initializationHints = ObjectInitializationHint::LoadFactoryDefaults;
 	};
 
 	/**
@@ -147,9 +143,6 @@ public:
 
 		/// Returns the FileSource that owns the file importer.
 		PipelineObject* dataSource() const { return _loadRequest.dataSource; }
-
-		/// Returns how the parameters of new objects should be initialized.
-		ObjectInitializationHints initializationHints() const { return loadRequest().initializationHints; }
 
 		/// Returns a data structure describing the current load operation.
 		const LoadOperationRequest& loadRequest() const { return _loadRequest; }
@@ -223,7 +216,7 @@ public:
 	virtual bool isReplaceExistingPossible(const std::vector<QUrl>& sourceUrls) override;
 
 	/// \brief Imports the given file(s) into the scene.
-	virtual OORef<PipelineSceneNode> importFileSet(std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, ObjectInitializationHints initializationHints) override;
+	virtual OORef<PipelineSceneNode> importFileSet(std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences) override;
 
 	//////////////////////////// Specific methods ////////////////////////////////
 
@@ -299,7 +292,7 @@ protected:
 	virtual bool shouldScanFileForFrames(const QUrl& sourceUrl) const { return isMultiTimestepFile(); }
 
 	/// Is called when importing multiple files of different formats.
-	virtual bool importFurtherFiles(std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, ObjectInitializationHints initializationHints, PipelineSceneNode* pipeline);
+	virtual bool importFurtherFiles(std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, PipelineSceneNode* pipeline);
 
 private:
 

@@ -46,9 +46,7 @@ PipelineObject::PipelineObject(DataSet* dataset) : ActiveObject(dataset)
 ******************************************************************************/
 PipelineFlowState PipelineObject::evaluateSynchronousAtCurrentTime() 
 { 
-	return evaluateSynchronous(PipelineEvaluationRequest(
-		Application::instance()->executionContext() == ExecutionContext::Interactive ? LoadUserDefaults : LoadFactoryDefaults,
-		dataset()->animationSettings()->time()));
+	return evaluateSynchronous(PipelineEvaluationRequest(dataset()->animationSettings()->time()));
 }
 
 /******************************************************************************

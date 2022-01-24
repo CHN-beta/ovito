@@ -127,7 +127,7 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const ParticlesObject* particl
 	particles->verifyIntegrity();
 
 	// Allocate output color array.
-	PropertyPtr output = ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::ColorProperty, false, ObjectInitializationHint::LoadFactoryDefaults);
+	PropertyPtr output = ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::ColorProperty);
 
 	Color defaultColor = defaultParticleColor();
 	if(const PropertyObject* baseProperty = particles->getProperty(ParticlesObject::NucleobaseTypeProperty)) {
@@ -272,7 +272,7 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 			visCache.basePrimitive.setRenderingQuality(ParticlePrimitive::MediumQuality);
 
 			// Fill in the position data for the base sites.
-			DataBufferAccessAndRef<Point3> baseSites = DataBufferPtr::create(dataset(), particles->elementCount(), DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Point3> baseSites = DataBufferPtr::create(dataset(), particles->elementCount(), DataBuffer::Float, 3);
 			ConstPropertyAccess<Point3> positionsArray(positionProperty);
 			ConstPropertyAccess<Vector3> nucleotideAxisArray(nucleotideAxisProperty);
 			for(size_t i = 0; i < baseSites.size(); i++)
@@ -283,13 +283,13 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 			visCache.basePrimitive.setColors(nucleobaseColors(particles, renderer->isInteractive()));
 
 			// Fill in aspherical shape values.
-			DataBufferPtr asphericalShapes = DataBufferPtr::create(dataset(), particles->elementCount(), DataBuffer::Float, 3, 0, false);
+			DataBufferPtr asphericalShapes = DataBufferPtr::create(dataset(), particles->elementCount(), DataBuffer::Float, 3);
 			asphericalShapes->fill(cylinderRadius() * Vector3(2.0, 3.0, 1.0));
 			visCache.basePrimitive.setAsphericalShapes(std::move(asphericalShapes));
 
 			// Fill in base orientations.
 			if(ConstPropertyAccess<Vector3> nucleotideNormalArray = nucleotideNormalProperty) {
-				PropertyAccessAndRef<Quaternion> orientations = ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::OrientationProperty, false, ObjectInitializationHint::LoadFactoryDefaults);
+				PropertyAccessAndRef<Quaternion> orientations = ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::OrientationProperty);
 				for(size_t i = 0; i < orientations.size(); i++) {
 					if(nucleotideNormalArray[i] != Vector3::Zero() && nucleotideAxisArray[i] != Vector3::Zero()) {
 						// Build an orthonomal basis from the two direction vectors of a nucleotide.
@@ -316,7 +316,7 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 			visCache.connectionPrimitive.setRenderingQuality(CylinderPrimitive::HighQuality);
 			visCache.connectionPrimitive.setUniformWidth(2 * cylinderRadius());
 			visCache.connectionPrimitive.setColors(colors);
-			DataBufferAccessAndRef<Point3> headPositions = DataBufferPtr::create(dataset(), particles->elementCount(), DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Point3> headPositions = DataBufferPtr::create(dataset(), particles->elementCount(), DataBuffer::Float, 3);
 			for(size_t i = 0; i < positionsArray.size(); i++)
 				headPositions[i] = positionsArray[i] + 0.8 * nucleotideAxisArray[i];
 			visCache.connectionPrimitive.setPositions(positionProperty, headPositions.take());
@@ -327,7 +327,7 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 		}
 
 		// Create pick info record.
-		DataBufferAccessAndRef<int> subobjectToParticleMapping = DataBufferPtr::create(dataset(), nucleotideAxisProperty ? (particles->elementCount() * 3) : particles->elementCount(), DataBuffer::Int, 1, 0, false);
+		DataBufferAccessAndRef<int> subobjectToParticleMapping = DataBufferPtr::create(dataset(), nucleotideAxisProperty ? (particles->elementCount() * 3) : particles->elementCount(), DataBuffer::Int);
 		std::iota(subobjectToParticleMapping.begin(), subobjectToParticleMapping.begin() + particles->elementCount(), 0);
 		if(nucleotideAxisProperty) {
 			std::iota(subobjectToParticleMapping.begin() +     particles->elementCount(), subobjectToParticleMapping.begin() + 2 * particles->elementCount(), 0);

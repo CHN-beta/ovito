@@ -31,20 +31,6 @@
 namespace Ovito {
 
 /******************************************************************************
-* Creates an object that represents a longer-running operation executed in the 
-* main or GUI thread in the context of this abstract user interface. 
-******************************************************************************/
-MainThreadOperation UserInterface::createOperation(bool visibleInUserInterface)
-{
-	return MainThreadOperation::create(
-		*this,
-		(Application::instance()->executionContext() == ExecutionContext::Interactive) 
-			? ObjectInitializationHint::LoadUserDefaults 
-			: ObjectInitializationHint::LoadFactoryDefaults,
-		visibleInUserInterface);
-}
-
-/******************************************************************************
 * Closes the user interface and shuts down the entire application after 
 * displaying an error message.
 ******************************************************************************/

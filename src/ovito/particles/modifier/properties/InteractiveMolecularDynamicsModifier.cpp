@@ -249,7 +249,7 @@ void InteractiveMolecularDynamicsModifier::dataReceived()
 				_messageBytesToReceive = 0;
 
 				// Convert data array into particle coordinates property.
-				_coordinates = ParticlesObject::OOClass().createStandardProperty(dataset(), numCoords, ParticlesObject::PositionProperty, false, ObjectInitializationHint::LoadFactoryDefaults);
+				_coordinates = ParticlesObject::OOClass().createStandardProperty(dataset(), numCoords, ParticlesObject::PositionProperty);
 				std::transform(coords.cbegin(), coords.cend(), PropertyAccess<Point3>(_coordinates).begin(), [](const Point_3<float>& p) { return p.toDataType<FloatType>(); });
 
 				// Notify pipeline system that this modifier has new results. 
@@ -320,7 +320,7 @@ void InteractiveMolecularDynamicsModifier::evaluateSynchronous(const ModifierEva
 			if(cell->hasPbcCorrected()) {
 				if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
 					ConstPropertyAccess<Point3> positions(_coordinates);
-					PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, true, request.initializationHints());
+					PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
 					// Recompute PBC vectors of bonds as particle may have moved over arbitrary distances.
 					parallelForChunks(topologyProperty.size(), [&](size_t startIndex, size_t count) {
 						for(size_t bondIndex = startIndex, endIndex = startIndex+count; bondIndex < endIndex; bondIndex++) {

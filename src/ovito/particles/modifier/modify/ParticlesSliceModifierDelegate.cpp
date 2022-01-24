@@ -120,7 +120,7 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
 	}
 	else {
 		size_t numSelected = 0;
-		PropertyAccess<int> newSelProperty = outputParticles->createProperty(ParticlesObject::SelectionProperty, false, request.initializationHints());
+		PropertyAccess<int> newSelProperty = outputParticles->createProperty(ParticlesObject::SelectionProperty);
 		OVITO_ASSERT(mask.size() == newSelProperty.size());
 		boost::dynamic_bitset<>::size_type i = 0;
 		for(int& s : newSelProperty) {

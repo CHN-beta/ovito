@@ -57,14 +57,6 @@ DataSetContainer::~DataSetContainer()
 }
 
 /******************************************************************************
-* Creates an object that represents a longer-running operation performed in the main or GUI thread. 
-******************************************************************************/
-MainThreadOperation DataSetContainer::createOperation(bool visibleInUserInterface)
-{
-	return userInterface().createOperation(visibleInUserInterface);
-}
-
-/******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
 ******************************************************************************/
 void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
@@ -212,12 +204,14 @@ void DataSetContainer::onAnimationSettingsReplaced(AnimationSettings* newAnimati
 /******************************************************************************
 * Creates an empty dataset and makes it the current dataset.
 ******************************************************************************/
-bool DataSetContainer::newDataset()
+DataSet* DataSetContainer::newDataset()
 {
 	OORef<DataSet> newSet = new DataSet();
-	newSet->initializeObject(Application::instance()->executionContext() == ExecutionContext::Interactive ? LoadUserDefaults : LoadFactoryDefaults);
+	newSet->initializeObject(ExecutionContext::isInteractive() 
+		? ObjectInitializationHint::LoadUserDefaults
+		: ObjectInitializationHint::LoadFactoryDefaults);
 	setCurrentSet(std::move(newSet));
-	return true;
+	return currentSet();
 }
 
 /******************************************************************************

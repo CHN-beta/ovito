@@ -143,22 +143,22 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, MainThreadOperation& ope
 	if(!importerType) {
 
 		// Inspect input file to detect its format.
-		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(dataset(), operation.initializationHints(), sourceUrl);
+		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(dataset(), sourceUrl);
 		if(!operation.waitForFuture(importerFuture))
 			return false;
 
 		importer = dynamic_object_cast<FileSourceImporter>(importerFuture.result());
 	}
 	else {
-		importer = dynamic_object_cast<FileSourceImporter>(importerType->createInstance(dataset(), operation.initializationHints()));
+		importer = dynamic_object_cast<FileSourceImporter>(importerType->createInstance(dataset()));
 	}
 	if(!importer)
 		throwException(tr("Could not detect the format of the geometry file. The format might not be supported."));
 
 	// Create a temporary FileSource for loading the geometry data from the file.
-	OORef<FileSource> fileSource = OORef<FileSource>::create(dataset(), operation.initializationHints());
+	OORef<FileSource> fileSource = OORef<FileSource>::create(dataset());
 	fileSource->setSource({sourceUrl}, importer, false);
-	SharedFuture<PipelineFlowState> stateFuture = fileSource->evaluate(PipelineEvaluationRequest(operation.initializationHints() | ObjectInitializationHint::WithoutVisElement, 0));
+	SharedFuture<PipelineFlowState> stateFuture = fileSource->evaluate(PipelineEvaluationRequest(0));
 	if(!operation.waitForFuture(stateFuture))
 		return false;
 

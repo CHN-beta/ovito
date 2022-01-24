@@ -24,8 +24,8 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/oo/ExecutionContext.h>
 #include <ovito/core/oo/InitializationHints.h>
+#include <ovito/core/utilities/concurrent/ExecutionContext.h>
 
 namespace Ovito {
 
@@ -150,7 +150,7 @@ public:
     	std::swap(px,rhs.px);
     }
 
-    /// Factory method that instantiates and initializes a new object.
+    /// Factory method that instantiates and initializes a new object (any RefMaker derived class).
     template<typename... Args>
 	static this_type create(DataSet* dataset, ObjectInitializationHints hints, Args&&... args) {
         using OType = std::remove_const_t<T>;
@@ -159,17 +159,32 @@ public:
         return obj;
 	}
 
-    /// Factory method that instantiates and initializes a new object.
+    /// Factory method that instantiates and initializes a new object (any RefMaker derived class).
     template<typename... Args>
 	static this_type create(DataSet* dataset, ObjectInitializationHint hint, Args&&... args) {
-        return create(dataset, ObjectInitializationHints(hint), std::forward<Args>(args)...);
+        OVITO_ASSERT(hint == ObjectInitializationHint::WithoutVisElement);
+        return create(dataset, 
+            ObjectInitializationHints(ExecutionContext::isInteractive() 
+                ? ObjectInitializationHint::LoadUserDefaults 
+                : ObjectInitializationHint::LoadFactoryDefaults) | hint);
 	}
 
     /// Factory method that instantiates a new object.
     template<typename... Args>
 	static this_type create(DataSet* dataset, Args&&... args) {
         using OType = std::remove_const_t<T>;
-		return new OType(dataset, std::forward<Args>(args)...);
+        if constexpr(std::is_base_of_v<Ovito::RefMaker, OType>) {
+            // All RefMaker derived classes require initialization hints.
+            return create(dataset, 
+                ObjectInitializationHints(ExecutionContext::isInteractive() 
+                    ? ObjectInitializationHint::LoadUserDefaults 
+                    : ObjectInitializationHint::LoadFactoryDefaults),
+                std::forward<Args>(args)...);
+        }
+        else {
+            // Objects not derived from RefMaker do not use two-phase initialization.
+    		return new OType(dataset, std::forward<Args>(args)...);
+        }
 	}
 };
 

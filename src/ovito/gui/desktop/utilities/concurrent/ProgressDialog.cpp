@@ -31,7 +31,7 @@ namespace Ovito {
 * Initializes the dialog window.
 ******************************************************************************/
 ProgressDialog::ProgressDialog(QWidget* parent, UserInterface& userInterface, const QString& dialogTitle) : QDialog(parent),
-	MainThreadOperation(MainThreadOperation::create(userInterface, ObjectInitializationHint::LoadUserDefaults, true))
+	MainThreadOperation(MainThreadOperation::create(userInterface, true))
 {
 	setWindowModality(Qt::WindowModal);
 	setWindowTitle(dialogTitle);

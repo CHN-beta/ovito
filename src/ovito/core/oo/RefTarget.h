@@ -231,10 +231,6 @@ public:
 
 	/// Returns an executor object to be used with Future<>::then(), which executes work
 	/// in the context (and the thread) of this object.
-	RefTargetExecutor executor(ExecutionContext executionContext, bool requireDeferredExecution = false) const;
-
-	/// Returns an executor object to be used with Future<>::then(), which executes work
-	/// in the context (and the thread) of this object.
 	RefTargetExecutor executor(bool requireDeferredExecution = false) const;
 
 	/// Returns a reference to the manager for asycnhronous tasks associated with this object's dataset. 

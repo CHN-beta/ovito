@@ -72,9 +72,9 @@ void PropertyContainerClass::registerStandardProperty(int typeId, QString name, 
 /******************************************************************************
 * Creates a new property object for a standard property of this container class.
 ******************************************************************************/
-PropertyPtr PropertyContainerClass::createStandardProperty(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const 
+PropertyPtr PropertyContainerClass::createStandardProperty(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const 
 {
-	PropertyPtr property = createStandardPropertyInternal(dataset, elementCount, type, initializeMemory, initializationHints, containerPath);
+	PropertyPtr property = createStandardPropertyInternal(dataset, elementCount, type, flags, containerPath);
 	if(property && property->type() != 0)
 		property->setTitle(standardPropertyTitle(property->type()));
 	return property;

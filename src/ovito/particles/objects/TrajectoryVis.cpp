@@ -201,13 +201,13 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 			if(posProperty && timeProperty && idProperty && posProperty.size() >= 2) {
 
 				// Determine the number of line segments and corner points to render.
-				DataBufferAccessAndRef<Point3> cornerPoints = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3, 0, false);
-				DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3, 0, false);
-				DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3, 0, false);
-				DataBufferAccessAndRef<Color> cornerColors = colorProperty ? DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3, 0, false) : nullptr;
-				DataBufferAccessAndRef<Color> segmentColors = colorProperty ? DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3, 0, false) : nullptr;
-				DataBufferAccessAndRef<FloatType> cornerPseudoColors = pseudoColorArray ? DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 1, 0, false) : nullptr;
-				DataBufferAccessAndRef<FloatType> segmentPseudoColors = pseudoColorArray ? DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 1, 0, false) : nullptr;
+				DataBufferAccessAndRef<Point3> cornerPoints = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3);
+				DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3);
+				DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3);
+				DataBufferAccessAndRef<Color> cornerColors = colorProperty ? DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3) : nullptr;
+				DataBufferAccessAndRef<Color> segmentColors = colorProperty ? DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3) : nullptr;
+				DataBufferAccessAndRef<FloatType> cornerPseudoColors = pseudoColorArray ? DataBufferPtr::create(dataset(), 0, DataBuffer::Float) : nullptr;
+				DataBufferAccessAndRef<FloatType> segmentPseudoColors = pseudoColorArray ? DataBufferPtr::create(dataset(), 0, DataBuffer::Float) : nullptr;
 				const Point3* pos = posProperty.cbegin();
 				const int* sampleTime = timeProperty.cbegin();
 				const qlonglong* id = idProperty.cbegin();
@@ -297,7 +297,7 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 		auto& cornerColorsUpToDate = dataset()->visCache().get<bool>(std::make_pair(visCache.cornerPseudoColors, visCache.segments.pseudoColorMapping()));
 		if(!cornerColorsUpToDate) {
 			// Create an RGB color array, which will be filled and then assigned to the ParticlesPrimitive.
-			DataBufferAccessAndRef<Color> cornerColorsArray = DataBufferPtr::create(dataset(), visCache.cornerPseudoColors->size(), DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Color> cornerColorsArray = DataBufferPtr::create(dataset(), visCache.cornerPseudoColors->size(), DataBuffer::Float, 3);
 			boost::transform(ConstDataBufferAccess<FloatType>(visCache.cornerPseudoColors), cornerColorsArray.begin(), [&](FloatType v) { return visCache.segments.pseudoColorMapping().valueToColor(v); });
 			visCache.corners.setColors(cornerColorsArray.take());
 			cornerColorsUpToDate = true;

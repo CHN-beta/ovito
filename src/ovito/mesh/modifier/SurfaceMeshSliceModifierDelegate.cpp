@@ -65,7 +65,7 @@ PipelineStatus SurfaceMeshSliceModifierDelegate::apply(const ModifierEvaluationR
 				// Create a mesh vertex selection.
 				if(SurfaceMeshVertices* outputVertices = outputMesh->makeVerticesMutable()) {
 					ConstPropertyAccess<Point3> vertexPositionProperty = outputVertices->expectProperty(SurfaceMeshVertices::PositionProperty);
-					PropertyAccess<int> vertexSelectionProperty = outputVertices->createProperty(SurfaceMeshVertices::SelectionProperty, false, request.initializationHints());
+					PropertyAccess<int> vertexSelectionProperty = outputVertices->createProperty(SurfaceMeshVertices::SelectionProperty);
 					size_t numSelectedVertices = 0;
 					boost::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {
 						bool selectionState = 
@@ -81,7 +81,7 @@ PipelineStatus SurfaceMeshSliceModifierDelegate::apply(const ModifierEvaluationR
 
 					// Create a mesh face selection.
 					if(SurfaceMeshFaces* outputFaces = outputMesh->makeFacesMutable()) {
-						PropertyAccess<int> faceSelectionProperty = outputFaces->createProperty(SurfaceMeshFaces::SelectionProperty, false, request.initializationHints());
+						PropertyAccess<int> faceSelectionProperty = outputFaces->createProperty(SurfaceMeshFaces::SelectionProperty);
 						size_t numSelectedFaces = 0;
 						const SurfaceMeshTopology* topology = outputMesh->topology();
 						auto firstFaceEdge = topology->firstFaceEdges().cbegin();

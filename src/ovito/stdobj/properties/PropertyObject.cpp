@@ -43,8 +43,8 @@ PropertyObject::PropertyObject(DataSet* dataset) : DataBuffer(dataset)
 /******************************************************************************
 * Constructor allocating a property array with given size and data layout.
 ******************************************************************************/
-PropertyObject::PropertyObject(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, size_t stride, const QString& name, bool initializeMemory, int type, QStringList componentNames) :
-	DataBuffer(dataset, elementCount, dataType, componentCount, stride, initializeMemory, std::move(componentNames)),
+PropertyObject::PropertyObject(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, const QString& name, DataBuffer::InitializationFlags flags, int type, QStringList componentNames) :
+	DataBuffer(dataset, elementCount, dataType, componentCount, flags, std::move(componentNames)),
 	_name(name),
 	_type(type)
 {
@@ -358,7 +358,7 @@ void PropertyObject::updateEditableProxies(PipelineFlowState& state, ConstDataOb
 	else if(!self->elementTypes().empty()) {
 		// Create and initialize a new proxy property object. 
 		// Note: We avoid copying the property data here by constructing the proxy PropertyObject from scratch instead of cloning the original data object.
-		OORef<PropertyObject> newProxy = OORef<PropertyObject>::create(self->dataset(), ObjectInitializationHints(LoadFactoryDefaults | WithoutVisElement), 0, self->dataType(), self->componentCount(), self->stride(), self->name(), false, self->type(), self->componentNames());
+		OORef<PropertyObject> newProxy = OORef<PropertyObject>::create(self->dataset(), ObjectInitializationHints(LoadFactoryDefaults | WithoutVisElement), 0, self->dataType(), self->componentCount(), self->name(), DataBuffer::NoFlags, self->type(), self->componentNames());
 		newProxy->setTitle(self->title());
 
 		// Adopt the proxy objects corresponding to the element types, which have already been created by

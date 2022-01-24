@@ -109,7 +109,7 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
 
 	// Create line primitive for the coordinate axis arrows.
 	if(!_orientationTripodGeometry.colors()) {
-		DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(renderer->dataset(), 18, DataBuffer::Float, 4, 0, false);
+		DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(renderer->dataset(), 18, DataBuffer::Float, 4);
 		std::fill(vertexColors.begin() + 0,  vertexColors.begin() + 6,  axisColors[0]);
 		std::fill(vertexColors.begin() + 6,  vertexColors.begin() + 12, axisColors[1]);
 		std::fill(vertexColors.begin() + 12, vertexColors.end(),        axisColors[2]);
@@ -117,7 +117,7 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
 	}
 
 	// Update geometry of coordinate axis arrows.
-	DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(renderer->dataset(), 18, DataBuffer::Float, 3, 0, false);
+	DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(renderer->dataset(), 18, DataBuffer::Float, 3);
 	for(size_t axis = 0, index = 0; axis < 3; axis++) {
 		Vector3 dir = viewport()->projectionParams().viewMatrix.column(axis).normalized();
 		vertices[index++] = Point3::Origin();

@@ -198,7 +198,7 @@ void SmoothTrajectoryModifier::evaluateSynchronous(const ModifierEvaluationReque
 		TimePoint time2 = request.modApp()->sourceFrameToAnimationTime(nextFrame);
 
 		// Get the second frame.
-		const PipelineFlowState& state2 = request.modApp()->evaluateInputSynchronous(PipelineEvaluationRequest(request.initializationHints(), time2)); 
+		const PipelineFlowState& state2 = request.modApp()->evaluateInputSynchronous(PipelineEvaluationRequest(time2)); 
 
 		// Perform the actual interpolation calculation.
 		interpolateState(state, state2, request, time1, time2);
@@ -214,7 +214,7 @@ void SmoothTrajectoryModifier::evaluateSynchronous(const ModifierEvaluationReque
 		for(int frame = startFrame; frame <= endFrame; frame++) {
 			if(frame != currentFrame) {
 				TimePoint time2 = request.modApp()->sourceFrameToAnimationTime(frame);
-				otherStates.push_back(request.modApp()->evaluateInputSynchronous(PipelineEvaluationRequest(request.initializationHints(), time2)));
+				otherStates.push_back(request.modApp()->evaluateInputSynchronous(PipelineEvaluationRequest(time2)));
 			}
 		}
 
@@ -253,7 +253,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 	ConstPropertyAccess<qlonglong> idProperty1 = particles1->getProperty(ParticlesObject::IdentifierProperty);
 	ConstPropertyAccess<qlonglong> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
 	ParticlesObject* outputParticles = state1.makeMutable(particles1);
-	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, true, request.initializationHints());
+	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, DataBuffer::InitializeMemory);
 	std::unordered_map<qlonglong, size_t> idmap;
 	if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
 
@@ -304,7 +304,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
 
 	// Interpolate particle orientations.
 	if(ConstPropertyAccess<Quaternion> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
-		PropertyAccess<Quaternion> outputOrientations = outputParticles->createProperty(ParticlesObject::OrientationProperty, true, request.initializationHints());
+		PropertyAccess<Quaternion> outputOrientations = outputParticles->createProperty(ParticlesObject::OrientationProperty, DataBuffer::InitializeMemory);
 		if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
 			auto id = idProperty1.cbegin();
 			for(Quaternion& q1 : outputOrientations) {
@@ -377,11 +377,11 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 
 	// Create a modifiable copy of the particle coordinates array.
 	ParticlesObject* outputParticles = state1.makeMutable(particles1);
-	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, true, request.initializationHints());
+	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, DataBuffer::InitializeMemory);
 
 	// Create output orientations array if smoothing particle orientations.
 	PropertyAccess<Quaternion> outputOrientations = particles1->getProperty(ParticlesObject::OrientationProperty)
-		? outputParticles->createProperty(ParticlesObject::OrientationProperty, true, request.initializationHints())
+		? outputParticles->createProperty(ParticlesObject::OrientationProperty, DataBuffer::InitializeMemory)
 		: nullptr;
 
 	// Create copies of all scalar continuous particle properties.

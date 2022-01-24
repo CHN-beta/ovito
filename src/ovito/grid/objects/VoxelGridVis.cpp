@@ -174,7 +174,7 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 		}
 		primitives.pickInfo = new VoxelGridPickInfo(this, gridObj, trianglesPerCell);
 		if(gridObj->domain()) {
-			DataOORef<TriMeshObject> mesh = DataOORef<TriMeshObject>::create(dataset(), ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement);
+			DataOORef<TriMeshObject> mesh = DataOORef<TriMeshObject>::create(dataset(), ObjectInitializationHint::WithoutVisElement);
 			if(colorArray) {
 				if(interpolateColors()) mesh->setHasVertexColors(true);
 				else mesh->setHasFaceColors(true);

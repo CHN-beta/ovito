@@ -149,10 +149,10 @@ void XSFImporter::FrameLoader::loadFile()
 			line = stream.line();
 
 			setParticleCount(coords.size());
-			PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, initializationHints());
+			PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
 			boost::copy(coords, posProperty.begin());
 
-			PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, initializationHints());
+			PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
 			boost::transform(types, typeProperty.begin(), [&](const QString& typeName) {
 				return addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), typeName)->numericId();
 			});
@@ -162,7 +162,7 @@ void XSFImporter::FrameLoader::loadFile()
 			typeProperty.buffer()->sortElementTypesByName();
 
 			if(forces.size() == coords.size()) {
-				PropertyAccess<Vector3> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty, false, initializationHints());
+				PropertyAccess<Vector3> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty);
 				boost::copy(forces, forceProperty.begin());
 			}
 
@@ -245,7 +245,7 @@ void XSFImporter::FrameLoader::loadFile()
 			stream.seek(atomsListOffset, atomsLineNumber);
 
 			// Parse atoms data.
-			InputColumnReader columnParser(columnMapping, particles(), initializationHints());
+			InputColumnReader columnParser(columnMapping, particles());
 			setProgressMaximum(natoms);
 			for(size_t i = 0; i < natoms; i++) {
 				if(!setProgressValueIntermittent(i)) return;
@@ -267,7 +267,7 @@ void XSFImporter::FrameLoader::loadFile()
 					if(type->name().isEmpty() && typeId >= 0 && typeId < ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES) {
 						ElementType* mutableType = typeProperty->makeMutable(type);
 						mutableType->setName(ParticleType::getPredefinedParticleTypeName(static_cast<ParticleType::PredefinedParticleType>(typeId)));
-						mutableType->initializeType(ParticlePropertyReference(typeProperty), initializationHints());
+						mutableType->initializeType(ParticlePropertyReference(typeProperty));
 					}
 				}
 			}
@@ -280,7 +280,7 @@ void XSFImporter::FrameLoader::loadFile()
 			// Create the voxel grid data object.
 			voxelGrid = state().getMutableLeafObject<VoxelGrid>(VoxelGrid::OOClass(), gridId);
 			if(!voxelGrid) {
-				voxelGrid = state().createObject<VoxelGrid>(dataSource(), initializationHints(), gridId);
+				voxelGrid = state().createObject<VoxelGrid>(dataSource(), gridId);
 				voxelGrid->visElement()->setEnabled(false);
 				voxelGrid->visElement()->setTitle(voxelGrid->title());
 				voxelGrid->visElement()->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled), SHADOW_PROPERTY_FIELD(ActiveObject::title)});
@@ -313,12 +313,12 @@ void XSFImporter::FrameLoader::loadFile()
 				voxelGrid->mutableDomain()->setCellMatrix(cell);
 			}
 			else {
-				DataOORef<SimulationCellObject> simCell = DataOORef<SimulationCellObject>::create(dataset(), initializationHints(), cell, true, true, true, false);
+				DataOORef<SimulationCellObject> simCell = DataOORef<SimulationCellObject>::create(dataset(), cell, true, true, true, false);
 				simCell->setDataSource(dataSource());
 				voxelGrid->setDomain(std::move(simCell));
 			}
 
-			PropertyAccess<FloatType> fieldQuantity = voxelGrid->createProperty(name, PropertyObject::Float, 1, 0, false);
+			PropertyAccess<FloatType> fieldQuantity = voxelGrid->createProperty(name, PropertyObject::Float);
 			FloatType* data = fieldQuantity.begin();
 			setProgressMaximum(fieldQuantity.size());
 			const char* s = "";

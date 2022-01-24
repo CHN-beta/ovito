@@ -51,9 +51,6 @@ public:
 	/// \brief Performs a synchronous evaluation of the pipeline yielding only preliminary results.
 	const PipelineFlowState& evaluatePipelineSynchronous(bool includeVisElements);
 
-	/// \brief Performs a synchronous evaluation of the pipeline yielding only preliminary results.
-	const PipelineFlowState& evaluatePipelineSynchronous(bool includeVisElements, ObjectInitializationHints initializationHints);
-
 	/// \brief Performs an asynchronous evaluation of the data pipeline.
 	PipelineEvaluationFuture evaluatePipeline(const PipelineEvaluationRequest& request);
 
@@ -65,9 +62,7 @@ public:
 	void setPipelineSource(PipelineObject* sourceObject);
 
 	/// \brief Applies a modifier by appending it to the end of the node's data pipeline.
-	/// \param modifier The modifier to be inserted into the data flow pipeline.
-	/// \undoable
-	ModifierApplication* applyModifier(Modifier* modifier, ObjectInitializationHints initializationHints);
+	ModifierApplication* applyModifier(Modifier* modifier);
 
 	/// \brief Returns the title of this object.
 	virtual QString objectTitle() const override;

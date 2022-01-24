@@ -363,7 +363,8 @@ private:
  * Create an instance of this class on the stack to suspend recording of operations
  * during the lifetime of the class instance.
  */
-class OVITO_CORE_EXPORT UndoSuspender {
+class OVITO_CORE_EXPORT UndoSuspender 
+{
 public:
 	UndoSuspender(UndoStack& undoStack) noexcept : _suspendCount(&undoStack._suspendCount) { 
 		OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "UndoSuspender::UndoSuspender()", "This method must only be called from the main thread.");

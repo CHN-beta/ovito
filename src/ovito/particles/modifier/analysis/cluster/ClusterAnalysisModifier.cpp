@@ -100,7 +100,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 		periodicImageBondProperty = ConstPropertyPtr(particles->bonds()->getProperty(BondsObject::PeriodicImageProperty)).makeCopy();
 		// If no PBC vectors are present, create ad-hoc vectors initialized to zero.
 		if(!periodicImageBondProperty)
-			periodicImageBondProperty = BondsObject::OOClass().createStandardProperty(dataset(), particles->bonds()->elementCount(), BondsObject::PeriodicImageProperty, true, request.initializationHints());
+			periodicImageBondProperty = BondsObject::OOClass().createStandardProperty(dataset(), particles->bonds()->elementCount(), BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
 	}
 
 	// Get particle masses, needed for center-of-mass calculation.
@@ -115,7 +115,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 			std::map<int,FloatType> massMap = ParticleType::typeMassMap(typeProperty);
 			// Use the per-type masses only if there is at least one type having a positive mass.
 			if(!massMap.empty() && std::any_of(massMap.cbegin(), massMap.cend(), [](const auto& i) { return i.second > 0; })) {
-				PropertyAccessAndRef<FloatType> massArray(ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::MassProperty, false, request.initializationHints()));
+				PropertyAccessAndRef<FloatType> massArray(ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::MassProperty));
 				boost::transform(ConstPropertyAccess<int>(typeProperty), massArray.begin(), [&](int t) {
 					auto iter = massMap.find(t);
 					if(iter != massMap.end()) return iter->second;
@@ -529,7 +529,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(const Modifier
 		clusterColors[0] = Color(0.8, 0.8, 0.8);
 
 		// Assign colors to particles according to the clusters they belong to.
-		PropertyAccess<Color> colorsArray = particles->createProperty(ParticlesObject::ColorProperty, false, request.initializationHints());
+		PropertyAccess<Color> colorsArray = particles->createProperty(ParticlesObject::ColorProperty);
 		boost::transform(ConstPropertyAccess<qlonglong>(particleClusters()), colorsArray.begin(), [&](qlonglong cluster) { 
 			OVITO_ASSERT(cluster >= 0 && (size_t)cluster < clusterColors.size());
 			return clusterColors[cluster];
@@ -551,7 +551,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(const Modifier
 		state.addAttribute(QStringLiteral("ClusterAnalysis.largest_size"), QVariant::fromValue(largestClusterSize()), request.modApp());
 
 	// Output a data table with the cluster list.
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("clusters"), request.modApp(), request.initializationHints(), DataTable::Scatter, tr("Cluster list"), _clusterSizes, _clusterIds);
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("clusters"), request.modApp(), DataTable::Scatter, tr("Cluster list"), _clusterSizes, _clusterIds);
 
 	// Output centers of mass.
 	if(modifier->computeCentersOfMass() && _centersOfMass)

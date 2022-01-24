@@ -114,7 +114,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 			}
 
 			// Create an empty surface mesh object.
-			SurfaceMesh* meshObj = state.createObject<SurfaceMesh>(QStringLiteral("volume-slice"), request.modApp(), request.initializationHints() | ObjectInitializationHint::WithoutVisElement, tr("Volume slice"));
+			SurfaceMesh* meshObj = state.createObject<SurfaceMesh>(QStringLiteral("volume-slice"), request.modApp(), ObjectInitializationHint::WithoutVisElement, tr("Volume slice"));
 			meshObj->setDomain(cell);
 			meshObj->setVisElement(surfaceMeshVis());
 
@@ -168,7 +168,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 
 			// Copy field values from voxel grid to surface mesh vertices.
 			auto localOperation = std::make_shared<ProgressingTask>(Task::Started);
-			CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(*localOperation, mesh, fieldProperties, gridShape, request.initializationHints());
+			CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(*localOperation, mesh, fieldProperties, gridShape);
 			localOperation->setFinished();
 
 			// Transform mesh vertices from orthogonal grid space to world space.

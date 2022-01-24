@@ -61,7 +61,6 @@ SET(SourceFiles
 	oo/RefMakerClass.cpp
 	oo/RefTarget.cpp
 	oo/RefTargetListener.cpp
-	oo/RefTargetExecutor.cpp
 	dataset/animation/AnimationSettings.cpp
 	dataset/animation/controller/Controller.cpp
 	dataset/animation/controller/ConstantControllers.cpp
@@ -124,6 +123,7 @@ SET(SourceFiles
 	utilities/concurrent/AsynchronousTask.cpp
 	utilities/concurrent/TaskManager.cpp
 	utilities/concurrent/MainThreadOperation.cpp
+	utilities/concurrent/ExecutionContext.cpp
 	rendering/SceneRenderer.cpp
 	rendering/RenderSettings.cpp
 	rendering/FrameBuffer.cpp

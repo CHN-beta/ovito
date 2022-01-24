@@ -67,7 +67,7 @@ void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor* fie
 	// Whenever the subject of this modifier is changed, reset the selection.
 	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded()) {
 		for(ModifierApplication* modApp : modifierApplications()) {
-			ModifierEvaluationRequest request(ObjectInitializationHint::LoadUserDefaults, dataset()->animationSettings()->time(), modApp);
+			PipelineEvaluationRequest request(ExecutionContext::current(), dataset()->animationSettings()->time());
 			resetSelection(modApp, modApp->evaluateInputSynchronous(request));
 		}
 	}
@@ -89,7 +89,7 @@ void ManualSelectionModifier::evaluateSynchronous(const ModifierEvaluationReques
 		container->verifyIntegrity();
 
 		PipelineStatus status = selectionSet->applySelection(
-				container->createProperty(PropertyObject::GenericSelectionProperty, false, request.initializationHints()),
+				container->createProperty(PropertyObject::GenericSelectionProperty),
 				container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty) ?
 					container->getProperty(PropertyObject::GenericIdentifierProperty) : nullptr);
 

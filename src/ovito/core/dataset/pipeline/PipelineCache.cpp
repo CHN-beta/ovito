@@ -470,14 +470,14 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
 		});
 
 		// Compute the first frame of the trajectory.
-		precomputeNextAnimationFrame(request.initializationHints());
+		precomputeNextAnimationFrame();
 	}
 }
 
 /******************************************************************************
 * Requests the next frame from the pipeline that needs to be precomputed.
 ******************************************************************************/
-void PipelineCache::precomputeNextAnimationFrame(ObjectInitializationHints initializationHints)
+void PipelineCache::precomputeNextAnimationFrame()
 {
 	OVITO_ASSERT(_precomputeFramesOperation.isValid());
 	OVITO_ASSERT(!_precomputeFramesOperation.isCanceled());
@@ -511,10 +511,10 @@ void PipelineCache::precomputeNextAnimationFrame(ObjectInitializationHints initi
 	}
 
 	// Request the next frame from the input trajectory.
-	_precomputeFrameFuture = evaluatePipeline(PipelineEvaluationRequest(initializationHints, nextFrameTime));
+	_precomputeFrameFuture = evaluatePipeline(PipelineEvaluationRequest(nextFrameTime));
 
 	// Wait until input frame is ready.
-	_precomputeFrameFuture.finally(ownerObject()->executor(true), [this,initializationHints](Task& task) {
+	_precomputeFrameFuture.finally(ownerObject()->executor(true), [this](Task& task) {
 		try {
 			// If the pipeline evaluation has been canceled for some reason, we interrupt the precomputation process.
 			if(!_precomputeFramesOperation.isValid() || _precomputeFramesOperation.isFinished() || task.isCanceled()) {
@@ -528,7 +528,7 @@ void PipelineCache::precomputeNextAnimationFrame(ObjectInitializationHints initi
 			insertState(_precomputeFrameFuture.result());
 
 			// Schedule the pipeline evaluation at the next frame.
-			precomputeNextAnimationFrame(initializationHints);
+			precomputeNextAnimationFrame();
 		}
 		catch(const Exception&) {
 			// In case of an error during pipeline evaluation or the unwrapping calculation, 

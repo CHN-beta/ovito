@@ -137,11 +137,11 @@ public:
 
 	/// Creates a standard property and adds it to the container.
 	/// In case the property already exists, it is made sure that it's safe to modify it.
-	PropertyObject* createProperty(int typeId, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath = ConstDataObjectPath{});
+	PropertyObject* createProperty(int typeId, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, const ConstDataObjectPath& containerPath = ConstDataObjectPath{});
 
 	/// Creates a user-defined property and adds it to the container.
 	/// In case the property already exists, it is made sure that it's safe to modify it.
-	PropertyObject* createProperty(const QString& name, int dataType, size_t componentCount, size_t stride, bool initializeMemory = false, QStringList componentNames = QStringList());
+	PropertyObject* createProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList());
 
 	/// Adds a property object to the container, replacing any preexisting property in the container with the same type. 
 	const PropertyObject* createProperty(const PropertyObject* property);

@@ -97,10 +97,10 @@ TimeInterval StandardCameraSource::validityInterval(const PipelineEvaluationRequ
 PipelineFlowState StandardCameraSource::evaluateSynchronous(const PipelineEvaluationRequest& request)
 {
 	// Create a new DataCollection.
-	DataOORef<DataCollection> data = DataOORef<DataCollection>::create(dataset(), request.initializationHints());
+	DataOORef<DataCollection> data = DataOORef<DataCollection>::create(dataset());
 
 	// Set up the camera data object.
-	DataOORef<StandardCameraObject> camera = DataOORef<StandardCameraObject>::create(dataset(), request.initializationHints());
+	DataOORef<StandardCameraObject> camera = DataOORef<StandardCameraObject>::create(dataset());
 	camera->setDataSource(this);
 	TimeInterval stateValidity = TimeInterval::infinite();
 	camera->setIsPerspective(isPerspective());

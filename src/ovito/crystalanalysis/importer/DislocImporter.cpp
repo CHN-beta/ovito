@@ -109,13 +109,13 @@ void DislocImporter::FrameLoader::loadFile()
 		microstructureObj = state().makeMutable(existingMicrostructureObj);
 	}
 	else {
-		microstructureObj = state().createObject<Microstructure>(dataSource(), initializationHints());
+		microstructureObj = state().createObject<Microstructure>(dataSource());
 
 		// Create a visual element for the dislocation lines.
-		microstructureObj->setVisElement(OORef<DislocationVis>::create(dataset(), initializationHints()));
+		microstructureObj->setVisElement(OORef<DislocationVis>::create(dataset()));
 
 		// Create a visual element for the slip surfaces.
-		microstructureObj->addVisElement(OORef<SlipSurfaceVis>::create(dataset(), initializationHints()));
+		microstructureObj->addVisElement(OORef<SlipSurfaceVis>::create(dataset()));
 	}
 
 	/// The loaded microstructure.
@@ -198,7 +198,7 @@ void DislocImporter::FrameLoader::loadFile()
 		NCERR(nc_get_vara_int(root_ncid, cell_pbc_var, startp, countp, cellPbc));
 		simulationCell()->setPbcFlags(cellPbc[0] != 0, cellPbc[1] != 0, cellPbc[2] != 0);
 		simulationCell()->setCellMatrix(cellMatrix);
-		microstructure.setCell(DataOORef<SimulationCellObject>::create(dataset(), initializationHints() | ObjectInitializationHint::WithoutVisElement, cellMatrix, cellPbc[0] != 0, cellPbc[1] != 0, cellPbc[2] != 0));
+		microstructure.setCell(DataOORef<SimulationCellObject>::create(dataset(), ObjectInitializationHint::WithoutVisElement, cellMatrix, cellPbc[0] != 0, cellPbc[1] != 0, cellPbc[2] != 0));
 
 		// Read lattice orientation matrix.
 		int lattice_orientation_var;

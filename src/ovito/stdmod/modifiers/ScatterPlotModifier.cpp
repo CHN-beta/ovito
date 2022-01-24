@@ -90,7 +90,7 @@ void ScatterPlotModifier::initializeModifier(const ModifierInitializationRequest
 	GenericPropertyModifier::initializeModifier(request);
 
 	// Use the first available property from the input state as data source when the modifier is newly created.
-	if((xAxisProperty().isNull() || yAxisProperty().isNull()) && subject() && request.initializationHints().testFlag(LoadUserDefaults)) {
+	if((xAxisProperty().isNull() || yAxisProperty().isNull()) && subject() && ExecutionContext::isInteractive()) {
 		const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			PropertyReference bestProperty;
@@ -180,14 +180,14 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
 		// First make sure we can safely modify the property container.
 		PropertyContainer* mutableContainer = state.expectMutableLeafObject(subject());
 		// Add the selection property to the output container.
-		outputSelection = mutableContainer->createProperty(PropertyObject::GenericSelectionProperty, false, request.initializationHints());
+		outputSelection = mutableContainer->createProperty(PropertyObject::GenericSelectionProperty);
 		boost::fill(outputSelection, 1);
 		numSelected = outputSelection.size();
 	}
 
 	// Create output arrays.
-	PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createStandardProperty(dataset(), container->elementCount(), DataTable::XProperty, false, request.initializationHints());
-	PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createStandardProperty(dataset(), container->elementCount(), DataTable::YProperty, false, request.initializationHints());
+	PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createStandardProperty(dataset(), container->elementCount(), DataTable::XProperty);
+	PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createStandardProperty(dataset(), container->elementCount(), DataTable::YProperty);
 	out_x.buffer()->setName(xAxisProperty().nameWithComponent());
 	out_y.buffer()->setName(yAxisProperty().nameWithComponent());
 
@@ -224,7 +224,7 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
 	}
 
 	// Output a data table object with the scatter points.
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("scatter"), request.modApp(), request.initializationHints(),
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("scatter"), request.modApp(),
 		DataTable::Scatter, tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()),
 		out_y.take(), out_x.take());
 

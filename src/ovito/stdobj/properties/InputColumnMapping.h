@@ -218,7 +218,7 @@ public:
 	///        to the target properties.
 	/// \param container The property container where the parsed data will be stored in.
 	/// \throws Exception if the mapping is not valid.
-	InputColumnReader(const InputColumnMapping& mapping, PropertyContainer* container, ObjectInitializationHints initializationHints, bool removeExistingProperties = true);
+	InputColumnReader(const InputColumnMapping& mapping, PropertyContainer* container, bool removeExistingProperties = true);
 
 	/// \brief Tells the parser to read the names of element types from the given file column
 	void readTypeNamesFromColumn(int nameColumn, int numericIdColumn);
@@ -260,9 +260,6 @@ private:
 	/// The container that receives the parsed data.
 	PropertyContainer* _container;
 
-	/// Controls how new data objects are initialized.
-	ObjectInitializationHints _initializationHints;
-	
 	struct TargetPropertyRecord {
 		PropertyObject* property = nullptr;
 		PropertyAccess<void,true> propertyArray;

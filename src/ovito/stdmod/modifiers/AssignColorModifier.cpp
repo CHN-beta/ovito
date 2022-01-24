@@ -110,7 +110,7 @@ PipelineStatus AssignColorModifierDelegate::apply(const ModifierEvaluationReques
 	mod->colorController()->getColorValue(request.time(), color, state.mutableStateValidity());
 
 	// Create the color output property.
-    PropertyObject* colorProperty = container->createProperty(outputColorPropertyId(), (bool)selProperty, request.initializationHints(), objectPath);
+    PropertyObject* colorProperty = container->createProperty(outputColorPropertyId(), (bool)selProperty ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
 	// Assign color to selected elements (or all elements if there is no selection).
 	colorProperty->fillSelected(color, selProperty.get());
 

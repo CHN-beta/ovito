@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,11 +27,33 @@
 
 namespace Ovito {
 
-/// The different contexts which the program's actions may be performed in.
-enum class ExecutionContext 
+class OVITO_CORE_EXPORT ExecutionContext
 {
-	Interactive,	///< Actions are currently performed by the interactive user.
-	Scripting		///< Actions are currently performed by a running script.
+public:
+
+    /// The different types of contexts in which the program's actions may be performed.
+    enum Type {
+        Scripting,		///< Actions are currently performed by a script.
+        Interactive		///< Actions are currently performed by the user.
+    };
+
+    /// Returns the type of context the current thread performs its actions in.
+    static Type current() noexcept;
+
+    /// Returns true if the current operation is performed by the user.
+    static bool isInteractive() noexcept { return current() == Interactive; }
+
+    /// Sets the type of context the current thread performs its actions in.
+    static void setCurrent(Type type) noexcept;
+
+    class OVITO_CORE_EXPORT Scope
+    {
+    public:
+        explicit Scope(Type type) noexcept : _previous(ExecutionContext::current()) { ExecutionContext::setCurrent(type); }
+        ~Scope() { ExecutionContext::setCurrent(_previous); }
+    private:
+        Type _previous;
+    };
 };
 
 }	// End of namespace

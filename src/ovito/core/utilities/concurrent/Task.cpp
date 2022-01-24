@@ -79,8 +79,7 @@ bool Task::startLocked() noexcept
     _state.fetchAndOrRelaxed(Started);
 
 	// Inform the registered task watchers.
-	for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
-		cb->callStateChanged(Started);
+	callCallbacks(Started);
 
 	return true;
 }
@@ -112,9 +111,8 @@ void Task::finishLocked(QMutexLocker<QMutex>& locker) noexcept
 		qPrintable(QStringLiteral("Result has not been set for the task. Please check program code setting the task to finished. Task's last progress text: %1")
 			.arg(isProgressingTask() ? static_cast<ProgressingTask*>(this)->progressText() : QStringLiteral("<non-progress task>"))));
 
-	// Inform the registered task watchers.
-	for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
-		cb->callStateChanged(Finished);
+	// Inform the registered callbacks.
+	callCallbacks(Finished);
 
 	// Note: Move the functions into a new local list first so that we can unlock the mutex.
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0) 
@@ -156,10 +154,8 @@ void Task::cancelAndFinishLocked(QMutexLocker<QMutex>& locker) noexcept
 	// Put the task into the 'canceled' state as well.
 	state = _state.fetchAndOrRelaxed(Canceled);
 
-	// Inform the registered task watchers.
-	for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList) {
-		cb->callStateChanged(!(state & Canceled) ? (Canceled | Finished) : Finished);
-	}
+	// Inform the registered callbacks.
+	callCallbacks(!(state & Canceled) ? (Canceled | Finished) : Finished);
 
 	// Note: Move the functions into a new local list first so that we can unlock the mutex.
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -204,8 +200,27 @@ void Task::addCallback(detail::TaskCallbackBase* cb, bool replayStateChanges) no
 	_callbacks = cb;
 
 	// Replay past state changes to the new callback if requested.
-	if(replayStateChanges)
-		cb->callStateChanged(_state.loadRelaxed());
+	if(replayStateChanges) {
+		if(!cb->callStateChanged(_state.loadRelaxed())) {
+			// The callback requested to be removed from the list.
+			_callbacks = cb->_nextInList;
+		}
+	}
+}
+
+/******************************************************************************
+* Invokes the registered callback functions.
+******************************************************************************/
+void Task::callCallbacks(int state)
+{
+	detail::TaskCallbackBase** preceding = &_callbacks;
+	for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList) {
+		if(!cb->callStateChanged(state)) {
+			// The callback requested to be removed from the list.
+			*preceding = cb->_nextInList;
+		}
+		else preceding = &cb->_nextInList;
+	}
 }
 
 /******************************************************************************

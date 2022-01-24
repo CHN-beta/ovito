@@ -84,7 +84,7 @@ class OVITO_PARTICLES_EXPORT BondsObject : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// \brief Create a storage object for standard bond properties.
-		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t bondsCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
 
 		/// Indicates whether this kind of property container supports picking of individual elements in the viewports.
 		virtual bool supportsViewportPicking() const override { return true; }
@@ -144,7 +144,7 @@ public:
 	void generatePeriodicImageProperty(const ParticlesObject* particles, const SimulationCellObject* simulationCellObject);
 
 	/// Creates new bonds making sure bonds are not created twice.
-	size_t addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const ParticlesObject* particles, ObjectInitializationHints initializationHints, const std::vector<PropertyPtr>& bondProperties = {}, DataOORef<const BondType> bondType = {});
+	size_t addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const ParticlesObject* particles, const std::vector<PropertyPtr>& bondProperties = {}, DataOORef<const BondType> bondType = {});
 
 	/// Returns a property array with the input bond widths.
 	ConstPropertyPtr inputBondWidths() const;

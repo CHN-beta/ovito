@@ -36,8 +36,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-MainThreadOperation::MainThreadOperation(TaskPtr p, UserInterface& userInterface, ObjectInitializationHints initializationHints, bool visibleInUserInterface) noexcept :
-	Promise<>(std::move(p)), _userInterface(userInterface), _initializationHints(initializationHints)
+MainThreadOperation::MainThreadOperation(TaskPtr p, UserInterface& userInterface, bool visibleInUserInterface) noexcept :
+	Promise<>(std::move(p)), _userInterface(userInterface)
 {
 	OVITO_ASSERT(isValid());
 	OVITO_ASSERT(isStarted());
@@ -75,14 +75,22 @@ MainThreadOperation MainThreadOperation::createSubTask(bool visibleInUserInterfa
 			registerCallback(parentTask.get(), true);
 		}
 
-		/// Callback function, which is invoked by the Task base class whenever the state of the task changes.
-		void taskStateChangedCallback(int state) noexcept {
+		/// Callback function, which is invoked whenever the state of the parent task changes.
+		bool taskStateChangedCallback(int state) noexcept {
 			if(state & Canceled)
 				this->cancel();
+			// When the parent task finishes, we should detach our callback function immediately,
+			// because a task object may have callbacks registered at the end of its lifetime.
+			if(state & Finished) {
+				OVITO_ASSERT(isFinished());
+				return false; // Returning false indicates that the callback wishes to be unregistered.
+			}
+			return true;
 		}
 	};
 
-	return MainThreadOperation(std::make_shared<MainThreadSubTask>(task()), userInterface(), initializationHints(), visibleInUserInterface);
+	MainThreadOperation subOp(std::make_shared<MainThreadSubTask>(task()), userInterface(), visibleInUserInterface);
+	return subOp;
 }
 
 /******************************************************************************
@@ -135,12 +143,14 @@ bool MainThreadOperation::waitForTask(const TaskPtr& awaitedTask)
 	detail::FunctionTaskCallback thisTaskCallback(thisTaskPtr.get(), [&eventLoop](int state) {
 		if(state & (Task::Canceled | Task::Finished))
 			QMetaObject::invokeMethod(&eventLoop, &QEventLoop::quit, Qt::QueuedConnection);
+		return true;
 	});
 
 	// Register a callback function with the awaited task, which makes the event loop quit when the task gets canceled or finishes.
 	detail::FunctionTaskCallback awaitedfTaskCallback(awaitedTaskPtr.get(), [&eventLoop](int state) {
 		if(state & Task::Finished)
 			QMetaObject::invokeMethod(&eventLoop, &QEventLoop::quit, Qt::QueuedConnection);
+		return true;
 	});
 
 #ifdef Q_OS_UNIX
@@ -159,18 +169,14 @@ bool MainThreadOperation::waitForTask(const TaskPtr& awaitedTask)
 	});
 #endif
 
-	// If this method was called as part of a script, temporarily switch to interactive mode now since
-	// the user may perform actions in the user interface while the local event loop is active.
-	bool wasCalledFromScript = (Application::instance()->executionContext() == ExecutionContext::Scripting);
-	if(wasCalledFromScript)
-		Application::instance()->switchExecutionContext(ExecutionContext::Interactive);
+	{
+		// Temporarily switch back to an interactive context now, since
+		// the user may be performing other actions in the user interface while the local event loop is running.
+		ExecutionContext::Scope executionContextScope(ExecutionContext::Interactive);
 
-	// Enter the local event loop.
-	eventLoop.exec();
-
-	// Restore previous execution context state.
-	if(wasCalledFromScript)
-		Application::instance()->switchExecutionContext(ExecutionContext::Scripting);
+		// Enter the local event loop.
+		eventLoop.exec();
+	}
 
 	thisTaskCallback.unregisterCallback();
 	awaitedfTaskCallback.unregisterCallback();

@@ -88,7 +88,7 @@ void HistogramModifier::initializeModifier(const ModifierInitializationRequest& 
 	GenericPropertyModifier::initializeModifier(request);
 
 	// Use the first available property from the input state as data source when the modifier is newly created.
-	if(sourceProperty().isNull() && subject() && request.initializationHints().testFlag(LoadUserDefaults)) {
+	if(sourceProperty().isNull() && subject() && ExecutionContext::isInteractive()) {
 		const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			PropertyReference bestProperty;
@@ -155,7 +155,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
 		// First make sure we can safely modify the property container.
 		PropertyContainer* mutableContainer = state.expectMutableLeafObject(subject());
 		// Add the selection property to the output container.
-		outputSelection = mutableContainer->createProperty(PropertyObject::GenericSelectionProperty, false, request.initializationHints());
+		outputSelection = mutableContainer->createProperty(PropertyObject::GenericSelectionProperty);
 	}
 
 	// Create selection property for output.
@@ -168,7 +168,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
 	FloatType intervalEnd = xAxisRangeEnd();
 
 	// Allocate output data array.
-	PropertyAccessAndRef<qlonglong> histogram = DataTable::OOClass().createUserProperty(dataset(), std::max(1, numberOfBins()), PropertyObject::Int64, 1, 0, tr("Count"), true, DataTable::YProperty);
+	PropertyAccessAndRef<qlonglong> histogram = DataTable::OOClass().createUserProperty(dataset(), std::max(1, numberOfBins()), PropertyObject::Int64, 1, tr("Count"), DataBuffer::InitializeMemory, DataTable::YProperty);
 	qlonglong* histogramData = histogram.begin();
 	int histogramSizeMin1 = histogram.size() - 1;
 
@@ -313,8 +313,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
 	// Output a data table with the histogram data.
 	DataTable* table = state.createObject<DataTable>(
 		QStringLiteral("histogram[%1]").arg(sourceProperty().nameWithComponent()), 
-		request.modApp(), request.initializationHints(), DataTable::Histogram, sourceProperty().nameWithComponent(), 
-		histogram.take());
+		request.modApp(), DataTable::Histogram, sourceProperty().nameWithComponent(), histogram.take());
 	table->setAxisLabelX(sourceProperty().nameWithComponent());
 	table->setIntervalStart(intervalStart);
 	table->setIntervalEnd(intervalEnd);

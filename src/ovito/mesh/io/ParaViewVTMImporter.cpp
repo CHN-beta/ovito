@@ -239,7 +239,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 				// Detect file format and create an importer for it.
 				// This currently works only for FileSourceImporters. Files handled by other kinds of importers will be skipped.
 				// VTK dataset blocks using a file format not supported by OVITO are silently ignored.
-				OORef<FileSourceImporter> importer = dynamic_object_cast<FileSourceImporter>(FileImporter::autodetectFileFormat(request.dataset, request.initializationHints, file));
+				OORef<FileSourceImporter> importer = dynamic_object_cast<FileSourceImporter>(FileImporter::autodetectFileFormat(request.dataset, file));
 				if(!importer)
 					return Future<>::createImmediateEmpty();
 

@@ -107,9 +107,9 @@ Future<AsynchronousModifier::EnginePtr> WignerSeitzAnalysisModifier::createEngin
 	// Create output properties:
 	if(outputCurrentConfig()) {
 		if(referenceIdentifierProperty)
-			engine->setSiteIdentifiers(ParticlesObject::OOClass().createUserProperty(dataset(), posProperty->size(), PropertyObject::Int64, 1, 0, tr("Site Identifier"), false));
-		engine->setSiteTypes(ParticlesObject::OOClass().createUserProperty(dataset(), posProperty->size(), PropertyObject::Int, 1, 0, tr("Site Type"), false));
-		engine->setSiteIndices(ParticlesObject::OOClass().createUserProperty(dataset(), posProperty->size(), PropertyObject::Int64, 1, 0, tr("Site Index"), false));
+			engine->setSiteIdentifiers(ParticlesObject::OOClass().createUserProperty(dataset(), posProperty->size(), PropertyObject::Int64, 1, tr("Site Identifier")));
+		engine->setSiteTypes(ParticlesObject::OOClass().createUserProperty(dataset(), posProperty->size(), PropertyObject::Int, 1, tr("Site Type")));
+		engine->setSiteIndices(ParticlesObject::OOClass().createUserProperty(dataset(), posProperty->size(), PropertyObject::Int64, 1, tr("Site Index")));
 	}
 
 	return engine;
@@ -199,7 +199,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
 	setOccupancyNumbers(ParticlesObject::OOClass().createUserProperty(
 		positions()->dataset(),
 		siteTypes() ? positions()->size() : refPositions()->size(),
-		PropertyObject::Int, ncomponents, 0, tr("Occupancy"), false));
+		PropertyObject::Int, ncomponents, tr("Occupancy")));
 	if(ncomponents > 1 && typemin != 1) {
 		QStringList componentNames;
 		for(int i = typemin; i <= typemax; i++)

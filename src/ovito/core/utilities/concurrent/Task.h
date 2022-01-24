@@ -279,6 +279,9 @@ protected:
             cancel();
     }
 
+    /// Invokes the registered callback functions.
+    void callCallbacks(int state);
+
     /// Returns the mutex that is used to manage concurrent access to this task.
     QMutex& taskMutex() const { return _mutex; }
 

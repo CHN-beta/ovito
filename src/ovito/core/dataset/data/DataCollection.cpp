@@ -159,7 +159,7 @@ const DataObject* DataCollection::expectObject(const DataObject::OOMetaClass& ob
 	if(const DataObject* obj = getObject(objectClass))
 		return obj;
 	else {
-		if(Application::instance()->executionContext() == ExecutionContext::Interactive) {
+		if(ExecutionContext::isInteractive()) {
 			throwException(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
 		}
 		else {
@@ -176,7 +176,7 @@ const DataObject* DataCollection::expectLeafObject(const DataObject::OOMetaClass
 {
 	const DataObject* obj = getLeafObject(objectClass, pathString);
 	if(!obj) {
-		if(Application::instance()->executionContext() == ExecutionContext::Interactive) {
+		if(ExecutionContext::isInteractive()) {
 			if(pathString.isEmpty())
 				throwException(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
 			else
@@ -313,7 +313,7 @@ ConstDataObjectPath DataCollection::expectObject(const DataObject::OOMetaClass& 
 {
 	ConstDataObjectPath path = getObject(objectClass, pathString);
 	if(path.empty()) {
-		if(Application::instance()->executionContext() == ExecutionContext::Interactive) {
+		if(ExecutionContext::isInteractive()) {
 			if(pathString.isEmpty())
 				throwException(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
 			else
@@ -337,7 +337,7 @@ DataObjectPath DataCollection::expectMutableObject(const DataObject::OOMetaClass
 {
 	DataObjectPath path = getMutableObject(objectClass, pathString);
 	if(path.empty()) {
-		if(Application::instance()->executionContext() == ExecutionContext::Interactive) {
+		if(ExecutionContext::isInteractive()) {
 			if(pathString.isEmpty())
 				throwException(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
 			else
@@ -562,7 +562,7 @@ QVariant DataCollection::getAttributeValue(const PipelineObject* dataSource, con
 ******************************************************************************/
 AttributeDataObject* DataCollection::addAttribute(const QString& key, QVariant value, const PipelineObject* dataSource)
 {
-	return createObject<AttributeDataObject>(key, dataSource, ObjectInitializationHint::LoadFactoryDefaults, std::move(value));
+	return createObject<AttributeDataObject>(key, dataSource, std::move(value));
 }
 
 /******************************************************************************
@@ -581,7 +581,7 @@ AttributeDataObject* DataCollection::setAttribute(const QString& key, QVariant v
 			}
 		}
 	}
-	return createObject<AttributeDataObject>(key, dataSource, ObjectInitializationHint::LoadFactoryDefaults, std::move(value));
+	return createObject<AttributeDataObject>(key, dataSource, std::move(value));
 }
 
 /******************************************************************************

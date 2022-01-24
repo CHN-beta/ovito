@@ -164,7 +164,7 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 	}
 
 	// Create output RenderableDislocationLines object.
-	DataOORef<RenderableDislocationLines> renderableLines = DataOORef<RenderableDislocationLines>::create(dataset(), ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement, this, dataObject);
+	DataOORef<RenderableDislocationLines> renderableLines = DataOORef<RenderableDislocationLines>::create(dataset(), ObjectInitializationHint::WithoutVisElement, this, dataObject);
 	renderableLines->setVisElement(this);
 	renderableLines->setLineSegments(std::move(outputSegments));
 	renderableLines->setClusterGraph(std::move(clusterGraph));
@@ -317,11 +317,11 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 		// Allocate rendering data buffers.
 		std::vector<int> subobjToSegmentMap(lineSegmentCount + cornerCount);
 		FloatType lineDiameter = std::max(lineWidth(), FloatType(0));
-		DataBufferAccessAndRef<Point3> cornerPoints = DataBufferPtr::create(dataset(), cornerCount, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<Color> cornerColors = DataBufferPtr::create(dataset(), cornerCount, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), lineSegmentCount, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), lineSegmentCount, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<Color> segmentColors = DataBufferPtr::create(dataset(), lineSegmentCount, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Point3> cornerPoints = DataBufferPtr::create(dataset(), cornerCount, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Color> cornerColors = DataBufferPtr::create(dataset(), cornerCount, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), lineSegmentCount, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), lineSegmentCount, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Color> segmentColors = DataBufferPtr::create(dataset(), lineSegmentCount, DataBuffer::Float, 3);
 
 		// Build list of line segments.
 		auto cornerPointsIter = cornerPoints.begin();
@@ -429,8 +429,8 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 
 		if(dislocationsObj) {
 			if(showBurgersVectors()) {
-				DataBufferAccessAndRef<Point3> baseArrowPoints = DataBufferPtr::create(dataset(), dislocationsObj->segments().size(), DataBuffer::Float, 3, 0, false);
-				DataBufferAccessAndRef<Point3> headArrowPoints = DataBufferPtr::create(dataset(), dislocationsObj->segments().size(), DataBuffer::Float, 3, 0, false);
+				DataBufferAccessAndRef<Point3> baseArrowPoints = DataBufferPtr::create(dataset(), dislocationsObj->segments().size(), DataBuffer::Float, 3);
+				DataBufferAccessAndRef<Point3> headArrowPoints = DataBufferPtr::create(dataset(), dislocationsObj->segments().size(), DataBuffer::Float, 3);
 				subobjToSegmentMap.reserve(subobjToSegmentMap.size() + dislocationsObj->segments().size());
 				int arrowIndex = 0;
 				for(const DislocationSegment* segment : dislocationsObj->segments()) {
@@ -503,9 +503,9 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	const DislocationSegment* segment = dislocationsObj->segments()[segmentIndex];
 
 	// Generate the polyline segments to render.
-	DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3, 0, false);
-	DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3, 0, false);
-	DataBufferAccessAndRef<Point3> cornerVertices = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3, 0, false);
+	DataBufferAccessAndRef<Point3> baseSegmentPoints = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3);
+	DataBufferAccessAndRef<Point3> headSegmentPoints = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3);
+	DataBufferAccessAndRef<Point3> cornerVertices = DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 3);
 	clipDislocationLine(segment->line, *cellObject, dislocationsObj->cuttingPlanes(), [&](const Point3& v1, const Point3& v2, bool isInitialSegment) {
 		baseSegmentPoints.push_back(v1);
 		headSegmentPoints.push_back(v2);
@@ -551,7 +551,7 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	renderer->renderParticles(cornerBuffer);
 
 	if(!segment->line.empty()) {
-		DataBufferAccessAndRef<Point3> wrappedHeadPos = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 3, 0, false); 
+		DataBufferAccessAndRef<Point3> wrappedHeadPos = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 3); 
 		wrappedHeadPos[0] = cellObject->wrapPoint(segment->line.front());
 		ParticlePrimitive headBuffer;
 		headBuffer.setShadingMode(ParticlePrimitive::FlatShading);

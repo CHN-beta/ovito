@@ -58,8 +58,8 @@ public:
 public:
 
 	/// Constructor.
-	ManifoldConstructionHelper(ObjectInitializationHints initializationHints, DelaunayTessellation& tessellation, SurfaceMeshAccess& outputMesh, FloatType alpha, bool createRegions,
-			const PropertyObject* positions) : _initializationHints(initializationHints), _tessellation(tessellation), _mesh(outputMesh), _alpha(alpha), _createRegions(createRegions), _positions(positions) { OVITO_ASSERT(_tessellation.simCell()); }
+	ManifoldConstructionHelper(DelaunayTessellation& tessellation, SurfaceMeshAccess& outputMesh, FloatType alpha, bool createRegions,
+			const PropertyObject* positions) : _tessellation(tessellation), _mesh(outputMesh), _alpha(alpha), _createRegions(createRegions), _positions(positions) { OVITO_ASSERT(_tessellation.simCell()); }
 
 	/// Returns the number of filled regions that have been identified.
 	SurfaceMeshAccess::size_type filledRegionCount() const { return _filledRegionCount; }
@@ -88,7 +88,7 @@ public:
 		if(_createRegions) {
 
 			// Create the "Region" face property in the output mesh.
-			_mesh.createFaceProperty(SurfaceMeshFaces::RegionProperty, false, _initializationHints);
+			_mesh.createFaceProperty(SurfaceMeshFaces::RegionProperty);
 
 			if(!formFilledRegions(operation))
 				return false;
@@ -462,7 +462,7 @@ private:
 			return false;
 
 		// Create the 'Volume' property for the identified regions.
- 		_mesh.createRegionProperty(SurfaceMeshRegions::VolumeProperty, true, _initializationHints);
+ 		_mesh.createRegionProperty(SurfaceMeshRegions::VolumeProperty, DataBuffer::InitializeMemory);
 
 		operation.nextProgressSubStep();
 		operation.setProgressMaximum(_tessellation.numberOfTetrahedra());
@@ -1039,7 +1039,7 @@ private:
 
 		// Construct convex hull of remaining line segments.
 		if(!_convexHullMesh)
-			_convexHullMesh.reset(DataOORef<SurfaceMesh>::create(_mesh.topology()->dataset(), ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement));
+			_convexHullMesh.reset(DataOORef<SurfaceMesh>::create(_mesh.topology()->dataset(), ObjectInitializationHint::WithoutVisElement));
 		else
 			_convexHullMesh.clearMesh();
 		_convexHullMesh.constructConvexHull(std::vector<Point3>(lineSegments, lineSegments + numPoints));
@@ -1076,9 +1076,6 @@ private:
 
 	/// The squared probe sphere radius used to classify tetrahedra as open or solid.
 	FloatType _alpha;
-
-	/// Indicates whether this algorithm is executed in an interactive or a scripting context.
-	ObjectInitializationHints _initializationHints;
 
 	/// Controls the grouping of Delaunay cells into volumetric regions and the generation
 	/// of a two-sided surface mesh.

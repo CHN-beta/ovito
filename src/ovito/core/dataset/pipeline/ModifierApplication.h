@@ -80,9 +80,6 @@ public:
 	/// \brief Requests the preliminary computation results from the upstream data pipeline.
 	PipelineFlowState evaluateInputSynchronous(const PipelineEvaluationRequest& request) const { return input() ? input()->evaluateSynchronous(request) : PipelineFlowState(); }
 
-	/// \brief Compute the preliminary results of the upstream pipeline in a synchronous fashion at the current animation time.
-	PipelineFlowState evaluateInputSynchronousAtCurrentTime() const;
-
 	/// \brief Asks the object for the result of the data pipeline.
 	virtual SharedFuture<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request) override;
 
@@ -189,8 +186,8 @@ public:
 		PipelineEvaluationRequest(pipelineRequest), _modApp(const_cast<ModifierApplication*>(modApp)) {}
 
 	/// Constructor.
-	ModifierEvaluationRequest(ObjectInitializationHints initializationHints, TimePoint time, const ModifierApplication* modApp) :
-		PipelineEvaluationRequest(initializationHints, time), _modApp(const_cast<ModifierApplication*>(modApp)) {}
+	ModifierEvaluationRequest(TimePoint time, const ModifierApplication* modApp) :
+		PipelineEvaluationRequest(time), _modApp(const_cast<ModifierApplication*>(modApp)) {}
 
 	/// Returns the modifier application being evaluated.
 	ModifierApplication* modApp() const { return _modApp; }

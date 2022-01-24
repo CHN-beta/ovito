@@ -50,9 +50,6 @@ OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char
 	// Insert into linked list of all object types.
 	_nextMetaclass = _firstMetaClass;
 	_firstMetaClass = this;
-
-//	if(name == "DataObject")
-//		qDebug() << "OvitoClass:" << name << (void*)this;
 }
 
 /******************************************************************************
@@ -138,6 +135,20 @@ OORef<OvitoObject> OvitoClass::createInstance() const
 
 	// Instantiate the class.
 	return createInstanceImpl(nullptr);
+}
+
+
+/******************************************************************************
+* Creates an instance of this object class.
+* Throws an exception if the containing plugin failed to load.
+******************************************************************************/
+OORef<RefTarget> OvitoClass::createInstance(DataSet* dataset) const
+{
+	ObjectInitializationHints hints = ExecutionContext::isInteractive()
+		? ObjectInitializationHint::LoadUserDefaults
+		: ObjectInitializationHint::LoadFactoryDefaults;
+
+	return createInstance(dataset, hints);
 }
 
 /******************************************************************************

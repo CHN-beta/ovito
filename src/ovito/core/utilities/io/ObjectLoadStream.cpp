@@ -113,7 +113,7 @@ OORef<OvitoObject> ObjectLoadStream::loadObjectInternal()
 
 			// Create an instance of the object class.
 			if(record.classInfo->clazz->isDerivedFrom(RefTarget::OOClass()))
-				record.object = record.classInfo->clazz->createInstance(_dataset, operation().initializationHints() | ObjectInitializationHint::WithoutVisElement);
+				record.object = record.classInfo->clazz->createInstance(_dataset, ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement);
 			else
 				record.object = record.classInfo->clazz->createInstance();
 

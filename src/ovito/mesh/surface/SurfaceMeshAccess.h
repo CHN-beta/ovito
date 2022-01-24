@@ -541,13 +541,13 @@ public:
     }
 
     /// Adds a new standard vertex property to the mesh.
-    PropertyObject* createVertexProperty(SurfaceMeshVertices::Type ptype, bool initializeMemory, ObjectInitializationHints initializationHints) {
-        return mutableVertices().createProperty(ptype, initializeMemory, initializationHints);
+    PropertyObject* createVertexProperty(SurfaceMeshVertices::Type ptype, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags) {
+        return mutableVertices().createProperty(ptype, flags);
     }
 
 	/// Add a new user-defined vertex property to the mesh.
-	PropertyObject* createVertexProperty(const QString& name, int dataType, size_t componentCount, size_t stride, bool initializeMemory, QStringList componentNames = QStringList()) {
-        return mutableVertices().createProperty(name, dataType, componentCount, stride, initializeMemory, std::move(componentNames));
+	PropertyObject* createVertexProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList()) {
+        return mutableVertices().createProperty(name, dataType, componentCount, flags, std::move(componentNames));
 	}
 
     /// Attaches an existing property object to the vertices of the mesh.
@@ -561,13 +561,13 @@ public:
     }
 
     /// Adds a new standard face property to the mesh.
-    PropertyObject* createFaceProperty(SurfaceMeshFaces::Type ptype, bool initializeMemory, ObjectInitializationHints initializationHints) {
-        return mutableFaces().createProperty(ptype, initializeMemory, initializationHints);
+    PropertyObject* createFaceProperty(SurfaceMeshFaces::Type ptype, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags) {
+        return mutableFaces().createProperty(ptype, flags);
     }
 
 	/// Add a new user-defined face property to the mesh.
-	PropertyObject* createFaceProperty(const QString& name, int dataType, size_t componentCount, size_t stride, bool initializeMemory, QStringList componentNames = QStringList()) {
-        return mutableFaces().createProperty(name, dataType, componentCount, stride, initializeMemory, std::move(componentNames));
+	PropertyObject* createFaceProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList()) {
+        return mutableFaces().createProperty(name, dataType, componentCount, flags, std::move(componentNames));
 	}
 
     /// Attaches an existing property object to the faces of the mesh.
@@ -581,13 +581,13 @@ public:
     }
 
     /// Adds a new standard region property to the mesh.
-    PropertyObject* createRegionProperty(SurfaceMeshRegions::Type ptype, bool initializeMemory, ObjectInitializationHints initializationHints) {
-        return mutableRegions().createProperty(ptype, initializeMemory, initializationHints);
+    PropertyObject* createRegionProperty(SurfaceMeshRegions::Type ptype, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags) {
+        return mutableRegions().createProperty(ptype, flags);
     }
 
 	/// Add a new user-defined region property to the mesh.
-	PropertyObject* createRegionProperty(const QString& name, int dataType, size_t componentCount, size_t stride, bool initializeMemory, QStringList componentNames = QStringList()) {
-        return mutableRegions().createProperty(name, dataType, componentCount, stride, initializeMemory, std::move(componentNames));
+	PropertyObject* createRegionProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList()) {
+        return mutableRegions().createProperty(name, dataType, componentCount, flags, std::move(componentNames));
 	}
 
     /// Attaches an existing property object to the regions of the mesh.

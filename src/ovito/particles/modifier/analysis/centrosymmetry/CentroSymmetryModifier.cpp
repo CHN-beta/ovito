@@ -80,7 +80,7 @@ Future<AsynchronousModifier::EnginePtr> CentroSymmetryModifier::createEngine(con
 		throwException(tr("The number of neighbors to take into account in the centrosymmetry calculation must be a positive and even integer."));
 
 	// Create an empty data table for the CSP value histogram to be computed.
-	DataOORef<DataTable> histogram = DataOORef<DataTable>::create(dataset(), request.initializationHints(), DataTable::Line, tr("CSP distribution"));
+	DataOORef<DataTable> histogram = DataOORef<DataTable>::create(dataset(), DataTable::Line, tr("CSP distribution"));
 	histogram->setIdentifier(input.generateUniqueIdentifier<DataTable>(QStringLiteral("csp-centrosymmetry")));
 	histogram->setDataSource(request.modApp());
 	histogram->setAxisLabelX(tr("CSP"));
@@ -120,7 +120,7 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
 	_histogram->setElementCount(numHistogramBins);
 	_histogram->setIntervalStart(0);
 	_histogram->setIntervalEnd(cspHistogramBinSize * numHistogramBins);
-	PropertyAccess<qlonglong> histogramCounts = _histogram->createYProperty(tr("Count"), PropertyObject::Int64, 1, true);
+	PropertyAccess<qlonglong> histogramCounts = _histogram->createYProperty(tr("Count"), PropertyObject::Int64, 1, DataBuffer::InitializeMemory);
 	for(FloatType cspValue : cspArray) {
 		OVITO_ASSERT(cspValue >= 0);
 		int binIndex = cspValue / cspHistogramBinSize;

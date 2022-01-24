@@ -56,13 +56,20 @@ public:
 #endif
 	};
 
+	enum InitializationFlag {
+		NoFlags = 0,
+		InitializeMemory = (1<<0)
+	};
+	Q_DECLARE_FLAGS(InitializationFlags, InitializationFlag);
+	Q_FLAG(InitializationFlags);
+
 public:
 
 	/// \brief Creates an empty buffer.
 	Q_INVOKABLE DataBuffer(DataSet* dataset);
 
 	/// \brief Constructor that creates and initializes a new property array.
-	DataBuffer(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, size_t stride, bool initializeMemory, QStringList componentNames = QStringList());
+	DataBuffer(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount = 1, InitializationFlags flags = NoFlags, QStringList componentNames = QStringList());
 
 	/// \brief Returns the number of elements stored in the property array.
 	size_t size() const { return _numElements; }

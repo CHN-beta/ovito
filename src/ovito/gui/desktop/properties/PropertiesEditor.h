@@ -104,7 +104,7 @@ public:
 	/// \brief Creates an object that represents a longer-running operation executed in the main or GUI thread 
 	///        in the context of this properties editor 
 	MainThreadOperation createOperation() {
-		return mainWindow().createOperation(false); 
+		return MainThreadOperation::create(mainWindow(), false); 
 	}
 
 	/// \brief Returns a pointer to the parent editor which has opened this editor for one of its sub-components.

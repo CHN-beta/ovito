@@ -379,7 +379,7 @@ void ColorCodingModifierEditor::onAdjustRange()
 	OVITO_CHECK_OBJECT_POINTER(mod);
 
 	undoableTransaction(tr("Adjust range"), [mod]() {
-		mod->adjustRange(ObjectInitializationHint::LoadUserDefaults);
+		mod->adjustRange();
 	});
 }
 
@@ -393,7 +393,7 @@ void ColorCodingModifierEditor::onAdjustRangeGlobal()
 
 	undoableTransaction(tr("Adjust range"), [this, mod]() {
 		ProgressDialog progressDialog(container(), mainWindow(), tr("Determining property value range"));
-		mod->adjustRangeGlobal(ObjectInitializationHint::LoadUserDefaults, progressDialog);
+		mod->adjustRangeGlobal(progressDialog);
 	});
 }
 

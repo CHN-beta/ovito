@@ -129,7 +129,7 @@ void OXDNAImporter::FrameLoader::loadFile()
 
 		// Check if the topology file exists.
 		if(!topoFileUrl.isValid() || (topoFileUrl.isLocalFile() && !QFileInfo::exists(topoFileUrl.toLocalFile()))) {
-			if(initializationHints().testFlag(LoadUserDefaults)) {
+			if(ExecutionContext::isInteractive()) {
 				throw Exception(tr("Could not locate corresponding topology file for oxDNA configuration file '%1'.\n"
 					"Tried automatically inferred path:\n\n%2\n\nBut the path does not exist. Please pick the topology file manually.")
 						.arg(frame().sourceFile.fileName())
@@ -163,17 +163,17 @@ void OXDNAImporter::FrameLoader::loadFile()
 
 	// Create a special visual element for rendering the nucleotides.
 	if(!dynamic_object_cast<NucleotidesVis>(particles()->visElement()))
-		particles()->setVisElement(OORef<NucleotidesVis>::create(dataset(), initializationHints()));
+		particles()->setVisElement(OORef<NucleotidesVis>::create(dataset()));
 
 	// Define nucleobase types.
-	PropertyAccess<int> baseProperty = particles()->createProperty(ParticlesObject::NucleobaseTypeProperty, false, initializationHints());
+	PropertyAccess<int> baseProperty = particles()->createProperty(ParticlesObject::NucleobaseTypeProperty);
 	addNumericType(ParticlesObject::OOClass(), baseProperty.buffer(), 1, QStringLiteral("T"));
 	addNumericType(ParticlesObject::OOClass(), baseProperty.buffer(), 2, QStringLiteral("C"));
 	addNumericType(ParticlesObject::OOClass(), baseProperty.buffer(), 3, QStringLiteral("G"));
 	addNumericType(ParticlesObject::OOClass(), baseProperty.buffer(), 4, QStringLiteral("A"));
 
 	// Define strands list.
-	PropertyAccess<int> strandsProperty = particles()->createProperty(ParticlesObject::DNAStrandProperty, false, initializationHints());
+	PropertyAccess<int> strandsProperty = particles()->createProperty(ParticlesObject::DNAStrandProperty);
 	for(int i = 1; i <= numStrands; i++)
 		addNumericType(ParticlesObject::OOClass(), strandsProperty.buffer(), i, {});
 
@@ -210,7 +210,7 @@ void OXDNAImporter::FrameLoader::loadFile()
 
 	// Create and fill bonds topology storage.
 	setBondCount(bonds.size());
-	PropertyAccess<ParticleIndexPair> bondTopologyProperty = this->bonds()->createProperty(BondsObject::TopologyProperty, false, initializationHints());
+	PropertyAccess<ParticleIndexPair> bondTopologyProperty = this->bonds()->createProperty(BondsObject::TopologyProperty);
 	boost::copy(bonds, bondTopologyProperty.begin());
 
 	// Open oxDNA configuration file for reading.
@@ -263,7 +263,7 @@ void OXDNAImporter::FrameLoader::loadFile()
 	columnMapping.mapStandardColumn(14, ParticlesObject::AngularVelocityProperty, 2);
 
 	// Parse data table.
-	InputColumnReader columnParser(columnMapping, particles(), initializationHints(), false);
+	InputColumnReader columnParser(columnMapping, particles(), false);
 	for(size_t i = 0; i < numNucleotidesLong; i++) {
 		if(!setProgressValueIntermittent(i)) return;
 		try {
@@ -280,8 +280,8 @@ void OXDNAImporter::FrameLoader::loadFile()
 		signalAdditionalFrames();
 
 	// Displace particle positions. oxDNA stores center of mass coordinates, but OVITO expects particle coordinates to be backbone sphere centers.
-	PropertyAccess<Point3> centerOfMassPositionsArray = particles()->createProperty(QStringLiteral("Center Of Mass"), PropertyObject::Float, 3, 0, false, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
-	PropertyAccess<Point3> basePositionsArray = particles()->createProperty(QStringLiteral("Base Position"), PropertyObject::Float, 3, 0, false, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
+	PropertyAccess<Point3> centerOfMassPositionsArray = particles()->createProperty(QStringLiteral("Center Of Mass"), PropertyObject::Float, 3, DataBuffer::NoFlags, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
+	PropertyAccess<Point3> basePositionsArray = particles()->createProperty(QStringLiteral("Base Position"), PropertyObject::Float, 3, DataBuffer::NoFlags, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
 	PropertyAccess<Point3> positionsArray = particles()->getMutableProperty(ParticlesObject::PositionProperty);
 	ConstPropertyAccess<Vector3> axisVectorArray = particles()->expectProperty(ParticlesObject::NucleotideAxisProperty);
 	for(size_t i = 0; i < numNucleotidesLong; i++) {

@@ -39,22 +39,19 @@ AnglesObject::AnglesObject(DataSet* dataset) : PropertyContainer(dataset)
 /******************************************************************************
 * Creates a storage object for standard properties.
 ******************************************************************************/
-PropertyPtr AnglesObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const
+PropertyPtr AnglesObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
-	size_t stride;
 
 	switch(type) {
 	case TypeProperty:
 		dataType = PropertyObject::Int;
 		componentCount = 1;
-		stride = sizeof(int);
 		break;
 	case TopologyProperty:
 		dataType = PropertyObject::Int64;
 		componentCount = 3;
-		stride = componentCount * sizeof(qlonglong);
 		break;
 	default:
 		OVITO_ASSERT_MSG(false, "AnglesObject::createStandardPropertyInternal", "Invalid standard property type");
@@ -65,10 +62,9 @@ PropertyPtr AnglesObject::OOMetaClass::createStandardPropertyInternal(DataSet* d
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, initializationHints, elementCount, dataType, componentCount, stride,
-								propertyName, false, type, componentNames);
+	PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
 
-	if(initializeMemory) {
+	if(flags.testFlag(DataBuffer::InitializeMemory)) {
 		// Default-initialize property values with zeros.
 		property->fillZero();
 	}

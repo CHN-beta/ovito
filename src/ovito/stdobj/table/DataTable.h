@@ -43,7 +43,7 @@ class OVITO_STDOBJ_EXPORT DataTable : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// Creates a storage object for standard data table properties.
-		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
 
 	protected:
 
@@ -87,8 +87,8 @@ public:
 	ConstPropertyPtr getXValues() const;
 
 	/// Creates a property for the y-values of the data points.
-	PropertyObject* createYProperty(const QString& name, int dataType, size_t componentCount, bool initializeMemory, QStringList componentNames = QStringList()) {
-		PropertyPtr property = DataTable::OOClass().createUserProperty(dataset(), elementCount(), dataType, componentCount, 0, name, initializeMemory, DataTable::YProperty, std::move(componentNames));
+	PropertyObject* createYProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList()) {
+		PropertyPtr property = DataTable::OOClass().createUserProperty(dataset(), elementCount(), dataType, componentCount, name, flags, DataTable::YProperty, std::move(componentNames));
 		return const_cast<PropertyObject*>(createProperty(std::move(property)));
 	}
 

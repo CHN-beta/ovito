@@ -66,7 +66,7 @@ void FreezePropertyModifier::initializeModifier(const ModifierInitializationRequ
 	GenericPropertyModifier::initializeModifier(request);
 
 	// Use the first available particle property from the input state as data source when the modifier is newly created.
-	if(sourceProperty().isNull() && subject() && request.initializationHints().testFlag(LoadUserDefaults)) {
+	if(sourceProperty().isNull() && subject() && ExecutionContext::isInteractive()) {
 		const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
 		if(const PropertyContainer* container = input.getLeafObject(subject())) {
 			for(const PropertyObject* property : container->properties()) {
@@ -170,7 +170,7 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
 	// Get the property that will be overwritten by the stored one.
 	PropertyObject* outputProperty;
 	if(destinationProperty().type() != PropertyObject::GenericUserProperty) {
-		outputProperty = container->createProperty(destinationProperty().type(), true, request.initializationHints());
+		outputProperty = container->createProperty(destinationProperty().type(), DataBuffer::InitializeMemory);
 		if(outputProperty->dataType() != myModApp->property()->dataType()
 			|| outputProperty->componentCount() != myModApp->property()->componentCount()
 			|| outputProperty->stride() != myModApp->property()->stride())
@@ -179,7 +179,7 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
 	else {
 		outputProperty = container->createProperty(destinationProperty().name(),
 			myModApp->property()->dataType(), myModApp->property()->componentCount(),
-			0, true);
+			DataBuffer::InitializeMemory);
 		outputProperty->setComponentNames(myModApp->property()->componentNames());
 	}
 	OVITO_ASSERT(outputProperty->stride() == myModApp->property()->stride());

@@ -62,7 +62,7 @@ protected:
 	virtual bool processCommandLineParameters() override;
 
 	/// Prepares application to start running.
-	virtual UserInterface* startupApplication() override;
+	virtual MainThreadOperation startupApplication() override;
 
 	/// Is called at program startup once the event loop is running.
 	virtual void postStartupInitialization(MainThreadOperation& operation) override;

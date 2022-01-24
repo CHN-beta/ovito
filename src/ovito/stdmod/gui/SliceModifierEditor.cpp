@@ -460,7 +460,7 @@ void PickPlanePointsInputMode::alignPlane(SliceModifier* mod)
 
 		// Convert to reduced cell coordinates if requested.
 		if(mod->reducedCoordinates()) {
-			const PipelineFlowState& input = modApp->evaluateInputSynchronousAtCurrentTime();
+			const PipelineFlowState& input = _editor->getPipelineInput();
 			if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
 				localPlane = cell->inverseMatrix() * localPlane;
 			}
@@ -510,7 +510,7 @@ void PickPlanePointsInputMode::renderOverlay3D(Viewport* vp, SceneRenderer* rend
 			renderer->renderLines(lines);
 		}
 		else if(npoints == 3) {
-			DataOORef<TriMeshObject> tri = DataOORef<TriMeshObject>::create(renderer->dataset(), ObjectInitializationHint::LoadFactoryDefaults | ObjectInitializationHint::WithoutVisElement);
+			DataOORef<TriMeshObject> tri = DataOORef<TriMeshObject>::create(renderer->dataset(), ObjectInitializationHint::WithoutVisElement);
 			tri->setVertexCount(3);
 			tri->setVertex(0, _pickedPoints[0]);
 			tri->setVertex(1, _pickedPoints[1]);

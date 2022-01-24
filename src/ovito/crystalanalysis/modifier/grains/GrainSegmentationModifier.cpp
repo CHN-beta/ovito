@@ -185,21 +185,21 @@ void GrainSegmentationEngine1::applyResults(const ModifierEvaluationRequest& req
 		}
 
 		// Output disorientation angles as a bond property.
-		PropertyAccessAndRef<FloatType> neighborDisorientationAngles = BondsObject::OOClass().createUserProperty(dataset(), bonds.size(), PropertyObject::Float, 1, 0, QStringLiteral("Disorientation"), false);
+		PropertyAccessAndRef<FloatType> neighborDisorientationAngles = BondsObject::OOClass().createUserProperty(dataset(), bonds.size(), PropertyObject::Float, 1, QStringLiteral("Disorientation"));
 		for (size_t i = 0; i < disorientations.size(); i++) {
 			neighborDisorientationAngles[i] = disorientations[i];
 		}
 
-		particles->addBonds(bonds, modifier->bondsVis(), request.initializationHints(), { neighborDisorientationAngles.take() });
+		particles->addBonds(bonds, modifier->bondsVis(), { neighborDisorientationAngles.take() });
 	}
 
 	// Output a data plot with the dendrogram points.
 	if(mergeSize() && mergeDistance())
-		state.createObject<DataTable>(QStringLiteral("grains-merge"), request.modApp(), request.initializationHints(), DataTable::Scatter, GrainSegmentationModifier::tr("Merge size vs. distance"), mergeSize(), mergeDistance());
+		state.createObject<DataTable>(QStringLiteral("grains-merge"), request.modApp(), DataTable::Scatter, GrainSegmentationModifier::tr("Merge size vs. distance"), mergeSize(), mergeDistance());
 
 	// Output a data plot with the log-log dendrogram points.
 	if(logMergeSize() && logMergeDistance())
-		state.createObject<DataTable>(QStringLiteral("grains-log"), request.modApp(), request.initializationHints(), DataTable::Scatter, GrainSegmentationModifier::tr("Log distance vs. log merge size"), logMergeDistance(), logMergeSize());
+		state.createObject<DataTable>(QStringLiteral("grains-log"), request.modApp(), DataTable::Scatter, GrainSegmentationModifier::tr("Log distance vs. log merge size"), logMergeDistance(), logMergeSize());
 
 	if(modifier->mergeAlgorithm() == GrainSegmentationModifier::GraphClusteringAutomatic)
 		state.addAttribute(QStringLiteral("GrainSegmentation.auto_merge_threshold"), QVariant::fromValue(suggestedMergingThreshold()), request.modApp());
@@ -226,7 +226,7 @@ void GrainSegmentationEngine2::applyResults(const ModifierEvaluationRequest& req
 			
 			// Assign colors to particles according to the grains they belong to.
 			ConstPropertyAccess<Color> grainColorsArray(_grainColors);
-			PropertyAccess<Color> particleColorsArray = particles->createProperty(ParticlesObject::ColorProperty, false, request.initializationHints());
+			PropertyAccess<Color> particleColorsArray = particles->createProperty(ParticlesObject::ColorProperty);
 			boost::transform(ConstPropertyAccess<qlonglong>(atomClusters()), particleColorsArray.begin(), [&](qlonglong cluster) { 
 				if(cluster != 0)
 					return grainColorsArray[cluster - 1];
@@ -238,7 +238,7 @@ void GrainSegmentationEngine2::applyResults(const ModifierEvaluationRequest& req
 
 	// Output a data table with the list of grains.
 	// The X-column consists of the grain IDs, the Y-column contains the grain sizes. 
-	DataTable* grainTable = state.createObject<DataTable>(QStringLiteral("grains"), request.modApp(), request.initializationHints(), DataTable::Scatter, GrainSegmentationModifier::tr("Grain list"), _grainSizes, _grainIds);
+	DataTable* grainTable = state.createObject<DataTable>(QStringLiteral("grains"), request.modApp(), DataTable::Scatter, GrainSegmentationModifier::tr("Grain list"), _grainSizes, _grainIds);
 	// Add extra columns to the table containing other per-grain data.
 	grainTable->createProperty(_grainColors);
 	grainTable->createProperty(_grainStructureTypes);

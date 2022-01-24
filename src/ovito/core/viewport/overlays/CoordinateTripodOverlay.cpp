@@ -95,7 +95,7 @@ CoordinateTripodOverlay::CoordinateTripodOverlay(DataSet* dataset) : ViewportOve
 ******************************************************************************/
 void CoordinateTripodOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing() && Application::instance()->executionContext() == ExecutionContext::Interactive) {
+	if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
 		// Automatically reset offset to zero when user changes the alignment of the overlay in the viewport.
 		setOffsetX(0);
 		setOffsetY(0);

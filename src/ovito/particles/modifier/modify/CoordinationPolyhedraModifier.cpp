@@ -112,7 +112,7 @@ Future<AsynchronousModifier::EnginePtr> CoordinationPolyhedraModifier::createEng
 	}
 
 	// Create the output data object.
-	DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(dataset(), request.initializationHints() | ObjectInitializationHint::WithoutVisElement, tr("Coordination polyhedra"));
+	DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(dataset(), ObjectInitializationHint::WithoutVisElement, tr("Coordination polyhedra"));
 	mesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("coord-polyhedra")));
 	mesh->setDataSource(request.modApp());
 	mesh->setDomain(simCell);
@@ -138,7 +138,7 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 
 	// Create the "Region" face property.
 	SurfaceMeshAccess mesh(_mesh);
-	mesh.createFaceProperty(SurfaceMeshFaces::RegionProperty, false, initializationHints());
+	mesh.createFaceProperty(SurfaceMeshFaces::RegionProperty);
 
 	// Determine number of selected particles.
 	ConstPropertyAccess<int> selectionArray(_selection);
@@ -229,7 +229,7 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 			PropertyPtr vertexProperty;
 			if(SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
 				// Input property is also a standard property for mesh vertices.
-				vertexProperty = mesh.createVertexProperty(static_cast<SurfaceMeshVertices::Type>(particleProperty->type()), false, initializationHints());
+				vertexProperty = mesh.createVertexProperty(static_cast<SurfaceMeshVertices::Type>(particleProperty->type()));
 				OVITO_ASSERT(vertexProperty->dataType() == particleProperty->dataType());
 				OVITO_ASSERT(vertexProperty->stride() == particleProperty->stride());
 			}
@@ -237,11 +237,11 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 				// Input property name is that of a standard property for mesh vertices.
 				// Must rename the property to avoid conflict, because user properties may not have a standard property name.
 				QString newPropertyName = particleProperty->name() + tr("_particles");
-				vertexProperty = mesh.createVertexProperty(newPropertyName, particleProperty->dataType(), particleProperty->componentCount(), particleProperty->stride(), false, particleProperty->componentNames());
+				vertexProperty = mesh.createVertexProperty(newPropertyName, particleProperty->dataType(), particleProperty->componentCount(), DataBuffer::NoFlags, particleProperty->componentNames());
 			}
 			else {
 				// Input property is a user property for mesh vertices.
-				vertexProperty = mesh.createVertexProperty(particleProperty->name(), particleProperty->dataType(), particleProperty->componentCount(), particleProperty->stride(), false, particleProperty->componentNames());
+				vertexProperty = mesh.createVertexProperty(particleProperty->name(), particleProperty->dataType(), particleProperty->componentCount(), DataBuffer::NoFlags, particleProperty->componentNames());
 			}
 			// Copy particle property values to mesh vertices using precomputed index mapping.
 			particleProperty->mappedCopyTo(*vertexProperty, vertexToParticleMap);
@@ -252,7 +252,7 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 			PropertyPtr regionProperty;
 			if(SurfaceMeshRegions::OOClass().isValidStandardPropertyId(particleProperty->type())) {
 				// Input property is also a standard property for mesh regions.
-				regionProperty = mesh.createRegionProperty(static_cast<SurfaceMeshRegions::Type>(particleProperty->type()), false, initializationHints());
+				regionProperty = mesh.createRegionProperty(static_cast<SurfaceMeshRegions::Type>(particleProperty->type()));
 				OVITO_ASSERT(regionProperty->dataType() == particleProperty->dataType());
 				OVITO_ASSERT(regionProperty->stride() == particleProperty->stride());
 			}
@@ -260,11 +260,11 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 				// Input property name is that of a standard property for mesh regions.
 				// Must rename the property to avoid conflict, because user properties may not have a standard property name.
 				QString newPropertyName = particleProperty->name() + tr("_particles");
-				regionProperty = mesh.createRegionProperty(newPropertyName, particleProperty->dataType(), particleProperty->componentCount(), particleProperty->stride(), false, particleProperty->componentNames());
+				regionProperty = mesh.createRegionProperty(newPropertyName, particleProperty->dataType(), particleProperty->componentCount(), DataBuffer::NoFlags, particleProperty->componentNames());
 			}
 			else {
 				// Input property is a user property for mesh regions.
-				regionProperty = mesh.createRegionProperty(particleProperty->name(), particleProperty->dataType(), particleProperty->componentCount(), particleProperty->stride(), false, particleProperty->componentNames());
+				regionProperty = mesh.createRegionProperty(particleProperty->name(), particleProperty->dataType(), particleProperty->componentCount(), DataBuffer::NoFlags, particleProperty->componentNames());
 			}
 			// Copy particle property values to mesh regions using precomputed index mapping.
 			particleProperty->mappedCopyTo(*regionProperty, regionToParticleMap);
@@ -274,7 +274,7 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 	}
 
 	// Create the "Particle index" region property, which contains the index of the particle that is at the center of each coordination polyhedron.
-	PropertyPtr particleIndexProperty = mesh.createRegionProperty(QStringLiteral("Particle Index"), PropertyObject::Int64, 1, 0, false);
+	PropertyPtr particleIndexProperty = mesh.createRegionProperty(QStringLiteral("Particle Index"), PropertyObject::Int64);
 	std::copy(regionToParticleMap.cbegin(), regionToParticleMap.cend(), PropertyAccess<qlonglong>(particleIndexProperty).begin());
 
 	// Release data that is no longer needed.

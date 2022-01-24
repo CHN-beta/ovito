@@ -104,7 +104,7 @@ Future<PipelineFlowState> LoadTrajectoryModifier::evaluate(const ModifierEvaluat
 				state.setStatus(trajState.status());
 			}
 			else {
-				trajModifier->applyTrajectoryState(state, trajState, request.initializationHints());
+				trajModifier->applyTrajectoryState(state, trajState);
 
 				// Invalidate the synchronous state cache of the modifier application.
 				// This is needed to force the pipeline system to call our evaluateSynchronous() method
@@ -124,7 +124,7 @@ void LoadTrajectoryModifier::evaluateSynchronous(const ModifierEvaluationRequest
 {
 	if(trajectorySource()) {
 		const PipelineFlowState& trajState = trajectorySource()->evaluateSynchronous(request);
-		applyTrajectoryState(state, trajState, request.initializationHints());
+		applyTrajectoryState(state, trajState);
 	}
 }
 
@@ -132,7 +132,7 @@ void LoadTrajectoryModifier::evaluateSynchronous(const ModifierEvaluationRequest
 * Transfers the particle positions from the trajectory frame to the current 
 * pipeline input state.
 ******************************************************************************/
-void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, const PipelineFlowState& trajState, ObjectInitializationHints initializationHints)
+void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, const PipelineFlowState& trajState)
 {
 	if(!trajState)
 		throwException(tr("Data source has not been specified yet or is empty. Please pick a trajectory file."));
@@ -220,7 +220,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 			bool replacingProperty;
 			if(property->type() != ParticlesObject::UserProperty) {
 				replacingProperty = (particles->getProperty(property->type()) != nullptr);
-				outputProperty = particles->createProperty(property->type(), true, initializationHints);
+				outputProperty = particles->createProperty(property->type(), DataBuffer::InitializeMemory);
 				if(outputProperty->dataType() != property->dataType()
 					|| outputProperty->componentCount() != property->componentCount())
 					continue; // Types of source property and output property are not compatible.
@@ -228,8 +228,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 			else {
 				replacingProperty = (particles->getProperty(property->name()) != nullptr);
 				outputProperty = particles->createProperty(property->name(),
-					property->dataType(), property->componentCount(),
-					0, true);
+					property->dataType(), property->componentCount(), DataBuffer::InitializeMemory);
 			}
 			OVITO_ASSERT(outputProperty->stride() == property->stride());
 
@@ -259,7 +258,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 
 				BondsObject* bonds = particles->makeBondsMutable();
 				if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty)) {
-					PropertyAccess<Vector3I> periodicImageProperty = bonds->createProperty(BondsObject::PeriodicImageProperty, true, initializationHints);
+					PropertyAccess<Vector3I> periodicImageProperty = bonds->createProperty(BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
 
 					// Wrap bonds crossing a periodic boundary by resetting their PBC shift vectors.
 					for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
@@ -325,7 +324,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 				}
 
 				// Perform lookup of particle IDs.
-				PropertyAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty, false, initializationHints);
+				PropertyAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty);
 				auto t = bondTopologyArray.begin();
 				for(const ParticleIndexPair& bond : ConstPropertyAccess<ParticleIndexPair>(bondParticleIdentifiers)) {
 					auto iter1 = idToIndexMap.find(bond[0]);

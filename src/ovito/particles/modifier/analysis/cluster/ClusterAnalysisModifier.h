@@ -89,17 +89,17 @@ private:
 			_sortBySize(sortBySize),
 			_unwrapParticleCoordinates(unwrapParticleCoordinates),
 			_unwrappedPositions((unwrapParticleCoordinates || computeCentersOfMass || computeRadiusOfGyration) ? positions.makeCopy() : nullptr),
-			_centersOfMass(computeCentersOfMass ? DataTable::OOClass().createUserProperty(request.dataset(), 0, PropertyObject::Float, 3, 0, QStringLiteral("Center of Mass"), true, 
+			_centersOfMass(computeCentersOfMass ? DataTable::OOClass().createUserProperty(request.dataset(), 0, PropertyObject::Float, 3, QStringLiteral("Center of Mass"), DataBuffer::InitializeMemory, 
 				0, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z")) : nullptr),
-			_radiiOfGyration(computeRadiusOfGyration ? DataTable::OOClass().createUserProperty(request.dataset(), 0, PropertyObject::Float, 1, 0, QStringLiteral("Radius of Gyration"), true) : nullptr),
-			_gyrationTensors(computeRadiusOfGyration ? DataTable::OOClass().createUserProperty(request.dataset(), 0, PropertyObject::Float, 6, 0, QStringLiteral("Gyration Tensor"), true,
+			_radiiOfGyration(computeRadiusOfGyration ? DataTable::OOClass().createUserProperty(request.dataset(), 0, PropertyObject::Float, 1, QStringLiteral("Radius of Gyration"), DataBuffer::InitializeMemory) : nullptr),
+			_gyrationTensors(computeRadiusOfGyration ? DataTable::OOClass().createUserProperty(request.dataset(), 0, PropertyObject::Float, 6, QStringLiteral("Gyration Tensor"), DataBuffer::InitializeMemory,
 				0, QStringList() << QStringLiteral("XX") << QStringLiteral("YY") << QStringLiteral("ZZ") << QStringLiteral("XY") << QStringLiteral("XZ") << QStringLiteral("YZ")) : nullptr),
 			_selection(std::move(selection)),
 			_periodicImageBondProperty(std::move(periodicImageBondProperty)),
 			_bondTopology(std::move(bondTopology)),
-			_clusterSizes(DataTable::OOClass().createUserProperty(request.dataset(), 0, PropertyObject::Int64, 1, 0, QStringLiteral("Cluster Size"), true, DataTable::YProperty)),
-			_clusterIds(DataTable::OOClass().createUserProperty(request.dataset(), 0, PropertyObject::Int64, 1, 0, QStringLiteral("Cluster Identifier"), false, DataTable::XProperty)),
-			_particleClusters(ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::ClusterProperty, false, request.initializationHints())),
+			_clusterSizes(DataTable::OOClass().createUserProperty(request.dataset(), 0, PropertyObject::Int64, 1, QStringLiteral("Cluster Size"), DataBuffer::InitializeMemory, DataTable::YProperty)),
+			_clusterIds(DataTable::OOClass().createUserProperty(request.dataset(), 0, PropertyObject::Int64, 1, QStringLiteral("Cluster Identifier"), DataBuffer::NoFlags, DataTable::XProperty)),
+			_particleClusters(ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::ClusterProperty)),
 			_inputFingerprint(std::move(fingerprint)) {}
 
 		/// Computes the modifier's results.

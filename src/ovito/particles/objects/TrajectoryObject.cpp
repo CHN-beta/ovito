@@ -51,33 +51,29 @@ void TrajectoryObject::OOMetaClass::initialize()
 /******************************************************************************
 * Creates a storage object for standard properties.
 ******************************************************************************/
-PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const
+PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
-	size_t stride;
 
 	switch(type) {
 	case PositionProperty:
 		dataType = PropertyObject::Float;
 		componentCount = 3;
-		stride = sizeof(Point3);
+		OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Point3));
 		break;
 	case ColorProperty:
 		dataType = PropertyObject::Float;
 		componentCount = 3;
-		stride = componentCount * sizeof(FloatType);
-		OVITO_ASSERT(stride == sizeof(Color));
+		OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Color));
 		break;
 	case SampleTimeProperty:
 		dataType = PropertyObject::Int;
 		componentCount = 1;
-		stride = sizeof(int);
 		break;
 	case ParticleIdentifierProperty:
 		dataType = PropertyObject::Int64;
 		componentCount = 1;
-		stride = sizeof(qlonglong);
 		break;
 	default:
 		OVITO_ASSERT_MSG(false, "TrajectoryObject::createStandardProperty()", "Invalid standard property type");
@@ -89,23 +85,22 @@ PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(DataSe
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, initializationHints, elementCount, dataType, componentCount, stride,
-								propertyName, false, type, componentNames);
+	PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
 
 	// Initialize memory if requested.
-	if(initializeMemory && !containerPath.empty()) {
+	if(flags.testFlag(DataBuffer::InitializeMemory) && !containerPath.empty()) {
 		// Certain standard properties need to be initialized with default values determined by the attached visual element.
 		if(type == ColorProperty) {
 			if(const TrajectoryObject* trajectory = dynamic_object_cast<TrajectoryObject>(containerPath.back())) {
 				if(TrajectoryVis* trajectoryVis = dynamic_object_cast<TrajectoryVis>(trajectory->visElement())) {
 					property->fill(trajectoryVis->lineColor());
-					initializeMemory = false;
+					flags.setFlag(DataBuffer::InitializeMemory, false);
 				}
 			}
 		}
 	}
 
-	if(initializeMemory) {
+	if(flags.testFlag(DataBuffer::InitializeMemory)) {
 		// Default-initialize property values with zeros.
 		property->fillZero();
 	}

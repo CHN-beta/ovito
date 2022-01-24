@@ -116,12 +116,12 @@ public:
 	}
 
     /// Creates a new standard property in the container.
-    PropertyObject* createProperty(int ptype, bool initializeMemory, ObjectInitializationHints initializationHints) {
+    PropertyObject* createProperty(int ptype, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags) {
 		// Write current element count back to container before allocating a new property array.
 		updateElementCount();
 		
 		// Create the property object in the wrapped container.
-		PropertyObject* property = mutableContainer()->createProperty(ptype, initializeMemory, initializationHints);
+		PropertyObject* property = mutableContainer()->createProperty(ptype, flags);
 		
 		// Update our array memory pointers corresponding to this property.
 		updateMutablePropertyPointer(property);
@@ -130,12 +130,12 @@ public:
     }
 
 	/// Creates a user-defined property in the container.
-	PropertyObject* createProperty(const QString& name, int dataType, size_t componentCount, size_t stride, bool initializeMemory, QStringList componentNames = QStringList()) {
+	PropertyObject* createProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList()) {
 		// Write current element count back to container before allocating a new property array.
 		updateElementCount();
 		
 		// Create the property object in the wrapped container.
-		return mutableContainer()->createProperty(name, dataType, componentCount, stride, initializeMemory, std::move(componentNames));
+		return mutableContainer()->createProperty(name, dataType, componentCount, flags, std::move(componentNames));
 	}
 
     /// Inserts an existing property object into the contaienr.

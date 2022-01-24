@@ -122,8 +122,8 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 
 	// Create the particle properties.
 	setParticleCount(numAtoms);
-	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, initializationHints());
-	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, initializationHints());
+	PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+	PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
 
 	// Read atomic coordinates.
 	Point3* p = posProperty.begin();
@@ -187,7 +187,7 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 	// Create the voxel grid data object.
 	VoxelGrid* voxelGrid = state().getMutableObject<VoxelGrid>();
 	if(!voxelGrid) {
-		voxelGrid = state().createObject<VoxelGrid>(dataSource(), initializationHints());
+		voxelGrid = state().createObject<VoxelGrid>(dataSource());
 		voxelGrid->visElement()->setEnabled(false);
 		voxelGrid->visElement()->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled)});
 	}
@@ -197,7 +197,7 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 	voxelGrid->setContent(gridSize[0] * gridSize[1] * gridSize[2], {});
 
 	// Create the voxel grid property.
-	PropertyAccess<FloatType, true> fieldQuantity = voxelGrid->createProperty(QStringLiteral("Property"), PropertyObject::Float, nfields, 0, false, std::move(componentNames));
+	PropertyAccess<FloatType, true> fieldQuantity = voxelGrid->createProperty(QStringLiteral("Property"), PropertyObject::Float, nfields, DataBuffer::NoFlags, std::move(componentNames));
 
 	// Parse voxel data.
 	for(size_t x = 0; x < gridSize[0]; x++) {

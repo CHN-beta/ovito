@@ -480,7 +480,7 @@ ConstDataBufferPtr OpenGLSceneRenderer::generateMeshWireframeLines(const MeshPri
 		}
 
 		// Allocate storage buffer for line elements.
-        DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(dataset(), numVisibleEdges * 2, DataBuffer::Float, 3, 0, false);
+        DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(dataset(), numVisibleEdges * 2, DataBuffer::Float, 3);
 
 		// Generate line elements.
         Point3* outVert = lines.begin();

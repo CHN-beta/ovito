@@ -87,7 +87,7 @@ PipelineStatus TargetVis::render(TimePoint time, const ConstDataObjectPath& path
 				{ 1, -1,  1}, { 1, 1, 1},
 				{-1, -1,  1}, {-1, 1, 1}
 			};
-			DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(renderer->dataset(), sizeof(linePoints) / sizeof(Point3), DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(renderer->dataset(), sizeof(linePoints) / sizeof(Point3), DataBuffer::Float, 3);
 			boost::copy(linePoints, vertices.begin());
 			vertexPositions = vertices.take();
 		}

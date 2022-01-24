@@ -120,7 +120,7 @@ bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstPropertyA
 	OVITO_ASSERT(regionCount() == 1);
 
 	// Construct a one-sided surface mesh.
-	ManifoldConstructionHelper manifoldConstructor(ObjectInitializationHint::LoadFactoryDefaults, tessellation(), *this, alpha, false, structureAnalysis().positions());
+	ManifoldConstructionHelper manifoldConstructor(tessellation(), *this, alpha, false, structureAnalysis().positions());
 	if(!manifoldConstructor.construct(tetrahedronRegion, operation, prepareMeshFace))
 		return false;
 

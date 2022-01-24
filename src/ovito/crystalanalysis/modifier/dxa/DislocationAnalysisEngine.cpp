@@ -296,11 +296,11 @@ void DislocationAnalysisEngine::applyResults(const ModifierEvaluationRequest& re
 	// Output cluster graph.
 	if(const ClusterGraphObject* oldClusterGraph = state.getObject<ClusterGraphObject>())
 		state.removeObject(oldClusterGraph);
-	ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(request.modApp(), request.initializationHints());
+	ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(request.modApp());
 	clusterGraphObj->setStorage(clusterGraph());
 
 	// Output dislocations.
-	DislocationNetworkObject* dislocationsObj = state.createObject<DislocationNetworkObject>(request.modApp(), request.initializationHints());
+	DislocationNetworkObject* dislocationsObj = state.createObject<DislocationNetworkObject>(request.modApp());
 	dislocationsObj->setStorage(dislocationNetwork());
 	while(!dislocationsObj->crystalStructures().empty())
 		dislocationsObj->removeCrystalStructure(dislocationsObj->crystalStructures().size()-1);
@@ -324,7 +324,7 @@ void DislocationAnalysisEngine::applyResults(const ModifierEvaluationRequest& re
 	state.addAttribute(QStringLiteral("DislocationAnalysis.cell_volume"), QVariant::fromValue(simCellVolume()), request.modApp());
 
 	// Compute dislocation line statistics.
-	FloatType totalLineLength = generateDislocationStatistics(request.modApp(), request.initializationHints(), state, dislocationsObj, false, dislocationsObj->structureById(modifier->inputCrystalStructure()));
+	FloatType totalLineLength = generateDislocationStatistics(request.modApp(), state, dislocationsObj, false, dislocationsObj->structureById(modifier->inputCrystalStructure()));
 	size_t totalSegmentCount = dislocationsObj->storage()->segments().size();	
 
 	if(totalSegmentCount == 0)
@@ -337,7 +337,7 @@ void DislocationAnalysisEngine::applyResults(const ModifierEvaluationRequest& re
 * Computes statistical information on the identified dislocation lines and 
 * outputs it to the pipeline as data tables and global attributes.
 ******************************************************************************/
-FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const PipelineObject* dataSource, ObjectInitializationHints initializationHints, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure)
+FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const PipelineObject* dataSource, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure)
 {
 	std::map<const BurgersVectorFamily*,FloatType> dislocationLengths;
 	std::map<const BurgersVectorFamily*,int> segmentCounts;
@@ -384,15 +384,15 @@ FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const Pipeli
 	int maxId = 0;
 	for(const auto& entry : dislocationLengths)
 		maxId = std::max(maxId, entry.first->numericId());
-	PropertyAccessAndRef<FloatType> dislocationLengthsProperty = DataTable::OOClass().createUserProperty(dataSource->dataset(), maxId+1, PropertyObject::Float, 1, 0, DislocationAnalysisModifier::tr("Total line length"), true, DataTable::YProperty);
+	PropertyAccessAndRef<FloatType> dislocationLengthsProperty = DataTable::OOClass().createUserProperty(dataSource->dataset(), maxId+1, PropertyObject::Float, 1, DislocationAnalysisModifier::tr("Total line length"), DataBuffer::InitializeMemory, DataTable::YProperty);
 	for(const auto& entry : dislocationLengths)
 		dislocationLengthsProperty[entry.first->numericId()] = entry.second;
-	PropertyAccessAndRef<int> dislocationTypeIds = DataTable::OOClass().createUserProperty(dataSource->dataset(), maxId+1, PropertyObject::Int, 1, 0, DislocationAnalysisModifier::tr("Dislocation type"), false, DataTable::XProperty);
+	PropertyAccessAndRef<int> dislocationTypeIds = DataTable::OOClass().createUserProperty(dataSource->dataset(), maxId+1, PropertyObject::Int, 1, DislocationAnalysisModifier::tr("Dislocation type"), DataBuffer::NoFlags, DataTable::XProperty);
 	boost::algorithm::iota_n(dislocationTypeIds.begin(), 0, dislocationTypeIds.size());
 
 	DataTable* lengthTableObj = replaceDataObjects ? state.getMutableLeafObject<DataTable>(DataTable::OOClass(), QStringLiteral("disloc-lengths")) : nullptr;
 	if(!lengthTableObj)
-		lengthTableObj = state.createObject<DataTable>(QStringLiteral("disloc-lengths"), dataSource, initializationHints, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation lengths"), dislocationLengthsProperty.take(), dislocationTypeIds.take());
+		lengthTableObj = state.createObject<DataTable>(QStringLiteral("disloc-lengths"), dataSource, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation lengths"), dislocationLengthsProperty.take(), dislocationTypeIds.take());
 	else
 		lengthTableObj->setContent(maxId+1, DataRefVector<PropertyObject>{{ dislocationLengthsProperty.take(), dislocationTypeIds.take() }});
 	
@@ -402,13 +402,13 @@ FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const Pipeli
 		xProperty->addElementType(entry.first);
 
 	// Output a data table with the dislocation segment counts.
-	PropertyAccessAndRef<int> dislocationCountsProperty = DataTable::OOClass().createUserProperty(dataSource->dataset(), maxId+1, PropertyObject::Int, 1, 0, DislocationAnalysisModifier::tr("Dislocation count"), true, DataTable::YProperty);
+	PropertyAccessAndRef<int> dislocationCountsProperty = DataTable::OOClass().createUserProperty(dataSource->dataset(), maxId+1, PropertyObject::Int, 1, DislocationAnalysisModifier::tr("Dislocation count"), DataBuffer::InitializeMemory, DataTable::YProperty);
 	for(const auto& entry : segmentCounts)
 		dislocationCountsProperty[entry.first->numericId()] = entry.second;
 
 	DataTable* countTableObj = replaceDataObjects ? state.getMutableLeafObject<DataTable>(DataTable::OOClass(), QStringLiteral("disloc-counts")) : nullptr;
 	if(!countTableObj)
-		countTableObj = state.createObject<DataTable>(QStringLiteral("disloc-counts"), dataSource, initializationHints, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation counts"), dislocationCountsProperty.take());
+		countTableObj = state.createObject<DataTable>(QStringLiteral("disloc-counts"), dataSource, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation counts"), dislocationCountsProperty.take());
 	else
 		countTableObj->setContent(maxId+1, DataRefVector<PropertyObject>{{ dislocationCountsProperty.take() }});
 	countTableObj->insertProperty(0, xProperty);

@@ -93,7 +93,7 @@ private:
 			_mode(mode),
 			_positions(std::move(positions)),
 			_simCell(simCell),
-			_csp(ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::CentroSymmetryProperty, false, request.initializationHints())),
+			_csp(ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::CentroSymmetryProperty)),
 			_inputFingerprint(std::move(fingerprint)),
 			_histogram(std::move(histogram)) {}
 

@@ -96,7 +96,7 @@ private Q_SLOTS:
 
 private:
 
-	void taskStateChangedCallback(int state);
+	bool taskStateChangedCallback(int state);
 	void taskProgressChangedCallback(qlonglong progress, qlonglong maximum);
 	void taskTextChangedCallback();
 

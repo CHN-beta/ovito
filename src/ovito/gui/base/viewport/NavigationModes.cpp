@@ -473,9 +473,9 @@ void PickOrbitCenterMode::renderOverlay3D(Viewport* vp, SceneRenderer* renderer)
 
 	if(!renderer->isBoundingBoxPass()) {
 		// Create rendering primitive.
-		DataBufferAccessAndRef<Point3> basePositions = DataBufferPtr::create(vp->dataset(), 3, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<Point3> headPositions = DataBufferPtr::create(vp->dataset(), 3, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<Color> colors = DataBufferPtr::create(vp->dataset(), 3, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Point3> basePositions = DataBufferPtr::create(vp->dataset(), 3, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> headPositions = DataBufferPtr::create(vp->dataset(), 3, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Color> colors = DataBufferPtr::create(vp->dataset(), 3, DataBuffer::Float, 3);
 		basePositions[0] = Point3(-1,0,0); headPositions[0] = Point3(1,0,0); colors[0] = Color(1,0,0);
 		basePositions[1] = Point3(0,-1,0); headPositions[1] = Point3(0,1,0); colors[1] = Color(0,1,0);
 		basePositions[2] = Point3(0,0,-1); headPositions[2] = Point3(0,0,1); colors[2] = Color(0.4,0.4,1);

@@ -230,7 +230,7 @@ void SliceModifier::renderPlane(SceneRenderer* renderer, const Plane3& plane, co
 		renderer->addToLocalBoundingBox(vertexBoundingBox);
 	}
 	else {
-		DataBufferAccessAndRef<Point3> positions = DataBufferPtr::create(dataset(), vertices.size(), DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Point3> positions = DataBufferPtr::create(dataset(), vertices.size(), DataBuffer::Float, 3);
 		boost::range::copy(vertices, positions.begin());
 		LinePrimitive buffer;
 		buffer.setPositions(positions.take());
@@ -308,7 +308,7 @@ void SliceModifier::evaluateSynchronous(const ModifierEvaluationRequest& request
 		const AffineTransformation& cellMatrix = cellObj->cellMatrix();
 
 		// Create an output mesh for visualizing the cutting plane.
-		TriMeshObject* mesh = state.createObject<TriMeshObject>(QStringLiteral("plane"), request.modApp(), request.initializationHints() | ObjectInitializationHint::WithoutVisElement);
+		TriMeshObject* mesh = state.createObject<TriMeshObject>(QStringLiteral("plane"), request.modApp(), ObjectInitializationHint::WithoutVisElement);
 		mesh->setVisElement(planeVis());
 
 		// Compute intersection lines of slicing plane and simulation cell.

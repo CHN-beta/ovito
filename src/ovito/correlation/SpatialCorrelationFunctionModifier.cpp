@@ -139,7 +139,7 @@ void SpatialCorrelationFunctionModifier::initializeModifier(const ModifierInitia
 	AsynchronousModifier::initializeModifier(request);
 
 	// Use the first available particle property from the input state as data source when the modifier is newly created.
-	if((sourceProperty1().isNull() || sourceProperty2().isNull()) && request.initializationHints().testFlag(LoadUserDefaults)) {
+	if((sourceProperty1().isNull() || sourceProperty2().isNull()) && ExecutionContext::isInteractive()) {
 		const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
 		if(const ParticlesObject* container = input.getObject<ParticlesObject>()) {
 			ParticlePropertyReference bestProperty;
@@ -469,7 +469,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 	}
 
 	// Averaged reciprocal space correlation function.
-	_reciprocalSpaceCorrelation = DataTable::OOClass().createUserProperty(positions()->dataset(), numberOfWavevectorBins, PropertyObject::Float, 1, 0, tr("C(q)"), true, DataTable::YProperty);
+	_reciprocalSpaceCorrelation = DataTable::OOClass().createUserProperty(positions()->dataset(), numberOfWavevectorBins, PropertyObject::Float, 1, tr("C(q)"), DataBuffer::InitializeMemory, DataTable::YProperty);
 	_reciprocalSpaceCorrelationRange = 2 * FLOATTYPE_PI * minReciprocalSpaceVector * numberOfWavevectorBins;
 
 	std::vector<int> numberOfValues(numberOfWavevectorBins, 0);
@@ -550,9 +550,9 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 	FloatType gridSpacing = minCellFaceDistance / (2 * numberOfDistanceBins);
 
 	// Radially averaged real space correlation function.
-	_realSpaceCorrelation = DataTable::OOClass().createUserProperty(positions()->dataset(), numberOfDistanceBins, PropertyObject::Float, 1, 0, tr("C(r)"), true, DataTable::YProperty);
+	_realSpaceCorrelation = DataTable::OOClass().createUserProperty(positions()->dataset(), numberOfDistanceBins, PropertyObject::Float, 1, tr("C(r)"), DataBuffer::InitializeMemory, DataTable::YProperty);
 	_realSpaceCorrelationRange = minCellFaceDistance / 2;
-	_realSpaceRDF = DataTable::OOClass().createUserProperty(positions()->dataset(), numberOfDistanceBins, PropertyObject::Float, 1, 0, tr("g(r)"), true, DataTable::YProperty);
+	_realSpaceRDF = DataTable::OOClass().createUserProperty(positions()->dataset(), numberOfDistanceBins, PropertyObject::Float, 1, tr("g(r)"), DataBuffer::InitializeMemory, DataTable::YProperty);
 
 	numberOfValues = std::vector<int>(numberOfDistanceBins, 0);
 	PropertyAccess<FloatType> realSpaceCorrelationData(_realSpaceCorrelation);
@@ -635,7 +635,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
 	}
 
 	// Allocate neighbor RDF.
-	_neighRDF = DataTable::OOClass().createUserProperty(positions()->dataset(), neighCorrelation()->size(), PropertyObject::Float, 1, 0, tr("Neighbor g(r)"), true, DataTable::YProperty);
+	_neighRDF = DataTable::OOClass().createUserProperty(positions()->dataset(), neighCorrelation()->size(), PropertyObject::Float, 1, tr("Neighbor g(r)"), DataBuffer::InitializeMemory, DataTable::YProperty);
 
 	// Prepare the neighbor list.
 	CutoffNeighborFinder neighborListBuilder;
@@ -804,20 +804,20 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::perform()
 void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
 	// Output real-space correlation function to the pipeline as a data table.
-	DataTable* realSpaceCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-real-space"), request.modApp(), request.initializationHints(), DataTable::Line, tr("Real-space correlation"), realSpaceCorrelation());
+	DataTable* realSpaceCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-real-space"), request.modApp(), DataTable::Line, tr("Real-space correlation"), realSpaceCorrelation());
 	realSpaceCorrelationObj->setAxisLabelX(tr("Distance r"));
 	realSpaceCorrelationObj->setIntervalStart(0);
 	realSpaceCorrelationObj->setIntervalEnd(_realSpaceCorrelationRange);
 
 	// Output real-space RDF to the pipeline as a data table.
-	DataTable* realSpaceRDFObj = state.createObject<DataTable>(QStringLiteral("correlation-real-space-rdf"), request.modApp(), request.initializationHints(), DataTable::Line, tr("Real-space RDF"), realSpaceRDF());
+	DataTable* realSpaceRDFObj = state.createObject<DataTable>(QStringLiteral("correlation-real-space-rdf"), request.modApp(), DataTable::Line, tr("Real-space RDF"), realSpaceRDF());
 	realSpaceRDFObj->setAxisLabelX(tr("Distance r"));
 	realSpaceRDFObj->setIntervalStart(0);
 	realSpaceRDFObj->setIntervalEnd(_realSpaceCorrelationRange);
 
 	// Output short-ranged part of the real-space correlation function to the pipeline as a data table.
 	if(neighCorrelation()) {
-		DataTable* neighCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-neighbor"), request.modApp(), request.initializationHints(), DataTable::Line, tr("Neighbor correlation"), neighCorrelation());
+		DataTable* neighCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-neighbor"), request.modApp(), DataTable::Line, tr("Neighbor correlation"), neighCorrelation());
 		neighCorrelationObj->setAxisLabelX(tr("Distance r"));
 		neighCorrelationObj->setIntervalStart(0);
 		neighCorrelationObj->setIntervalEnd(neighCutoff());
@@ -825,14 +825,14 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::applyResults
 
 	// Output short-ranged part of the RDF to the pipeline as a data table.
 	if(neighRDF()) {
-		DataTable* neighRDFObj = state.createObject<DataTable>(QStringLiteral("correlation-neighbor-rdf"), request.modApp(), request.initializationHints(), DataTable::Line, tr("Neighbor RDF"), neighRDF());
+		DataTable* neighRDFObj = state.createObject<DataTable>(QStringLiteral("correlation-neighbor-rdf"), request.modApp(), DataTable::Line, tr("Neighbor RDF"), neighRDF());
 		neighRDFObj->setAxisLabelX(tr("Distance r"));
 		neighRDFObj->setIntervalStart(0);
 		neighRDFObj->setIntervalEnd(neighCutoff());
 	}
 
 	// Output reciprocal-space correlation function to the pipeline as a data table.
-	DataTable* reciprocalSpaceCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-reciprocal-space"), request.modApp(), request.initializationHints(), DataTable::Line, tr("Reciprocal-space correlation"), reciprocalSpaceCorrelation());
+	DataTable* reciprocalSpaceCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-reciprocal-space"), request.modApp(), DataTable::Line, tr("Reciprocal-space correlation"), reciprocalSpaceCorrelation());
 	reciprocalSpaceCorrelationObj->setAxisLabelX(tr("Wavevector q"));
 	reciprocalSpaceCorrelationObj->setIntervalStart(0);
 	reciprocalSpaceCorrelationObj->setIntervalEnd(_reciprocalSpaceCorrelationRange);

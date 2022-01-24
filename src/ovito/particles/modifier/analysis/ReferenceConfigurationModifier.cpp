@@ -194,7 +194,7 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 			TimePoint referenceTime = referenceConfiguration()->sourceFrameToAnimationTime(referenceFrame);
 
 			// Set up the pipeline request for obtaining the reference configuration.
-			PipelineEvaluationRequest referenceRequest(request.initializationHints(), referenceTime, request.breakOnError());
+			PipelineEvaluationRequest referenceRequest(referenceTime, request.breakOnError());
 
 			// Send the request to the pipeline branch.
 			refState = referenceConfiguration()->evaluate(referenceRequest);

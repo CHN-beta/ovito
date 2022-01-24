@@ -158,7 +158,7 @@ public:
 public:
 
 	/// Constructor.
-	InterfaceMesh(DataSet* dataset, ElasticMapping& elasticMapping) : SurfaceMeshAccess(DataOORef<SurfaceMesh>::create(dataset, ObjectInitializationHint::LoadFactoryDefaults)),
+	InterfaceMesh(DataSet* dataset, ElasticMapping& elasticMapping) : SurfaceMeshAccess(DataOORef<SurfaceMesh>::create(dataset)),
 		_elasticMapping(elasticMapping) {
 			setCell(elasticMapping.structureAnalysis().cell());
 		}

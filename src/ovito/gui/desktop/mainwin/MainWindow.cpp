@@ -535,7 +535,7 @@ void MainWindow::dropEvent(QDropEvent* event)
 			if(url.fileName().endsWith(".ovito", Qt::CaseInsensitive)) {
 				if(url.isLocalFile()) {
 					if(datasetContainer().askForSaveChanges()) {
-						datasetContainer().loadDataset(url.toLocalFile(), createOperation(true));
+						datasetContainer().loadDataset(url.toLocalFile(), MainThreadOperation::create(*this, true));
 					}
 					return;
 				}
@@ -544,7 +544,7 @@ void MainWindow::dropEvent(QDropEvent* event)
 				importUrls.push_back(url);
 			}
 		}
-		datasetContainer().importFiles(std::move(importUrls), createOperation(true));
+		datasetContainer().importFiles(std::move(importUrls), MainThreadOperation::create(*this, true));
 	}
 	catch(const Exception& ex) {
 		ex.reportError();

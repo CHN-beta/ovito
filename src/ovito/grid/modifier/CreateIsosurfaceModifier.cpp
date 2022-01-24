@@ -97,7 +97,7 @@ void CreateIsosurfaceModifier::initializeModifier(const ModifierInitializationRe
 	AsynchronousModifier::initializeModifier(request);
 
 	// Use the first available voxel grid from the input state as data source when the modifier is newly created.
-	if(sourceProperty().isNull() && subject().dataPath().isEmpty() && request.initializationHints().testFlag(LoadUserDefaults)) {
+	if(sourceProperty().isNull() && subject().dataPath().isEmpty() && ExecutionContext::isInteractive()) {
 		const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
 		if(const VoxelGrid* grid = input.getObject<VoxelGrid>()) {
 			setSubject(PropertyContainerReference(&grid->getOOMetaClass(), grid->identifier()));
@@ -105,7 +105,7 @@ void CreateIsosurfaceModifier::initializeModifier(const ModifierInitializationRe
 	}
 
 	// Use the first available property from the input grid as data source when the modifier is newly created.
-	if(sourceProperty().isNull() && subject() && request.initializationHints().testFlag(LoadUserDefaults)) {
+	if(sourceProperty().isNull() && subject() && ExecutionContext::isInteractive()) {
 		const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
 		if(const VoxelGrid* grid = dynamic_object_cast<VoxelGrid>(input.getLeafObject(subject()))) {
 			for(const PropertyObject* property : grid->properties()) {
@@ -165,14 +165,14 @@ Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(c
 	}
 
 	// Create an empty surface mesh object.
-	DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(dataset(), request.initializationHints() | ObjectInitializationHint::WithoutVisElement, tr("Isosurface"));
+	DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(dataset(), ObjectInitializationHint::WithoutVisElement, tr("Isosurface"));
 	mesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("isosurface")));
 	mesh->setDataSource(request.modApp());
 	mesh->setDomain(voxelGrid->domain());
 	mesh->setVisElement(surfaceMeshVis());
 
 	// Create an empty data table for the field value histogram.
-	DataOORef<DataTable> histogram = DataOORef<DataTable>::create(dataset(), request.initializationHints(), DataTable::Histogram, sourceProperty().nameWithComponent());
+	DataOORef<DataTable> histogram = DataOORef<DataTable>::create(dataset(), DataTable::Histogram, sourceProperty().nameWithComponent());
 	histogram->setIdentifier(input.generateUniqueIdentifier<DataTable>(QStringLiteral("isosurface-histogram")));
 	histogram->setDataSource(request.modApp());
 	histogram->setAxisLabelX(sourceProperty().nameWithComponent());
@@ -231,7 +231,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
 		return;
 
 	// Copy field values from voxel grid to surface mesh vertices.
-	if(!transferPropertiesFromGridToMesh(*this, mesh, auxiliaryProperties(), _gridShape, initializationHints()))
+	if(!transferPropertiesFromGridToMesh(*this, mesh, auxiliaryProperties(), _gridShape))
 		return;
 
 	// Transform mesh vertices from orthogonal grid space to world space.
@@ -265,7 +265,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
 
 	// Compute a histogram of the input field values.
 	_histogram->setElementCount(64);
-	PropertyAccess<qlonglong> histogramData = _histogram->createYProperty(tr("Count"), PropertyObject::Int64, 1, true);
+	PropertyAccess<qlonglong> histogramData = _histogram->createYProperty(tr("Count"), PropertyObject::Int64, 1, DataBuffer::InitializeMemory);
 	FloatType binSize = (maxValue - minValue) / histogramData.size();
 	int histogramSizeMin1 = histogramData.size() - 1;
 	for(FloatType v : data.componentRange(_vectorComponent)) {
@@ -295,7 +295,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::applyResults(const Modif
 /******************************************************************************
 * Transfers voxel grid properties to the vertices of a surfaces mesh.
 ******************************************************************************/
-bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(ProgressingTask& operation, SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape, ObjectInitializationHints initializationHints)
+bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(ProgressingTask& operation, SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape)
 {
 	// Create destination properties for transferring voxel values to the surface vertices.
 	std::vector<std::pair<ConstPropertyAccess<void,true>, PropertyAccess<void,true>>> propertyMapping;
@@ -303,7 +303,7 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(ProgressingTask&
 		PropertyPtr vertexProperty;
 		if(SurfaceMeshVertices::OOClass().isValidStandardPropertyId(fieldProperty->type())) {
 			// Input voxel property is also a standard property for mesh vertices.
-			vertexProperty = mesh.createVertexProperty(static_cast<SurfaceMeshVertices::Type>(fieldProperty->type()), true, initializationHints);
+			vertexProperty = mesh.createVertexProperty(static_cast<SurfaceMeshVertices::Type>(fieldProperty->type()), DataBuffer::InitializeMemory);
 			OVITO_ASSERT(vertexProperty->dataType() == fieldProperty->dataType());
 			OVITO_ASSERT(vertexProperty->stride() == fieldProperty->stride());
 		}
@@ -311,11 +311,11 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(ProgressingTask&
 			// Input property name is that of a standard property for mesh vertices.
 			// Must rename the property to avoid conflict, because user properties may not have a standard property name.
 			QString newPropertyName = fieldProperty->name() + tr("_field");
-			vertexProperty = mesh.createVertexProperty(newPropertyName, fieldProperty->dataType(), fieldProperty->componentCount(), fieldProperty->stride(), true, fieldProperty->componentNames());
+			vertexProperty = mesh.createVertexProperty(newPropertyName, fieldProperty->dataType(), fieldProperty->componentCount(), DataBuffer::InitializeMemory, fieldProperty->componentNames());
 		}
 		else {
 			// Input property is a user property for mesh vertices.
-			vertexProperty = mesh.createVertexProperty(fieldProperty->name(), fieldProperty->dataType(), fieldProperty->componentCount(), fieldProperty->stride(), true, fieldProperty->componentNames());
+			vertexProperty = mesh.createVertexProperty(fieldProperty->name(), fieldProperty->dataType(), fieldProperty->componentCount(), DataBuffer::InitializeMemory, fieldProperty->componentNames());
 		}
 		propertyMapping.emplace_back(fieldProperty, std::move(vertexProperty));
 	}

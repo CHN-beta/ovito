@@ -444,11 +444,12 @@ void ModifierListModel::insertModifier()
 		}
 		else if(!action->templateName().isEmpty()) {
 			// Load modifier template from the store.
-			QVector<OORef<Modifier>> modifierSet = ModifierTemplates::get()->instantiateTemplate(action->templateName(), dataset);
+			MainThreadOperation operation = MainThreadOperation::create(dataset->userInterface(), ExecutionContext::Interactive);
+			QVector<OORef<Modifier>> modifierSet = ModifierTemplates::get()->instantiateTemplate(action->templateName(), dataset, operation);
 			// Put the modifiers into a group if the template consists of two or more modifiers.
 			OORef<ModifierGroup> modifierGroup;
 			if(modifierSet.size() >= 2) {
-				modifierGroup = OORef<ModifierGroup>::create(dataset, ObjectInitializationHint::LoadUserDefaults);
+				modifierGroup = OORef<ModifierGroup>::create(dataset);
 				modifierGroup->setCollapsed(true);
 				modifierGroup->setTitle(action->templateName());
 			}
@@ -578,10 +579,7 @@ void ModifierListModel::updateActionState()
 	// Evaluate pipeline at the selected stage.
 	if(currentItem) {
 		if(DataSet* dataset = _pipelineListModel->datasetContainer().currentSet()) {
-			if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(currentItem->object())) {
-				inputState = modApp->evaluateSynchronousAtCurrentTime();
-			}
-			else if(PipelineObject* pipelineObject = dynamic_object_cast<PipelineObject>(currentItem->object())) {
+			if(PipelineObject* pipelineObject = dynamic_object_cast<PipelineObject>(currentItem->object())) {
 				inputState = pipelineObject->evaluateSynchronousAtCurrentTime();
 			}
 			else if(PipelineSceneNode* pipeline = _pipelineListModel->selectedPipeline()) {

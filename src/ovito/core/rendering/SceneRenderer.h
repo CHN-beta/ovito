@@ -239,7 +239,7 @@ protected:
 
 	/// \brief This virtual method is responsible for rendering additional content that is only
 	///       visible in the interactive viewports.
-	virtual void renderInteractiveContent();
+	virtual void renderInteractiveContent(MainThreadOperation& operation);
 
 	/// Indicates whether the scene renderer is allowed to block execution until long-running
 	/// operations, e.g. data pipeline evaluation, complete. By default, this method returns
@@ -252,10 +252,10 @@ protected:
 	virtual void resumeRendering() {}
 
 	/// \brief Renders the visual representation of the modifiers.
-	void renderModifiers(bool renderOverlay);
+	void renderModifiers(bool renderOverlay, MainThreadOperation& operation);
 
 	/// \brief Renders the visual representation of the modifiers.
-	void renderModifiers(PipelineSceneNode* pipeline, bool renderOverlay);
+	void renderModifiers(PipelineSceneNode* pipeline, bool renderOverlay, MainThreadOperation& operation);
 
 	/// \brief Gets the trajectory of motion of a node. The returned data buffer stores an array of 
 	///        Point3 (if the node's position is animated) or a null pointer (if the node's position is static).

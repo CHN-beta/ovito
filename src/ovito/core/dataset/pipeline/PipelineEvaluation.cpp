@@ -32,7 +32,7 @@ namespace Ovito {
 void PipelineEvaluationFuture::reset(TimePoint time)
 {
     SharedFuture<PipelineFlowState>::reset();
-    _request = PipelineEvaluationRequest(ObjectInitializationHint::LoadFactoryDefaults, time);
+    _request = PipelineEvaluationRequest(time);
     _pipeline = nullptr;
 }
 

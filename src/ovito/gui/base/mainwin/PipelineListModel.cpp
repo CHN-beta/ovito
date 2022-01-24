@@ -409,7 +409,7 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
 				modApp->setModifier(modifier);
 				modApp->setInput(pobj);
 				modApp->setModifierGroup(modifierGroup);
-				modifier->initializeModifier(ModifierInitializationRequest(ObjectInitializationHint::LoadUserDefaults, modApp->dataset()->animationSettings()->time(), modApp));
+				modifier->initializeModifier(ModifierInitializationRequest(modApp->dataset()->animationSettings()->time(), modApp));
 				setNextObjectToSelect(modApp);
 				for(RefMaker* dependent : dependentsList) {
 					if(ModifierApplication* predecessorModApp = dynamic_object_cast<ModifierApplication>(dependent)) {
@@ -430,7 +430,7 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
 
 	// Insert modifiers at the end of the selected pipelines.
 	for(int index = modifiers.size() - 1; index >= 0; --index) {
-		ModifierApplication* modApp = selectedPipeline()->applyModifier(modifiers[index], ObjectInitializationHint::LoadUserDefaults);
+		ModifierApplication* modApp = selectedPipeline()->applyModifier(modifiers[index]);
 		if(group)
 			modApp->setModifierGroup(group);
 		else
@@ -1430,7 +1430,7 @@ void PipelineListModel::toggleModifierGroup()
 		existingGroup = modApp->modifierGroup();
 		if(!existingGroup) {
 			// Create a new group.
-			OORef<ModifierGroup> group = OORef<ModifierGroup>::create(modApp->dataset(), ObjectInitializationHint::LoadUserDefaults);
+			OORef<ModifierGroup> group = OORef<ModifierGroup>::create(modApp->dataset());
 			UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Create modifier group"), [&]() {
 				for(RefTarget* obj : objects) {
 					if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {

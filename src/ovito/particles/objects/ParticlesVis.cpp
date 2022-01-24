@@ -220,7 +220,7 @@ ConstPropertyPtr ParticlesVis::particleColors(const ParticlesObject* particles, 
 	DataObjectAccess<DataOORef, PropertyObject> output = particles->getProperty(ParticlesObject::ColorProperty);
 	if(!output) {
 		// Allocate new output color array.
-		output.reset(ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::ColorProperty, false, ObjectInitializationHint::LoadFactoryDefaults));
+		output.reset(ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::ColorProperty));
 
 		const Color defaultColor = defaultParticleColor();
 		if(const PropertyObject* typeProperty = getParticleTypeColorProperty(particles)) {
@@ -330,7 +330,7 @@ ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles, b
 	}
 	else {
 		// Allocate output array.
-		output.reset(ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::RadiusProperty, false, ObjectInitializationHint::LoadFactoryDefaults));
+		output.reset(ParticlesObject::OOClass().createStandardProperty(dataset(), particles->elementCount(), ParticlesObject::RadiusProperty));
 
 		if(const PropertyObject* typeProperty = getParticleTypeRadiusProperty(particles)) {
 			OVITO_ASSERT(typeProperty->size() == output->size());
@@ -591,9 +591,9 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 			meshVisCache.push_back(std::move(meshType));
 
 			perInstanceData.emplace_back(
-				DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 12, 0, false),	// <AffineTransformation> (particle orientations)
-				DataBufferPtr::create(dataset(), 0, DataBuffer::Float,  4, 0, false),	// <ColorA> (particle colors)
-				DataBufferPtr::create(dataset(), 0, DataBuffer::Int, 1, 0, false)		// <int> (particle indices)
+				DataBufferPtr::create(dataset(), 0, DataBuffer::Float, 12),	// <AffineTransformation> (particle orientations)
+				DataBufferPtr::create(dataset(), 0, DataBuffer::Float,  4),	// <ColorA> (particle colors)
+				DataBufferPtr::create(dataset(), 0, DataBuffer::Int)		// <int> (particle indices)
 			);
 		}
 
@@ -756,7 +756,7 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 				}
 
 				// Collect indices of all particles that have an active type.
-				DataBufferAccessAndRef<int> activeParticleIndices = DataBufferPtr::create(dataset(), 0, DataBuffer::Int, 1, 0, false);
+				DataBufferAccessAndRef<int> activeParticleIndices = DataBufferPtr::create(dataset(), 0, DataBuffer::Int);
 				size_t index = 0;
 				for(int t : ConstPropertyAccess<int>(typeProperty)) {
 					if(boost::find(activeParticleTypes, t) != activeParticleTypes.cend())
@@ -937,7 +937,7 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 				}
 
 				// Collect indices of all particles that have an active type.
-				activeParticleIndices = DataBufferPtr::create(dataset(), 0, DataBuffer::Int, 1, 0, false);
+				activeParticleIndices = DataBufferPtr::create(dataset(), 0, DataBuffer::Int);
 				size_t index = 0;
 				for(int t : ConstPropertyAccess<int>(typeProperty)) {
 					if(boost::find(activeParticleTypes, t) != activeParticleTypes.cend())
@@ -969,12 +969,12 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 				radiusBuffer = particleRadii(particles, true);
 
 			// Allocate cylinder data buffers.
-			DataBufferAccessAndRef<Point3> cylinderBasePositions = DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float, 3, 0, false);
-			DataBufferAccessAndRef<Point3> cylinderHeadPositions = DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float, 3, 0, false);
-			DataBufferAccessAndRef<FloatType> cylinderWidths = DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float, 1, 0, false);
-			DataBufferAccessAndRef<Color> cylinderColors = DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float, 3, 0, false);
-			DataBufferAccessAndRef<FloatType> cylinderTransparencies = transparencyProperty ? DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float, 1, 0, false) : nullptr;
-			DataBufferAccessAndRef<FloatType> sphereRadii = (shape == ParticleShape::Spherocylinder) ? DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float, 1, 0, false) : nullptr;
+			DataBufferAccessAndRef<Point3> cylinderBasePositions = DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float, 3);
+			DataBufferAccessAndRef<Point3> cylinderHeadPositions = DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float, 3);
+			DataBufferAccessAndRef<FloatType> cylinderWidths = DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float);
+			DataBufferAccessAndRef<Color> cylinderColors = DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float, 3);
+			DataBufferAccessAndRef<FloatType> cylinderTransparencies = transparencyProperty ? DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float) : nullptr;
+			DataBufferAccessAndRef<FloatType> sphereRadii = (shape == ParticleShape::Spherocylinder) ? DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float) : nullptr;
 
 			// Fill data buffers.
 			ConstPropertyAccess<Point3> positionArray(positionProperty);
@@ -1135,24 +1135,24 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 				primitiveShadingMode = ParticlePrimitive::FlatShading;
 
 			// Prepare data buffers.
-			DataBufferAccessAndRef<Point3> positionBuffer = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Point3> positionBuffer = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 3);
 			positionBuffer[0] = pos;
 			DataBufferAccessAndRef<Vector3> asphericalShapeBuffer;
 			DataBufferAccessAndRef<Vector3> asphericalShapeBufferHighlight;
 			if(shapeProperty) {
-				asphericalShapeBuffer = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 3, 0, false);
-				asphericalShapeBufferHighlight = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 3, 0, false);
+				asphericalShapeBuffer = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 3);
+				asphericalShapeBufferHighlight = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 3);
 				asphericalShapeBufferHighlight[0] = asphericalShapeBuffer[0] = ConstPropertyAccess<Vector3>(shapeProperty)[particleIndex];
 				asphericalShapeBufferHighlight[0] += Vector3(renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1));
 			}
 			DataBufferAccessAndRef<Quaternion> orientationBuffer;
 			if(orientationProperty) {
-				orientationBuffer = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 4, 0, false);
+				orientationBuffer = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 4);
 				orientationBuffer[0] = ConstPropertyAccess<Quaternion>(orientationProperty)[particleIndex];
 			}
 			DataBufferAccessAndRef<Vector2> roundnessBuffer;
 			if(roundnessProperty) {
-				roundnessBuffer = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 2, 0, false);
+				roundnessBuffer = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 2);
 				roundnessBuffer[0] = ConstPropertyAccess<Vector2>(roundnessProperty)[particleIndex];
 			}
 
@@ -1193,9 +1193,9 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 				Quaternion q = ConstPropertyAccess<Quaternion>(orientationProperty)[particleIndex];
 				dir = q * dir;
 			}
-			DataBufferAccessAndRef<Point3> positionBuffer1 = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 3, 0, false);
-			DataBufferAccessAndRef<Point3> positionBuffer2 = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 3, 0, false);
-			DataBufferAccessAndRef<Point3> positionBufferSpheres = DataBufferPtr::create(dataset(), 2, DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Point3> positionBuffer1 = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 3);
+			DataBufferAccessAndRef<Point3> positionBuffer2 = DataBufferPtr::create(dataset(), 1, DataBuffer::Float, 3);
+			DataBufferAccessAndRef<Point3> positionBufferSpheres = DataBufferPtr::create(dataset(), 2, DataBuffer::Float, 3);
 			positionBufferSpheres[0] = positionBuffer1[0] = pos - (dir * FloatType(0.5));
 			positionBufferSpheres[1] = positionBuffer2[0] = pos + (dir * FloatType(0.5));
 			cylinderBuffer.setShape(CylinderPrimitive::CylinderShape);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -72,7 +72,7 @@ public:
 	Q_INVOKABLE PropertyObject(DataSet* dataset);
 
 	/// \brief Constructor that creates and initializes a new property array.
-	PropertyObject(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, size_t stride, const QString& name, bool initializeMemory, int type = 0, QStringList componentNames = QStringList());
+	PropertyObject(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, const QString& name, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, int type = 0, QStringList componentNames = QStringList());
 
 	/// \brief Gets the property's name.
 	/// \return The name of property.

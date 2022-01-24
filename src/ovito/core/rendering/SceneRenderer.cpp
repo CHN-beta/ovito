@@ -101,7 +101,7 @@ Box3 SceneRenderer::computeSceneBoundingBox(TimePoint time, const ViewProjection
 
 			// Include other visual content that is only visible in the interactive viewports.
 			if(isInteractive())
-				renderInteractiveContent();
+				renderInteractiveContent(operation);
 		}
 
 		_isBoundingBoxPass = false;
@@ -189,7 +189,7 @@ bool SceneRenderer::renderNode(SceneNode* node, MainThreadOperation& operation)
 			// Evaluate data pipeline of object node and render the results.
 			PipelineEvaluationFuture pipelineEvaluation;
 			if(waitForLongOperationsEnabled()) {
-				pipelineEvaluation = pipeline->evaluateRenderingPipeline(PipelineEvaluationRequest(operation.initializationHints(), time()));
+				pipelineEvaluation = pipeline->evaluateRenderingPipeline(PipelineEvaluationRequest(time()));
 				if(!operation.waitForFuture(pipelineEvaluation))
 					return false;
 
@@ -321,7 +321,7 @@ ConstDataBufferPtr SceneRenderer::getNodeTrajectory(const SceneNode* node)
 		int firstFrame = animSettings->firstFrame();
 		int lastFrame = animSettings->lastFrame();
 		OVITO_ASSERT(lastFrame >= firstFrame);
-		DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(dataset(), lastFrame - firstFrame + 1, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(dataset(), lastFrame - firstFrame + 1, DataBuffer::Float, 3);
 		auto v = vertices.begin();
 		for(int frame = firstFrame; frame <= lastFrame; frame++) {
 			TimeInterval iv;
@@ -349,7 +349,7 @@ void SceneRenderer::renderNodeTrajectory(const SceneNode* node)
 
 			// Render lines connecting the trajectory points.
 			if(trajectory->size() >= 2) {
-				DataBufferAccessAndRef<Point3> lineVertices = DataBufferPtr::create(dataset(), (trajectory->size() - 1) * 2, DataBuffer::Float, 3, 0, false);
+				DataBufferAccessAndRef<Point3> lineVertices = DataBufferPtr::create(dataset(), (trajectory->size() - 1) * 2, DataBuffer::Float, 3);
 				ConstDataBufferAccess<Point3> trajectoryPoints(trajectory);
 				for(size_t index = 0; index < trajectory->size(); index++) {
 					if(index != 0)
@@ -381,7 +381,7 @@ void SceneRenderer::renderNodeTrajectory(const SceneNode* node)
 * This virtual method is responsible for rendering additional content that is only
 * visible in the interactive viewports.
 ******************************************************************************/
-void SceneRenderer::renderInteractiveContent()
+void SceneRenderer::renderInteractiveContent(MainThreadOperation& operation)
 {
 	OVITO_ASSERT(viewport());
 
@@ -390,10 +390,10 @@ void SceneRenderer::renderInteractiveContent()
 		renderGrid();
 
 	// Render visual 3D representation of the modifiers.
-	renderModifiers(false);
+	renderModifiers(false, operation);
 
 	// Render visual 2D representation of the modifiers.
-	renderModifiers(true);
+	renderModifiers(true, operation);
 
 	// Render viewport gizmos.
 	if(ViewportWindowInterface* viewportWindow = viewport()->window()) {
@@ -411,11 +411,11 @@ void SceneRenderer::renderInteractiveContent()
 /******************************************************************************
 * Renders the visual representation of the modifiers.
 ******************************************************************************/
-void SceneRenderer::renderModifiers(bool renderOverlay)
+void SceneRenderer::renderModifiers(bool renderOverlay, MainThreadOperation& operation)
 {
 	// Visit all objects in the scene.
-	renderDataset()->sceneRoot()->visitObjectNodes([this, renderOverlay](PipelineSceneNode* pipeline) -> bool {
-		renderModifiers(pipeline, renderOverlay);
+	renderDataset()->sceneRoot()->visitObjectNodes([this, renderOverlay, &operation](PipelineSceneNode* pipeline) {
+		renderModifiers(pipeline, renderOverlay, operation);
 		return true;
 	});
 }
@@ -423,7 +423,7 @@ void SceneRenderer::renderModifiers(bool renderOverlay)
 /******************************************************************************
 * Renders the visual representation of the modifiers in a pipeline.
 ******************************************************************************/
-void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOverlay)
+void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOverlay, MainThreadOperation& operation)
 {
 	ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(pipeline->dataProvider());
 	while(modApp) {
@@ -435,7 +435,7 @@ void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOver
 
 		try {
 			// Render modifier.
-			mod->renderModifierVisual(ModifierEvaluationRequest(ObjectInitializationHint::LoadUserDefaults, time(), modApp), pipeline, this, renderOverlay);
+			mod->renderModifierVisual(ModifierEvaluationRequest(time(), modApp), pipeline, this, renderOverlay);
 		}
 		catch(const Exception& ex) {
 			// Swallow exceptions, because we are in interactive rendering mode.
@@ -459,7 +459,7 @@ void SceneRenderer::render2DPolyline(const Point2* points, int count, const Colo
 	LinePrimitive primitive;
 	primitive.setUniformColor(color);
 
-	DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(dataset(), (closed ? count : count-1) * 2, DataBuffer::Float, 3, 0, false);
+	DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(dataset(), (closed ? count : count-1) * 2, DataBuffer::Float, 3);
 	Point3* lineSegment = vertices.begin();
 	for(int i = 0; i < count - 1; i++, lineSegment += 2) {
 		lineSegment[0] = Point3(points[i].x(), points[i].y(), 0.0);
@@ -590,8 +590,8 @@ void SceneRenderer::renderGrid()
 		// Allocate vertex buffer.
 		int numVertices = 2 * (numLinesX + numLinesY);
 
-		DataBufferAccessAndRef<Point3> vertexPositions = DataBufferPtr::create(dataset(), numVertices, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(dataset(), numVertices, DataBuffer::Float, 4, 0, false);
+		DataBufferAccessAndRef<Point3> vertexPositions = DataBufferPtr::create(dataset(), numVertices, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(dataset(), numVertices, DataBuffer::Float, 4);
 
 		// Build lines array.
 		ColorA color = Viewport::viewportColor(ViewportSettings::COLOR_GRID);

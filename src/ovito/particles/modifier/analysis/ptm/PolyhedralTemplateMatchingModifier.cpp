@@ -144,13 +144,13 @@ PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(const ModifierEvaluatio
 		const OORefVector<ElementType>& structureTypes, const OORefVector<ElementType>& orderingTypes, ConstPropertyPtr selection,
 		bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient) :
 	StructureIdentificationEngine(request, std::move(fingerprint), positions, simCell, structureTypes, std::move(selection)),
-	_rmsd(ParticlesObject::OOClass().createUserProperty(request.dataset(), positions->size(), PropertyObject::Float, 1, 0, QStringLiteral("RMSD"), false)),
-	_interatomicDistances(outputInteratomicDistance ? ParticlesObject::OOClass().createUserProperty(request.dataset(), positions->size(), PropertyObject::Float, 1, 0, QStringLiteral("Interatomic Distance"), true) : nullptr),
-	_orientations(outputOrientation ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), positions->size(), ParticlesObject::OrientationProperty, true, request.initializationHints()) : nullptr),
-	_deformationGradients(outputDeformationGradient ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), positions->size(), ParticlesObject::ElasticDeformationGradientProperty, true, request.initializationHints()) : nullptr),
-	_orderingTypes(particleTypes ? ParticlesObject::OOClass().createUserProperty(request.dataset(), positions->size(), PropertyObject::Int, 1, 0, QStringLiteral("Ordering Type"), true) : nullptr),
-	_correspondences(outputOrientation ? ParticlesObject::OOClass().createUserProperty(request.dataset(), positions->size(), PropertyObject::Int64, 1, 0, QStringLiteral("Correspondences"), true) : nullptr),	// only output correspondences if orientations are selected
-	_rmsdHistogram(DataTable::OOClass().createUserProperty(request.dataset(), 100, PropertyObject::Int64, 1, 0, tr("Count"), true, DataTable::YProperty))
+	_rmsd(ParticlesObject::OOClass().createUserProperty(request.dataset(), positions->size(), PropertyObject::Float, 1, QStringLiteral("RMSD"))),
+	_interatomicDistances(outputInteratomicDistance ? ParticlesObject::OOClass().createUserProperty(request.dataset(), positions->size(), PropertyObject::Float, 1, QStringLiteral("Interatomic Distance"), DataBuffer::InitializeMemory) : nullptr),
+	_orientations(outputOrientation ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), positions->size(), ParticlesObject::OrientationProperty, DataBuffer::InitializeMemory) : nullptr),
+	_deformationGradients(outputDeformationGradient ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), positions->size(), ParticlesObject::ElasticDeformationGradientProperty, DataBuffer::InitializeMemory) : nullptr),
+	_orderingTypes(particleTypes ? ParticlesObject::OOClass().createUserProperty(request.dataset(), positions->size(), PropertyObject::Int, 1, QStringLiteral("Ordering Type"), DataBuffer::InitializeMemory) : nullptr),
+	_correspondences(outputOrientation ? ParticlesObject::OOClass().createUserProperty(request.dataset(), positions->size(), PropertyObject::Int64, 1, QStringLiteral("Correspondences"), DataBuffer::InitializeMemory) : nullptr),	// only output correspondences if orientations are selected
+	_rmsdHistogram(DataTable::OOClass().createUserProperty(request.dataset(), 100, PropertyObject::Int64, 1, tr("Count"), DataBuffer::InitializeMemory, DataTable::YProperty))
 {
 	_algorithm.emplace();
 	_algorithm->setCalculateDefGradient(outputDeformationGradient);
@@ -380,7 +380,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::applyResults(const ModifierE
 	}
 
 	// Output RMSD histogram.
-	DataTable* table = state.createObject<DataTable>(QStringLiteral("ptm-rmsd"), request.modApp(), request.initializationHints(), DataTable::Line, tr("RMSD distribution"), rmsdHistogram());
+	DataTable* table = state.createObject<DataTable>(QStringLiteral("ptm-rmsd"), request.modApp(), DataTable::Line, tr("RMSD distribution"), rmsdHistogram());
 	table->setAxisLabelX(tr("RMSD"));
 	table->setIntervalStart(0);
 	table->setIntervalEnd(rmsdHistogramRange());

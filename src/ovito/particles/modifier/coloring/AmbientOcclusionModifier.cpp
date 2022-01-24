@@ -119,7 +119,7 @@ AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(const M
 	_particleRadii(std::move(particleRadii)),
 	_boundingBox(boundingBox),
 	_renderer(std::move(renderer)),
-	_brightness(DataBufferPtr::create(request.dataset(), ObjectInitializationHint::LoadFactoryDefaults, fingerprint.particleCount(), PropertyObject::Float, 1, 0, true)),
+	_brightness(DataBufferPtr::create(request.dataset(), fingerprint.particleCount(), PropertyObject::Float, 1, DataBuffer::InitializeMemory)),
 	_inputFingerprint(std::move(fingerprint))
 {
 	OVITO_ASSERT(_particleRadii->size() == _positions->size());
@@ -278,7 +278,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::applyResults(const Modifi
 
 	// Get output property object.
 	ConstDataBufferAccess<FloatType> brightnessValues(brightness());
-	PropertyAccess<Color> colorProperty = particles->createProperty(ParticlesObject::ColorProperty, true, request.initializationHints(), {particles});
+	PropertyAccess<Color> colorProperty = particles->createProperty(ParticlesObject::ColorProperty, DataBuffer::InitializeMemory, {particles});
 	const FloatType* b = brightnessValues.cbegin();
 	for(Color& c : colorProperty) {
 		FloatType factor = FloatType(1) - intensity + (*b);

@@ -98,6 +98,8 @@ public:
 	/// \brief Initializes the element type's attributes to standard values.
 	virtual void initializeType(const PropertyReference& property, ObjectInitializationHints initializationHints) override;
 
+	using ElementType::initializeType;
+
 	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
 	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
 

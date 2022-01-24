@@ -31,29 +31,25 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshVertices);
 /******************************************************************************
 * Creates a storage object for standard vertex properties.
 ******************************************************************************/
-PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t vertexCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const
+PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
-	size_t stride;
 
 	switch(type) {
 	case PositionProperty:
 		dataType = PropertyObject::Float;
 		componentCount = 3;
-		stride = componentCount * sizeof(FloatType);
-		OVITO_ASSERT(stride == sizeof(Point3));
+		OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Point3));
 		break;
 	case SelectionProperty:
 		dataType = PropertyObject::Int;
 		componentCount = 1;
-		stride = sizeof(int);
 		break;
 	case ColorProperty:
 		dataType = PropertyObject::Float;
 		componentCount = 3;
-		stride = componentCount * sizeof(FloatType);
-		OVITO_ASSERT(stride == sizeof(Color));
+		OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Color));
 		break;
 	default:
 		OVITO_ASSERT_MSG(false, "SurfaceMeshVertices::createStandardPropertyInternal", "Invalid standard property type");
@@ -64,23 +60,22 @@ PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardPropertyInternal(Dat
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, initializationHints, vertexCount, dataType, componentCount, stride,
-								propertyName, false, type, componentNames);
+	PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
 
 	// Initialize memory if requested.
-	if(initializeMemory && containerPath.size() >= 2) {
+	if(flags.testFlag(DataBuffer::InitializeMemory) && containerPath.size() >= 2) {
 		// Certain standard properties need to be initialized with default values determined by the attached visual elements.
 		if(type == ColorProperty) {
 			if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(containerPath[containerPath.size()-2])) {
 				if(SurfaceMeshVis* vis = surfaceMesh->visElement<SurfaceMeshVis>()) {
 					property->fill(vis->surfaceColor());
-					initializeMemory = false;
+					flags.setFlag(DataBuffer::InitializeMemory, false);
 				}
 			}
 		}
 	}
 
-	if(initializeMemory) {
+	if(flags.testFlag(DataBuffer::InitializeMemory)) {
 		// Default-initialize property values with zeros.
 		property->fillZero();
 	}
@@ -132,7 +127,7 @@ void SurfaceMeshVertices::initializeObject(ObjectInitializationHints hints)
 	setIdentifier(OOClass().pythonName());
 
 	// Create the standard 'Position' property.
-	createProperty(SurfaceMeshVertices::PositionProperty, false, hints);
+	createProperty(SurfaceMeshVertices::PositionProperty);
 
 	PropertyContainer::initializeObject(hints);
 }

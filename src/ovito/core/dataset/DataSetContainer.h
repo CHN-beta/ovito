@@ -55,11 +55,8 @@ public:
 	/// Returns the abstract user interface this container is part of.
 	UserInterface& userInterface() { return _userInterface; }
 
-	/// Creates an object that represents a longer-running operation performed in the main or GUI thread. 
-	MainThreadOperation createOperation(bool visibleInUserInterface);
-
 	/// Creates an empty dataset and makes it the current dataset.
-	bool newDataset();
+	DataSet* newDataset();
 
 	/// Loads the given session state file and makes it the current dataset.
 	bool loadDataset(const QString& filename, MainThreadOperation operation);

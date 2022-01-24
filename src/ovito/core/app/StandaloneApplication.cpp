@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -130,9 +130,9 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 			return true;
 		}
 
-		// Prepares application to start running.
-		UserInterface* startupUserInterface = startupApplication();
-		if(!startupUserInterface) {
+		// Prepares the application to start running.
+		MainThreadOperation startupOperation = startupApplication();
+		if(!startupOperation.isValid()) {
 			shutdown();
 			return false;
 		}
@@ -140,24 +140,23 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 		// Notify registered application services that application is starting up.
 		for(const auto& service : applicationServices()) {
 			// If any of the service callbacks returns false, abort the application startup process.
-			if(!service->applicationStarting(*startupUserInterface)) {
+			if(!service->applicationStarting(startupOperation)) {
 				shutdown();
 				return false;
 			}
 		}
 
 		// Complete the startup process by calling postStartupInitialization() once the main event loop is running.
-		QMetaObject::invokeMethod(this, [this,startupUserInterface]() {
+		QMetaObject::invokeMethod(this, [this, startupOperation = std::move(startupOperation)]() mutable {
 			try {
-				MainThreadOperation operation = startupUserInterface->createOperation(true);
-				postStartupInitialization(operation);
-				if(operation.isCanceled()) 
+				postStartupInitialization(startupOperation);
+				if(startupOperation.isCanceled()) 
 					QCoreApplication::exit(1);
 			}
 			catch(const Exception& ex) {
 				// Shutdown with error exit code when running in scripting mode.
 				if(consoleMode())
-					startupUserInterface->exitWithFatalError(ex);
+					startupOperation.userInterface().exitWithFatalError(ex);
 				else
 					ex.reportError(true);
 			}

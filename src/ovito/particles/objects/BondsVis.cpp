@@ -246,16 +246,16 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 		if(bondTopologyProperty && positionProperty && bondDiameter > 0) {
 
 			// Allocate buffers for the bonds geometry.
-			DataBufferAccessAndRef<Point3> bondPositions1 = DataBufferPtr::create(dataset(), bondTopologyProperty->size() * 2, DataBuffer::Float, 3, 0, false);
-			DataBufferAccessAndRef<Point3> bondPositions2 = DataBufferPtr::create(dataset(), bondTopologyProperty->size() * 2, DataBuffer::Float, 3, 0, false);
-			DataBufferAccessAndRef<Color> bondColors = DataBufferPtr::create(dataset(), bondTopologyProperty->size() * 2, DataBuffer::Float, 3, 0, false);
-			DataBufferAccessAndRef<FloatType> bondTransparencies = transparencyProperty ? DataBufferPtr::create(dataset(), bondTopologyProperty->size() * 2, DataBuffer::Float, 1, 0, false) : nullptr;
-			DataBufferAccessAndRef<FloatType> bondWidths = bondWidthProperty ? DataBufferPtr::create(dataset(), bondTopologyProperty->size() * 2, DataBuffer::Float, 1, 0, false) : nullptr;
+			DataBufferAccessAndRef<Point3> bondPositions1 = DataBufferPtr::create(dataset(), bondTopologyProperty->size() * 2, DataBuffer::Float, 3);
+			DataBufferAccessAndRef<Point3> bondPositions2 = DataBufferPtr::create(dataset(), bondTopologyProperty->size() * 2, DataBuffer::Float, 3);
+			DataBufferAccessAndRef<Color> bondColors = DataBufferPtr::create(dataset(), bondTopologyProperty->size() * 2, DataBuffer::Float, 3);
+			DataBufferAccessAndRef<FloatType> bondTransparencies = transparencyProperty ? DataBufferPtr::create(dataset(), bondTopologyProperty->size() * 2, DataBuffer::Float) : nullptr;
+			DataBufferAccessAndRef<FloatType> bondWidths = bondWidthProperty ? DataBufferPtr::create(dataset(), bondTopologyProperty->size() * 2, DataBuffer::Float) : nullptr;
 
 			// Allocate buffers for the nodal vertices.
-			DataBufferAccessAndRef<Color> nodalColors = renderNodalVertices ? DataBufferPtr::create(dataset(), positionProperty->size(), DataBuffer::Float, 3, 0, false) : nullptr;
-			DataBufferAccessAndRef<FloatType> nodalTransparencies = (renderNodalVertices && transparencyProperty) ? DataBufferPtr::create(dataset(), positionProperty->size(), DataBuffer::Float, 1, 0, false) : nullptr;
-			DataBufferAccessAndRef<int> nodalIndices = renderNodalVertices ? DataBufferPtr::create(dataset(), 0, DataBuffer::Int, 1, 0, false) : nullptr;
+			DataBufferAccessAndRef<Color> nodalColors = renderNodalVertices ? DataBufferPtr::create(dataset(), positionProperty->size(), DataBuffer::Float, 3) : nullptr;
+			DataBufferAccessAndRef<FloatType> nodalTransparencies = (renderNodalVertices && transparencyProperty) ? DataBufferPtr::create(dataset(), positionProperty->size(), DataBuffer::Float) : nullptr;
+			DataBufferAccessAndRef<int> nodalIndices = renderNodalVertices ? DataBufferPtr::create(dataset(), 0, DataBuffer::Int) : nullptr;
 			boost::dynamic_bitset<> visitedParticles(renderNodalVertices ? positionProperty->size() : 0);
 			OVITO_ASSERT(nodalColors || !nodalTransparencies);
 
@@ -639,7 +639,7 @@ ConstPropertyPtr BondsVis::bondWidths(const BondsObject* bonds) const
 	}
 	else {
 		// Allocate output array.
-		output.reset(BondsObject::OOClass().createStandardProperty(dataset(), bonds->elementCount(), BondsObject::WidthProperty, false, ObjectInitializationHint::LoadFactoryDefaults));
+		output.reset(BondsObject::OOClass().createStandardProperty(dataset(), bonds->elementCount(), BondsObject::WidthProperty));
 
 		// Assign the uniform default width to all bonds.
 		output.makeMutable()->fill(bondWidth());

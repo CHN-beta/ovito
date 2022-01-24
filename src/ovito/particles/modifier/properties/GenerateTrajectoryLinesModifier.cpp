@@ -119,7 +119,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 		if(!myModApp) continue;
 
 		// Get input particles.
-		SharedFuture<PipelineFlowState> stateFuture = myModApp->evaluateInput(PipelineEvaluationRequest(operation.initializationHints(), currentTime));
+		SharedFuture<PipelineFlowState> stateFuture = myModApp->evaluateInput(PipelineEvaluationRequest(currentTime));
 		if(!operation.waitForFuture(stateFuture))
 			return false;
 
@@ -179,7 +179,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 		for(TimePoint time : sampleTimes) {
 			operation.setProgressText(tr("Generating trajectory lines (frame %1 of %2)").arg(operation.progressValue()+1).arg(operation.progressMaximum()));
 
-			SharedFuture<PipelineFlowState> stateFuture = myModApp->evaluateInput(PipelineEvaluationRequest(operation.initializationHints(), time));
+			SharedFuture<PipelineFlowState> stateFuture = myModApp->evaluateInput(PipelineEvaluationRequest(time));
 			if(!operation.waitForFuture(stateFuture))
 				return false;
 
@@ -291,25 +291,25 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 		UndoSuspender noUndo(dataset());
 
 		// Create the trajectory lines data object.
-		DataOORef<TrajectoryObject> trajObj = DataOORef<TrajectoryObject>::create(dataset(), operation.initializationHints());
+		DataOORef<TrajectoryObject> trajObj = DataOORef<TrajectoryObject>::create(dataset());
 
 		// Copy re-ordered trajectory points.
 		trajObj->setElementCount(pointData.size());
-		PropertyAccess<Point3> trajPosProperty = trajObj->createProperty(TrajectoryObject::PositionProperty, false, operation.initializationHints());
+		PropertyAccess<Point3> trajPosProperty = trajObj->createProperty(TrajectoryObject::PositionProperty);
 		auto piter = permutation.cbegin();
 		for(Point3& p : trajPosProperty) {
 			p = pointData[*piter++];
 		}
 
 		// Copy re-ordered trajectory time stamps.
-		PropertyAccess<int> trajTimeProperty = trajObj->createProperty(TrajectoryObject::SampleTimeProperty, false, operation.initializationHints());
+		PropertyAccess<int> trajTimeProperty = trajObj->createProperty(TrajectoryObject::SampleTimeProperty);
 		piter = permutation.cbegin();
 		for(int& t : trajTimeProperty) {
 			t = sampleFrames[timeData[*piter++]];
 		}
 
 		// Copy re-ordered trajectory ids.
-		PropertyAccess<qlonglong> trajIdProperty = trajObj->createProperty(TrajectoryObject::ParticleIdentifierProperty, false, operation.initializationHints());
+		PropertyAccess<qlonglong> trajIdProperty = trajObj->createProperty(TrajectoryObject::ParticleIdentifierProperty);
 		piter = permutation.cbegin();
 		for(qlonglong& id : trajIdProperty) {
 			id = idData[*piter++];
@@ -326,7 +326,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 				PropertyAccess<void,true> samplingProperty;
 				if(TrajectoryObject::OOClass().isValidStandardPropertyId(inputProperty->type())) {
 					// Input particle property is also a standard property for trajectory lines.
-					samplingProperty = trajObj->createProperty(inputProperty->type(), false, operation.initializationHints());
+					samplingProperty = trajObj->createProperty(inputProperty->type());
 					OVITO_ASSERT(samplingProperty.dataType() == inputProperty->dataType());
 					OVITO_ASSERT(samplingProperty.stride() == inputProperty->stride());
 				}
@@ -334,11 +334,11 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 					// Input property name is that of a standard property for trajectory lines.
 					// Must rename the property to avoid naming conflict, because user properties may not have a standard property name.
 					QString newPropertyName = inputProperty->name() + tr("_particles");
-					samplingProperty = trajObj->createProperty(newPropertyName, inputProperty->dataType(), inputProperty->componentCount(), inputProperty->stride(), false, inputProperty->componentNames());
+					samplingProperty = trajObj->createProperty(newPropertyName, inputProperty->dataType(), inputProperty->componentCount(), DataBuffer::NoFlags, inputProperty->componentNames());
 				}
 				else {
 					// Input property is a user property for trajectory lines.
-					samplingProperty = trajObj->createProperty(inputProperty->name(), inputProperty->dataType(), inputProperty->componentCount(), inputProperty->stride(), false, inputProperty->componentNames());
+					samplingProperty = trajObj->createProperty(inputProperty->name(), inputProperty->dataType(), inputProperty->componentCount(), DataBuffer::NoFlags, inputProperty->componentNames());
 				}
 
 				// Copy property values from temporary sampling buffer to destination trajectory line property.

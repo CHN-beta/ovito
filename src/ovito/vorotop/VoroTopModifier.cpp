@@ -69,10 +69,10 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath, MainThreadOp
     // Rebuild structure types list.
     setStructureTypes({});
     for(int i = 0; i < filter->structureTypeCount(); i++) {
-        OORef<ParticleType> stype = OORef<ParticleType>::create(dataset(), operation.initializationHints());
+        OORef<ParticleType> stype = OORef<ParticleType>::create(dataset());
         stype->setNumericId(i);
         stype->setName(filter->structureTypeLabel(i));
-        stype->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), operation.initializationHints());
+        stype->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty));
         addStructureType(std::move(stype));
     }
 

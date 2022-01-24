@@ -21,44 +21,31 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/oo/RefTarget.h>
-#include <ovito/core/app/Application.h>
-#include <ovito/core/dataset/DataSet.h>
-#include "RefTargetExecutor.h"
+#include <ovito/core/utilities/concurrent/ExecutionContext.h>
+
+#include <QThreadStorage>
 
 namespace Ovito {
 
-/******************************************************************************
-* Activates the original execution context under which the work was submitted.
-******************************************************************************/
-void RefTargetExecutor::activateExecutionContext()
-{
-    if(Application* app = Application::instance()) {
-        ExecutionContext previousContext = app->executionContext();
-        app->switchExecutionContext(_executionContext);
-        _executionContext = previousContext;
+static QThreadStorage<ExecutionContext::Type> currentExecutionContext;
 
-        // In the current implementation, deferred work is always executed without undo recording.
-        // Thus, we should suspend the undo stack while running the work function.
-        if(object()->dataset()) 
-            object()->dataset()->undoStack().suspend();
-    }
+/******************************************************************************
+* Returns the type of context the current thread performs its actions in.
+******************************************************************************/
+ExecutionContext::Type ExecutionContext::current() noexcept
+{
+	if(currentExecutionContext.hasLocalData())
+		return currentExecutionContext.localData();
+	else
+		return Interactive;
 }
 
 /******************************************************************************
-* Restores the execution context as it was before the work was executed.
+* Sets the type of context the current thread performs its actions in.
 ******************************************************************************/
-void RefTargetExecutor::restoreExecutionContext()
+void ExecutionContext::setCurrent(ExecutionContext::Type type) noexcept
 {
-    if(Application* app = Application::instance()) {
-        ExecutionContext previousContext = app->executionContext();
-        app->switchExecutionContext(_executionContext);
-        _executionContext = previousContext;
-
-        // Restore undo recording state.
-        if(object()->dataset()) 
-            object()->dataset()->undoStack().resume();
-    }
+	currentExecutionContext.setLocalData(type);
 }
 
 }	// End of namespace

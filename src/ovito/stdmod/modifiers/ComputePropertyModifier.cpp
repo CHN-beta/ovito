@@ -176,10 +176,10 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
 	else {
 		// Allocate new data array.
 		if(outputProperty().type() != PropertyObject::GenericUserProperty) {
-			outp = container->getOOMetaClass().createStandardProperty(dataset(), nelements, outputProperty().type(), onlySelectedElements(), request.initializationHints(), objectPath);
+			outp = container->getOOMetaClass().createStandardProperty(dataset(), nelements, outputProperty().type(), onlySelectedElements() ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
 		}
 		else if(!outputProperty().name().isEmpty() && propertyComponentCount() > 0) {
-			outp = container->getOOMetaClass().createUserProperty(dataset(), nelements, PropertyObject::Float, propertyComponentCount(), 0, outputProperty().name(), onlySelectedElements());
+			outp = container->getOOMetaClass().createUserProperty(dataset(), nelements, PropertyObject::Float, propertyComponentCount(), outputProperty().name(), onlySelectedElements() ? DataBuffer::InitializeMemory : DataBuffer::NoFlags);
 		}
 		else {
 			throwException(tr("Output property of compute property modifier has not been specified."));

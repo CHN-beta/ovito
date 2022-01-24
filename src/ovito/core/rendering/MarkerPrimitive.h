@@ -58,7 +58,7 @@ public:
 	template<typename InputIterator>
 	void setPositions(DataSet* dataset, InputIterator begin, InputIterator end) {
 		size_t count = std::distance(begin, end);
-		DataBufferAccessAndRef<Point3> buffer = DataBufferPtr::create(dataset, count, DataBuffer::Float, 3, 0, false);
+		DataBufferAccessAndRef<Point3> buffer = DataBufferPtr::create(dataset, count, DataBuffer::Float, 3);
 		std::copy(std::move(begin), std::move(end), buffer.begin());
 		setPositions(buffer.take());
 	}

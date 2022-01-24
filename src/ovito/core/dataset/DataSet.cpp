@@ -363,9 +363,7 @@ void DataSet::makeSceneReady(bool forceReevaluation)
 	_pipelineEvaluationWatcher.reset();
 	_pipelineEvaluation.reset(animationSettings()->time());
 	_sceneReadyTime = animationSettings()->time();
-	PipelineEvaluationRequest request(
-		Application::instance()->executionContext() == ExecutionContext::Interactive ? ObjectInitializationHint::LoadUserDefaults : ObjectInitializationHint::LoadFactoryDefaults,
-		animationSettings()->time());
+	PipelineEvaluationRequest request(animationSettings()->time());
 
 	sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
 		// Request visual elements too.
@@ -578,7 +576,7 @@ bool DataSet::renderScene(RenderSettings* renderSettings, const std::vector<std:
 		renderer->endRender();
 
 		// Free visual element resources to avoid clogging the memory in cases where render() gets called repeatedly from a script.
-		if(Application::instance()->executionContext() == ExecutionContext::Scripting)
+		if(ExecutionContext::current() == ExecutionContext::Scripting)
 			visCache().discardUnusedObjects();
 	}
 	catch(Exception& ex) {

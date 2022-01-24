@@ -24,7 +24,7 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/oo/ExecutionContext.h>
+#include <ovito/core/utilities/concurrent/ExecutionContext.h>
 #include <ovito/core/oo/RefTarget.h>
 
 namespace Ovito {
@@ -38,7 +38,10 @@ class OVITO_CORE_EXPORT RefTargetExecutor
 public:
 
 	/// Constructor.
-	RefTargetExecutor(const RefTarget* obj, ExecutionContext executionContext, bool deferredExecution) noexcept : _obj(obj), _executionContext(executionContext), _deferredExecution(deferredExecution) { 
+	explicit RefTargetExecutor(const RefTarget* obj, bool deferredExecution) noexcept : 
+			_obj(obj), 
+			_executionContext(ExecutionContext::current()), 
+			_deferredExecution(deferredExecution) { 
 		OVITO_ASSERT(obj != nullptr); 
 	}
 
@@ -61,19 +64,21 @@ public:
 
 			/// Event destructor, which runs the work function.
 			virtual ~WorkEvent() {
-				// Qt events should only be destroyed in the main thread.
-				OVITO_ASSERT(!QCoreApplication::instance() || QCoreApplication::closingDown() || QThread::currentThread() == QCoreApplication::instance()->thread());
+				// Qt events should only get destroyed in the main thread.
+				OVITO_ASSERT(QThread::currentThread() == this->object()->thread());
 
 				if(!QCoreApplication::closingDown()) {
-					/// Activate the original execution context under which the work was submitted.
-					activateExecutionContext();
+					// Temporarily activate the original execution context under which the work was submitted.
+					ExecutionContext::Scope execScope(_executionContext);
+
+					// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
+					UndoSuspender noUndo(this->object());
+
 					// Execute the work function.
 					if constexpr(std::is_invocable_v<Function, Task&>)
 						std::move(_callable)(*_task);
 					else
 						std::move(_callable)();
-					/// Restore the execution context as it was before the work was executed.
-					restoreExecutionContext();
 				}
 			}
 
@@ -85,44 +90,44 @@ public:
 		if constexpr(std::is_invocable_v<Function, Task&>) {
 			return [f = std::forward<Function>(f), *this](Task& task) mutable noexcept {					
 				OVITO_ASSERT(this->object()); 
-				if(_deferredExecution || (QCoreApplication::instance() && QThread::currentThread() != object()->thread())) {
-					if(!QCoreApplication::closingDown()) {
-						// When not in the main thread, schedule work for later execution in the main thread.
-						WorkEvent* event = new WorkEvent(std::move(*this), std::move(f), task.shared_from_this());
-						OVITO_ASSERT(event->object()); 
-						QCoreApplication::postEvent(const_cast<RefTarget*>(event->object()), event);
-					}
+				if(_deferredExecution || QThread::currentThread() != object()->thread()) {
+					// When not in the main thread, schedule work for later execution in the main thread.
+					WorkEvent* event = new WorkEvent(std::move(*this), std::move(f), task.shared_from_this());
+					QCoreApplication::postEvent(const_cast<RefTarget*>(event->object()), event);
 				}
 				else {
 					// When already in the main thread, execute work immediately.
-					// Activate the original execution context under which the work was submitted.
-					activateExecutionContext();
+
+					// Temporarily activate the original execution context under which the work was submitted.
+					ExecutionContext::Scope execScope(_executionContext);
+
+					// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
+					UndoSuspender noUndo(this->object());
+
 					// Execute the work function.
 					std::move(f)(task);
-					// Restore the execution context as it was before the work was executed.
-					restoreExecutionContext();
 				}
 			};
 		}
 		else {
 			return [f = std::forward<Function>(f), *this]() mutable noexcept {
 				OVITO_ASSERT(this->object()); 
-				if(_deferredExecution || (QCoreApplication::instance() && QThread::currentThread() != object()->thread())) {
-					if(!QCoreApplication::closingDown()) {
-						// When not in the main thread, schedule work for later execution in the main thread.
-						WorkEvent* event = new WorkEvent(std::move(*this), std::move(f), nullptr);
-						OVITO_ASSERT(event->object()); 
-						QCoreApplication::postEvent(const_cast<RefTarget*>(event->object()), event);
-					}
+				if(_deferredExecution || QThread::currentThread() != object()->thread()) {
+					// When not in the main thread, schedule work for later execution in the main thread.
+					WorkEvent* event = new WorkEvent(std::move(*this), std::move(f), nullptr);
+					QCoreApplication::postEvent(const_cast<RefTarget*>(event->object()), event);
 				}
 				else {
 					// When already in the main thread, execute work immediately.
-					// Activate the original execution context under which the work was submitted.
-					activateExecutionContext();
+
+					// Temporarily activate the original execution context under which the work was submitted.
+					ExecutionContext::Scope execScope(_executionContext);
+
+					// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
+					UndoSuspender noUndo(this->object());
+
 					// Execute the work function.
 					std::move(f)();
-					// Restore the execution context as it was before the work was executed.
-					restoreExecutionContext();
 				}
 			};
 		}
@@ -140,19 +145,11 @@ public:
 
 private:
 
-	/// Activates the original execution context under which the work was submitted.
-	void activateExecutionContext();
-
-	/// Restores the execution context as it was before the work was executed.
-	void restoreExecutionContext();
-
-private:
-
 	/// The object the work is submitted to.
 	OORef<const RefTarget> _obj;
 
-	/// The execution context (interactive or scripting) under which the work has been submitted.
-	ExecutionContext _executionContext;
+	/// The execution context (interactive or scripting) in which the work has been submitted.
+	ExecutionContext::Type _executionContext;
 
 	/// Controls whether execution of the work will be deferred even if immediate execution would be possible.
 	const bool _deferredExecution;

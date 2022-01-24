@@ -65,7 +65,7 @@ void SelectTypeModifier::initializeModifier(const ModifierInitializationRequest&
 			PropertyReference bestProperty;
 			for(const PropertyObject* property : container->properties()) {
 				if(property->isTypedProperty()) {
-					if(request.initializationHints().testFlag(LoadUserDefaults) || property->type() == PropertyObject::GenericTypeProperty) {
+					if(ExecutionContext::isInteractive() || property->type() == PropertyObject::GenericTypeProperty) {
 						bestProperty = PropertyReference(subject().dataClass(), property);
 					}
 				}
@@ -117,7 +117,7 @@ void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
 	ConstPropertyAccess<int> typeProperty = typePropertyObject;
 
 	// Create the selection property.
-	PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty, false, request.initializationHints());
+	PropertyAccess<int> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty);
 
 	// Counts the number of selected elements.
 	size_t nSelected = 0;

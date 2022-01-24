@@ -26,7 +26,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/Exception.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
-#include <ovito/core/oo/ExecutionContext.h>
 
 namespace Ovito {
 
@@ -108,20 +107,6 @@ public:
 	/// Handler function for exceptions.
 	virtual void reportError(const Exception& exception, bool blocking);
 
-	/// \brief Returns type of context in which the program's actions are currently performed.
-	/// \note It is only safe to call this method from the main thread.
-	ExecutionContext executionContext() const {
-		OVITO_ASSERT(QThread::currentThread() == this->thread());
-		return _executionContext;
-	}
-
-	/// Notifies the application that script execution has started or stopped.
-	/// This is an internal method that should only be called by script engines.
-	void switchExecutionContext(ExecutionContext context) {
-		OVITO_ASSERT(QThread::currentThread() == this->thread());
-		_executionContext = context;
-	}
-
 #ifndef Q_OS_WASM
 	/// Returns the application-wide network access manager object.
 	QNetworkAccessManager* networkAccessManager();
@@ -134,10 +119,6 @@ protected:
 
 	/// Indicates that the application is running in headless mode (without OpenGL support).
 	bool _headlessMode = true;
-
-	/// Indicates that a script engine is executing code right now.
-	/// If false, the program is running in interactive mode and all actions are performed by the human user.
-	ExecutionContext _executionContext = ExecutionContext::Interactive;
 
 	/// The number of parallel threads to be used by the application when doing computations.
 	int _idealThreadCount = 1;

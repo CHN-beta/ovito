@@ -190,8 +190,7 @@ void SelectTypeModifierEditor::ViewModel::refresh()
 	if(mod && mod->subject() && !mod->sourceProperty().isNull() && mod->sourceProperty().containerClass() == mod->subject().dataClass()) {
 
 		// Populate types list based on the selected input property.
-		for(ModifierApplication* modApp : editor()->modifierApplications()) {
-			const PipelineFlowState& inputState = modApp->evaluateInputSynchronousAtCurrentTime();
+		for(const PipelineFlowState& inputState : editor()->getPipelineInputs()) {
 			if(const PropertyContainer* container = inputState.getLeafObject(mod->subject())) {
 				if(const PropertyObject* inputProperty = mod->sourceProperty().findInContainer(container)) {
 					for(const ElementType* type : inputProperty->elementTypes()) {

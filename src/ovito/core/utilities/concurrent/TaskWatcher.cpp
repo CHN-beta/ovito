@@ -57,7 +57,7 @@ void TaskWatcher::cancel()
 		task()->cancel();
 }
 
-void TaskWatcher::taskStateChangedCallback(int state)
+bool TaskWatcher::taskStateChangedCallback(int state)
 {
 	if(state & Task::Started)
 		QMetaObject::invokeMethod(this, "taskStarted", Qt::QueuedConnection);
@@ -65,6 +65,7 @@ void TaskWatcher::taskStateChangedCallback(int state)
 		QMetaObject::invokeMethod(this, "taskCanceled", Qt::QueuedConnection);
 	if(state & Task::Finished)
 		QMetaObject::invokeMethod(this, "taskFinished", Qt::QueuedConnection);
+	return true;
 }
 
 void TaskWatcher::taskProgressChangedCallback(qlonglong progress, qlonglong maximum)

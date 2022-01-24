@@ -72,7 +72,7 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
 	QString gridIdentifier = loadRequest().dataBlockPrefix;
 	VoxelGrid* gridObj = state().getMutableLeafObject<VoxelGrid>(VoxelGrid::OOClass(), gridIdentifier);
 	if(!gridObj) {
-		gridObj = state().createObject<VoxelGrid>(dataSource(), initializationHints());
+		gridObj = state().createObject<VoxelGrid>(dataSource());
 		gridObj->setIdentifier(gridIdentifier);
 		VoxelGridVis* vis = gridObj->visElement<VoxelGridVis>();
 		if(!gridIdentifier.isEmpty()) {
@@ -183,7 +183,7 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
 			while(xml.readNextStartElement() && !isCanceled()) {
 				if(xml.name().compare(QStringLiteral("DataArray")) == 0) {
 					int vectorComponent = -1;
-					if(PropertyObject* property = createGridPropertyForDataArray(gridObj, xml, vectorComponent)) {
+					if(PropertyObject* property = createGridPropertyForDataArray(gridObj, xml)) {
 						if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml, vectorComponent))
 							break;
 					}
@@ -225,12 +225,12 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
 * Creates the right kind of OVITO property object that will receive the data 
 * read from a <DataArray> element.
 ******************************************************************************/
-PropertyObject* ParaViewVTIGridImporter::FrameLoader::createGridPropertyForDataArray(VoxelGrid* gridObj, QXmlStreamReader& xml, int& vectorComponent)
+PropertyObject* ParaViewVTIGridImporter::FrameLoader::createGridPropertyForDataArray(VoxelGrid* gridObj, QXmlStreamReader& xml)
 {
 	int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
 	auto name = xml.attributes().value("Name");
 
-	return gridObj->createProperty(name.toString(), PropertyObject::Float, numComponents, 0, false);
+	return gridObj->createProperty(name.toString(), PropertyObject::Float, numComponents);
 }
 
 }	// End of namespace

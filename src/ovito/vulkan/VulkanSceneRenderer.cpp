@@ -203,7 +203,7 @@ bool VulkanSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOper
 
 		// Call virtual method to render additional content that is only visible in the interactive viewports.
         if(viewport() && isInteractive()) {
-    		renderInteractiveContent();
+    		renderInteractiveContent(operation);
         }
 
 		// Render translucent objects in a second pass.

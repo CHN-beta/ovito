@@ -39,27 +39,25 @@ DataBuffer::DataBuffer(DataSet* dataset) : DataObject(dataset)
 /******************************************************************************
 * Constructor allocating a property array with given size and data layout.
 ******************************************************************************/
-DataBuffer::DataBuffer(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, size_t stride, bool initializeMemory, QStringList componentNames) :
+DataBuffer::DataBuffer(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, InitializationFlags flags, QStringList componentNames) :
 	DataObject(dataset),
 	_dataType(dataType),
 	_dataTypeSize(getQtTypeSizeFromId(dataType)),
-	_stride(stride),
 	_componentCount(componentCount),
 	_componentNames(std::move(componentNames))
 {
+	_stride = _dataTypeSize * _componentCount;
 	OVITO_ASSERT(dataType == Int || dataType == Int64 || dataType == Float);
 	OVITO_ASSERT(_dataTypeSize > 0);
 	OVITO_ASSERT(_componentCount > 0);
 	OVITO_ASSERT(_componentNames.empty() || _componentCount == _componentNames.size());
-	if(_stride == 0) 
-		_stride = _dataTypeSize * _componentCount;
 	OVITO_ASSERT(_stride >= _dataTypeSize * _componentCount);
 	OVITO_ASSERT((_stride % _dataTypeSize) == 0);
 	if(componentCount > 1) {
 		for(size_t i = _componentNames.size(); i < componentCount; i++)
 			_componentNames << QString::number(i + 1);
 	}
-	resize(elementCount, initializeMemory);
+	resize(elementCount, flags.testFlag(InitializeMemory));
 }
 
 /******************************************************************************

@@ -202,6 +202,18 @@ void ViewportConfiguration::zoomToSceneExtents()
 }
 
 /******************************************************************************
+* Zooms all viewports to the extents of the currently selected nodes 
+* when the pipeline has been fully evaluated and the extents are known.
+******************************************************************************/
+void ViewportConfiguration::zoomToSelectionExtentsWhenReady()
+{
+	dataset()->whenSceneReady().finally(executor(), [this](Task& task) {
+		if(!task.isCanceled())
+			zoomToSelectionExtents();
+	});
+}
+
+/******************************************************************************
 * Helper function for recursively gathering all viewports in a layout tree.
 ******************************************************************************/
 static void gatherViewportsFromLayout(const ViewportLayoutCell* cell, std::vector<Viewport*>& viewportList) 
@@ -237,20 +249,20 @@ void ViewportConfiguration::loadFromStreamComplete(ObjectLoadStream& stream)
 	if(!layoutRootCell()) {
 		OVITO_ASSERT(viewports().size() == 4);
 
-		OORef<ViewportLayoutCell> rootCell = OORef<ViewportLayoutCell>::create(dataset(), ObjectInitializationHint::LoadUserDefaults);
+		OORef<ViewportLayoutCell> rootCell = OORef<ViewportLayoutCell>::create(dataset());
 		rootCell->setSplitDirection(ViewportLayoutCell::Horizontal);
-		rootCell->addChild(OORef<ViewportLayoutCell>::create(dataset(), ObjectInitializationHint::LoadUserDefaults));
-		rootCell->addChild(OORef<ViewportLayoutCell>::create(dataset(), ObjectInitializationHint::LoadUserDefaults));
+		rootCell->addChild(OORef<ViewportLayoutCell>::create(dataset()));
+		rootCell->addChild(OORef<ViewportLayoutCell>::create(dataset()));
 
 		rootCell->children()[0]->setSplitDirection(ViewportLayoutCell::Vertical);
-		rootCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(dataset(), ObjectInitializationHint::LoadUserDefaults));
-		rootCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(dataset(), ObjectInitializationHint::LoadUserDefaults));
+		rootCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(dataset()));
+		rootCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(dataset()));
 		rootCell->children()[0]->children()[0]->setViewport(viewports().size() > 0 ? viewports()[0] : nullptr); // Upper left
 		rootCell->children()[0]->children()[1]->setViewport(viewports().size() > 2 ? viewports()[2] : nullptr); // Lower left
 
 		rootCell->children()[1]->setSplitDirection(ViewportLayoutCell::Vertical);
-		rootCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(dataset(), ObjectInitializationHint::LoadUserDefaults));
-		rootCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(dataset(), ObjectInitializationHint::LoadUserDefaults));
+		rootCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(dataset()));
+		rootCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(dataset()));
 		rootCell->children()[1]->children()[0]->setViewport(viewports().size() > 1 ? viewports()[1] : nullptr); // Upper right
 		rootCell->children()[1]->children()[1]->setViewport(viewports().size() > 3 ? viewports()[3] : nullptr); // Lower right
 		setLayoutRootCell(std::move(rootCell));

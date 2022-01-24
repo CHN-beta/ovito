@@ -67,7 +67,7 @@ void ColorByTypeModifier::initializeModifier(const ModifierInitializationRequest
 			PropertyReference bestProperty;
 			for(const PropertyObject* property : container->properties()) {
 				if(property->isTypedProperty()) {
-					if(request.initializationHints().testFlag(LoadUserDefaults) || property->type() == PropertyObject::GenericTypeProperty) {
+					if(ExecutionContext::isInteractive() || property->type() == PropertyObject::GenericTypeProperty) {
 						bestProperty = PropertyReference(subject().dataClass(), property);
 					}
 				}
@@ -135,7 +135,7 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
 	}
 
 	// Create the color output property.
-	PropertyAccess<Color> colorProperty = container->createProperty(PropertyObject::GenericColorProperty, (bool)selectionProperty, request.initializationHints(), objectPath);
+	PropertyAccess<Color> colorProperty = container->createProperty(PropertyObject::GenericColorProperty, (bool)selectionProperty ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
 
 	// Access selection array.
 	ConstPropertyAccessAndRef<int> selection(std::move(selectionProperty));

@@ -123,7 +123,7 @@ public:
 
 	/// Sets the start and end value to the minimum and maximum value of the selected input property
 	/// determined over the entire animation sequence.
-	bool adjustRangeGlobal(ObjectInitializationHints initializationHints, MainThreadOperation& operation);
+	bool adjustRangeGlobal(MainThreadOperation& operation);
 
 	/// Returns the current delegate of this modifier.
 	ColorCodingModifierDelegate* delegate() const {
@@ -135,14 +135,14 @@ public:
 	QString colorGradientType() const;
 
 	/// Assigns a new color gradient based on its class name.
-	void setColorGradientType(const QString& typeName, ExecutionContext executionContext = ExecutionContext::Interactive);
+	void setColorGradientType(const QString& typeName);
 #endif
 
 public Q_SLOTS:
 
 	/// Sets the start and end value to the minimum and maximum value of the selected input property.
 	/// Returns true if successful.
-	bool adjustRange(ObjectInitializationHints initializationHints);
+	bool adjustRange();
 
 	/// Swaps the minimum and maximum values to reverse the color scale.
 	void reverseRange();

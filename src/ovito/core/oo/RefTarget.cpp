@@ -266,18 +266,9 @@ bool RefTarget::isObjectBeingEdited() const
 * Returns an executor object to be used with Future<>::then(), which executes work
 * in the context (and the thread) of this object.
 ******************************************************************************/
-RefTargetExecutor RefTarget::executor(ExecutionContext executionContext, bool requireDeferredExecution) const
-{
-	return RefTargetExecutor(this, executionContext, requireDeferredExecution);
-}
-
-/******************************************************************************
-* Returns an executor object to be used with Future<>::then(), which executes work
-* in the context (and the thread) of this object.
-******************************************************************************/
 RefTargetExecutor RefTarget::executor(bool requireDeferredExecution) const
 {
-	return RefTargetExecutor(this, Application::instance()->executionContext(), requireDeferredExecution);
+	return RefTargetExecutor(this, requireDeferredExecution);
 }
 
 /******************************************************************************

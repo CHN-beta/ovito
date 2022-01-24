@@ -48,7 +48,7 @@ class OVITO_PARTICLES_EXPORT ParticlesObject : public PropertyContainer
 		using PropertyContainerClass::PropertyContainerClass;
 
 		/// \brief Create a storage object for standard particle properties.
-		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const override;
+		virtual PropertyPtr createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
 
 		/// Indicates whether this kind of property container supports picking of individual elements in the viewports.
 		virtual bool supportsViewportPicking() const override { return true; }
@@ -176,7 +176,7 @@ public:
 	const PropertyObject* expectBondsTopology() const;
 
 	/// Adds a set of new bonds to the particle system.
-	void addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, ObjectInitializationHints initializationHints, const std::vector<PropertyPtr>& bondProperties = {}, DataOORef<const BondType> bondType = {});
+	void addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const std::vector<PropertyPtr>& bondProperties = {}, DataOORef<const BondType> bondType = {});
 
 	/// Returns a property array with the input particle colors.
 	ConstPropertyPtr inputParticleColors() const;

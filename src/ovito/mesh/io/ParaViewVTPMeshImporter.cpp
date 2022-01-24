@@ -77,7 +77,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 	if(meshIdentifier.isEmpty()) meshIdentifier = "mesh";
 	SurfaceMesh* meshObj = state().getMutableLeafObject<SurfaceMesh>(SurfaceMesh::OOClass(), meshIdentifier);
 	if(!meshObj) {
-		meshObj = state().createObject<SurfaceMesh>(dataSource(), initializationHints());
+		meshObj = state().createObject<SurfaceMesh>(dataSource());
 		meshObj->setIdentifier(meshIdentifier);
 		SurfaceMeshVis* vis = meshObj->visElement<SurfaceMeshVis>();
 		if(vis) {
@@ -368,7 +368,7 @@ PropertyPtr ParaViewVTPMeshImporter::FrameLoader::parseDataArray(QXmlStreamReade
 	}
 
 	// Create destination property. Initially with zero elements, will be resized later when the size of the VTK data array is known.
-	PropertyPtr property = DataOORef<PropertyObject>::create(dataset(), initializationHints(), 0, convertToDataType, numComponents, 0, name, false);
+	PropertyPtr property = DataOORef<PropertyObject>::create(dataset(), 0, convertToDataType, numComponents, name);
 
 	// Delegate parsing of payload to sub-routine.
 	if(!parseVTKDataArray(property.get(), xml))

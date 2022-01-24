@@ -516,11 +516,11 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
 		ParticlesObject::Type propertyType = (ParticlesObject::Type)column.property.type();
 		if(propertyType != ParticlesObject::UserProperty) {
 			// Create standard property.
-			property = particles()->createProperty(propertyType, true, initializationHints());
+			property = particles()->createProperty(propertyType, DataBuffer::InitializeMemory);
 		}
 		else {
 			// Create a new user-defined property for the column.
-			property = particles()->createProperty(propertyName, dataType, componentCount, 0, true);
+			property = particles()->createProperty(propertyName, dataType, componentCount, DataBuffer::InitializeMemory);
 		}
 		loadedProperties.push_back(property);
 

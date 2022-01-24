@@ -279,9 +279,9 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 		}
 
 		// Allocate data buffers.
-		DataBufferAccessAndRef<Point3> arrowBasePositions = DataBufferPtr::create(dataset(), vectorCount, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<Point3> arrowHeadPositions = DataBufferPtr::create(dataset(), vectorCount, DataBuffer::Float, 3, 0, false);
-		DataBufferAccessAndRef<Color> arrowColors = (vectorColorProperty || pseudoColorProperty) ? DataBufferPtr::create(dataset(), vectorCount, DataBuffer::Float, 3, 0, false) : nullptr;
+		DataBufferAccessAndRef<Point3> arrowBasePositions = DataBufferPtr::create(dataset(), vectorCount, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Point3> arrowHeadPositions = DataBufferPtr::create(dataset(), vectorCount, DataBuffer::Float, 3);
+		DataBufferAccessAndRef<Color> arrowColors = (vectorColorProperty || pseudoColorProperty) ? DataBufferPtr::create(dataset(), vectorCount, DataBuffer::Float, 3) : nullptr;
 
 		// Fill data buffers.
 		if(vectorCount) {
@@ -323,7 +323,7 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 		arrows.setPositions(arrowBasePositions.take(), arrowHeadPositions.take());
 		arrows.setColors(arrowColors.take());
 		if(transparency > 0.0) {
-			DataBufferPtr transparencyBuffer = DataBufferPtr::create(dataset(), vectorCount, DataBuffer::Float, 1, 0, false);
+			DataBufferPtr transparencyBuffer = DataBufferPtr::create(dataset(), vectorCount, DataBuffer::Float);
 			transparencyBuffer->fill(transparency);
 			arrows.setTransparencies(std::move(transparencyBuffer));
 		}

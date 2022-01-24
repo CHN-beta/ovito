@@ -99,7 +99,7 @@ private:
 			_selection(std::move(selection)),
 			_mesh(std::move(mesh)),
 			_particleProperties(std::move(particleProperties)),
-			_surfaceDistances(computeSurfaceDistance ? ParticlesObject::OOClass().createUserProperty(request.dataset(), _positions->size(), PropertyObject::Float, 1, 0, tr("Surface Distance"), false) : nullptr) {}
+			_surfaceDistances(computeSurfaceDistance ? ParticlesObject::OOClass().createUserProperty(request.dataset(), _positions->size(), PropertyObject::Float, 1, tr("Surface Distance")) : nullptr) {}
 
 		/// Returns the computed total surface area.
 		FloatType surfaceArea() const { return (FloatType)_totalSurfaceArea; }
@@ -168,7 +168,7 @@ private:
 			_smoothingLevel(smoothingLevel),
 			_identifyRegions(identifyRegions),
 			_totalCellVolume(this->mesh()->domain() ? this->mesh()->domain()->volume3D() : 0.0),
-			_surfaceParticleSelection(selectSurfaceParticles ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), this->positions()->size(), ParticlesObject::SelectionProperty, true, request.initializationHints()) : nullptr) {}
+			_surfaceParticleSelection(selectSurfaceParticles ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), this->positions()->size(), ParticlesObject::SelectionProperty, DataBuffer::InitializeMemory) : nullptr) {}
 
 		/// Computes the modifier's results and stores them in this object for later retrieval.
 		virtual void perform() override;

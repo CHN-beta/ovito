@@ -211,7 +211,8 @@ void ModifierTemplatesPage::onCreateTemplate()
 				}
 			}
 			OVITO_ASSERT(!selectedModifierList.empty());
-			int idx = ModifierTemplates::get()->createTemplate(nameBox->currentText().trimmed(), selectedModifierList, _settingsDialog->mainWindow());
+			MainThreadOperation operation = MainThreadOperation::create(_settingsDialog->mainWindow(), ExecutionContext::Interactive);
+			int idx = ModifierTemplates::get()->createTemplate(nameBox->currentText().trimmed(), selectedModifierList, operation);
 			_listWidget->setCurrentIndex(_listWidget->model()->index(idx, 0));
 			_dirtyFlag = true;
 		}

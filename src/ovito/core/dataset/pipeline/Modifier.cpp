@@ -71,7 +71,7 @@ OORef<ModifierApplication> Modifier::createModifierApplication()
 				}
 			}
 #endif
-			return static_object_cast<ModifierApplication>(modAppClass->createInstance(dataset(), ObjectInitializationHint::LoadFactoryDefaults));
+			return static_object_cast<ModifierApplication>(modAppClass->createInstance(dataset()));
 		}
 	}
 	return new ModifierApplication(dataset());

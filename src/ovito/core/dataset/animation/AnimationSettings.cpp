@@ -204,12 +204,9 @@ void AnimationSettings::jumpToNextFrame()
 void AnimationSettings::setAnimationPlayback(bool on)
 {
 	if(on) {
-		bool reverse = false;
-		if(Application::instance()->executionContext() == ExecutionContext::Interactive) {
-			if(QGuiApplication::keyboardModifiers() & Qt::ShiftModifier)
-				reverse = true;
-		}
-		startAnimationPlayback(reverse ? -1 : 1);
+		startAnimationPlayback(
+			(QGuiApplication::keyboardModifiers() & Qt::ShiftModifier)
+			? -1 : 1);
 	}
 	else {
 		stopAnimationPlayback();

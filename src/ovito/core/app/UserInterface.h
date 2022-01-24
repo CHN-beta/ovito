@@ -56,10 +56,6 @@ public:
 	/// Returns the manager of asynchronous tasks belonging to this user interface.
 	TaskManager& taskManager() { return _taskManager; }
 
-	/// Creates an object that represents a longer-running operation executed in the main or GUI thread 
-	/// in the context of this abstract user interface. 
-	MainThreadOperation createOperation(bool visibleInUserInterface);
-
 	/// Gives the active viewport the input focus.
 	virtual void setViewportInputFocus() {}
 	

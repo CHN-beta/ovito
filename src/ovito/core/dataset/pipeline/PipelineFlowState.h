@@ -358,19 +358,10 @@ public:
 	/// Also update the data path to point to the new object.
 	DataObject* makeMutableInplace(ConstDataObjectPath& path);
 
-	/// Instantiates a new data object, passes the given parameters to its class constructor,
-	/// assigns the given data source object, and finally inserts the data object into this pipeline flow state.
-	template<class DataObjectType, class PipelineObjectClass, typename... Args>
-	DataObjectType* createObject(const PipelineObjectClass* dataSource, ObjectInitializationHints initializationHints, Args&&... args) {
-		return mutableData()->createObject<DataObjectType, PipelineObjectClass, Args...>(dataSource, initializationHints, std::forward<Args>(args)...);
-	}
-
-	/// Instantiates a new data object, passes the given parameters to its class constructor,
-	/// assign a unique identifier to the object, assigns the given data source object, and
-	/// finally inserts the data object into this pipeline flow state.
-	template<class DataObjectType, class PipelineObjectClass, typename... Args>
-	DataObjectType* createObject(const QString& baseName, const PipelineObjectClass* dataSource, ObjectInitializationHints initializationHints, Args&&... args) {
-		return mutableData()->createObject<DataObjectType, PipelineObjectClass, Args...>(baseName, dataSource, initializationHints, std::forward<Args>(args)...);
+	/// Instantiates a new data object.
+	template<class DataObjectType, typename... Args>
+	DataObjectType* createObject(Args&&... args) {
+		return mutableData()->createObject<DataObjectType>(std::forward<Args>(args)...);
 	}
 
 	/// Adds a data object to this collection while making sure the object gets a unique identifier.

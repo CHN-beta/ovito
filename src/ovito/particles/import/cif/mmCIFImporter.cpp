@@ -141,10 +141,10 @@ void mmCIFImporter::FrameLoader::loadFile()
 
 		// Allocate property arrays for atoms.
 		setParticleCount(natoms);
-		PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty, false, initializationHints());
-		PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty, false, initializationHints());
-		PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int, 1, 0, false);
-		PropertyAccess<int> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int, 1, 0, false);
+		PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+		PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+		PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int);
+		PropertyAccess<int> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int);
 
 		// Give these particle properties new titles, which are displayed in the GUI under the file source.
 		atomNameProperty.buffer()->setTitle(tr("Atom names"));
@@ -184,7 +184,7 @@ void mmCIFImporter::FrameLoader::loadFile()
 
 		// Parse the optional site occupancy information.
 		if(hasOccupancy) {
-			PropertyAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::Float, 1, 0, false);
+			PropertyAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::Float);
 			FloatType* occupancyIter = occupancyProperty.begin();
 			for(const gemmi::Chain& chain : model.chains) {
 				for(const gemmi::Residue& residue : chain.residues) {

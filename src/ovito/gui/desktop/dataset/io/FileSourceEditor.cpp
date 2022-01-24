@@ -290,7 +290,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 	if(!importerType) {
 
 		// Detect file format.
-		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(fileSource->dataset(), ObjectInitializationHint::LoadUserDefaults, url, fileSource->importer());
+		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(fileSource->dataset(), url, fileSource->importer());
 		if(!operation.waitForFuture(importerFuture))
 			return false;
 

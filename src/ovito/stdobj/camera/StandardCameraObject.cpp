@@ -221,7 +221,7 @@ PipelineStatus CameraVis::render(TimePoint time, const ConstDataObjectPath& path
 
 			// Check if we already have a valid rendering primitive that is up to date.
 			if(!conePrimitive.positions()) {
-				DataBufferAccessAndRef<Point3> targetLineVertices = DataBufferPtr::create(renderer->dataset(), 0, DataBuffer::Float, 3, 0, false);
+				DataBufferAccessAndRef<Point3> targetLineVertices = DataBufferPtr::create(renderer->dataset(), 0, DataBuffer::Float, 3);
 				if(targetDistance != 0) {
 					if(showTargetLine) {
 						targetLineVertices.push_back(Point3::Origin());
@@ -280,7 +280,7 @@ PipelineStatus CameraVis::render(TimePoint time, const ConstDataObjectPath& path
 
 		// Load 3d camera icon.
 		if(!_cameraIconVertices) {
-			DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(renderer->dataset(), 0, DataBuffer::Float, 3, 0, false);
+			DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(renderer->dataset(), 0, DataBuffer::Float, 3);
 			// Load and parse PLY file that contains the camera icon.
 			QFile meshFile(QStringLiteral(":/core/3dicons/camera.ply"));
 			meshFile.open(QIODevice::ReadOnly | QIODevice::Text);

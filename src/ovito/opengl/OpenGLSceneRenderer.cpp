@@ -350,7 +350,7 @@ bool OpenGLSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOpera
 
 		// Render additional content that is only visible in the interactive viewports.
 		if(viewport() && isInteractive()) {
-			renderInteractiveContent();
+			renderInteractiveContent(operation);
 			OVITO_REPORT_OPENGL_ERRORS(this);
 		}
 
@@ -573,7 +573,7 @@ void OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
 					}
 				}
 				if(!fullyOpaqueIndices.empty()) {
-					DataBufferAccessAndRef<int> indexArray = DataBufferPtr::create(dataset(), fullyOpaqueIndices.size(), DataBuffer::Int, 1, 0, false);
+					DataBufferAccessAndRef<int> indexArray = DataBufferPtr::create(dataset(), fullyOpaqueIndices.size(), DataBuffer::Int);
 					std::copy(fullyOpaqueIndices.begin(), fullyOpaqueIndices.end(), indexArray.begin());
 					cache.opaqueIndices = indexArray.take();
 				}

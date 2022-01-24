@@ -290,17 +290,6 @@ PipelineFlowState ModifierApplication::evaluateSynchronous(const PipelineEvaluat
 }
 
 /******************************************************************************
-* Compute the preliminary results of the upstream pipeline in a synchronous 
-* fashion at the current animation time.
-******************************************************************************/
-PipelineFlowState ModifierApplication::evaluateInputSynchronousAtCurrentTime() const
-{
-	return evaluateInputSynchronous(PipelineEvaluationRequest(
-		Application::instance()->executionContext() == ExecutionContext::Interactive ? LoadUserDefaults : LoadFactoryDefaults,
-		dataset()->animationSettings()->time()));
-}
-
-/******************************************************************************
 * Asks the object for the result of the data pipeline.
 ******************************************************************************/
 SharedFuture<PipelineFlowState> ModifierApplication::evaluate(const PipelineEvaluationRequest& request)

@@ -210,17 +210,18 @@ PropertyObject* ParaViewVTPBondsImporter::FrameLoader::createBondPropertyForData
 {
 	int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
 	auto name = xml.attributes().value("Name");
+	DataBuffer::InitializationFlags initFlags = preserveExistingData ? DataBuffer::InitializeMemory : DataBuffer::NoFlags;
 
 	if(name.compare(QLatin1String("id1"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
 		vectorComponent = 0;
-		return bonds()->createProperty(BondsObject::ParticleIdentifiersProperty, preserveExistingData, initializationHints());
+		return bonds()->createProperty(BondsObject::ParticleIdentifiersProperty, initFlags);
 	}
 	else if(name.compare(QLatin1String("id2"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
 		vectorComponent = 1;
-		return bonds()->createProperty(BondsObject::ParticleIdentifiersProperty, preserveExistingData, initializationHints());
+		return bonds()->createProperty(BondsObject::ParticleIdentifiersProperty, initFlags);
 	}
 	else {
-		return bonds()->createProperty(name.toString(), PropertyObject::Float, numComponents, 0, preserveExistingData);
+		return bonds()->createProperty(name.toString(), PropertyObject::Float, numComponents, initFlags);
 	}
 	return nullptr;
 }
@@ -252,7 +253,7 @@ void BondsParaViewVTMFileFilter::postprocessDatasets(FileSourceImporter::LoadOpe
 		}
 
 		// Perform lookup of particle IDs.
-		PropertyAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty, false, request.initializationHints);
+		PropertyAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty);
 		auto t = bondTopologyArray.begin();
 		for(const ParticleIndexPair& bond : ConstPropertyAccess<ParticleIndexPair>(bondParticleIdentifiers)) {
 			auto iter1 = idToIndexMap.find(bond[0]);

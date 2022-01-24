@@ -52,6 +52,11 @@ public:
 	/// Initializes the element type to default parameter values.
 	virtual void initializeType(const PropertyReference& property, ObjectInitializationHints initializationHints);
 
+	/// Initializes the element type to default parameter values.
+	void initializeType(const PropertyReference& property) {
+		initializeType(property, ExecutionContext::isInteractive() ? ObjectInitializationHint::LoadUserDefaults : ObjectInitializationHint::LoadFactoryDefaults);
+	}
+
 	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
 	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
 

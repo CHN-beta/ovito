@@ -79,7 +79,7 @@ void BondsObject::generatePeriodicImageProperty(const ParticlesObject* particles
 	const AffineTransformation inverseCellMatrix = simulationCellObject->reciprocalCellMatrix();
 
 	auto topoIter = bondTopologyProperty.begin();
-	PropertyAccess<Vector3I> bondPeriodicImageProperty = createProperty(BondsObject::PeriodicImageProperty, false, ObjectInitializationHint::LoadFactoryDefaults);
+	PropertyAccess<Vector3I> bondPeriodicImageProperty = createProperty(BondsObject::PeriodicImageProperty);
 	for(Vector3I& pbcVec : bondPeriodicImageProperty) {
 		size_t particleIndex1 = (*topoIter)[0];
 		size_t particleIndex2 = (*topoIter)[1];
@@ -100,7 +100,7 @@ void BondsObject::generatePeriodicImageProperty(const ParticlesObject* particles
 /******************************************************************************
 * Creates new bonds making sure bonds are not created twice.
 ******************************************************************************/
-size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const ParticlesObject* particles, ObjectInitializationHints initializationHints, const std::vector<PropertyPtr>& bondProperties, DataOORef<const BondType> bondType)
+size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const ParticlesObject* particles, const std::vector<PropertyPtr>& bondProperties, DataOORef<const BondType> bondType)
 {
 	OVITO_ASSERT(isSafeToModify());
 
@@ -112,9 +112,9 @@ size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsV
 		setElementCount(newBonds.size());
 
 		// Create essential bond properties.
-		PropertyAccess<ParticleIndexPair> topologyProperty = createProperty(BondsObject::TopologyProperty, false, initializationHints);
-		PropertyAccess<Vector3I> periodicImageProperty = createProperty(BondsObject::PeriodicImageProperty, false, initializationHints);
-		PropertyObject* bondTypeProperty = bondType ? createProperty(BondsObject::TypeProperty, false, initializationHints) : nullptr;
+		PropertyAccess<ParticleIndexPair> topologyProperty = createProperty(BondsObject::TopologyProperty);
+		PropertyAccess<Vector3I> periodicImageProperty = createProperty(BondsObject::PeriodicImageProperty);
+		PropertyObject* bondTypeProperty = bondType ? createProperty(BondsObject::TypeProperty) : nullptr;
 
 		// Transfer per-bond data into the standard property arrays.
 		auto t = topologyProperty.begin();
@@ -176,8 +176,8 @@ size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsV
 		setElementCount(outputBondCount);
 
 		PropertyAccess<ParticleIndexPair> newBondsTopology = expectMutableProperty(BondsObject::TopologyProperty);
-		PropertyAccess<Vector3I> newBondsPeriodicImages = createProperty(BondsObject::PeriodicImageProperty, true, initializationHints);
-		PropertyAccess<int> newBondTypeProperty = bondType ? createProperty(BondsObject::TypeProperty, true, initializationHints) : nullptr;
+		PropertyAccess<Vector3I> newBondsPeriodicImages = createProperty(BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
+		PropertyAccess<int> newBondTypeProperty = bondType ? createProperty(BondsObject::TypeProperty, DataBuffer::InitializeMemory) : nullptr;
 
 		if(newBondTypeProperty && !newBondTypeProperty.buffer()->elementType(bondType->numericId()))
 			newBondTypeProperty.buffer()->addElementType(bondType);
@@ -227,10 +227,10 @@ size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsV
 
 			PropertyObject* propertyObject;
 			if(bprop->type() != BondsObject::UserProperty) {
-				propertyObject = createProperty(bprop->type(), true, initializationHints);
+				propertyObject = createProperty(bprop->type(), DataBuffer::InitializeMemory);
 			}
 			else {
-				propertyObject = createProperty(bprop->name(), bprop->dataType(), bprop->componentCount(), bprop->stride(), true);
+				propertyObject = createProperty(bprop->name(), bprop->dataType(), bprop->componentCount(), DataBuffer::InitializeMemory);
 			}
 
 			// Copy bond property data.
@@ -254,7 +254,7 @@ ConstPropertyPtr BondsObject::inputBondWidths() const
 	}
 
 	// Return uniform default width for all bonds.
-	PropertyPtr buffer = OOClass().createStandardProperty(dataset(), elementCount(), BondsObject::WidthProperty, false, ObjectInitializationHint::LoadFactoryDefaults);
+	PropertyPtr buffer = OOClass().createStandardProperty(dataset(), elementCount(), BondsObject::WidthProperty);
 	buffer->fill<FloatType>(1);
 	return buffer;
 }
@@ -262,24 +262,24 @@ ConstPropertyPtr BondsObject::inputBondWidths() const
 /******************************************************************************
 * Creates a storage object for standard bond properties.
 ******************************************************************************/
-PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t bondsCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const
+PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
 	// Initialize memory if requested.
-	if(initializeMemory && containerPath.size() >= 2) {
+	if(flags.testFlag(DataBuffer::InitializeMemory) && containerPath.size() >= 2) {
 		// Certain standard properties need to be initialized with default values determined by the attached visual elements.
 		if(type == ColorProperty) {
 			if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(containerPath[containerPath.size()-2])) {
 				ConstPropertyPtr property = particles->inputBondColors();
-				OVITO_ASSERT(property && property->size() == bondsCount && property->type() == ColorProperty);
+				OVITO_ASSERT(property && property->size() == elementCount && property->type() == ColorProperty);
 				return std::move(property).makeMutable();
 			}
 		}
 		else if(type == WidthProperty) {
 			if(const BondsObject* bonds = dynamic_object_cast<BondsObject>(containerPath.back())) {
-				OVITO_ASSERT(bonds->elementCount() == bondsCount);
+				OVITO_ASSERT(bonds->elementCount() == elementCount);
 				ConstPropertyPtr property = bonds->inputBondWidths();
 				OVITO_ASSERT(property);
-				OVITO_ASSERT(property->size() == bondsCount);
+				OVITO_ASSERT(property->size() == elementCount);
 				OVITO_ASSERT(property->type() == WidthProperty);
 				return std::move(property).makeMutable();
 			}
@@ -288,38 +288,31 @@ PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* da
 
 	int dataType;
 	size_t componentCount;
-	size_t stride;
 
 	switch(type) {
 	case TypeProperty:
 	case SelectionProperty:
 		dataType = PropertyObject::Int;
 		componentCount = 1;
-		stride = sizeof(int);
 		break;
 	case LengthProperty:
 	case TransparencyProperty:
 	case WidthProperty:
 		dataType = PropertyObject::Float;
 		componentCount = 1;
-		stride = sizeof(FloatType);
 		break;
 	case ColorProperty:
 		dataType = PropertyObject::Float;
 		componentCount = 3;
-		stride = componentCount * sizeof(FloatType);
-		OVITO_ASSERT(stride == sizeof(Color));
 		break;
 	case TopologyProperty:
 	case ParticleIdentifiersProperty:
 		dataType = PropertyObject::Int64;
 		componentCount = 2;
-		stride = componentCount * sizeof(qlonglong);
 		break;
 	case PeriodicImageProperty:
 		dataType = PropertyObject::Int;
 		componentCount = 3;
-		stride = componentCount * sizeof(int);
 		break;
 	default:
 		OVITO_ASSERT_MSG(false, "BondsObject::createStandardPropertyInternal", "Invalid standard property type");
@@ -331,10 +324,9 @@ PropertyPtr BondsObject::OOMetaClass::createStandardPropertyInternal(DataSet* da
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, initializationHints, bondsCount, dataType, componentCount, stride,
-								propertyName, false, type, componentNames);
+	PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
 
-	if(initializeMemory) {
+	if(flags.testFlag(DataBuffer::InitializeMemory)) {
 		// Default-initialize property values with zeros.
 		property->fillZero();
 	}

@@ -142,7 +142,7 @@ void GuiApplication::createQtApplication(int& argc, char** argv)
 /******************************************************************************
 * Prepares application to start running.
 ******************************************************************************/
-UserInterface* GuiApplication::startupApplication()
+MainThreadOperation GuiApplication::startupApplication()
 {
 	if(guiMode()) {
 		// Set up graphical user interface.
@@ -190,11 +190,11 @@ UserInterface* GuiApplication::startupApplication()
 			return nullptr;
 		}
 #endif
-		return mainWin;
+		return MainThreadOperation::create(*mainWin, ExecutionContext::Interactive);
 	}
 	else {
 		// Use this application's command line user interface.
-		return this;
+		return MainThreadOperation::create(*this, ExecutionContext::Scripting);
 	}
 }
 
@@ -281,10 +281,10 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
 		try {
 			if(MainWindow* mainWindow = qobject_cast<MainWindow*>(QApplication::activeWindow())) {
 				if(openEvent->file().endsWith(".ovito", Qt::CaseInsensitive)) {
-					mainWindow->datasetContainer().loadDataset(openEvent->file(), mainWindow->createOperation(true));
+					mainWindow->datasetContainer().loadDataset(openEvent->file(), MainThreadOperation::create(*mainWindow, true));
 				}
 				else {
-					mainWindow->datasetContainer().importFiles({openEvent->url()}, mainWindow->createOperation(true));
+					mainWindow->datasetContainer().importFiles({openEvent->url()}, MainThreadOperation::create(*mainWindow, true));
 					mainWindow->datasetContainer().currentSet()->undoStack().setClean();
 				}
 			}

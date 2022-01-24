@@ -49,7 +49,7 @@ public:
 	virtual void registerCommandLineOptions(QCommandLineParser& cmdLineParser) {}
 
 	/// \brief Is called by the system during standalone application startup after the main window has been created.
-	virtual bool applicationStarting(UserInterface& userInterface) { return true; }
+	virtual bool applicationStarting(MainThreadOperation& operation) { return true; }
 
 	/// \brief Is called by the system after the standalone application has been completely initialized.
 	virtual void applicationStarted(MainThreadOperation& operation) {}

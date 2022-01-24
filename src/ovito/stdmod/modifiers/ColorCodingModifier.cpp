@@ -130,7 +130,7 @@ void ColorCodingModifier::initializeModifier(const ModifierInitializationRequest
 	DelegatingModifier::initializeModifier(request);
 
 	// When the modifier is inserted, automatically select the most recently added property from the input.
-	if(sourceProperty().isNull() && delegate() && request.initializationHints().testFlag(LoadUserDefaults)) {
+	if(sourceProperty().isNull() && delegate() && ExecutionContext::isInteractive()) {
 		const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
 		if(const PropertyContainer* container = input.getLeafObject(delegate()->inputContainerRef())) {
 			PropertyReference bestProperty;
@@ -142,7 +142,7 @@ void ColorCodingModifier::initializeModifier(const ModifierInitializationRequest
 		}
 
 		// Automatically adjust value range to input.
-		adjustRange(request.initializationHints());
+		adjustRange();
 	}
 }
 
@@ -210,14 +210,14 @@ bool ColorCodingModifier::determinePropertyValueRange(const PipelineFlowState& s
 * in the selected particle or bond property.
 * Returns true if successful.
 ******************************************************************************/
-bool ColorCodingModifier::adjustRange(ObjectInitializationHints initializationHints)
+bool ColorCodingModifier::adjustRange()
 {
 	FloatType minValue = std::numeric_limits<FloatType>::max();
 	FloatType maxValue = std::numeric_limits<FloatType>::lowest();
 
 	// Loop over all input data.
 	bool success = false;
-	PipelineEvaluationRequest request(initializationHints, dataset()->animationSettings()->time());
+	PipelineEvaluationRequest request(dataset()->animationSettings()->time());
 	for(ModifierApplication* modApp : modifierApplications()) {
 		const PipelineFlowState& inputState = modApp->evaluateInputSynchronous(request);
 
@@ -240,7 +240,7 @@ bool ColorCodingModifier::adjustRange(ObjectInitializationHints initializationHi
 * Sets the start and end value to the minimum and maximum value of the selected
 * particle or bond property determined over the entire animation sequence.
 ******************************************************************************/
-bool ColorCodingModifier::adjustRangeGlobal(ObjectInitializationHints initializationHints, MainThreadOperation& operation)
+bool ColorCodingModifier::adjustRangeGlobal(MainThreadOperation& operation)
 {
 	ViewportSuspender noVPUpdates(this);
 
@@ -258,7 +258,7 @@ bool ColorCodingModifier::adjustRangeGlobal(ObjectInitializationHints initializa
 		for(ModifierApplication* modApp : modifierApplications()) {
 
 			// Evaluate data pipeline up to this color coding modifier.
-			SharedFuture<PipelineFlowState> stateFuture = modApp->evaluateInput(PipelineEvaluationRequest(initializationHints, time));
+			SharedFuture<PipelineFlowState> stateFuture = modApp->evaluateInput(PipelineEvaluationRequest(time));
 			if(!operation.waitForFuture(stateFuture))
 				break;
 
@@ -303,14 +303,14 @@ QString ColorCodingModifier::colorGradientType() const
 /******************************************************************************
 * Assigns a new color gradient based on its class name.
 ******************************************************************************/
-void ColorCodingModifier::setColorGradientType(const QString& typeName, ExecutionContext executionContext) 
+void ColorCodingModifier::setColorGradientType(const QString& typeName) 
 {
 	OvitoClassPtr descriptor = PluginManager::instance().findClass(QString(), typeName);
 	if(!descriptor) {
 		qWarning() << "setColorGradientType: Color gradient class" << typeName << "does not exist.";
 		return;
 	}
-	OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(dataset(), executionContext));
+	OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(dataset()));
 	if(gradient) {
 		setColorGradient(std::move(gradient));
 #ifndef OVITO_DISABLE_QSETTINGS
@@ -395,7 +395,7 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
 	if(!std::isfinite(endValue)) endValue = std::numeric_limits<FloatType>::max();
 
 	// Create the color output property.
-    PropertyAccess<Color> colorProperty = container->createProperty(outputColorPropertyId(), (bool)selectionProperty, request.initializationHints(), objectPath);
+    PropertyAccess<Color> colorProperty = container->createProperty(outputColorPropertyId(), (bool)selectionProperty ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
 
 	ConstPropertyAccessAndRef<int> selection(std::move(selectionProperty));
 	bool result = property->forEach(vecComponent, [&](size_t i, auto v) {

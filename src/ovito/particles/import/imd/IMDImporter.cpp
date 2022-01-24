@@ -158,7 +158,7 @@ void IMDImporter::FrameLoader::loadFile()
 	stream.seek(headerOffset, headerLineNumber);
 
 	// Parse data columns.
-	InputColumnReader columnParser(columnMapping, particles(), initializationHints());
+	InputColumnReader columnParser(columnMapping, particles());
 	for(size_t i = 0; i < numAtoms; i++) {
 		if(!setProgressValueIntermittent(i)) return;
 		try {

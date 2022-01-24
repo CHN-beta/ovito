@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/InitializationHints.h>
+#include <ovito/core/utilities/concurrent/ExecutionContext.h>
 #include "Promise.h"
 
 namespace Ovito {
@@ -32,15 +33,15 @@ namespace Ovito {
 /**
  * A promise-like object that is used during long-running program operations that are performed synchronously by the program's main thread.
  * 
- * The operation is automatically put into the 'finished' state by its destructor.
+ * The operation is automatically put into the 'finished' state by the class' destructor.
  */
 class OVITO_CORE_EXPORT MainThreadOperation : public Promise<>
 {
 public:
 
 	/// Creates a promise that represents an asynchronous operation running in the main thread.
-	static MainThreadOperation create(UserInterface& userInterface, ObjectInitializationHints initializationHints, bool visibleInUserInterface = false) {
-		return MainThreadOperation(std::make_shared<ProgressingTask>(Task::Started), userInterface, initializationHints, visibleInUserInterface);
+	static MainThreadOperation create(UserInterface& userInterface, bool visibleInUserInterface = false) {
+		return MainThreadOperation(std::make_shared<ProgressingTask>(Task::Started), userInterface, visibleInUserInterface);
 	}
 
 	/// No copy constructor.
@@ -54,12 +55,6 @@ public:
 
 	/// A promise is not copy assignable.
 	MainThreadOperation& operator=(const MainThreadOperation& other) = delete;
-
-	/// Returns how to initialize newly created objects.
-	ObjectInitializationHints initializationHints() const { return _initializationHints; }
-
-	/// Changes how to initialize newly created objects.
-	void setInitializationHints(ObjectInitializationHints hints) { _initializationHints = hints; }
 
 	/// Returns the abstract user interface this operation is being performed in. 
 	UserInterface& userInterface() const { return _userInterface; }
@@ -113,25 +108,24 @@ public:
 protected:
 
 	/// Constructor.
-	explicit MainThreadOperation(TaskPtr p, UserInterface& userInterface, ObjectInitializationHints initializationHints, bool visibleInUserInterface) noexcept;
+	explicit MainThreadOperation(TaskPtr p, UserInterface& userInterface, bool visibleInUserInterface) noexcept;
 
 	/// The abstract user interface this operation is being performed in. 
 	UserInterface& _userInterface;
-
-	/// Indicates how to initialize newly created objects.
-	ObjectInitializationHints _initializationHints;
 };
 
 /**
  * A helper class that mimics a MainThreadOperation based on an existing asynchronous task.
+ * In contrast to MainThreadOperation, it does not automatically set the task to the 'finished'
+ * state in its destructor.
  */
 class OVITO_CORE_EXPORT MainThreadTaskWrapper : public MainThreadOperation
 {
 public:
 
 	/// Constructor.
-	MainThreadTaskWrapper(TaskPtr task, UserInterface& userInterface, ObjectInitializationHints initializationHints) : 
-		MainThreadOperation(std::move(task), userInterface, initializationHints, false) {}
+	MainThreadTaskWrapper(TaskPtr task, UserInterface& userInterface) : 
+		MainThreadOperation(std::move(task), userInterface, false) {}
 
 	/// Destructor.
 	~MainThreadTaskWrapper() { 

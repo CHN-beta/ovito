@@ -45,9 +45,9 @@ ElasticStrainEngine::ElasticStrainEngine(
 	_inputCrystalStructure(inputCrystalStructure),
 	_latticeConstant(latticeConstant),
 	_pushStrainTensorsForward(pushStrainTensorsForward),
-	_volumetricStrains(ParticlesObject::OOClass().createUserProperty(request.dataset(), positions->size(), PropertyObject::Float, 1, 0, QStringLiteral("Volumetric Strain"), false)),
-	_strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), positions->size(), ParticlesObject::ElasticStrainTensorProperty, false, request.initializationHints()) : nullptr),
-	_deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), positions->size(), ParticlesObject::ElasticDeformationGradientProperty, false, request.initializationHints()) : nullptr)
+	_volumetricStrains(ParticlesObject::OOClass().createUserProperty(request.dataset(), positions->size(), PropertyObject::Float, 1, QStringLiteral("Volumetric Strain"))),
+	_strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), positions->size(), ParticlesObject::ElasticStrainTensorProperty) : nullptr),
+	_deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), positions->size(), ParticlesObject::ElasticDeformationGradientProperty) : nullptr)
 {
 	setAtomClusters(_structureAnalysis->atomClusters());
 	if(inputCrystalStructure == StructureAnalysis::LATTICE_FCC || inputCrystalStructure == StructureAnalysis::LATTICE_BCC || inputCrystalStructure == StructureAnalysis::LATTICE_CUBIC_DIAMOND) {
@@ -190,7 +190,7 @@ void ElasticStrainEngine::applyResults(const ModifierEvaluationRequest& request,
 	StructureIdentificationEngine::applyResults(request, state);
 
 	// Output cluster graph.
-	ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(request.modApp(), request.initializationHints());
+	ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(request.modApp());
 	clusterGraphObj->setStorage(clusterGraph());
 
 	// Output particle properties.

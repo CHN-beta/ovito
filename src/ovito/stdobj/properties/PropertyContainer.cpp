@@ -158,7 +158,7 @@ size_t PropertyContainer::deleteElements(const boost::dynamic_bitset<>& mask)
 * Creates a property and adds it to the container.
 * In case the property already exists, it is made sure that it's safe to modify it.
 ******************************************************************************/
-PropertyObject* PropertyContainer::createProperty(int typeId, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath)
+PropertyObject* PropertyContainer::createProperty(int typeId, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath)
 {
 	OVITO_ASSERT(isSafeToModify());
 
@@ -176,19 +176,19 @@ PropertyObject* PropertyContainer::createProperty(int typeId, bool initializeMem
 		OVITO_ASSERT(existingProperty->size() == elementCount());
 		if(existingProperty->isSafeToModify())
 			return const_cast<PropertyObject*>(existingProperty);
-		if(initializeMemory)
+		if(flags.testFlag(DataBuffer::InitializeMemory))
 			return makeMutable(existingProperty);
 
 		// If no memory initialization is requested, create a new PropertyObject from scratch and just adopt 
 		// the existing ElementType list to save time.	
-		PropertyPtr newProperty = getOOMetaClass().createStandardProperty(dataset(), elementCount(), typeId, false, initializationHints, containerPath);
+		PropertyPtr newProperty = getOOMetaClass().createStandardProperty(dataset(), elementCount(), typeId, flags, containerPath);
 		newProperty->setElementTypes(existingProperty->elementTypes());
 		replaceReferencesTo(existingProperty, newProperty);
 		return newProperty;
 	}
 	else {
 		// Create a new property object.
-		PropertyPtr newProperty = getOOMetaClass().createStandardProperty(dataset(), elementCount(), typeId, initializeMemory, initializationHints, containerPath);
+		PropertyPtr newProperty = getOOMetaClass().createStandardProperty(dataset(), elementCount(), typeId, flags, containerPath);
 		addProperty(newProperty);
 		return newProperty;
 	}
@@ -198,7 +198,7 @@ PropertyObject* PropertyContainer::createProperty(int typeId, bool initializeMem
 * Creates a user-defined property and adds it to the container.
 * In case the property already exists, it is made sure that it's safe to modify it.
 ******************************************************************************/
-PropertyObject* PropertyContainer::createProperty(const QString& name, int dataType, size_t componentCount, size_t stride, bool initializeMemory, QStringList componentNames)
+PropertyObject* PropertyContainer::createProperty(const QString& name, int dataType, size_t componentCount, DataBuffer::InitializationFlags flags, QStringList componentNames)
 {
 	OVITO_ASSERT(isSafeToModify());
 
@@ -211,8 +211,6 @@ PropertyObject* PropertyContainer::createProperty(const QString& name, int dataT
 			throwException(tr("Existing property '%1' has a different data type.").arg(name));
 		if(existingProperty->componentCount() != componentCount)
 			throwException(tr("Existing property '%1' has a different number of components.").arg(name));
-		if(stride != 0 && existingProperty->stride() != stride)
-			throwException(tr("Existing property '%1' has a different stride.").arg(name));
 
 		PropertyObject* newProperty = makeMutable(existingProperty);
 		OVITO_ASSERT(newProperty->isSafeToModify());
@@ -221,7 +219,7 @@ PropertyObject* PropertyContainer::createProperty(const QString& name, int dataT
 	}
 	else {
 		// Create a new property object.
-		PropertyPtr newProperty = getOOMetaClass().createUserProperty(dataset(), elementCount(), dataType, componentCount, stride, name, initializeMemory, 0, std::move(componentNames));
+		PropertyPtr newProperty = getOOMetaClass().createUserProperty(dataset(), elementCount(), dataType, componentCount, name, flags, 0, std::move(componentNames));
 		addProperty(newProperty);
 		return newProperty;
 	}

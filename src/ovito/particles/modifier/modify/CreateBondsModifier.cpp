@@ -163,7 +163,7 @@ void CreateBondsModifier::initializeModifier(const ModifierInitializationRequest
 		}
 
 		// Initialize the pair-wise cutoffs based on the van der Waals radii of the particle types.
-		if(request.initializationHints().testFlag(LoadUserDefaults) && pairwiseCutoffs().empty()) {
+		if(ExecutionContext::isInteractive() && pairwiseCutoffs().empty()) {
 			if(const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty)) {
 				PairwiseCutoffsList cutoffList;
 				for(const ElementType* type1 : typeProperty->elementTypes()) {
@@ -189,7 +189,7 @@ void CreateBondsModifier::initializeModifier(const ModifierInitializationRequest
 	}
 	if(bondType() && bondType()->numericId() == 0) {
 		bondType()->setNumericId(bondTypeId);
-		bondType()->initializeType(BondPropertyReference(BondsObject::TypeProperty), request.initializationHints());
+		bondType()->initializeType(BondPropertyReference(BondsObject::TypeProperty));
 	}
 }
 
@@ -298,7 +298,7 @@ Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const 
 		bondsObject->verifyIntegrity();
 	}
 	else {
-		bondsObject = DataOORef<BondsObject>::create(dataset(), request.initializationHints() | ObjectInitializationHint::WithoutVisElement);
+		bondsObject = DataOORef<BondsObject>::create(dataset(), ObjectInitializationHint::WithoutVisElement);
 		bondsObject->setDataSource(request.modApp());
 		bondsObject->setVisElement(bondsVis());
 	}
@@ -392,7 +392,7 @@ void CreateBondsModifier::BondsEngine::perform()
 		return;
 
 	// Insert bonds into BondsObject.
-	_numGeneratedBonds = bonds()->addBonds(bondsList, nullptr, _particles.get(), initializationHints(), {}, std::move(_bondType));
+	_numGeneratedBonds = bonds()->addBonds(bondsList, nullptr, _particles.get(), {}, std::move(_bondType));
 
 	// Release data that is no longer needed.
 	_positions.reset();
@@ -428,7 +428,7 @@ void CreateBondsModifier::BondsEngine::applyResults(const ModifierEvaluationRequ
 
 	// If the total number of bonds is unusually high, we better turn off bonds display to prevent the program from freezing.
 	size_t bondsCount = bonds()->elementCount();
-	if(bondsCount > 1000000 && modifier->autoDisableBondDisplay() && modifier->bondsVis() && request.initializationHints().testFlag(LoadUserDefaults)) {
+	if(bondsCount > 1000000 && modifier->autoDisableBondDisplay() && modifier->bondsVis() && ExecutionContext::isInteractive()) {
 		modifier->bondsVis()->setEnabled(false);
 		state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Created %1 bonds, which is a lot. As a precaution, the display of bonds has been disabled. You can manually enable it again if needed.").arg(_numGeneratedBonds)));
 	}
@@ -450,7 +450,7 @@ bool CreateBondsModifier::applyCachedResultsSynchronous(const ModifierEvaluation
 
 	// Bonds have not been computed yet, but still add the empty BondsObject to the pipeline output
 	// so that subsequent modifiers in the pipeline see it.
-	state.expectMutableObject<ParticlesObject>()->addBonds({}, bondsVis(), request.initializationHints(), {}, bondType());
+	state.expectMutableObject<ParticlesObject>()->addBonds({}, bondsVis(), {}, bondType());
 	OVITO_ASSERT(state.expectObject<ParticlesObject>()->bonds());
 
 	return false;

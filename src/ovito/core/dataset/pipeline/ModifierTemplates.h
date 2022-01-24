@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -64,13 +64,13 @@ public:
 	/// \param templateName The name of the new template. If a temnplate with the same name exists, it is overwritten.
 	/// \param modifiers The list of one or more modifiers from which the template should be created.
 	/// \return The index of the created template.
-	int createTemplate(const QString& templateName, const QVector<OORef<Modifier>>& modifiers, UserInterface& userInterface);
+	int createTemplate(const QString& templateName, const QVector<OORef<Modifier>>& modifiers, MainThreadOperation& operation);
 
-	/// \brief Creates a new modifier template given a serialized version of the modifier.
+	/// \brief Creates a new modifier template from a serialized version of the modifier.
 	/// \param templateName The name of the new template. If a temnplate with the same name exists, it is overwritten.
 	/// \param data The serialized modifier data, which was originally obtained by a call to templateData().
 	/// \return The index of the created template.
-	int createTemplate(const QString& templateName, QByteArray data);
+	int restoreTemplate(const QString& templateName, QByteArray data);
 
 	/// \brief Deletes the given modifier template from the store.
 	void removeTemplate(const QString& templateName);
@@ -79,7 +79,7 @@ public:
 	void renameTemplate(const QString& oldTemplateName, const QString& newTemplateName);
 
 	/// \brief Instantiates the modifiers that are stored under the given template name.
-	QVector<OORef<Modifier>> instantiateTemplate(const QString& templateName, DataSet* dataset);
+	QVector<OORef<Modifier>> instantiateTemplate(const QString& templateName, DataSet* dataset, MainThreadOperation& operation);
 
 	/// \brief Returns the serialized modifier data for the given template.
 	QByteArray templateData(const QString& templateName);

@@ -31,11 +31,10 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshFaces);
 /******************************************************************************
 * Creates a storage object for standard face properties.
 ******************************************************************************/
-PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t faceCount, int type, bool initializeMemory, ObjectInitializationHints initializationHints, const ConstDataObjectPath& containerPath) const
+PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataSet* dataset, size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
 {
 	int dataType;
 	size_t componentCount;
-	size_t stride;
 
 	switch(type) {
 	case SelectionProperty:
@@ -43,20 +42,17 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataSe
 	case FaceTypeProperty:
 		dataType = PropertyObject::Int;
 		componentCount = 1;
-		stride = sizeof(int);
 		break;
 	case ColorProperty:
 		dataType = PropertyObject::Float;
 		componentCount = 3;
-		stride = componentCount * sizeof(FloatType);
-		OVITO_ASSERT(stride == sizeof(Color));
+		OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Color));
 		break;
 	case BurgersVectorProperty:
 	case CrystallographicNormalProperty:
 		dataType = PropertyObject::Float;
 		componentCount = 3;
-		stride = componentCount * sizeof(FloatType);
-		OVITO_ASSERT(stride == sizeof(Vector3));
+		OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Vector3));
 		break;
 	default:
 		OVITO_ASSERT_MSG(false, "SurfaceMeshFaces::createStandardPropertyInternal", "Invalid standard property type");
@@ -67,32 +63,31 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataSe
 
 	OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-	PropertyPtr property = PropertyPtr::create(dataset, initializationHints, faceCount, dataType, componentCount, stride,
-								propertyName, false, type, componentNames);
+	PropertyPtr property = PropertyPtr::create(dataset, elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
 
 	// Initialize memory if requested.
-	if(initializeMemory && containerPath.size() >= 2) {
+	if(flags.testFlag(DataBuffer::InitializeMemory) && containerPath.size() >= 2) {
 		// Certain standard properties need to be initialized with default values determined by the attached visual elements.
 		if(type == ColorProperty) {
 			if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(containerPath[containerPath.size()-2])) {
 				ConstPropertyAccess<Color> regionColorProperty = surfaceMesh->regions()->getProperty(SurfaceMeshRegions::ColorProperty);
 				ConstPropertyAccess<int> faceRegionProperty = surfaceMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
-				if(regionColorProperty && faceRegionProperty && faceRegionProperty.size() == faceCount) {
+				if(regionColorProperty && faceRegionProperty && faceRegionProperty.size() == elementCount) {
 					// Inherit face colors from regions.
 					boost::transform(faceRegionProperty, PropertyAccess<Color>(property).begin(), 
 						[&](int region) { return (region >= 0 && region < regionColorProperty.size()) ? regionColorProperty[region] : Color(1,1,1); });
-					initializeMemory = false;
+					flags.setFlag(DataBuffer::InitializeMemory, false);
 				}
 				else if(SurfaceMeshVis* vis = surfaceMesh->visElement<SurfaceMeshVis>()) {
 					// Initialize face colors from uniform color set in SurfaceMeshVis.
 					property->fill(vis->surfaceColor());
-					initializeMemory = false;
+					flags.setFlag(DataBuffer::InitializeMemory, false);
 				}
 			}
 		}
 	}
 
-	if(initializeMemory) {
+	if(flags.testFlag(DataBuffer::InitializeMemory)) {
 		// Default-initialize property values with zeros.
 		property->fillZero();
 	}

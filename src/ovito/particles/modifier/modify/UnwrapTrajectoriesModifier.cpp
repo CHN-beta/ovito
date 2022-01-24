@@ -115,8 +115,8 @@ SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(co
 			std::move(inputFrameRange), 
 			executor(true), // require deferred execution of each frame
 			// Requests the next frame from the upstream pipeline.
-			[this,initializationHints = request.initializationHints()](int frame) {
-				return evaluateInput(PipelineEvaluationRequest(initializationHints, sourceFrameToAnimationTime(frame)));
+			[this](int frame) {
+				return evaluateInput(PipelineEvaluationRequest(sourceFrameToAnimationTime(frame)));
 			},
 			// This object processes each frame's data.
 			WorkingData{this});
@@ -199,7 +199,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
 		// Unwrap bonds by adjusting their PBC shift vectors.
 		if(outputParticles->bonds()) {
 			if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-				PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, true, ObjectInitializationHint::LoadFactoryDefaults);
+				PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
 				for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
 					size_t particleIndex1 = topologyProperty[bondIndex][0];
 					size_t particleIndex2 = topologyProperty[bondIndex][1];
@@ -223,7 +223,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
 
 	// Check if periodic cell boundary crossing have been precomputed or not.
 	if(request.time() > unwrappedUpToTime()) {
-		if(request.initializationHints().testFlag(ObjectInitializationHint::LoadUserDefaults))
+		if(ExecutionContext::isInteractive())
 			state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Particle crossings of periodic cell boundaries have not been determined yet.")));
 		else
 			throwException(tr("Particle crossings of periodic cell boundaries have not been determined yet. Cannot unwrap trajectories. Did you forget to call UnwrapTrajectoriesModifier.update()?"));
@@ -283,7 +283,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
 	// Unwrap bonds by adjusting their PBC shift vectors.
 	if(outputParticles->bonds()) {
 		if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-			PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, true, request.initializationHints());
+			PropertyAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
 			for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
 				size_t particleIndex1 = topologyProperty[bondIndex][0];
 				size_t particleIndex2 = topologyProperty[bondIndex][1];
