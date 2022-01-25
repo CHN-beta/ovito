@@ -227,6 +227,7 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
 	DataTable* table = state.createObject<DataTable>(QStringLiteral("scatter"), request.modApp(),
 		DataTable::Scatter, tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()),
 		out_y.take(), out_x.take());
+	OVITO_ASSERT(table == state.getObjectBy<DataTable>(modApp, QStringLiteral("scatter")));
 
 	QString statusMessage;
 	if(outputSelection) {
