@@ -50,7 +50,11 @@ public:
     constexpr bool dontCreateSubObjects() const { return _flags.testFlag(DontCreateSubObjects); }
     constexpr bool createSubObjects() const { return !dontCreateSubObjects(); }
     constexpr bool loadUserDefaults() const { return _flags.testFlag(LoadUserDefaults); }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 2, 0)
     constexpr bool createVisElement() const { return !_flags.testAnyFlags(InitializationFlags(DontCreateSubObjects | WithoutVisElement)); }
+#else
+    constexpr bool createVisElement() const { return !_flags.testFlag(DontCreateSubObjects) && !_flags.testFlag(WithoutVisElement); }
+#endif
 
 private:
 	DataSet* _dataset;
