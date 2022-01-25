@@ -58,7 +58,7 @@ class OVITO_PARTICLES_EXPORT XYZImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE XYZImporter(DataSet* dataset) : ParticleImporter(dataset), _autoRescaleCoordinates(true) {}
+	Q_INVOKABLE XYZImporter(ObjectCreationParams params) : ParticleImporter(params), _autoRescaleCoordinates(true) {}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("XYZ File"); }

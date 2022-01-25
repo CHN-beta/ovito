@@ -117,7 +117,7 @@ void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OpenGLSceneRenderer::OpenGLSceneRenderer(DataSet* dataset) : SceneRenderer(dataset) 
+OpenGLSceneRenderer::OpenGLSceneRenderer(ObjectCreationParams params) : SceneRenderer(params) 
 {
 	registerQtResources();
 

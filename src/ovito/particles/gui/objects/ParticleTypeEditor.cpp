@@ -120,22 +120,22 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	// Color presets menu.
 	QToolButton* colorPresetsMenuButton = createPresetsMenuButton(tr("color"),
 		// Loads the default parameter value.
-		[](ParticleType* ptype) { ptype->setColor(ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), ObjectInitializationHint::LoadUserDefaults)); },
+		[](ParticleType* ptype) { ptype->setColor(ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), true)); },
 		// Saves the current parameter value as new default preset.
 		[](const ParticleType* ptype) { ElementType::setDefaultColor(ParticlePropertyReference(ParticlesObject::TypeProperty), ptype->nameOrNumericId(), ptype->color()); },
 		// Determines if the current parameter value differs from the saved default value or not.
-		[](const ParticleType* ptype) { return (ptype->color() == ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), ObjectInitializationHint::LoadUserDefaults)); }
+		[](const ParticleType* ptype) { return (ptype->color() == ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), true)); }
 	);
 	gridLayout->addWidget(colorPresetsMenuButton, 0, 2);
 
 	// Display radius presets menu.
 	QToolButton* displayRadiusPresetsMenuButton = createPresetsMenuButton(tr("display radius"),
 		// Loads the default parameter value.
-		[](ParticleType* ptype) { ptype->setRadius(ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ObjectInitializationHint::LoadUserDefaults, ParticleType::DisplayRadius)); },
+		[](ParticleType* ptype) { ptype->setRadius(ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::DisplayRadius)); },
 		// Saves the current parameter value as new default preset.
 		[](const ParticleType* ptype) { ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->radius(), ParticleType::DisplayRadius); },
 		// Determines if the current parameter value differs from the saved default value or not.
-		[](const ParticleType* ptype) { return (ptype->radius() == ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ObjectInitializationHint::LoadUserDefaults, ParticleType::DisplayRadius)); }
+		[](const ParticleType* ptype) { return (ptype->radius() == ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::DisplayRadius)); }
 	);
 	gridLayout->addWidget(displayRadiusPresetsMenuButton, 1, 2);
 
@@ -236,11 +236,11 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	// VDW radius presets menu.
 	QToolButton* vdwRadiusPresetsMenuButton = createPresetsMenuButton(tr("VdW radius"),
 		// Loads the default parameter value.
-		[](ParticleType* ptype) { ptype->setVdwRadius(ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ObjectInitializationHint::LoadUserDefaults, ParticleType::VanDerWaalsRadius)); },
+		[](ParticleType* ptype) { ptype->setVdwRadius(ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::VanDerWaalsRadius)); },
 		// Saves the current parameter value as new default preset.
 		[](const ParticleType* ptype) { ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->vdwRadius(), ParticleType::VanDerWaalsRadius); },
 		// Determines if the current parameter value differs from the saved default value or not.
-		[](const ParticleType* ptype) { return (ptype->vdwRadius() == ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), ObjectInitializationHint::LoadUserDefaults, ParticleType::VanDerWaalsRadius)); }
+		[](const ParticleType* ptype) { return (ptype->vdwRadius() == ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::VanDerWaalsRadius)); }
 	);
 	gridLayout->addWidget(vdwRadiusPresetsMenuButton, 1, 2);
 }

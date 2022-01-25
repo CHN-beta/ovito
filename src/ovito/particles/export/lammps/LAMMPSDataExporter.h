@@ -53,7 +53,7 @@ class OVITO_PARTICLES_EXPORT LAMMPSDataExporter : public ParticleExporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE LAMMPSDataExporter(DataSet* dataset) : ParticleExporter(dataset), 
+	Q_INVOKABLE LAMMPSDataExporter(ObjectCreationParams params) : ParticleExporter(params), 
 		_atomStyle(LAMMPSDataImporter::AtomStyle_Atomic), 
 		_omitMassesSection(false),
 		_ignoreParticleIdentifiers(false) {}

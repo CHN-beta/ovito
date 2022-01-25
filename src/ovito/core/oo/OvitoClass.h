@@ -130,12 +130,15 @@ public:
 	/// \throw Exception if a required plugin failed to load, or if the instantiation failed for some other reason.
 	OORef<RefTarget> createInstance(DataSet* dataset) const;
 
-	/// \brief Creates an instance of a RefTarget-derived class.
+	/// Creates an instance of this object class.
 	/// \param dataset The dataset the newly created object will belong to.
-	/// \param hints Controls how the parameters of the new object get initialized. 
+	/// \param initFlags Controls how the parameters of the new object get initialized. 
+	OORef<RefTarget> createInstance(DataSet* dataset, ObjectCreationParams::InitializationFlags initFlags) const;
+
+	/// \brief Creates an instance of a RefTarget-derived class.
 	/// \return The new instance of the class. The pointer can be safely cast to the corresponding C++ class type.
 	/// \throw Exception if a required plugin failed to load, or if the instantiation failed for some other reason.
-	OORef<RefTarget> createInstance(DataSet* dataset, ObjectInitializationHints hints) const;
+	OORef<RefTarget> createInstance(ObjectCreationParams params) const;
 
 	/// Compares two types.
 	bool operator==(const OvitoClass& other) const { return (this == &other); }
@@ -183,10 +186,9 @@ protected:
 	virtual void initialize();
 
 	/// \brief Creates an instance of the class described by this meta-class.
-	/// \param dataset The dataset the newly created object will belong to.
 	/// \return The new instance of the class. The pointer can be safely cast to the corresponding C++ class type.
 	/// \throw Exception if the instance could not be created.
-	virtual OvitoObject* createInstanceImpl(DataSet* dataset) const;
+	OvitoObject* createInstanceImpl(ObjectCreationParams params) const;
 
 	/// \brief Marks this class as an abstract class that cannot be instantiated.
 	void setAbstract(bool abstract) { _isAbstract = abstract; }

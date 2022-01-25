@@ -37,7 +37,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(StandardSceneRenderer, antialiasingLevel, Int
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-StandardSceneRenderer::StandardSceneRenderer(DataSet* dataset) : SceneRenderer(dataset), 
+StandardSceneRenderer::StandardSceneRenderer(ObjectCreationParams params) : SceneRenderer(params), 
 	_antialiasingLevel(3) 
 {
 }
@@ -73,7 +73,7 @@ bool StandardSceneRenderer::startRender(DataSet* dataset, RenderSettings* settin
 	// Instantiate the renderer implementation.
 	if(!rendererClass)
 		throwException(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
-	_internalRenderer = static_object_cast<SceneRenderer>(rendererClass->createInstance(this->dataset(), LoadFactoryDefaults));
+	_internalRenderer = static_object_cast<SceneRenderer>(rendererClass->createInstance(this->dataset()));
 
 	// Pass supersampling level requested by the user to the renderer implementation.
 	_internalRenderer->setAntialiasingHint(std::max(1, antialiasingLevel()));

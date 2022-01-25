@@ -51,7 +51,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(AtomicStrainModifier, cutoff, WorldParamete
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-AtomicStrainModifier::AtomicStrainModifier(DataSet* dataset) : ReferenceConfigurationModifier(dataset),
+AtomicStrainModifier::AtomicStrainModifier(ObjectCreationParams params) : ReferenceConfigurationModifier(params),
     _cutoff(3),
 	_calculateDeformationGradients(false),
 	_calculateStrainTensors(false),

@@ -29,13 +29,6 @@ IMPLEMENT_OVITO_CLASS(AsynchronousModifierApplication);
 SET_MODIFIER_APPLICATION_TYPE(AsynchronousModifier, AsynchronousModifierApplication);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-AsynchronousModifierApplication::AsynchronousModifierApplication(DataSet* dataset) : ModifierApplication(dataset)
-{
-}
-
-/******************************************************************************
 * Is called when a RefTarget referenced by this object has generated an event.
 ******************************************************************************/
 bool AsynchronousModifierApplication::referenceEvent(RefTarget* source, const ReferenceEvent& event)

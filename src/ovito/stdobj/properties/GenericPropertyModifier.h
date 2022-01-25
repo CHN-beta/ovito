@@ -52,7 +52,7 @@ class OVITO_STDOBJ_EXPORT GenericPropertyModifier : public Modifier
 protected:
 
 	/// Constructor.
-	GenericPropertyModifier(DataSet* dataset);
+	using Modifier::Modifier;
 
 	/// Sets the subject property container.
 	void setDefaultSubject(const QString& pluginId, const QString& containerClassName);

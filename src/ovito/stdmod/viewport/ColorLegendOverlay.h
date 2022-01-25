@@ -42,11 +42,7 @@ class OVITO_STDMOD_EXPORT ColorLegendOverlay : public ViewportOverlay
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE ColorLegendOverlay(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
+	Q_INVOKABLE ColorLegendOverlay(ObjectCreationParams params);
 
 	/// Lets the overlay paint its contents into the framebuffer.
 	virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;

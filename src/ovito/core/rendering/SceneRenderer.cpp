@@ -46,13 +46,6 @@ IMPLEMENT_OVITO_CLASS(SceneRenderer);
 IMPLEMENT_OVITO_CLASS(ObjectPickInfo);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-SceneRenderer::SceneRenderer(DataSet* dataset) : RefTarget(dataset)
-{
-}
-
-/******************************************************************************
 * This helper method throws a RendererException with the given message text.
 ******************************************************************************/
 void SceneRenderer::throwRendererException(const QString& msg) const

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,30 +39,21 @@ static const std::shared_ptr<DislocationNetwork> defaultStorage = std::make_shar
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DislocationNetworkObject::DislocationNetworkObject(DataSet* dataset) : PeriodicDomainDataObject(dataset), _storage(defaultStorage)
+DislocationNetworkObject::DislocationNetworkObject(ObjectCreationParams params) : PeriodicDomainDataObject(params), _storage(defaultStorage)
 {
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void DislocationNetworkObject::initializeObject(ObjectInitializationHints hints)
-{
-	// Attach a visualization element for rendering the dislocation lines.
-	if(!visElement() && !hints.testFlag(WithoutVisElement))
-		setVisElement(OORef<DislocationVis>::create(dataset(), hints));
+	if(params.createVisElement()) {
+		// Attach a visualization element for rendering the dislocation lines.
+		setVisElement(OORef<DislocationVis>::create(params));
+	}
 
 	// Create the "unidentified" structure.
 	if(crystalStructures().empty()) {
-		DataOORef<MicrostructurePhase> defaultStructure = DataOORef<MicrostructurePhase>::create(dataset(), hints);
+		DataOORef<MicrostructurePhase> defaultStructure = DataOORef<MicrostructurePhase>::create(params);
 		defaultStructure->setName(tr("Unidentified structure"));
 		defaultStructure->setColor(Color(1,1,1));
-		defaultStructure->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(dataset(), hints));
+		defaultStructure->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(params));
 		addCrystalStructure(std::move(defaultStructure));
 	}
-
-	PeriodicDomainDataObject::initializeObject(hints);
 }
 
 /******************************************************************************
@@ -112,7 +103,7 @@ void DislocationNetworkObject::updateEditableProxies(PipelineFlowState& state, C
 	else {
 		// Create and initialize a new proxy object. 
 		// Note: We avoid copying the actual dislocation data here by constructing the proxy DislocationNetworkObject from scratch instead of cloning the original data object.
-		OORef<DislocationNetworkObject> newProxy = OORef<DislocationNetworkObject>::create(self->dataset(), ObjectInitializationHint::WithoutVisElement);
+		OORef<DislocationNetworkObject> newProxy = OORef<DislocationNetworkObject>::create(self->dataset(), ObjectCreationParams::WithoutVisElement);
 		newProxy->setTitle(self->title());
 		while(!newProxy->crystalStructures().empty())
 			newProxy->removeCrystalStructure(0);

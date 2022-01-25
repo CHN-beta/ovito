@@ -49,25 +49,17 @@ IMPLEMENT_OVITO_CLASS(ReplicateModifierDelegate);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ReplicateModifier::ReplicateModifier(DataSet* dataset) : MultiDelegatingModifier(dataset),
+ReplicateModifier::ReplicateModifier(ObjectCreationParams params) : MultiDelegatingModifier(params),
 	_numImagesX(1),
 	_numImagesY(1),
 	_numImagesZ(1),
 	_adjustBoxSize(true),
 	_uniqueIdentifiers(true)
 {
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void ReplicateModifier::initializeObject(ObjectInitializationHints hints)
-{
-	// Generate the list of delegate objects.
-	createModifierDelegates(ReplicateModifierDelegate::OOClass(), hints);
-
-	MultiDelegatingModifier::initializeObject(hints);
+	if(params.createSubObjects()) {
+		// Generate the list of delegate objects.
+		createModifierDelegates(ReplicateModifierDelegate::OOClass(), params);
+	}
 }
 
 /******************************************************************************

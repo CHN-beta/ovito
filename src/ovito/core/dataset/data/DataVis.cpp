@@ -30,13 +30,6 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(DataVis);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-DataVis::DataVis(DataSet* dataset) : ActiveObject(dataset)
-{
-}
-
-/******************************************************************************
 * Returns all pipeline nodes whose pipeline produced this visualization element.
 ******************************************************************************/
 QSet<PipelineSceneNode*> DataVis::pipelines(bool onlyScenePipelines) const

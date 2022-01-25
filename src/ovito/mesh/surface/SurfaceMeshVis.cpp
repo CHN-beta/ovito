@@ -73,7 +73,7 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshPickInfo);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-SurfaceMeshVis::SurfaceMeshVis(DataSet* dataset) : TransformingDataVis(dataset),
+SurfaceMeshVis::SurfaceMeshVis(ObjectCreationParams params) : TransformingDataVis(params),
 	_surfaceColor(1, 1, 1),
 	_capColor(0.8, 0.8, 1.0),
 	_showCap(true),
@@ -83,22 +83,28 @@ SurfaceMeshVis::SurfaceMeshVis(DataSet* dataset) : TransformingDataVis(dataset),
 	_surfaceIsClosed(true),
 	_colorMappingMode(NoPseudoColoring)
 {
+	if(params.createSubObjects()) {
+		// Create animation controllers for the transparency parameters.
+		setSurfaceTransparencyController(ControllerManager::createFloatController(dataset()));
+		setCapTransparencyController(ControllerManager::createFloatController(dataset()));
+
+		// Create a color mapping object for pseudo-color visualization of a surface property.
+		setSurfaceColorMapping(OORef<PropertyColorMapping>::create(params));
+	}
 }
 
 /******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
+* This method is called once for this object after it has been completely
+* loaded from a stream.
 ******************************************************************************/
-void SurfaceMeshVis::initializeObject(ObjectInitializationHints hints)
+void SurfaceMeshVis::loadFromStreamComplete(ObjectLoadStream& stream)
 {
-	// Create animation controllers for the transparency parameters.
-	setSurfaceTransparencyController(ControllerManager::createFloatController(dataset(), hints));
-	setCapTransparencyController(ControllerManager::createFloatController(dataset(), hints));
+	TransformingDataVis::loadFromStreamComplete(stream);
 
-	// Create a color mapping object for pseudo-color visualization of a surface property.
-	setSurfaceColorMapping(OORef<PropertyColorMapping>::create(dataset(), hints));
-
-	TransformingDataVis::initializeObject(hints);
+	// For backward compatibility with OVITO 3.5.4.
+	// Create a color mapping sub-object if it wasn't loaded from the state file.
+	if(!surfaceColorMapping())
+		setSurfaceColorMapping(OORef<PropertyColorMapping>::create(dataset()));
 }
 
 /******************************************************************************
@@ -171,7 +177,7 @@ Future<PipelineFlowState> SurfaceMeshVis::transformDataImpl(const PipelineEvalua
 		.then(executor(), [this, flowState = std::move(flowState), dataObject = OORef<DataObject>(dataObject)](DataOORef<const TriMeshObject>&& surfaceMesh, DataOORef<const TriMeshObject>&& capPolygonsMesh, std::vector<ColorA>&& materialColors, std::vector<size_t>&& originalFaceMap, bool renderFacesTwoSided, PipelineStatus&& status) mutable {
 			// Output the computed mesh as a RenderableSurfaceMesh.
 			DataOORef<RenderableSurfaceMesh> renderableMesh = DataOORef<RenderableSurfaceMesh>::create(dataset(), 
-				ObjectInitializationHint::WithoutVisElement, this, dataObject, std::move(surfaceMesh), std::move(capPolygonsMesh), !renderFacesTwoSided);
+				ObjectCreationParams::WithoutVisElement, this, dataObject, std::move(surfaceMesh), std::move(capPolygonsMesh), !renderFacesTwoSided);
             renderableMesh->setVisElement(this);
 			renderableMesh->setMaterialColors(std::move(materialColors));
             renderableMesh->setOriginalFaceMap(std::move(originalFaceMap));
@@ -627,7 +633,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
 	const SurfaceMeshAccess inputMeshData(inputMesh());
 
 	// Transfer vertices and faces from half-edge mesh structure to triangle mesh structure.
-	_surfaceMesh = DataOORef<TriMeshObject>::create(_inputMesh->dataset(), ObjectInitializationHint::WithoutVisElement);
+	_surfaceMesh = DataOORef<TriMeshObject>::create(_inputMesh->dataset(), ObjectCreationParams::WithoutVisElement);
 	inputMeshData.convertToTriMesh(*_surfaceMesh, _smoothShading, _faceSubset, &_originalFaceMap, !_renderFacesTwoSided);
 
 	// Check for early abortion.
@@ -970,7 +976,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
 	OVITO_ASSERT(cell());
 
 	// Create the output mesh object.
-	_capPolygonsMesh = DataOORef<TriMeshObject>::create(_inputMesh->dataset(), ObjectInitializationHint::WithoutVisElement);
+	_capPolygonsMesh = DataOORef<TriMeshObject>::create(_inputMesh->dataset(), ObjectCreationParams::WithoutVisElement);
 
 	// Create accessor for the input mesh data.
 	const SurfaceMeshAccess inputMeshData(inputMesh());

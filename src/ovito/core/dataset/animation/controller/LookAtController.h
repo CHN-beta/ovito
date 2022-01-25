@@ -47,11 +47,7 @@ class OVITO_CORE_EXPORT LookAtController : public Controller
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE LookAtController(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;
+	Q_INVOKABLE LookAtController(ObjectCreationParams params);
 
 	/// \brief Returns the value type of the controller.
 	virtual ControllerType controllerType() const override { return ControllerTypeRotation; }

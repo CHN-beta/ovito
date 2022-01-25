@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_LABEL(StructureIdentificationModifier, colorByType, "Color pa
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-StructureIdentificationModifier::StructureIdentificationModifier(DataSet* dataset) : AsynchronousModifier(dataset),
+StructureIdentificationModifier::StructureIdentificationModifier(ObjectCreationParams params) : AsynchronousModifier(params),
 	_onlySelectedParticles(false),
 	_colorByType(true)
 {
@@ -59,12 +59,12 @@ bool StructureIdentificationModifier::OOMetaClass::isApplicableTo(const DataColl
 /******************************************************************************
 * Create an instance of the ParticleType class to represent a structure type.
 ******************************************************************************/
-ElementType* StructureIdentificationModifier::createStructureType(int id, ParticleType::PredefinedStructureType predefType, ObjectInitializationHints initializationHints)
+ElementType* StructureIdentificationModifier::createStructureType(int id, ParticleType::PredefinedStructureType predefType, ObjectCreationParams params)
 {
-	DataOORef<ElementType> stype = DataOORef<ElementType>::create(dataset(), initializationHints);
+	DataOORef<ElementType> stype = DataOORef<ElementType>::create(dataset());
 	stype->setNumericId(id);
 	stype->setName(ParticleType::getPredefinedStructureTypeName(predefType));
-	stype->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), initializationHints);
+	stype->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), params.loadUserDefaults());
 	addStructureType(stype);
 	return stype;
 }

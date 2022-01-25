@@ -42,11 +42,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocationNetworkObject : public PeriodicDom
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE DislocationNetworkObject(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;		
+	Q_INVOKABLE DislocationNetworkObject(ObjectCreationParams params);
 
 	/// Returns the data encapsulated by this object after making sure it is not shared with other owners.
 	const std::shared_ptr<DislocationNetwork>& modifiableStorage();

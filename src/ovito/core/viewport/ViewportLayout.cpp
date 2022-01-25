@@ -36,7 +36,7 @@ DEFINE_PROPERTY_FIELD(ViewportLayoutCell, childWeights);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ViewportLayoutCell::ViewportLayoutCell(DataSet* dataset) : RefTarget(dataset),
+ViewportLayoutCell::ViewportLayoutCell(ObjectCreationParams params) : RefTarget(params),
 	_splitDirection(SplitDirection::None)
 {
 }

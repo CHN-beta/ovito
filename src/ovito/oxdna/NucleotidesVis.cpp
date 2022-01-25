@@ -39,7 +39,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(NucleotidesVis, cylinderRadius, WorldParame
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-NucleotidesVis::NucleotidesVis(DataSet* dataset) : ParticlesVis(dataset),
+NucleotidesVis::NucleotidesVis(ObjectCreationParams params) : ParticlesVis(params),
 	_cylinderRadius(0.05)
 {	
 	setDefaultParticleRadius(0.1);

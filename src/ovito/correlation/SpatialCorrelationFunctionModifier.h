@@ -80,7 +80,7 @@ public:
     Q_ENUM(NormalizationType);
 
 	/// Constructor.
-	Q_INVOKABLE SpatialCorrelationFunctionModifier(DataSet* dataset);
+	Q_INVOKABLE SpatialCorrelationFunctionModifier(ObjectCreationParams params);
 
 	/// This method is called by the system after the modifier has been inserted into a data pipeline.
 	virtual void initializeModifier(const ModifierInitializationRequest& request) override;

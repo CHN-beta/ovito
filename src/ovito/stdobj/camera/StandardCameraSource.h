@@ -46,11 +46,7 @@ class OVITO_STDOBJ_EXPORT StandardCameraSource : public PipelineObject
 public:
 
 	/// Constructor.
-	Q_INVOKABLE StandardCameraSource(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;
+	Q_INVOKABLE StandardCameraSource(ObjectCreationParams params);
 	
 	/// Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;
@@ -67,7 +63,7 @@ public:
 	bool isTargetCamera() const;
 
 	/// Changes the type of the camera to a target camera or a free camera.
-	void setIsTargetCamera(bool enable, ObjectInitializationHints initializationHints = LoadUserDefaults);
+	void setIsTargetCamera(bool enable);
 
 	/// For a target camera, queries the distance between the camera and its target.
 	FloatType targetDistance() const;

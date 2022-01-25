@@ -31,13 +31,6 @@ IMPLEMENT_OVITO_CLASS(AsynchronousDelegatingModifier);
 DEFINE_REFERENCE_FIELD(AsynchronousDelegatingModifier, delegate);
 
 /******************************************************************************
-* Constructs the modifier object.
-******************************************************************************/
-AsynchronousDelegatingModifier::AsynchronousDelegatingModifier(DataSet* dataset) : AsynchronousModifier(dataset)
-{
-}
-
-/******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/
 TimeInterval AsynchronousDelegatingModifier::validityInterval(const ModifierEvaluationRequest& request) const
@@ -53,14 +46,14 @@ TimeInterval AsynchronousDelegatingModifier::validityInterval(const ModifierEval
 /******************************************************************************
 * Creates a default delegate for this modifier.
 ******************************************************************************/
-void AsynchronousDelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectInitializationHints initializationHints)
+void AsynchronousDelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectCreationParams params)
 {
 	OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
 
 	// Find the delegate type that corresponds to the given name string.
 	for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
 		if(clazz->name() == defaultDelegateTypeName) {
-			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance(dataset(), initializationHints));
+			OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance(params));
 			setDelegate(std::move(delegate));
 			break;
 		}

@@ -50,7 +50,7 @@ public:
 protected:
 
 	/// \brief Constructor.
-	PeriodicDomainDataObject(DataSet* dataset, const QString& title = {});
+	PeriodicDomainDataObject(ObjectCreationParams params, const QString& title = {});
 
 private:
 

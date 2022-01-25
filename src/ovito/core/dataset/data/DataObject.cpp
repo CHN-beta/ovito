@@ -76,13 +76,6 @@ QString DataObject::OOMetaClass::formatDataObjectPath(const ConstDataObjectPath&
 }
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-DataObject::DataObject(DataSet* dataset) : RefTarget(dataset)
-{
-}
-
-/******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
 void DataObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const

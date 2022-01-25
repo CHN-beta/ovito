@@ -60,7 +60,7 @@ class OVITO_PARTICLES_EXPORT CoordinationAnalysisModifier : public AsynchronousM
 public:
 
 	/// Constructor.
-	Q_INVOKABLE CoordinationAnalysisModifier(DataSet* dataset);
+	Q_INVOKABLE CoordinationAnalysisModifier(ObjectCreationParams params);
 
 protected:
 

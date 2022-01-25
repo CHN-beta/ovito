@@ -60,7 +60,7 @@ class OVITO_MESH_EXPORT ParaViewPVDImporter : public FileSourceImporter
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE ParaViewPVDImporter(DataSet *dataset) : FileSourceImporter(dataset) {
+	Q_INVOKABLE ParaViewPVDImporter(ObjectCreationParams params) : FileSourceImporter(params) {
 		setMultiTimestepFile(true);
 	}
 

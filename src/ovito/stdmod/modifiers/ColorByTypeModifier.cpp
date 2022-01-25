@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_LABEL(ColorByTypeModifier, clearSelection, "Clear selection")
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ColorByTypeModifier::ColorByTypeModifier(DataSet* dataset) : GenericPropertyModifier(dataset),
+ColorByTypeModifier::ColorByTypeModifier(ObjectCreationParams params) : GenericPropertyModifier(params),
 	_colorOnlySelected(false),
 	_clearSelection(true)
 {

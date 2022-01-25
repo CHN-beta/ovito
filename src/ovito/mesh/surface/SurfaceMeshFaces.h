@@ -70,7 +70,7 @@ public:
 	};
 
 	/// \brief Constructor.
-	Q_INVOKABLE SurfaceMeshFaces(DataSet* dataset) : PropertyContainer(dataset) {
+	Q_INVOKABLE SurfaceMeshFaces(ObjectCreationParams params) : PropertyContainer(params) {
 		// Assign the default data object identifier.
 		setIdentifier(OOClass().pythonName());
 	}

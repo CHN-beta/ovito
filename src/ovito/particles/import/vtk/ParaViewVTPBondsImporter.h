@@ -58,7 +58,7 @@ class OVITO_PARTICLES_EXPORT ParaViewVTPBondsImporter : public ParticleImporter
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE ParaViewVTPBondsImporter(DataSet *dataset) : ParticleImporter(dataset) {}
+	Q_INVOKABLE ParaViewVTPBondsImporter(ObjectCreationParams params) : ParticleImporter(params) {}
 
 	/// Creates an asynchronous loader object that loads the data for the given frame from the external file.
 	virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

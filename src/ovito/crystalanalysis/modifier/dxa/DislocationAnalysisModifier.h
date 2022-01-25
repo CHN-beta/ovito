@@ -49,12 +49,8 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocationAnalysisModifier : public Structur
 public:
 
 	/// Constructor.
-	Q_INVOKABLE DislocationAnalysisModifier(DataSet* dataset);
+	Q_INVOKABLE DislocationAnalysisModifier(ObjectCreationParams params);
 
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
-	
 	/// Returns the crystal structure with the given ID, or null if no such structure exists.
 	MicrostructurePhase* structureTypeById(int id) const {
 		return dynamic_object_cast<MicrostructurePhase>(StructureIdentificationModifier::structureTypeById(id));

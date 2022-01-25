@@ -60,7 +60,7 @@ class OVITO_OXDNA_EXPORT OXDNAImporter : public ParticleImporter
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE OXDNAImporter(DataSet *dataset) : ParticleImporter(dataset) {}
+	Q_INVOKABLE OXDNAImporter(ObjectCreationParams params) : ParticleImporter(params) {}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("oxDNA"); }

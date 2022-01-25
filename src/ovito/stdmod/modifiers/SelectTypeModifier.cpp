@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_LABEL(SelectTypeModifier, selectedTypeNames, "Selected type n
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-SelectTypeModifier::SelectTypeModifier(DataSet* dataset) : GenericPropertyModifier(dataset)
+SelectTypeModifier::SelectTypeModifier(ObjectCreationParams params) : GenericPropertyModifier(params)
 {
 	// Operate on particles by default.
 	setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));

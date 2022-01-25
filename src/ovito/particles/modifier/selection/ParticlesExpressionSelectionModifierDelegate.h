@@ -59,7 +59,7 @@ class ParticlesExpressionSelectionModifierDelegate : public ExpressionSelectionM
 public:
 
 	/// Constructor.
-	Q_INVOKABLE ParticlesExpressionSelectionModifierDelegate(DataSet* dataset) : ExpressionSelectionModifierDelegate(dataset) {}
+	Q_INVOKABLE ParticlesExpressionSelectionModifierDelegate(ObjectCreationParams params) : ExpressionSelectionModifierDelegate(params) {}
 
 	/// Creates and initializes the expression evaluator object.
 	virtual std::unique_ptr<PropertyExpressionEvaluator> initializeExpressionEvaluator(const QStringList& expressions, const PipelineFlowState& inputState, const ConstDataObjectPath& containerPath, int animationFrame) override;
@@ -94,7 +94,7 @@ class BondsExpressionSelectionModifierDelegate : public ExpressionSelectionModif
 public:
 
 	/// Constructor.
-	Q_INVOKABLE BondsExpressionSelectionModifierDelegate(DataSet* dataset) : ExpressionSelectionModifierDelegate(dataset) {}
+	Q_INVOKABLE BondsExpressionSelectionModifierDelegate(ObjectCreationParams params) : ExpressionSelectionModifierDelegate(params) {}
 
 	/// Creates and initializes the expression evaluator object.
 	virtual std::unique_ptr<PropertyExpressionEvaluator> initializeExpressionEvaluator(const QStringList& expressions, const PipelineFlowState& inputState, const ConstDataObjectPath& containerPath, int animationFrame) override;

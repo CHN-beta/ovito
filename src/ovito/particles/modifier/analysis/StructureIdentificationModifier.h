@@ -128,7 +128,7 @@ public:
 public:
 
 	/// Constructor.
-	StructureIdentificationModifier(DataSet* dataset);
+	StructureIdentificationModifier(ObjectCreationParams params);
 
 	/// Returns an existing structure type managed by the modifier.
 	ElementType* structureTypeById(int id) const {
@@ -159,7 +159,7 @@ protected:
 	}
 
 	/// Create an instance of the ParticleType class to represent a structure type.
-	ElementType* createStructureType(int id, ParticleType::PredefinedStructureType predefType, ObjectInitializationHints initializationHints);
+	ElementType* createStructureType(int id, ParticleType::PredefinedStructureType predefType, ObjectCreationParams params);
 
 private:
 

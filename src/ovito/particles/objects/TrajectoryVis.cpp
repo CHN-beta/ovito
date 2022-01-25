@@ -49,7 +49,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(TrajectoryVis, lineWidth, WorldParameterUni
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-TrajectoryVis::TrajectoryVis(DataSet* dataset) : DataVis(dataset),
+TrajectoryVis::TrajectoryVis(ObjectCreationParams params) : DataVis(params),
 	_lineWidth(0.2),
 	_lineColor(0.6, 0.6, 0.6),
 	_shadingMode(FlatShading),
@@ -57,18 +57,24 @@ TrajectoryVis::TrajectoryVis(DataSet* dataset) : DataVis(dataset),
 	_wrappedLines(false),
 	_coloringMode(UniformColoring)
 {
+	if(params.createSubObjects()) {
+		// Create a color mapping object for pseudo-color visualization of a trajectory property.
+		setColorMapping(OORef<PropertyColorMapping>::create(params));
+	}
 }
 
 /******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
+* This method is called once for this object after it has been completely
+* loaded from a stream.
 ******************************************************************************/
-void TrajectoryVis::initializeObject(ObjectInitializationHints hints)
+void TrajectoryVis::loadFromStreamComplete(ObjectLoadStream& stream)
 {
-	// Create a color mapping object for pseudo-color visualization of a trajectory property.
-	setColorMapping(OORef<PropertyColorMapping>::create(dataset(), hints));
+	DataVis::loadFromStreamComplete(stream);
 
-	DataVis::initializeObject(hints);
+	// For backward compatibility with OVITO 3.5.4.
+	// Create a color mapping sub-object if it wasn't loaded from the state file.
+	if(!colorMapping())
+		setColorMapping(OORef<PropertyColorMapping>::create(dataset()));
 }
 
 /******************************************************************************

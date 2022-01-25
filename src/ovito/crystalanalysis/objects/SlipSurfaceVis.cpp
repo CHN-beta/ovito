@@ -39,7 +39,7 @@ IMPLEMENT_OVITO_CLASS(SlipSurfacePickInfo);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-SlipSurfaceVis::SlipSurfaceVis(DataSet* dataset) : SurfaceMeshVis(dataset)
+SlipSurfaceVis::SlipSurfaceVis(ObjectCreationParams params) : SurfaceMeshVis(params)
 {
     // Do not interpolate facet normals by default.
     setSmoothShading(false);

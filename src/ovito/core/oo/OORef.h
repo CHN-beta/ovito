@@ -24,10 +24,38 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/oo/InitializationHints.h>
 #include <ovito/core/utilities/concurrent/ExecutionContext.h>
 
 namespace Ovito {
+
+/**
+ * \brief Data structure passed to constructors of RefTarget derived classes.
+ */
+class OVITO_CORE_EXPORT ObjectCreationParams final
+{
+public:
+	enum InitializationFlag {
+		NoFlags = 0,
+        DontCreateSubObjects = (1 << 0),//< Used when an object is being cloned or deserialized from a file stream.
+        LoadUserDefaults = (1 << 1),    //< Load user-defined standard values from the application settings store.
+	    WithoutVisElement = (1 << 2),	//< Do not attach a standard visual element when creating a new data object.
+	};
+	Q_DECLARE_FLAGS(InitializationFlags, InitializationFlag);
+
+	constexpr explicit ObjectCreationParams(DataSet* dataset) noexcept : _dataset(dataset) {}
+	constexpr explicit ObjectCreationParams(DataSet* dataset, InitializationFlags flags) noexcept : _dataset(dataset), _flags(flags) {}
+
+	constexpr DataSet* dataset() const { return _dataset; }
+	constexpr InitializationFlags flags() const { return _flags; }
+    constexpr bool dontCreateSubObjects() const { return _flags.testFlag(DontCreateSubObjects); }
+    constexpr bool createSubObjects() const { return !dontCreateSubObjects(); }
+    constexpr bool loadUserDefaults() const { return _flags.testFlag(LoadUserDefaults); }
+    constexpr bool createVisElement() const { return !_flags.testAnyFlags(InitializationFlags(DontCreateSubObjects | WithoutVisElement)); }
+
+private:
+	DataSet* _dataset;
+	InitializationFlags _flags{NoFlags};
+};
 
 /**
  * \brief A smart-pointer to an OvitoObject.
@@ -150,40 +178,46 @@ public:
     	std::swap(px,rhs.px);
     }
 
-    /// Factory method that instantiates and initializes a new object (any RefMaker derived class).
+    /// Factory method that instantiates and initializes a new object (any RefTarget derived class).
     template<typename... Args>
-	static this_type create(DataSet* dataset, ObjectInitializationHints hints, Args&&... args) {
+	static this_type create(ObjectCreationParams params, Args&&... args) {
         using OType = std::remove_const_t<T>;
-		OORef<OType> obj(new OType(dataset, std::forward<Args>(args)...));
-        obj->initializeObject(hints);
+        static_assert(std::is_base_of_v<Ovito::RefTarget, OType>, "Object class must be a RefTarget derived class");
+        OVITO_ASSERT((params.dataset() || std::is_base_of_v<Ovito::DataSet, OType>));
+		OORef<OType> obj(new OType(params, std::forward<Args>(args)...));
+        if(params.loadUserDefaults())
+            obj->initializeParametersToUserDefaults();
         return obj;
 	}
 
-    /// Factory method that instantiates and initializes a new object (any RefMaker derived class).
+    /// Factory method that instantiates a new object.
     template<typename... Args>
-	static this_type create(DataSet* dataset, ObjectInitializationHint hint, Args&&... args) {
-        OVITO_ASSERT(hint == ObjectInitializationHint::WithoutVisElement);
-        return create(dataset, 
-            ObjectInitializationHints(ExecutionContext::isInteractive() 
-                ? ObjectInitializationHint::LoadUserDefaults 
-                : ObjectInitializationHint::LoadFactoryDefaults) | hint);
-	}
+	static this_type create(DataSet* dataset, ObjectCreationParams::InitializationFlag extraFlag, Args&&... args) {
+        return create(dataset, ObjectCreationParams::InitializationFlags(extraFlag), std::forward<Args>(args)...);
+    }
+
+    /// Factory method that instantiates a new object.
+    template<typename... Args>
+	static this_type create(DataSet* dataset, ObjectCreationParams::InitializationFlags extraFlags, Args&&... args) {
+        return create(ObjectCreationParams(dataset,
+            extraFlags | (ExecutionContext::isInteractive() ? ObjectCreationParams::LoadUserDefaults : ObjectCreationParams::NoFlags)), 
+            std::forward<Args>(args)...);
+    }
 
     /// Factory method that instantiates a new object.
     template<typename... Args>
 	static this_type create(DataSet* dataset, Args&&... args) {
         using OType = std::remove_const_t<T>;
-        if constexpr(std::is_base_of_v<Ovito::RefMaker, OType>) {
-            // All RefMaker derived classes require initialization hints.
-            return create(dataset, 
-                ObjectInitializationHints(ExecutionContext::isInteractive() 
-                    ? ObjectInitializationHint::LoadUserDefaults 
-                    : ObjectInitializationHint::LoadFactoryDefaults),
-                std::forward<Args>(args)...);
+        if constexpr(std::is_base_of_v<Ovito::RefTarget, OType>) {
+            // All RefTarget derived classes expect a ObjectCreationParams structure.
+            return create(ObjectCreationParams(dataset, 
+                ExecutionContext::isInteractive() 
+                    ? ObjectCreationParams::LoadUserDefaults 
+                    : ObjectCreationParams::NoFlags), std::forward<Args>(args)...);
         }
         else {
-            // Objects not derived from RefMaker do not use two-phase initialization.
-    		return new OType(dataset, std::forward<Args>(args)...);
+            // Objects not derived from RefTarget do not expect a ObjectCreationParams.
+    		return new OType(std::forward<Args>(args)...);
         }
 	}
 };

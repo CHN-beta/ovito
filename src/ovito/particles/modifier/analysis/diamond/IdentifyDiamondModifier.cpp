@@ -35,26 +35,18 @@ IMPLEMENT_OVITO_CLASS(IdentifyDiamondModifier);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-IdentifyDiamondModifier::IdentifyDiamondModifier(DataSet* dataset) : StructureIdentificationModifier(dataset)
+IdentifyDiamondModifier::IdentifyDiamondModifier(ObjectCreationParams params) : StructureIdentificationModifier(params)
 {
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void IdentifyDiamondModifier::initializeObject(ObjectInitializationHints hints)
-{
-	// Create the structure types.
-	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, hints);
-	createStructureType(CUBIC_DIAMOND, ParticleType::PredefinedStructureType::CUBIC_DIAMOND, hints);
-	createStructureType(CUBIC_DIAMOND_FIRST_NEIGH, ParticleType::PredefinedStructureType::CUBIC_DIAMOND_FIRST_NEIGH, hints);
-	createStructureType(CUBIC_DIAMOND_SECOND_NEIGH, ParticleType::PredefinedStructureType::CUBIC_DIAMOND_SECOND_NEIGH, hints);
-	createStructureType(HEX_DIAMOND, ParticleType::PredefinedStructureType::HEX_DIAMOND, hints);
-	createStructureType(HEX_DIAMOND_FIRST_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_FIRST_NEIGH, hints);
-	createStructureType(HEX_DIAMOND_SECOND_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_SECOND_NEIGH, hints);
-
-	StructureIdentificationModifier::initializeObject(hints);
+	if(params.createSubObjects()) {
+		// Create the structure types.
+		createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, params);
+		createStructureType(CUBIC_DIAMOND, ParticleType::PredefinedStructureType::CUBIC_DIAMOND, params);
+		createStructureType(CUBIC_DIAMOND_FIRST_NEIGH, ParticleType::PredefinedStructureType::CUBIC_DIAMOND_FIRST_NEIGH, params);
+		createStructureType(CUBIC_DIAMOND_SECOND_NEIGH, ParticleType::PredefinedStructureType::CUBIC_DIAMOND_SECOND_NEIGH, params);
+		createStructureType(HEX_DIAMOND, ParticleType::PredefinedStructureType::HEX_DIAMOND, params);
+		createStructureType(HEX_DIAMOND_FIRST_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_FIRST_NEIGH, params);
+		createStructureType(HEX_DIAMOND_SECOND_NEIGH, ParticleType::PredefinedStructureType::HEX_DIAMOND_SECOND_NEIGH, params);
+	}
 }
 
 /******************************************************************************

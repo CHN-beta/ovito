@@ -141,9 +141,9 @@ void ParticleSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* s
 	for(const QString& tname : typeNames) {
 		QTreeWidgetItem* childItem = new QTreeWidgetItem();
 		childItem->setText(0, tname);
-		Color color = ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::TypeProperty), tname, 0, ObjectInitializationHint::LoadUserDefaults);
-		FloatType displayRadius = ParticleType::getDefaultParticleRadius(ParticlesObject::TypeProperty, tname, 0, ObjectInitializationHint::LoadUserDefaults, ParticleType::DisplayRadius);
-		FloatType vdwRadius = ParticleType::getDefaultParticleRadius(ParticlesObject::TypeProperty, tname, 0, ObjectInitializationHint::LoadUserDefaults, ParticleType::VanDerWaalsRadius);
+		Color color = ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::TypeProperty), tname, 0, true);
+		FloatType displayRadius = ParticleType::getDefaultParticleRadius(ParticlesObject::TypeProperty, tname, 0, true, ParticleType::DisplayRadius);
+		FloatType vdwRadius = ParticleType::getDefaultParticleRadius(ParticlesObject::TypeProperty, tname, 0, true, ParticleType::VanDerWaalsRadius);
 		childItem->setData(1, Qt::DisplayRole, QVariant::fromValue((QColor)color));
 		childItem->setData(2, Qt::DisplayRole, QVariant::fromValue(displayRadius));
 		childItem->setData(3, Qt::DisplayRole, QVariant::fromValue(vdwRadius));
@@ -162,7 +162,7 @@ void ParticleSettingsPage::insertSettingsDialogPage(ApplicationSettingsDialog* s
 	for(const QString& tname : structureNames) {
 		QTreeWidgetItem* childItem = new QTreeWidgetItem();
 		childItem->setText(0, tname);
-		Color color = ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), tname, 0, ObjectInitializationHint::LoadUserDefaults);
+		Color color = ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), tname, 0, true);
 		childItem->setData(1, Qt::DisplayRole, QVariant::fromValue((QColor)color));
 		childItem->setFlags(Qt::ItemFlags(Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren));
 		_structureTypesItem->addChild(childItem);
@@ -257,9 +257,9 @@ void ParticleSettingsPage::restoreBuiltinParticlePresets()
 {
 	for(int i = 0; i < ParticleType::PredefinedParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES; i++) {
 		QTreeWidgetItem* item = _particleTypesItem->child(i);
-		Color color = ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::TypeProperty), item->text(0), 0, ObjectInitializationHint::LoadFactoryDefaults);
-		FloatType displayRadius = ParticleType::getDefaultParticleRadius(ParticlesObject::TypeProperty, item->text(0), 0, ObjectInitializationHint::LoadFactoryDefaults, ParticleType::DisplayRadius);
-		FloatType vdwRadius = ParticleType::getDefaultParticleRadius(ParticlesObject::TypeProperty, item->text(0), 0, ObjectInitializationHint::LoadFactoryDefaults, ParticleType::VanDerWaalsRadius);
+		Color color = ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::TypeProperty), item->text(0), 0, false);
+		FloatType displayRadius = ParticleType::getDefaultParticleRadius(ParticlesObject::TypeProperty, item->text(0), 0, false, ParticleType::DisplayRadius);
+		FloatType vdwRadius = ParticleType::getDefaultParticleRadius(ParticlesObject::TypeProperty, item->text(0), 0, false, ParticleType::VanDerWaalsRadius);
 		item->setData(1, Qt::DisplayRole, QVariant::fromValue((QColor)color));
 		item->setData(2, Qt::DisplayRole, QVariant::fromValue(displayRadius));
 		item->setData(3, Qt::DisplayRole, QVariant::fromValue(vdwRadius));
@@ -270,7 +270,7 @@ void ParticleSettingsPage::restoreBuiltinParticlePresets()
 
 	for(int i = 0; i < ParticleType::PredefinedStructureType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES; i++) {
 		QTreeWidgetItem* item = _structureTypesItem->child(i);
-		Color color = ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), item->text(0), 0, ObjectInitializationHint::LoadFactoryDefaults);
+		Color color = ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), item->text(0), 0, false);
 		item->setData(1, Qt::DisplayRole, QVariant::fromValue((QColor)color));
 	}
 }

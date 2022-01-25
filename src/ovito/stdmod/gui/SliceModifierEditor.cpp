@@ -510,7 +510,7 @@ void PickPlanePointsInputMode::renderOverlay3D(Viewport* vp, SceneRenderer* rend
 			renderer->renderLines(lines);
 		}
 		else if(npoints == 3) {
-			DataOORef<TriMeshObject> tri = DataOORef<TriMeshObject>::create(renderer->dataset(), ObjectInitializationHint::WithoutVisElement);
+			DataOORef<TriMeshObject> tri = DataOORef<TriMeshObject>::create(renderer->dataset(), ObjectCreationParams::WithoutVisElement);
 			tri->setVertexCount(3);
 			tri->setVertex(0, _pickedPoints[0]);
 			tri->setVertex(1, _pickedPoints[1]);

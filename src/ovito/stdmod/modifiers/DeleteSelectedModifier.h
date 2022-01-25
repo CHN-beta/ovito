@@ -66,14 +66,11 @@ class OVITO_STDMOD_EXPORT DeleteSelectedModifier : public MultiDelegatingModifie
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE DeleteSelectedModifier(DataSet* dataset) : MultiDelegatingModifier(dataset) {}
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override {
-		// Generate the list of delegate objects.
-		createModifierDelegates(DeleteSelectedModifierDelegate::OOClass(), hints);
-		MultiDelegatingModifier::initializeObject(hints);
+	Q_INVOKABLE DeleteSelectedModifier(ObjectCreationParams params) : MultiDelegatingModifier(params) {
+		if(params.createSubObjects()) {
+			// Generate the list of delegate objects.
+			createModifierDelegates(DeleteSelectedModifierDelegate::OOClass(), params);
+		}
 	}
 };
 

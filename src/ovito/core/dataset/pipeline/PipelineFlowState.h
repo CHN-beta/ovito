@@ -364,6 +364,12 @@ public:
 		return mutableData()->createObject<DataObjectType>(std::forward<Args>(args)...);
 	}
 
+	/// Instantiates a new data object.
+	template<class DataObjectType, typename... Args>
+	DataObjectType* createObjectWithVis(Args&&... args) {
+		return mutableData()->createObjectWithVis<DataObjectType>(std::forward<Args>(args)...);
+	}
+
 	/// Adds a data object to this collection while making sure the object gets a unique identifier.
 	template<class DataObjectType>
 	void addObjectWithUniqueId(const DataObjectType* obj) {

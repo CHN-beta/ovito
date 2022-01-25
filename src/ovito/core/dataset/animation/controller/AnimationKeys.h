@@ -39,7 +39,7 @@ class OVITO_CORE_EXPORT AnimationKey : public RefTarget
 public:
 
 	/// Constructor.
-	AnimationKey(DataSet* dataset, TimePoint time = 0) : RefTarget(dataset), _time(time) {}
+	AnimationKey(ObjectCreationParams params, TimePoint time = 0) : RefTarget(params), _time(time) {}
 
 	/// Returns the value of this animation key as a QVariant.
 	virtual QVariant valueQVariant() const = 0;
@@ -72,9 +72,7 @@ public:
 	using tangent_type = FloatType;
 
 	/// Constructor.
-	Q_INVOKABLE FloatAnimationKey(DataSet* dataset, TimePoint time = 0, FloatType value = 0) : AnimationKey(dataset, time), _value(value) {
-
-	}
+	Q_INVOKABLE FloatAnimationKey(ObjectCreationParams params, TimePoint time = 0, FloatType value = 0) : AnimationKey(params, time), _value(value) {}
 
 	/// Returns the value of this animation key as a QVariant.
 	virtual QVariant valueQVariant() const override {
@@ -113,9 +111,7 @@ public:
 	using tangent_type = int;
 
 	/// Constructor.
-	Q_INVOKABLE IntegerAnimationKey(DataSet* dataset, TimePoint time = 0, int value = 0) : AnimationKey(dataset, time), _value(value) {
-
-	}
+	Q_INVOKABLE IntegerAnimationKey(ObjectCreationParams params, TimePoint time = 0, int value = 0) : AnimationKey(params, time), _value(value) {}
 
 	/// Returns the value of this animation key as a QVariant.
 	virtual QVariant valueQVariant() const override {
@@ -154,9 +150,7 @@ public:
 	using tangent_type = Vector3;
 
 	/// Constructor.
-	Q_INVOKABLE Vector3AnimationKey(DataSet* dataset, TimePoint time = 0, const Vector3& value = Vector3::Zero()) : AnimationKey(dataset, time), _value(value) {
-
-	}
+	Q_INVOKABLE Vector3AnimationKey(ObjectCreationParams params, TimePoint time = 0, const Vector3& value = Vector3::Zero()) : AnimationKey(params, time), _value(value) {}
 
 	/// Returns the value of this animation key as a QVariant.
 	virtual QVariant valueQVariant() const override {
@@ -195,9 +189,7 @@ public:
 	using tangent_type = Vector3;
 
 	/// Constructor.
-	Q_INVOKABLE PositionAnimationKey(DataSet* dataset, TimePoint time = 0, const Vector3& value = Vector3::Zero()) : AnimationKey(dataset, time), _value(value) {
-
-	}
+	Q_INVOKABLE PositionAnimationKey(ObjectCreationParams params, TimePoint time = 0, const Vector3& value = Vector3::Zero()) : AnimationKey(params, time), _value(value) {}
 
 	/// Returns the value of this animation key as a QVariant.
 	virtual QVariant valueQVariant() const override {
@@ -236,9 +228,7 @@ public:
 	using tangent_type = Rotation;
 
 	/// Constructor.
-	Q_INVOKABLE RotationAnimationKey(DataSet* dataset, TimePoint time = 0, const Rotation& value = Rotation::Identity()) : AnimationKey(dataset, time), _value(value) {
-
-	}
+	Q_INVOKABLE RotationAnimationKey(ObjectCreationParams params, TimePoint time = 0, const Rotation& value = Rotation::Identity()) : AnimationKey(params, time), _value(value) {}
 
 	/// Returns the value of this animation key as a QVariant.
 	virtual QVariant valueQVariant() const override {
@@ -277,9 +267,7 @@ public:
 	using tangent_type = Scaling;
 
 	/// Constructor.
-	Q_INVOKABLE ScalingAnimationKey(DataSet* dataset, TimePoint time = 0, const Scaling& value = Scaling::Identity()) : AnimationKey(dataset, time), _value(value) {
-
-	}
+	Q_INVOKABLE ScalingAnimationKey(ObjectCreationParams params, TimePoint time = 0, const Scaling& value = Scaling::Identity()) : AnimationKey(params, time), _value(value) {}
 
 	/// Returns the value of this animation key as a QVariant.
 	virtual QVariant valueQVariant() const override {

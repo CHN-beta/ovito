@@ -65,10 +65,6 @@ class OVITO_CORE_EXPORT FileExporter : public RefTarget
 
 public:
 
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;
-
 	/// \brief Selects the default scene node to be exported by this exporter.
 	virtual void selectDefaultExportableData();
 
@@ -114,7 +110,7 @@ public:
 protected:
 
 	/// Initializes the object.
-	FileExporter(DataSet* dataset);
+	FileExporter(ObjectCreationParams params);
 
 	/// \brief This is called once for every output file to be written and before exportFrame() is called.
 	virtual bool openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation) = 0;

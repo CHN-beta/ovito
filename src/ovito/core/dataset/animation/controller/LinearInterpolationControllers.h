@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,8 +56,8 @@ class OVITO_CORE_EXPORT LinearFloatController
 public:
 
 	/// Constructor.
-	Q_INVOKABLE LinearFloatController(DataSet* dataset)
-		: KeyframeControllerTemplate<FloatAnimationKey, LinearKeyInterpolator<FloatAnimationKey>, Controller::ControllerTypeFloat>(dataset) {}
+	Q_INVOKABLE LinearFloatController(ObjectCreationParams params)
+		: KeyframeControllerTemplate<FloatAnimationKey, LinearKeyInterpolator<FloatAnimationKey>, Controller::ControllerTypeFloat>(params) {}
 
 	/// \brief Gets the controller's value at a certain animation time.
 	virtual FloatType getFloatValue(TimePoint time, TimeInterval& validityInterval) override {
@@ -85,8 +85,8 @@ class OVITO_CORE_EXPORT LinearIntegerController
 public:
 
 	/// Constructor.
-	Q_INVOKABLE LinearIntegerController(DataSet* dataset)
-		: KeyframeControllerTemplate<IntegerAnimationKey, LinearKeyInterpolator<IntegerAnimationKey>, Controller::ControllerTypeInt>(dataset) {}
+	Q_INVOKABLE LinearIntegerController(ObjectCreationParams params)
+		: KeyframeControllerTemplate<IntegerAnimationKey, LinearKeyInterpolator<IntegerAnimationKey>, Controller::ControllerTypeInt>(params) {}
 
 	/// \brief Gets the controller's value at a certain animation time.
 	virtual int getIntValue(TimePoint time, TimeInterval& validityInterval) override {
@@ -114,8 +114,8 @@ class OVITO_CORE_EXPORT LinearVectorController
 public:
 
 	/// Constructor.
-	Q_INVOKABLE LinearVectorController(DataSet* dataset)
-		: KeyframeControllerTemplate<Vector3AnimationKey, LinearKeyInterpolator<Vector3AnimationKey>, Controller::ControllerTypeVector3>(dataset) {}
+	Q_INVOKABLE LinearVectorController(ObjectCreationParams params)
+		: KeyframeControllerTemplate<Vector3AnimationKey, LinearKeyInterpolator<Vector3AnimationKey>, Controller::ControllerTypeVector3>(params) {}
 
 	/// \brief Gets the controller's value at a certain animation time.
 	virtual void getVector3Value(TimePoint time, Vector3& value, TimeInterval& validityInterval) override {
@@ -141,8 +141,8 @@ class OVITO_CORE_EXPORT LinearPositionController
 public:
 
 	/// Constructor.
-	Q_INVOKABLE LinearPositionController(DataSet* dataset)
-		: KeyframeControllerTemplate<PositionAnimationKey, LinearKeyInterpolator<PositionAnimationKey>, Controller::ControllerTypePosition>(dataset) {}
+	Q_INVOKABLE LinearPositionController(ObjectCreationParams params)
+		: KeyframeControllerTemplate<PositionAnimationKey, LinearKeyInterpolator<PositionAnimationKey>, Controller::ControllerTypePosition>(params) {}
 
 	/// \brief Gets the controller's value at a certain animation time.
 	virtual void getPositionValue(TimePoint time, Vector3& value, TimeInterval& validityInterval) override {
@@ -171,8 +171,8 @@ class OVITO_CORE_EXPORT LinearRotationController
 public:
 
 	/// Constructor.
-	Q_INVOKABLE LinearRotationController(DataSet* dataset)
-		: KeyframeControllerTemplate<RotationAnimationKey, LinearKeyInterpolator<RotationAnimationKey>, Controller::ControllerTypeRotation>(dataset) {}
+	Q_INVOKABLE LinearRotationController(ObjectCreationParams params)
+		: KeyframeControllerTemplate<RotationAnimationKey, LinearKeyInterpolator<RotationAnimationKey>, Controller::ControllerTypeRotation>(params) {}
 
 	/// \brief Gets the controller's value at a certain animation time.
 	virtual void getRotationValue(TimePoint time, Rotation& value, TimeInterval& validityInterval) override {
@@ -201,8 +201,8 @@ class OVITO_CORE_EXPORT LinearScalingController
 public:
 
 	/// Constructor.
-	Q_INVOKABLE LinearScalingController(DataSet* dataset)
-		: KeyframeControllerTemplate<ScalingAnimationKey, LinearKeyInterpolator<ScalingAnimationKey>, Controller::ControllerTypeScaling>(dataset) {}
+	Q_INVOKABLE LinearScalingController(ObjectCreationParams params)
+		: KeyframeControllerTemplate<ScalingAnimationKey, LinearKeyInterpolator<ScalingAnimationKey>, Controller::ControllerTypeScaling>(params) {}
 
 	/// \brief Gets the controller's value at a certain animation time.
 	virtual void getScalingValue(TimePoint time, Scaling& value, TimeInterval& validityInterval) override {

@@ -30,7 +30,7 @@ IMPLEMENT_OVITO_CLASS(AnglesObject);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AnglesObject::AnglesObject(DataSet* dataset) : PropertyContainer(dataset)
+AnglesObject::AnglesObject(ObjectCreationParams params) : PropertyContainer(params)
 {
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());

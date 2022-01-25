@@ -59,30 +59,18 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(FileExporter, floatOutputPrecision, IntegerPa
 /******************************************************************************
 * Constructs a new instance of the class.
 ******************************************************************************/
-FileExporter::FileExporter(DataSet* dataset) : RefTarget(dataset),
+FileExporter::FileExporter(ObjectCreationParams params) : RefTarget(params),
 	_exportAnimation(false),
 	_useWildcardFilename(false),
 	_startFrame(0),
 	_endFrame(-1),
 	_everyNthFrame(1),
 	_floatOutputPrecision(10),
-	_ignorePipelineErrors(false)
+	_ignorePipelineErrors(params.loadUserDefaults())
 {
 	// Use the entire animation interval as default export interval.
-	int lastFrame = dataset->animationSettings()->timeToFrame(dataset->animationSettings()->animationInterval().end());
+	int lastFrame = dataset()->animationSettings()->timeToFrame(dataset()->animationSettings()->animationInterval().end());
 	setEndFrame(lastFrame);
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void FileExporter::initializeObject(ObjectInitializationHints hints)
-{
-	if(hints.testFlag(ObjectInitializationHint::LoadUserDefaults))
-		setIgnorePipelineErrors(true);
-
-	RefTarget::initializeObject(hints);
 }
 
 /******************************************************************************

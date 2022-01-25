@@ -206,11 +206,7 @@ void DataSetContainer::onAnimationSettingsReplaced(AnimationSettings* newAnimati
 ******************************************************************************/
 DataSet* DataSetContainer::newDataset()
 {
-	OORef<DataSet> newSet = new DataSet();
-	newSet->initializeObject(ExecutionContext::isInteractive() 
-		? ObjectInitializationHint::LoadUserDefaults
-		: ObjectInitializationHint::LoadFactoryDefaults);
-	setCurrentSet(std::move(newSet));
+	setCurrentSet(OORef<DataSet>::create(nullptr));
 	return currentSet();
 }
 

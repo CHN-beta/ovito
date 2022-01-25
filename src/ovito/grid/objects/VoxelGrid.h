@@ -67,11 +67,7 @@ public:
 	};
 
 	/// \brief Constructor.
-	Q_INVOKABLE VoxelGrid(DataSet* dataset, const QString& title = QString());
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
+	Q_INVOKABLE VoxelGrid(ObjectCreationParams params, const QString& title = QString());
 
 	/// Returns the spatial domain this voxel grid is embedded in after making sure it
 	/// can safely be modified.

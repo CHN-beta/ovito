@@ -100,7 +100,7 @@ class OVITO_MESH_EXPORT ParaViewVTMImporter : public FileSourceImporter
 public:
 
 	/// Constructor.
-	Q_INVOKABLE ParaViewVTMImporter(DataSet *dataset) : FileSourceImporter(dataset), _uniteMeshes(false) {}
+	Q_INVOKABLE ParaViewVTMImporter(ObjectCreationParams params) : FileSourceImporter(params), _uniteMeshes(false) {}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("VTM"); }

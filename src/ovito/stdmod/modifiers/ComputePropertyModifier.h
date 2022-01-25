@@ -184,12 +184,8 @@ class OVITO_STDMOD_EXPORT ComputePropertyModifier : public AsynchronousDelegatin
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE ComputePropertyModifier(DataSet* dataset);
+	Q_INVOKABLE ComputePropertyModifier(ObjectCreationParams params);
 
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
-	
 	/// \brief Returns the current delegate of this ComputePropertyModifier.
 	ComputePropertyModifierDelegate* delegate() const { return static_object_cast<ComputePropertyModifierDelegate>(AsynchronousDelegatingModifier::delegate()); }
 
@@ -268,7 +264,7 @@ class OVITO_STDMOD_EXPORT ComputePropertyModifierApplication : public Asynchrono
 public:
 
 	/// Constructor.
-	Q_INVOKABLE ComputePropertyModifierApplication(DataSet* dataset) : AsynchronousModifierApplication(dataset) {}
+	Q_INVOKABLE ComputePropertyModifierApplication(ObjectCreationParams params) : AsynchronousModifierApplication(params) {}
 
 private:
 

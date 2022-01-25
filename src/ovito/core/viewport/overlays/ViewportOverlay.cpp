@@ -32,7 +32,7 @@ SET_PROPERTY_FIELD_LABEL(ViewportOverlay, renderBehindScene, "Draw behind scene"
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ViewportOverlay::ViewportOverlay(DataSet* dataset) : ActiveObject(dataset),
+ViewportOverlay::ViewportOverlay(ObjectCreationParams params) : ActiveObject(params),
     _renderBehindScene(false)
 {
 }

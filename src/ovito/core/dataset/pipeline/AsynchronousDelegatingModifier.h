@@ -68,7 +68,7 @@ public:
 public:
 
 	/// Constructor.
-	AsynchronousDelegatingModifier(DataSet* dataset);
+	using AsynchronousModifier::AsynchronousModifier;
 
 	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
@@ -77,7 +77,7 @@ protected:
 
 	/// Creates a default delegate for this modifier.
 	/// This should be called from the modifier's constructor.
-	void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectInitializationHints initializationHints);
+	void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectCreationParams params);
 
 protected:
 

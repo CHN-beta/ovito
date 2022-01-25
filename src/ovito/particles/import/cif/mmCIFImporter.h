@@ -56,7 +56,7 @@ class OVITO_PARTICLES_EXPORT mmCIFImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE mmCIFImporter(DataSet* dataset) : ParticleImporter(dataset) { 
+	Q_INVOKABLE mmCIFImporter(ObjectCreationParams params) : ParticleImporter(params) { 
 		setGenerateBonds(true); 
 	}
 

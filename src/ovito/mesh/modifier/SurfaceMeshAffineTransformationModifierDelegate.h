@@ -65,7 +65,7 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshAffineTransformationModifierDelegate : pub
 public:
 
 	/// Constructor.
-	Q_INVOKABLE SurfaceMeshAffineTransformationModifierDelegate(DataSet* dataset) : AffineTransformationModifierDelegate(dataset) {}
+	Q_INVOKABLE SurfaceMeshAffineTransformationModifierDelegate(ObjectCreationParams params) : AffineTransformationModifierDelegate(params) {}
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
 	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

@@ -346,7 +346,7 @@ void ColorCodingModifierEditor::onColorGradientSelected(int index)
 	OvitoClassPtr descriptor = _colorGradientList->itemData(index).value<OvitoClassPtr>();
 	if(descriptor) {
 		undoableTransaction(tr("Change color gradient"), [descriptor, mod]() {
-			OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(mod->dataset(), ObjectInitializationHint::LoadUserDefaults));
+			OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(mod->dataset()));
 			if(gradient) {
 				mod->setColorGradient(gradient);
 
@@ -362,7 +362,7 @@ void ColorCodingModifierEditor::onColorGradientSelected(int index)
 		undoableTransaction(tr("Change color gradient"), [this, mod]() {
 			LoadImageFileDialog fileDialog(container(), tr("Pick color map image"));
 			if(fileDialog.exec()) {
-				OORef<ColorCodingImageGradient> gradient(new ColorCodingImageGradient(mod->dataset()));
+				OORef<ColorCodingImageGradient> gradient = OORef<ColorCodingImageGradient>::create(mod->dataset());
 				gradient->loadImage(fileDialog.imageInfo().filename());
 				mod->setColorGradient(gradient);
 			}
@@ -452,7 +452,7 @@ QIcon ColorCodingModifierEditor::iconFromColorMapClass(OvitoClassPtr clazz)
 	if(DataSet* dataset = mainWindow().datasetContainer().currentSet()) {
 		try {
 			// Create a temporary instance of the color map class.
-			OORef<ColorCodingGradient> map = static_object_cast<ColorCodingGradient>(clazz->createInstance(dataset, ObjectInitializationHint::LoadUserDefaults));
+			OORef<ColorCodingGradient> map = static_object_cast<ColorCodingGradient>(clazz->createInstance(dataset));
 			if(map) {
 				QIcon icon = iconFromColorMap(map);
 				iconCache.insert(std::make_pair(clazz, icon));

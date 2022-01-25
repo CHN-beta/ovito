@@ -59,7 +59,7 @@ class OVITO_MESH_EXPORT VTKFileImporter : public FileSourceImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE VTKFileImporter(DataSet* dataset) : FileSourceImporter(dataset) {}
+	Q_INVOKABLE VTKFileImporter(ObjectCreationParams params) : FileSourceImporter(params) {}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("VTK"); }

@@ -59,7 +59,7 @@ class OVITO_PARTICLES_EXPORT GroImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE GroImporter(DataSet* dataset) : ParticleImporter(dataset) {
+	Q_INVOKABLE GroImporter(ObjectCreationParams params) : ParticleImporter(params) {
 		setRecenterCell(true);
 	}
 

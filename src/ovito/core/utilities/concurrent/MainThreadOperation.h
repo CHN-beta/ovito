@@ -24,7 +24,6 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/oo/InitializationHints.h>
 #include <ovito/core/utilities/concurrent/ExecutionContext.h>
 #include "Promise.h"
 

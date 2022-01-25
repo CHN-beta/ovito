@@ -32,13 +32,6 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(OffscreenInteractiveOpenGLSceneRenderer);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-OffscreenInteractiveOpenGLSceneRenderer::OffscreenInteractiveOpenGLSceneRenderer(DataSet* dataset) : OpenGLSceneRenderer(dataset) 
-{
-}
-
-/******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
 void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)

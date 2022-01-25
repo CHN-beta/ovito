@@ -56,11 +56,7 @@ class OVITO_STDOBJ_EXPORT StandardCameraObject : public AbstractCameraObject
 public:
 
 	/// Constructor.
-	Q_INVOKABLE StandardCameraObject(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;
+	Q_INVOKABLE StandardCameraObject(ObjectCreationParams params);
 
 	/// With a target camera, indicates the distance between the camera and its target.
 	static FloatType getTargetDistance(TimePoint time, const PipelineSceneNode* node);
@@ -105,7 +101,7 @@ class OVITO_STDOBJ_EXPORT CameraVis : public DataVis
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE CameraVis(DataSet* dataset) : DataVis(dataset) {}
+	Q_INVOKABLE CameraVis(ObjectCreationParams params) : DataVis(params) {}
 
 	/// \brief Lets the vis element render a camera object.
 	virtual PipelineStatus render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;

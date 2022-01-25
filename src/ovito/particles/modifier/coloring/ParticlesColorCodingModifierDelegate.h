@@ -62,7 +62,7 @@ class ParticlesColorCodingModifierDelegate : public ColorCodingModifierDelegate
 public:
 
 	/// Constructor.
-	Q_INVOKABLE ParticlesColorCodingModifierDelegate(DataSet* dataset) : ColorCodingModifierDelegate(dataset) {}
+	Q_INVOKABLE ParticlesColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
 };
 
 /**
@@ -95,7 +95,7 @@ class ParticleVectorsColorCodingModifierDelegate : public ColorCodingModifierDel
 public:
 
 	/// Constructor.
-	Q_INVOKABLE ParticleVectorsColorCodingModifierDelegate(DataSet* dataset) : ColorCodingModifierDelegate(dataset) {}
+	Q_INVOKABLE ParticleVectorsColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
 
 protected:
 
@@ -133,7 +133,7 @@ class BondsColorCodingModifierDelegate : public ColorCodingModifierDelegate
 public:
 
 	/// Constructor.
-	Q_INVOKABLE BondsColorCodingModifierDelegate(DataSet* dataset) : ColorCodingModifierDelegate(dataset) {}
+	Q_INVOKABLE BondsColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
 };
 
 }	// End of namespace

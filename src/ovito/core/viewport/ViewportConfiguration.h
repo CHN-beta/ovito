@@ -55,7 +55,7 @@ public:
 public:
 
 	/// Constructor.
-	Q_INVOKABLE ViewportConfiguration(DataSet* dataset);
+	Q_INVOKABLE ViewportConfiguration(ObjectCreationParams params);
 
 	/// \brief Immediately repaints all viewports that have been scheduled for an update using updateViewports().
 	/// \sa updateViewports()

@@ -46,25 +46,33 @@ IMPLEMENT_OVITO_CLASS(VoxelGridPickInfo);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-VoxelGridVis::VoxelGridVis(DataSet* dataset) : DataVis(dataset),
+VoxelGridVis::VoxelGridVis(ObjectCreationParams params) : DataVis(params),
 	_highlightGridLines(true),
 	_interpolateColors(false)
 {
+	if(params.createSubObjects()) {
+		// Create animation controller for the transparency parameter.
+		setTransparencyController(ControllerManager::createFloatController(dataset()));
+
+		// Create a color mapping object for pseudo-color visualization of a grid property.
+		setColorMapping(OORef<PropertyColorMapping>::create(params));
+	}
 }
 
 /******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
+* This method is called once for this object after it has been completely
+* loaded from a stream.
 ******************************************************************************/
-void VoxelGridVis::initializeObject(ObjectInitializationHints hints)
+void VoxelGridVis::loadFromStreamComplete(ObjectLoadStream& stream)
 {
-	// Create animation controller for the transparency parameter.
-	setTransparencyController(ControllerManager::createFloatController(dataset(), hints));
+	DataVis::loadFromStreamComplete(stream);
 
-	// Create a color mapping object for pseudo-color visualization of a grid property.
-	setColorMapping(OORef<PropertyColorMapping>::create(dataset(), hints));
-
-	DataVis::initializeObject(hints);
+	// For backward compatibility with OVITO 3.5.4.
+	// Create a color mapping sub-object if it wasn't loaded from the state file.
+	if(!colorMapping()) {
+		// Create a color mapping object for pseudo-color visualization of a grid property.
+		setColorMapping(OORef<PropertyColorMapping>::create(dataset()));
+	}
 }
 
 /******************************************************************************
@@ -174,7 +182,7 @@ PipelineStatus VoxelGridVis::render(TimePoint time, const ConstDataObjectPath& p
 		}
 		primitives.pickInfo = new VoxelGridPickInfo(this, gridObj, trianglesPerCell);
 		if(gridObj->domain()) {
-			DataOORef<TriMeshObject> mesh = DataOORef<TriMeshObject>::create(dataset(), ObjectInitializationHint::WithoutVisElement);
+			DataOORef<TriMeshObject> mesh = DataOORef<TriMeshObject>::create(dataset(), ObjectCreationParams::WithoutVisElement);
 			if(colorArray) {
 				if(interpolateColors()) mesh->setHasVertexColors(true);
 				else mesh->setHasFaceColors(true);

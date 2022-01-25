@@ -41,12 +41,8 @@ class OVITO_CORE_EXPORT TriMeshVis : public DataVis
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE TriMeshVis(DataSet* dataset);
+	Q_INVOKABLE TriMeshVis(ObjectCreationParams params);
 
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;
-	
 	/// \brief Lets the vis element render a data object.
 	virtual PipelineStatus render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
 

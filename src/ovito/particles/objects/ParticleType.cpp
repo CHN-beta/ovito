@@ -57,7 +57,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticleType, vdwRadius, WorldParameterUnit
 /******************************************************************************
 * Constructs a new particle type.
 ******************************************************************************/
-ParticleType::ParticleType(DataSet* dataset) : ElementType(dataset),
+ParticleType::ParticleType(ObjectCreationParams params) : ElementType(params),
 	_radius(0),
 	_vdwRadius(0),
 	_shape(ParticlesVis::ParticleShape::Default),
@@ -71,27 +71,30 @@ ParticleType::ParticleType(DataSet* dataset) : ElementType(dataset),
 /******************************************************************************
 * Initializes the particle type's attributes to standard values.
 ******************************************************************************/
-void ParticleType::initializeType(const PropertyReference& property, ObjectInitializationHints initializationHints)
+void ParticleType::initializeType(const PropertyReference& property, bool loadUserDefaults)
 {
-	ElementType::initializeType(property, initializationHints);
+	ElementType::initializeType(property, loadUserDefaults);
 
 	// Load standard display radius.
-	setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadFactoryDefaults, DisplayRadius));
+	// First load the hardcoded default radius and freeze it, then load the user-defined default radius.
+	setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), false, DisplayRadius));
 	freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::radius)});
-	if(initializationHints.testFlag(LoadUserDefaults))
-		setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadUserDefaults, DisplayRadius));
+	if(loadUserDefaults)
+		setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), true, DisplayRadius));
 	
 	// Load standard van der Waals radius.
-	setVdwRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadFactoryDefaults, VanDerWaalsRadius));
+	// First load the hardcoded default radius and freeze it, then load the user-defined default radius.
+	setVdwRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), false, VanDerWaalsRadius));
 	freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::vdwRadius)});
-	if(initializationHints.testFlag(LoadUserDefaults))
-		setVdwRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadUserDefaults, VanDerWaalsRadius));
+	if(loadUserDefaults)
+		setVdwRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), true, VanDerWaalsRadius));
 	
 	// Load standard mass.
-	setMass(getDefaultParticleMass(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadFactoryDefaults));
+	// First load the hardcoded default mass and freeze it, then load the user-defined default mass.
+	setMass(getDefaultParticleMass(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), false));
 	freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::mass)});
-	if(initializationHints.testFlag(LoadUserDefaults))
-		setMass(getDefaultParticleMass(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), LoadUserDefaults));
+	if(loadUserDefaults)
+		setMass(getDefaultParticleMass(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), true));
 }
 
 /******************************************************************************
@@ -172,8 +175,8 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, MainThreadOperation& ope
 		throwException(tr("The loaded geometry file does not provide any valid mesh data."));
 	DataOORef<TriMeshObject> meshObj = DataOORef<TriMeshObject>::makeCopy(state.expectObject<TriMeshObject>());
 
-	// We requested creating the TriMeshObject without a visual element.
-	OVITO_ASSERT(meshObj->visElements().empty());
+	// Throw away any visual elements attached to the mesh object.
+	meshObj->setVisElement(nullptr);
 
 	// Show sharp edges of the mesh.
 	meshObj->determineEdgeVisibility();
@@ -341,11 +344,11 @@ const std::array<ParticleType::PredefinedStructuralType, ParticleType::NUMBER_OF
 /******************************************************************************
 * Returns the default radius for a particle type.
 ******************************************************************************/
-FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int numericTypeId, ObjectInitializationHints initializationHints, RadiusVariant radiusVariant)
+FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int numericTypeId, bool loadUserDefaults, RadiusVariant radiusVariant)
 {
 	// Interactive execution context means that we are supposed to load the user-defined
 	// settings from the settings store.
-	if(initializationHints.testFlag(ObjectInitializationHint::LoadUserDefaults) && typeClass != ParticlesObject::UserProperty) {
+	if(loadUserDefaults && typeClass != ParticlesObject::UserProperty) {
 
 #ifndef OVITO_DISABLE_QSETTINGS
 		// Use the type's name, property type and container class to look up the 
@@ -378,7 +381,7 @@ FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass
 
 		// Sometimes atom type names have additional letters/numbers appended.
 		if(particleTypeName.length() > 1 && particleTypeName.length() <= 5) {
-			return getDefaultParticleRadius(typeClass, particleTypeName.left(particleTypeName.length() - 1), numericTypeId, initializationHints, radiusVariant);
+			return getDefaultParticleRadius(typeClass, particleTypeName.left(particleTypeName.length() - 1), numericTypeId, loadUserDefaults, radiusVariant);
 		}
 	}
 
@@ -398,7 +401,7 @@ void ParticleType::setDefaultParticleRadius(ParticlesObject::Type typeClass, con
 	const QString& settingsKey = ElementType::getElementSettingsKey(ParticlePropertyReference(typeClass), 
 		(radiusVariant == DisplayRadius) ? QStringLiteral("radius") : QStringLiteral("vdw_radius"), particleTypeName);
 	
-	if(std::abs(getDefaultParticleRadius(typeClass, particleTypeName, 0, ObjectInitializationHint::LoadFactoryDefaults, radiusVariant) - radius) > 1e-6)
+	if(std::abs(getDefaultParticleRadius(typeClass, particleTypeName, 0, false, radiusVariant) - radius) > 1e-6)
 		settings.setValue(settingsKey, QVariant::fromValue(radius));
 	else
 		settings.remove(settingsKey);
@@ -408,7 +411,7 @@ void ParticleType::setDefaultParticleRadius(ParticlesObject::Type typeClass, con
 /******************************************************************************
 * Returns the default mass for a particle type.
 ******************************************************************************/
-FloatType ParticleType::getDefaultParticleMass(ParticlesObject::Type typeClass, const QString& particleTypeName, int numericTypeId, ObjectInitializationHints initializationHints)
+FloatType ParticleType::getDefaultParticleMass(ParticlesObject::Type typeClass, const QString& particleTypeName, int numericTypeId, bool loadUserDefaults)
 {
 	if(typeClass == ParticlesObject::TypeProperty) {
 		for(const PredefinedChemicalType& predefType : _predefinedParticleTypes) {
@@ -419,7 +422,7 @@ FloatType ParticleType::getDefaultParticleMass(ParticlesObject::Type typeClass, 
 
 		// Sometimes atom type names have additional letters/numbers appended.
 		if(particleTypeName.length() > 1 && particleTypeName.length() <= 5) {
-			return getDefaultParticleMass(typeClass, particleTypeName.left(particleTypeName.length() - 1), numericTypeId, initializationHints);
+			return getDefaultParticleMass(typeClass, particleTypeName.left(particleTypeName.length() - 1), numericTypeId, loadUserDefaults);
 		}
 	}
 

@@ -40,7 +40,7 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(Modifier, title, ReferenceEvent::TitleChanged);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Modifier::Modifier(DataSet* dataset) : RefTarget(dataset),
+Modifier::Modifier(ObjectCreationParams params) : RefTarget(params),
 	_isEnabled(true)
 {
 }
@@ -74,7 +74,7 @@ OORef<ModifierApplication> Modifier::createModifierApplication()
 			return static_object_cast<ModifierApplication>(modAppClass->createInstance(dataset()));
 		}
 	}
-	return new ModifierApplication(dataset());
+	return OORef<ModifierApplication>::create(dataset());
 }
 
 /******************************************************************************

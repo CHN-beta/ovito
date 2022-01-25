@@ -32,7 +32,7 @@ IMPLEMENT_OVITO_CLASS(ClearSelectionModifier);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ClearSelectionModifier::ClearSelectionModifier(DataSet* dataset) : GenericPropertyModifier(dataset)
+ClearSelectionModifier::ClearSelectionModifier(ObjectCreationParams params) : GenericPropertyModifier(params)
 {
 	// Operate on particles by default.
 	setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));

@@ -97,10 +97,12 @@ bool XYZImporterEditor::showEditColumnMappingDialog(XYZImporter* importer, const
 {
 	Future<ParticleInputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
 
-	// Block UI until reading is done.
-	ProgressDialog progressDialog(parentWindow(), mainWindow(), tr("Inspecting file header"));
-	if(!progressDialog.waitForFuture(inspectFuture))
-		return false;
+	{
+		// Block UI until reading is done.
+		ProgressDialog progressDialog(parentWindow(), mainWindow(), tr("Inspecting file header"));
+		if(!progressDialog.waitForFuture(inspectFuture))
+			return false;
+	}
 
 	ParticleInputColumnMapping mapping = inspectFuture.result();
 

@@ -53,11 +53,7 @@ class OVITO_CORE_EXPORT AttributeFileExporter : public FileExporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE AttributeFileExporter(DataSet* dataset) : FileExporter(dataset) {}
-
-	/// \brief Loads the user-defined default values of this object's parameter fields from the
-	///        application's settings store.
-	virtual void initializeObject(ObjectInitializationHints hints) override;
+	Q_INVOKABLE AttributeFileExporter(ObjectCreationParams params);
 
 	/// \brief Indicates whether this file exporter can write more than one animation frame into a single output file.
 	virtual bool supportsMultiFrameFiles() const override { return true; }

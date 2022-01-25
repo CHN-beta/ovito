@@ -229,7 +229,7 @@ public:
 protected:
 
 	/// Constructor.
-	SceneRenderer(DataSet* dataset);
+	using RefTarget::RefTarget;
 
 	/// \brief Renders all nodes in the scene.
 	virtual bool renderScene(MainThreadOperation& operation);

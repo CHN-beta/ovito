@@ -62,12 +62,8 @@ class OVITO_GRID_EXPORT CreateIsosurfaceModifier : public AsynchronousModifier
 public:
 
 	/// Constructor.
-	Q_INVOKABLE CreateIsosurfaceModifier(DataSet* dataset);
+	Q_INVOKABLE CreateIsosurfaceModifier(ObjectCreationParams params);
 
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
-	
 	/// This method is called by the system after the modifier has been inserted into a data pipeline.
 	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 

@@ -68,11 +68,7 @@ public:
 public:
 
 	/// Constructor.
-	Q_INVOKABLE ConstructSurfaceModifier(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
+	Q_INVOKABLE ConstructSurfaceModifier(ObjectCreationParams params);
 	
 	/// Decides whether a preliminary viewport update is performed after the modifier has been
 	/// evaluated but before the entire pipeline evaluation is complete.

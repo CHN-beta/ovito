@@ -58,7 +58,7 @@ public:
 public:
 
 	/// Constructor.
-	Q_INVOKABLE ParticlesVis(DataSet* dataset);
+	Q_INVOKABLE ParticlesVis(ObjectCreationParams params);
 
 	/// Renders the visual element.
 	virtual PipelineStatus render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;

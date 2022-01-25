@@ -45,7 +45,7 @@ class OVITO_CORE_EXPORT TextLabelOverlay : public ViewportOverlay
 public:
 
 	/// Constructor.
-	Q_INVOKABLE TextLabelOverlay(DataSet* dataset);
+	Q_INVOKABLE TextLabelOverlay(ObjectCreationParams params);
 
 	/// Lets the overlay paint its contents into the framebuffer.
 	virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;

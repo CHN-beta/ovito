@@ -59,12 +59,8 @@ class OVITO_PARTICLES_EXPORT LoadTrajectoryModifier : public Modifier
 public:
 
 	/// Constructor.
-	Q_INVOKABLE LoadTrajectoryModifier(DataSet* dataset);
+	Q_INVOKABLE LoadTrajectoryModifier(ObjectCreationParams params);
 
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
-	
 	/// Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 

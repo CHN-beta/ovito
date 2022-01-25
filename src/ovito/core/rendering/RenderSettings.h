@@ -57,11 +57,7 @@ public:
 
 	/// Constructor.
 	/// Creates an instance of the default renderer class which can be accessed via the renderer() method.
-	Q_INVOKABLE RenderSettings(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;
+	Q_INVOKABLE RenderSettings(ObjectCreationParams params);
 
 	/// Returns the aspect ratio (height/width) of the rendered image.
 	FloatType outputImageAspectRatio() const { return (FloatType)outputImageHeight() / (FloatType)outputImageWidth(); }

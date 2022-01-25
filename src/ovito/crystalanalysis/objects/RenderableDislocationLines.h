@@ -58,8 +58,8 @@ public:
 		bool operator==(const Segment& other) const { return verts == other.verts && dislocationIndex == other.dislocationIndex && burgersVector == other.burgersVector && region == other.region; }
 	};
 
-	/// constructor.
-	Q_INVOKABLE RenderableDislocationLines(DataSet* dataset, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr) : TransformedDataObject(dataset, creator, sourceData) {}
+	/// Constructor.
+	Q_INVOKABLE RenderableDislocationLines(ObjectCreationParams params, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr) : TransformedDataObject(params, creator, sourceData) {}
 
 private:
 

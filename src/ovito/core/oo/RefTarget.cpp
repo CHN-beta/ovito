@@ -35,12 +35,12 @@ IMPLEMENT_OVITO_CLASS(RefTarget);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-RefTarget::RefTarget(DataSet* dataset) : RefMaker(dataset) 
+RefTarget::RefTarget(ObjectCreationParams params) : RefMaker(params.dataset()) 
 {
-	OVITO_CHECK_POINTER(dataset);
+	OVITO_CHECK_POINTER(dataset());
 
 	// Ovito objects always live in the main thread.
-	moveToThread(dataset->thread());
+	moveToThread(dataset()->thread());
 }
 
 #ifdef OVITO_DEBUG
@@ -164,7 +164,7 @@ OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
 	// Create a new instance of the object's class.
 	// Note: Calling low-level method createInstanceImpl() instead of createInstanceImpl() here to avoid initialization of
 	// object parameters to default values. Default initialization is not needed when cloning an object.
-	OORef<RefTarget> clone = static_object_cast<RefTarget>(getOOClass().createInstanceImpl(dataset()));
+	OORef<RefTarget> clone = static_object_cast<RefTarget>(getOOClass().createInstanceImpl(ObjectCreationParams(dataset(), ObjectCreationParams::DontCreateSubObjects)));
 	OVITO_ASSERT(clone);
 	OVITO_ASSERT(clone->getOOClass().isDerivedFrom(getOOClass()));
 	if(!clone || !clone->getOOClass().isDerivedFrom(getOOClass()))

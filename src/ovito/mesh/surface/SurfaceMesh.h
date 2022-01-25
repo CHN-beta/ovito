@@ -53,11 +53,7 @@ public:
     constexpr static size_type InvalidIndex = SurfaceMeshTopology::InvalidIndex;
 
 	/// Constructor creating an empty SurfaceMesh object.
-	Q_INVOKABLE SurfaceMesh(DataSet* dataset, const QString& title = QString());
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
+	Q_INVOKABLE SurfaceMesh(ObjectCreationParams params, const QString& title = QString());
 	
 	/// Makes sure that the data structures of the surface mesh are valid and all vertex and face properties
 	/// are consistent with the topology of the mesh. If this is not the case, the method throws an exception.

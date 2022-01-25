@@ -587,7 +587,7 @@ void ViewportsPanel::showSplitterContextMenu(const SplitterRectangle& splitter, 
 			if(!adjacentCell->children().empty())
 				adjacentCell = adjacentCell->children().back();
 		}
-		OORef<ViewportLayoutCell> newCell = OORef<ViewportLayoutCell>::create(splitter.cell->dataset(), ObjectInitializationHint::LoadUserDefaults);
+		OORef<ViewportLayoutCell> newCell = OORef<ViewportLayoutCell>::create(splitter.cell->dataset());
 		newCell->setViewport(CloneHelper().cloneObject(adjacentViewport, true));
 		UndoableTransaction::handleExceptions(_viewportConfig->dataset()->undoStack(), tr("Insert viewport"), [&]() {
 			_viewportConfig->setActiveViewport(newCell->viewport());

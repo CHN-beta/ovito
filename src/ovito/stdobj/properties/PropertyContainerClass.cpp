@@ -83,7 +83,7 @@ PropertyPtr PropertyContainerClass::createStandardProperty(DataSet* dataset, siz
 /******************************************************************************
 * Returns the default color for a numeric type ID.
 ******************************************************************************/
-Color PropertyContainerClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ObjectInitializationHints initializationHints) const
+Color PropertyContainerClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const
 {
 	// Palette of standard colors initially assigned to new element types:
 	static const Color defaultTypeColors[] = {

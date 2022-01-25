@@ -41,7 +41,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(AnimationSettings, playbackEveryNthFrame, I
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AnimationSettings::AnimationSettings(DataSet* dataset) : RefTarget(dataset),
+AnimationSettings::AnimationSettings(ObjectCreationParams params) : RefTarget(params),
 		_ticksPerFrame(TICKS_PER_SECOND/10),
 		_playbackSpeed(1),
 		_animationInterval(0, 0),

@@ -63,27 +63,19 @@ SET_MODIFIER_APPLICATION_TYPE(GenerateTrajectoryLinesModifier, GenerateTrajector
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(DataSet* dataset) : Modifier(dataset),
+GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(ObjectCreationParams params) : Modifier(params),
 	_onlySelectedParticles(true),
 	_useCustomInterval(false),
-	_customIntervalStart(dataset->animationSettings()->animationInterval().start()),
-	_customIntervalEnd(dataset->animationSettings()->animationInterval().end()),
+	_customIntervalStart(params.dataset()->animationSettings()->animationInterval().start()),
+	_customIntervalEnd(params.dataset()->animationSettings()->animationInterval().end()),
 	_everyNthFrame(1),
 	_unwrapTrajectories(true),
 	_transferParticleProperties(false)
 {
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void GenerateTrajectoryLinesModifier::initializeObject(ObjectInitializationHints hints)
-{
-	// Create the vis element for rendering the trajectories created by the modifier.
-	setTrajectoryVis(OORef<TrajectoryVis>::create(dataset(), hints));
-
-	Modifier::initializeObject(hints);
+	if(params.createSubObjects()) {
+		// Create the vis element for rendering the trajectories created by the modifier.
+		setTrajectoryVis(OORef<TrajectoryVis>::create(params));
+	}
 }
 
 /******************************************************************************

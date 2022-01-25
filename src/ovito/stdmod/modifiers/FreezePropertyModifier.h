@@ -48,7 +48,7 @@ class OVITO_STDMOD_EXPORT FreezePropertyModifier : public GenericPropertyModifie
 public:
 
 	/// Constructor.
-	Q_INVOKABLE FreezePropertyModifier(DataSet* dataset);
+	Q_INVOKABLE FreezePropertyModifier(ObjectCreationParams params);
 
 	/// This method is called by the system after the modifier has been inserted into a data pipeline.
 	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -86,7 +86,7 @@ class OVITO_STDMOD_EXPORT FreezePropertyModifierApplication : public ModifierApp
 public:
 
 	/// Constructor.
-	Q_INVOKABLE FreezePropertyModifierApplication(DataSet* dataset) : ModifierApplication(dataset) {}
+	Q_INVOKABLE FreezePropertyModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
 
 	/// Makes a copy of the given source property and, optionally, of the provided
 	/// element identifier list, which will allow to restore the saved property

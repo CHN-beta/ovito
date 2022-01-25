@@ -37,7 +37,7 @@ SET_PROPERTY_FIELD_LABEL(BasePipelineSource, dataCollectionFrame, "Active frame 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-BasePipelineSource::BasePipelineSource(DataSet* dataset) : CachingPipelineObject(dataset),
+BasePipelineSource::BasePipelineSource(ObjectCreationParams params) : CachingPipelineObject(params),
 	_dataCollectionFrame(-1)
 {
 }

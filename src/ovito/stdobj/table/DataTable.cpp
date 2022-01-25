@@ -85,7 +85,7 @@ PropertyPtr DataTable::OOMetaClass::createStandardPropertyInternal(DataSet* data
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DataTable::DataTable(DataSet* dataset, PlotMode plotMode, const QString& title, ConstPropertyPtr y, ConstPropertyPtr x) : PropertyContainer(dataset, title),
+DataTable::DataTable(ObjectCreationParams params, PlotMode plotMode, const QString& title, ConstPropertyPtr y, ConstPropertyPtr x) : PropertyContainer(params, title),
 	_intervalStart(0),
 	_intervalEnd(0),
 	_plotMode(plotMode)

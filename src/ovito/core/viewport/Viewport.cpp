@@ -59,7 +59,7 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(Viewport, viewportTitle, ReferenceEvent::TitleCh
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Viewport::Viewport(DataSet* dataset) : RefTarget(dataset),
+Viewport::Viewport(ObjectCreationParams params) : RefTarget(params),
 		_viewType(VIEW_NONE),
 		_fieldOfView(100),
 		_renderPreviewMode(false),

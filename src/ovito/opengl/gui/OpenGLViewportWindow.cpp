@@ -49,11 +49,11 @@ OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, UserInterface* userInte
 	OpenGLSceneRenderer::determineOpenGLInfo();
 
 	// Create the viewport renderer.
-	_viewportRenderer = new OpenGLSceneRenderer(viewport()->dataset());
+	_viewportRenderer = OORef<OpenGLSceneRenderer>::create(viewport()->dataset());
 	_viewportRenderer->setInteractive(true);
 
 	// Create the object picking renderer.
-	_pickingRenderer = new PickingOpenGLSceneRenderer(viewport()->dataset());
+	_pickingRenderer = OORef<PickingOpenGLSceneRenderer>::create(viewport()->dataset());
 	_pickingRenderer->setInteractive(true);
 
 	// Make sure the viewport window releases its resources before the application shuts down, e.g.

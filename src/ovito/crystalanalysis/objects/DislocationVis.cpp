@@ -58,7 +58,7 @@ IMPLEMENT_OVITO_CLASS(DislocationPickInfo);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DislocationVis::DislocationVis(DataSet* dataset) : TransformingDataVis(dataset),
+DislocationVis::DislocationVis(ObjectCreationParams params) : TransformingDataVis(params),
 	_lineWidth(1.0),
 	_shadingMode(CylinderPrimitive::NormalShading),
 	_burgersVectorWidth(0.6),
@@ -164,7 +164,7 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 	}
 
 	// Create output RenderableDislocationLines object.
-	DataOORef<RenderableDislocationLines> renderableLines = DataOORef<RenderableDislocationLines>::create(dataset(), ObjectInitializationHint::WithoutVisElement, this, dataObject);
+	DataOORef<RenderableDislocationLines> renderableLines = DataOORef<RenderableDislocationLines>::create(dataset(), ObjectCreationParams::WithoutVisElement, this, dataObject);
 	renderableLines->setVisElement(this);
 	renderableLines->setLineSegments(std::move(outputSegments));
 	renderableLines->setClusterGraph(std::move(clusterGraph));

@@ -76,7 +76,7 @@ public:
 
 	/// \brief Constructor that initializes the object with default values.
 	/// \param dataset The context dataset.
-	Q_INVOKABLE AnimationSettings(DataSet* dataset);
+	Q_INVOKABLE AnimationSettings(ObjectCreationParams params);
 
 	/// \brief Returns the number of frames per second.
 	/// \return The number of frames per second.

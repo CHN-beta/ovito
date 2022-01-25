@@ -35,24 +35,16 @@ IMPLEMENT_OVITO_CLASS(AcklandJonesModifier);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-AcklandJonesModifier::AcklandJonesModifier(DataSet* dataset) : StructureIdentificationModifier(dataset)
+AcklandJonesModifier::AcklandJonesModifier(ObjectCreationParams params) : StructureIdentificationModifier(params)
 {
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void AcklandJonesModifier::initializeObject(ObjectInitializationHints hints)
-{
-	// Create the structure types.
-	createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, hints);
-	createStructureType(FCC, ParticleType::PredefinedStructureType::FCC, hints);
-	createStructureType(HCP, ParticleType::PredefinedStructureType::HCP, hints);
-	createStructureType(BCC, ParticleType::PredefinedStructureType::BCC, hints);
-	createStructureType(ICO, ParticleType::PredefinedStructureType::ICO, hints);
-	
-	StructureIdentificationModifier::initializeObject(hints);
+	if(params.createSubObjects()) {
+		// Create the structure types.
+		createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, params);
+		createStructureType(FCC, ParticleType::PredefinedStructureType::FCC, params);
+		createStructureType(HCP, ParticleType::PredefinedStructureType::HCP, params);
+		createStructureType(BCC, ParticleType::PredefinedStructureType::BCC, params);
+		createStructureType(ICO, ParticleType::PredefinedStructureType::ICO, params);
+	}
 }
 
 /******************************************************************************

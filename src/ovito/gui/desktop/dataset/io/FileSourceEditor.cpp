@@ -306,7 +306,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 		}
 		else {
 			// Create a new importer instance.
-			fileImporter = static_object_cast<FileImporter>(importerType->createInstance(fileSource->dataset(), ObjectInitializationHint::LoadUserDefaults));
+			fileImporter = static_object_cast<FileImporter>(importerType->createInstance(fileSource->dataset()));
 			if(!fileImporter)
 				return false;
 		}

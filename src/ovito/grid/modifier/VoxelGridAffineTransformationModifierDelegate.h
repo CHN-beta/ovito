@@ -57,7 +57,7 @@ class VoxelGridAffineTransformationModifierDelegate : public AffineTransformatio
 public:
 
 	/// Constructor.
-	Q_INVOKABLE VoxelGridAffineTransformationModifierDelegate(DataSet* dataset) : AffineTransformationModifierDelegate(dataset) {}
+	Q_INVOKABLE VoxelGridAffineTransformationModifierDelegate(ObjectCreationParams params) : AffineTransformationModifierDelegate(params) {}
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
 	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

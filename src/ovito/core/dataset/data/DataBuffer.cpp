@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,17 +30,10 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(DataBuffer);
 
 /******************************************************************************
-* Constructor creating an empty data array.
-******************************************************************************/
-DataBuffer::DataBuffer(DataSet* dataset) : DataObject(dataset)
-{
-}
-
-/******************************************************************************
 * Constructor allocating a property array with given size and data layout.
 ******************************************************************************/
-DataBuffer::DataBuffer(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, InitializationFlags flags, QStringList componentNames) :
-	DataObject(dataset),
+DataBuffer::DataBuffer(ObjectCreationParams params, size_t elementCount, int dataType, size_t componentCount, InitializationFlags flags, QStringList componentNames) :
+	DataObject(params),
 	_dataType(dataType),
 	_dataTypeSize(getQtTypeSizeFromId(dataType)),
 	_componentCount(componentCount),

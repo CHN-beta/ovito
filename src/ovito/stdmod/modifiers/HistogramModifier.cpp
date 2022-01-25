@@ -62,7 +62,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(HistogramModifier, numberOfBins, IntegerParam
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-HistogramModifier::HistogramModifier(DataSet* dataset) : GenericPropertyModifier(dataset),
+HistogramModifier::HistogramModifier(ObjectCreationParams params) : GenericPropertyModifier(params),
 	_numberOfBins(200),
 	_selectInRange(false),
 	_selectionRangeStart(0),

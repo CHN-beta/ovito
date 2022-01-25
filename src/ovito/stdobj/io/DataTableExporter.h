@@ -54,7 +54,7 @@ class OVITO_STDOBJ_EXPORT DataTableExporter : public FileExporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE DataTableExporter(DataSet* dataset) : FileExporter(dataset) {}
+	Q_INVOKABLE DataTableExporter(ObjectCreationParams params) : FileExporter(params) {}
 
 	/// \brief Returns the type(s) of data objects that this exporter service can export.
 	virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {

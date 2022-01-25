@@ -156,11 +156,7 @@ private:
 public:
 
 	/// Constructor.
-	Q_INVOKABLE CreateBondsModifier(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
+	Q_INVOKABLE CreateBondsModifier(ObjectCreationParams params);
 
 	/// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
 	virtual void initializeModifier(const ModifierInitializationRequest& request) override;

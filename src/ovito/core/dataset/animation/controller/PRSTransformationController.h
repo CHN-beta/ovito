@@ -45,11 +45,7 @@ class OVITO_CORE_EXPORT PRSTransformationController : public Controller
 public:
 
 	/// Default constructor.
-	Q_INVOKABLE PRSTransformationController(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;
+	Q_INVOKABLE PRSTransformationController(ObjectCreationParams params);
 
 	/// \brief Returns the value type of the controller.
 	virtual ControllerType controllerType() const override { return ControllerTypeTransformation; }

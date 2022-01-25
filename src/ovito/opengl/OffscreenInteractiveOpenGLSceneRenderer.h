@@ -38,7 +38,7 @@ class OVITO_OPENGLRENDERER_EXPORT OffscreenInteractiveOpenGLSceneRenderer : publ
 public:
 
 	/// Constructor.
-	explicit OffscreenInteractiveOpenGLSceneRenderer(DataSet* dataset);
+	using OpenGLSceneRenderer::OpenGLSceneRenderer;
 
 	/// This method is called just before renderFrame() is called.
 	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;

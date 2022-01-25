@@ -44,8 +44,7 @@ class OVITO_CORE_EXPORT RefTarget : public RefMaker
 protected:
 
 	/// \brief Constructor.
-	/// \param dataset The dataset this object will belong to.
-	RefTarget(DataSet* dataset);
+	RefTarget(ObjectCreationParams params);
 
 #ifdef OVITO_DEBUG
 	/// \brief Destructor.
@@ -255,5 +254,8 @@ private:
 };
 
 }	// End of namespace
+
+Q_DECLARE_METATYPE(Ovito::ObjectCreationParams)
+Q_DECLARE_OPERATORS_FOR_FLAGS(Ovito::ObjectCreationParams::InitializationFlags);
 
 #include <ovito/core/oo/RefTargetExecutor.h>

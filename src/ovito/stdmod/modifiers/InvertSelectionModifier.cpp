@@ -33,7 +33,7 @@ IMPLEMENT_OVITO_CLASS(InvertSelectionModifier);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-InvertSelectionModifier::InvertSelectionModifier(DataSet* dataset) : GenericPropertyModifier(dataset)
+InvertSelectionModifier::InvertSelectionModifier(ObjectCreationParams params) : GenericPropertyModifier(params)
 {
 	// Operate on particles by default.
 	setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));

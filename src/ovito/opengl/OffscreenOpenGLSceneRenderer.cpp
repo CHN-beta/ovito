@@ -35,7 +35,7 @@ IMPLEMENT_OVITO_CLASS(OffscreenOpenGLSceneRenderer);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OffscreenOpenGLSceneRenderer::OffscreenOpenGLSceneRenderer(DataSet* dataset) : OpenGLSceneRenderer(dataset) 
+OffscreenOpenGLSceneRenderer::OffscreenOpenGLSceneRenderer(ObjectCreationParams params) : OpenGLSceneRenderer(params) 
 {
 	// Create the offscreen surface.
 	// This must happen in the main thread.

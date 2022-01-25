@@ -24,6 +24,7 @@
 
 
 #include <ovito/stdobj/StdObj.h>
+#include <ovito/stdobj/simcell/SimulationCellVis.h>
 #include <ovito/core/dataset/data/DataObject.h>
 
 namespace Ovito::StdObj {
@@ -41,43 +42,54 @@ class OVITO_STDOBJ_EXPORT SimulationCellObject : public DataObject
 public:
 
 	/// \brief Constructor. Creates an empty simulation cell.
-	Q_INVOKABLE SimulationCellObject(DataSet* dataset) : DataObject(dataset),
+	Q_INVOKABLE SimulationCellObject(ObjectCreationParams params) : DataObject(params),
 		_cellMatrix(AffineTransformation::Zero()),
 		_reciprocalSimulationCell(AffineTransformation::Zero()),
-		_pbcX(false), _pbcY(false), _pbcZ(false), _is2D(false) {}
+		_pbcX(false), _pbcY(false), _pbcZ(false), _is2D(false)
+	{
+		if(params.createVisElement())
+			setVisElement(OORef<SimulationCellVis>::create(params));
+	}
 
 	/// \brief Constructs a cell from three vectors specifying the cell's edges.
 	/// \param a1 The first edge vector.
 	/// \param a2 The second edge vector.
 	/// \param a3 The third edge vector.
 	/// \param origin The origin position.
-	SimulationCellObject(DataSet* dataset, const Vector3& a1, const Vector3& a2, const Vector3& a3,
+	SimulationCellObject(ObjectCreationParams params, const Vector3& a1, const Vector3& a2, const Vector3& a3,
 			const Point3& origin = Point3::Origin(), bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false) :
-		DataObject(dataset),
+		DataObject(params),
 		_cellMatrix(a1, a2, a3, origin - Point3::Origin()),
-		_pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D) {}
+		_pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D)
+	{
+		if(params.createVisElement())
+			setVisElement(OORef<SimulationCellVis>::create(params));
+	}
 
 	/// \brief Constructs a cell from a matrix that specifies its shape and position in space.
 	/// \param cellMatrix The matrix
-	SimulationCellObject(DataSet* dataset, const AffineTransformation& cellMatrix, bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false) :
-		DataObject(dataset),
-		_cellMatrix(cellMatrix), _pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D) {}
+	SimulationCellObject(ObjectCreationParams params, const AffineTransformation& cellMatrix, bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false) :
+		DataObject(params),
+		_cellMatrix(cellMatrix), _pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D) 
+	{
+		if(params.createVisElement())
+			setVisElement(OORef<SimulationCellVis>::create(params));
+	}
 
 	/// \brief Constructs a cell with an axis-aligned box shape.
 	/// \param box The axis-aligned box.
 	/// \param pbcX Specifies whether periodic boundary conditions are enabled in the X direction.
 	/// \param pbcY Specifies whether periodic boundary conditions are enabled in the Y direction.
 	/// \param pbcZ Specifies whether periodic boundary conditions are enabled in the Z direction.
-	SimulationCellObject(DataSet* dataset, const Box3& box, bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false) :
-		DataObject(dataset),
+	SimulationCellObject(ObjectCreationParams params, const Box3& box, bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false) :
+		DataObject(params),
 		_cellMatrix(box.sizeX(), 0, 0, box.minc.x(), 0, box.sizeY(), 0, box.minc.y(), 0, 0, box.sizeZ(), box.minc.z()),
-		_pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D) {
+		_pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D) 
+	{
 		OVITO_ASSERT_MSG(box.sizeX() >= 0 && box.sizeY() >= 0 && box.sizeZ() >= 0, "SimulationCellObject constructor", "The simulation box must have a non-negative volume.");
+		if(params.createVisElement())
+			setVisElement(OORef<SimulationCellVis>::create(params));
 	}
-	
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;
 
 	/// Returns inverse of the simulation cell matrix.
 	/// This matrix maps the simulation cell to the unit cube ([0,1]^3).

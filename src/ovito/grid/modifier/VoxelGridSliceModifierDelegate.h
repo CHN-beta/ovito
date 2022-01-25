@@ -61,12 +61,8 @@ class OVITO_GRID_EXPORT VoxelGridSliceModifierDelegate : public SliceModifierDel
 public:
 
 	/// Constructor.
-	Q_INVOKABLE VoxelGridSliceModifierDelegate(DataSet* dataset);
+	Q_INVOKABLE VoxelGridSliceModifierDelegate(ObjectCreationParams params);
 
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
-	
 	/// \brief Applies a slice operation to a data object.
 	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 

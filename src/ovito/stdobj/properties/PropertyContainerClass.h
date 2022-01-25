@@ -84,7 +84,7 @@ public:
 	virtual void validateInputColumnMapping(const InputColumnMapping& mapping) const {}
 
 	/// Returns a default color for an ElementType given its numeric type ID.
-	virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ObjectInitializationHints initializationHints) const;
+	virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const;
 
 	/// Determines whether a standard property ID is defined for this property class.
 	bool isValidStandardPropertyId(int id) const {

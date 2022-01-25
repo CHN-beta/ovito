@@ -51,7 +51,7 @@ IMPLEMENT_OVITO_CLASS(ReferenceConfigurationModifierApplication);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ReferenceConfigurationModifier::ReferenceConfigurationModifier(DataSet* dataset) : AsynchronousModifier(dataset),
+ReferenceConfigurationModifier::ReferenceConfigurationModifier(ObjectCreationParams params) : AsynchronousModifier(params),
 	_affineMapping(NO_MAPPING),
     _useReferenceFrameOffset(false),
 	_referenceFrameNumber(0),

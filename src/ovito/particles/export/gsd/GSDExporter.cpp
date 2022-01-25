@@ -36,7 +36,7 @@ IMPLEMENT_OVITO_CLASS(GSDExporter);
 /******************************************************************************
  * Constructor.
  *****************************************************************************/
-GSDExporter::GSDExporter(DataSet* dataset) : ParticleExporter(dataset)
+GSDExporter::GSDExporter(ObjectCreationParams params) : ParticleExporter(params)
 {
 }
 

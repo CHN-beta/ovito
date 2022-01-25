@@ -49,23 +49,14 @@ IMPLEMENT_OVITO_CLASS(CameraVis);
 /******************************************************************************
 * Constructs a camera object.
 ******************************************************************************/
-StandardCameraObject::StandardCameraObject(DataSet* dataset) : AbstractCameraObject(dataset), 
+StandardCameraObject::StandardCameraObject(ObjectCreationParams params) : AbstractCameraObject(params), 
 	_isPerspective(true),
 	_fov(FLOATTYPE_PI/4),
 	_zoom(200.0)
 {
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void StandardCameraObject::initializeObject(ObjectInitializationHints hints)
-{
-	if(!visElement() && !hints.testFlag(WithoutVisElement))
-		setVisElement(OORef<CameraVis>::create(dataset(), hints));
-
-	AbstractCameraObject::initializeObject(hints);
+	if(params.createVisElement()) {
+		setVisElement(OORef<CameraVis>::create(params));
+	}
 }
 
 /******************************************************************************

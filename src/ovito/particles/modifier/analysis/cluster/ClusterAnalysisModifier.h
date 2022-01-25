@@ -66,7 +66,7 @@ public:
 	Q_ENUM(NeighborMode);
 
 	/// Constructor.
-	Q_INVOKABLE ClusterAnalysisModifier(DataSet* dataset);
+	Q_INVOKABLE ClusterAnalysisModifier(ObjectCreationParams params);
 
 protected:
 

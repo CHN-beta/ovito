@@ -89,7 +89,7 @@ public:
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE LAMMPSDataImporter(DataSet* dataset) : ParticleImporter(dataset), _atomStyle(AtomStyle_Unknown) {}
+	Q_INVOKABLE LAMMPSDataImporter(ObjectCreationParams params) : ParticleImporter(params), _atomStyle(AtomStyle_Unknown) {}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("LAMMPS Data"); }

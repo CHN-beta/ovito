@@ -44,7 +44,7 @@ class OVITO_CORE_EXPORT SceneNode : public RefTarget
 protected:
 
 	/// \brief constructor.
-	SceneNode(DataSet* dataset);
+	SceneNode(ObjectCreationParams params);
 
 public:
 
@@ -172,7 +172,7 @@ public:
 	///
 	/// The target node will automatically be deleted if this SceneNode is deleted and vice versa.
 	/// \undoable
-	LookAtController* setLookatTargetNode(SceneNode* targetNode, ObjectInitializationHints initializationHints);
+	LookAtController* setLookatTargetNode(SceneNode* targetNode);
 
 	/// \brief Returns the bounding box of the scene node in local coordinates.
 	/// \param time The time at which the bounding box should be computed.
@@ -219,10 +219,6 @@ public:
 
 	/// \brief Returns the title of this object.
 	virtual QString objectTitle() const override { return _nodeName; }
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;
 
 	/// Shows/hides this node in the given viewport, i.e. turns rendering on or off.
 	void setPerViewportVisibility(Viewport* vp, bool visible);

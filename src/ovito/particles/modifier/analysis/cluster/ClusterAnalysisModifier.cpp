@@ -57,7 +57,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ClusterAnalysisModifier, cutoff, WorldParam
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ClusterAnalysisModifier::ClusterAnalysisModifier(DataSet* dataset) : AsynchronousModifier(dataset),
+ClusterAnalysisModifier::ClusterAnalysisModifier(ObjectCreationParams params) : AsynchronousModifier(params),
 	_cutoff(3.2),
 	_onlySelectedParticles(false),
 	_sortBySize(false),

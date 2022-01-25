@@ -55,7 +55,7 @@ public:
 protected:
 
 	/// \brief Constructor.
-	DataObject(DataSet* dataset);
+	using RefTarget::RefTarget;
 
 public:
 

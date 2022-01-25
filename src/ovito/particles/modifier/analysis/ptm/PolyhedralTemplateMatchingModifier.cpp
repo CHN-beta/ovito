@@ -53,7 +53,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(PolyhedralTemplateMatchingModifier, rmsdCut
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-PolyhedralTemplateMatchingModifier::PolyhedralTemplateMatchingModifier(DataSet* dataset) : StructureIdentificationModifier(dataset),
+PolyhedralTemplateMatchingModifier::PolyhedralTemplateMatchingModifier(ObjectCreationParams params) : StructureIdentificationModifier(params),
 		_rmsdCutoff(0.1),
 		_outputRmsd(false),
 		_outputInteratomicDistance(false),
@@ -61,44 +61,36 @@ PolyhedralTemplateMatchingModifier::PolyhedralTemplateMatchingModifier(DataSet* 
 		_outputDeformationGradient(false),
 		_outputOrderingTypes(false)
 {
-}
+	if(params.createSubObjects()) {
+		// Define the structure types.
+		createStructureType(PTMAlgorithm::OTHER, ParticleType::PredefinedStructureType::OTHER, params);
+		createStructureType(PTMAlgorithm::FCC, ParticleType::PredefinedStructureType::FCC, params);
+		createStructureType(PTMAlgorithm::HCP, ParticleType::PredefinedStructureType::HCP, params);
+		createStructureType(PTMAlgorithm::BCC, ParticleType::PredefinedStructureType::BCC, params);
+		createStructureType(PTMAlgorithm::ICO, ParticleType::PredefinedStructureType::ICO, params)->setEnabled(false);
+		createStructureType(PTMAlgorithm::SC, ParticleType::PredefinedStructureType::SC, params)->setEnabled(false);
+		createStructureType(PTMAlgorithm::CUBIC_DIAMOND, ParticleType::PredefinedStructureType::CUBIC_DIAMOND, params)->setEnabled(false);
+		createStructureType(PTMAlgorithm::HEX_DIAMOND, ParticleType::PredefinedStructureType::HEX_DIAMOND, params)->setEnabled(false);
+		createStructureType(PTMAlgorithm::GRAPHENE, ParticleType::PredefinedStructureType::GRAPHENE, params)->setEnabled(false);
 
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void PolyhedralTemplateMatchingModifier::initializeObject(ObjectInitializationHints hints)
-{
-	// Define the structure types.
-	createStructureType(PTMAlgorithm::OTHER, ParticleType::PredefinedStructureType::OTHER, hints);
-	createStructureType(PTMAlgorithm::FCC, ParticleType::PredefinedStructureType::FCC, hints);
-	createStructureType(PTMAlgorithm::HCP, ParticleType::PredefinedStructureType::HCP, hints);
-	createStructureType(PTMAlgorithm::BCC, ParticleType::PredefinedStructureType::BCC, hints);
-	createStructureType(PTMAlgorithm::ICO, ParticleType::PredefinedStructureType::ICO, hints)->setEnabled(false);
-	createStructureType(PTMAlgorithm::SC, ParticleType::PredefinedStructureType::SC, hints)->setEnabled(false);
-	createStructureType(PTMAlgorithm::CUBIC_DIAMOND, ParticleType::PredefinedStructureType::CUBIC_DIAMOND, hints)->setEnabled(false);
-	createStructureType(PTMAlgorithm::HEX_DIAMOND, ParticleType::PredefinedStructureType::HEX_DIAMOND, hints)->setEnabled(false);
-	createStructureType(PTMAlgorithm::GRAPHENE, ParticleType::PredefinedStructureType::GRAPHENE, hints)->setEnabled(false);
-
-	// Define the ordering types.
-	for(int id = 0; id < PTMAlgorithm::NUM_ORDERING_TYPES; id++) {
-		OORef<ParticleType> otype = OORef<ParticleType>::create(dataset(), hints);
-		otype->setNumericId(id);
-		otype->initializeType(ParticlePropertyReference(QStringLiteral("Ordering Type")), hints);
-		otype->setColor({0.75f, 0.75f, 0.75f});
-		_orderingTypes.push_back(this, PROPERTY_FIELD(orderingTypes), std::move(otype));
+		// Define the ordering types.
+		for(int id = 0; id < PTMAlgorithm::NUM_ORDERING_TYPES; id++) {
+			OORef<ParticleType> otype = OORef<ParticleType>::create(params);
+			otype->setNumericId(id);
+			otype->initializeType(ParticlePropertyReference(QStringLiteral("Ordering Type")), params.loadUserDefaults());
+			otype->setColor({0.75f, 0.75f, 0.75f});
+			_orderingTypes.push_back(this, PROPERTY_FIELD(orderingTypes), std::move(otype));
+		}
+		orderingTypes()[PTMAlgorithm::ORDERING_NONE]->setColor({0.95f, 0.95f, 0.95f});
+		orderingTypes()[PTMAlgorithm::ORDERING_NONE]->setName(tr("Other"));
+		orderingTypes()[PTMAlgorithm::ORDERING_PURE]->setName(tr("Pure"));
+		orderingTypes()[PTMAlgorithm::ORDERING_L10]->setName(tr("L10"));
+		orderingTypes()[PTMAlgorithm::ORDERING_L12_A]->setName(tr("L12 (A-site)"));
+		orderingTypes()[PTMAlgorithm::ORDERING_L12_B]->setName(tr("L12 (B-site)"));
+		orderingTypes()[PTMAlgorithm::ORDERING_B2]->setName(tr("B2"));
+		orderingTypes()[PTMAlgorithm::ORDERING_ZINCBLENDE_WURTZITE]->setName(tr("Zincblende/Wurtzite"));
+		orderingTypes()[PTMAlgorithm::ORDERING_BORON_NITRIDE]->setName(tr("Boron/Nitride"));
 	}
-	orderingTypes()[PTMAlgorithm::ORDERING_NONE]->setColor({0.95f, 0.95f, 0.95f});
-	orderingTypes()[PTMAlgorithm::ORDERING_NONE]->setName(tr("Other"));
-	orderingTypes()[PTMAlgorithm::ORDERING_PURE]->setName(tr("Pure"));
-	orderingTypes()[PTMAlgorithm::ORDERING_L10]->setName(tr("L10"));
-	orderingTypes()[PTMAlgorithm::ORDERING_L12_A]->setName(tr("L12 (A-site)"));
-	orderingTypes()[PTMAlgorithm::ORDERING_L12_B]->setName(tr("L12 (B-site)"));
-	orderingTypes()[PTMAlgorithm::ORDERING_B2]->setName(tr("B2"));
-	orderingTypes()[PTMAlgorithm::ORDERING_ZINCBLENDE_WURTZITE]->setName(tr("Zincblende/Wurtzite"));
-	orderingTypes()[PTMAlgorithm::ORDERING_BORON_NITRIDE]->setName(tr("Boron/Nitride"));
-
-	StructureIdentificationModifier::initializeObject(hints);
 }
 
 /******************************************************************************

@@ -41,26 +41,18 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ChillPlusModifier, cutoff, WorldParameterUn
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ChillPlusModifier::ChillPlusModifier(DataSet* dataset) : StructureIdentificationModifier(dataset),
+ChillPlusModifier::ChillPlusModifier(ObjectCreationParams params) : StructureIdentificationModifier(params),
     _cutoff(3.5)
 {
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void ChillPlusModifier::initializeObject(ObjectInitializationHints hints)
-{
-	// Create the structure types.
-    createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, hints);
-    createStructureType(HEXAGONAL_ICE, ParticleType::PredefinedStructureType::HEXAGONAL_ICE, hints);
-    createStructureType(CUBIC_ICE, ParticleType::PredefinedStructureType::CUBIC_ICE, hints);
-    createStructureType(INTERFACIAL_ICE, ParticleType::PredefinedStructureType::INTERFACIAL_ICE, hints);
-    createStructureType(HYDRATE, ParticleType::PredefinedStructureType::HYDRATE, hints);
-    createStructureType(INTERFACIAL_HYDRATE, ParticleType::PredefinedStructureType::INTERFACIAL_HYDRATE, hints);
-
-	StructureIdentificationModifier::initializeObject(hints);
+	if(params.createSubObjects()) {
+        // Create the structure types.
+        createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, params);
+        createStructureType(HEXAGONAL_ICE, ParticleType::PredefinedStructureType::HEXAGONAL_ICE, params);
+        createStructureType(CUBIC_ICE, ParticleType::PredefinedStructureType::CUBIC_ICE, params);
+        createStructureType(INTERFACIAL_ICE, ParticleType::PredefinedStructureType::INTERFACIAL_ICE, params);
+        createStructureType(HYDRATE, ParticleType::PredefinedStructureType::HYDRATE, params);
+        createStructureType(INTERFACIAL_HYDRATE, ParticleType::PredefinedStructureType::INTERFACIAL_HYDRATE, params);
+    }
 }
 
 /******************************************************************************

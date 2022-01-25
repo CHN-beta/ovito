@@ -30,7 +30,7 @@ IMPLEMENT_OVITO_CLASS(ImpropersObject);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ImpropersObject::ImpropersObject(DataSet* dataset) : PropertyContainer(dataset)
+ImpropersObject::ImpropersObject(ObjectCreationParams params) : PropertyContainer(params)
 {
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());

@@ -42,7 +42,7 @@ class OVITO_OPENGLRENDERER_EXPORT OffscreenOpenGLSceneRenderer : public OpenGLSc
 public:
 
 	/// Constructor.
-	Q_INVOKABLE OffscreenOpenGLSceneRenderer(DataSet* dataset);
+	Q_INVOKABLE OffscreenOpenGLSceneRenderer(ObjectCreationParams params);
 
 	/// Prepares the renderer for rendering and sets the data set that is being rendered.
 	virtual bool startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize) override;

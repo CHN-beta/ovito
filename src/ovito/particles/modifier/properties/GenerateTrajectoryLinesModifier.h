@@ -61,11 +61,7 @@ class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModifier : public Modifier
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE GenerateTrajectoryLinesModifier(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
+	Q_INVOKABLE GenerateTrajectoryLinesModifier(ObjectCreationParams params);
 	
 	/// Modifies the input data synchronously.
 	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
@@ -116,7 +112,7 @@ class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModifierApplication : public
 public:
 
 	/// Constructor.
-	Q_INVOKABLE GenerateTrajectoryLinesModifierApplication(DataSet* dataset) : ModifierApplication(dataset) {}
+	Q_INVOKABLE GenerateTrajectoryLinesModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
 
 private:
 

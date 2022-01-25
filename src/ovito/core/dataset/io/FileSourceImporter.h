@@ -207,7 +207,7 @@ public:
 public:
 
 	/// \brief Constructs a new instance of this class.
-	FileSourceImporter(DataSet* dataset) : FileImporter(dataset), _isMultiTimestepFile(false) {}
+	FileSourceImporter(ObjectCreationParams params) : FileImporter(params), _isMultiTimestepFile(false) {}
 
 	///////////////////////////// from FileImporter /////////////////////////////
 

@@ -44,7 +44,7 @@ class OVITO_CORE_EXPORT SelectionSet : public RefTarget
 public:
 
 	/// \brief Creates an empty selection set.
-	Q_INVOKABLE SelectionSet(DataSet* dataset);
+	Q_INVOKABLE SelectionSet(ObjectCreationParams params) : RefTarget(params) {}
 
 	/// \brief Adds a scene node to this selection set.
 	/// \param node The node to be added.

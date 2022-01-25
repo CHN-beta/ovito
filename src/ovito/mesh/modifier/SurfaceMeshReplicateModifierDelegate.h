@@ -61,7 +61,7 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshReplicateModifierDelegate : public Replica
 public:
 
 	/// Constructor.
-	Q_INVOKABLE SurfaceMeshReplicateModifierDelegate(DataSet* dataset) : ReplicateModifierDelegate(dataset) {}
+	Q_INVOKABLE SurfaceMeshReplicateModifierDelegate(ObjectCreationParams params) : ReplicateModifierDelegate(params) {}
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
 	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

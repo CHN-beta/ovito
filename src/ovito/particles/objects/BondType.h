@@ -40,7 +40,7 @@ class OVITO_PARTICLES_EXPORT BondType : public ElementType
 public:
 
 	/// \brief Constructs a new bond type.
-	Q_INVOKABLE BondType(DataSet* dataset);
+	Q_INVOKABLE BondType(ObjectCreationParams params);
 
 	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
 	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;

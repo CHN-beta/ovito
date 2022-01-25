@@ -30,7 +30,7 @@ IMPLEMENT_OVITO_CLASS(RootSceneNode);
 /******************************************************************************
 * Default constructor.
 ******************************************************************************/
-RootSceneNode::RootSceneNode(DataSet* dataset) : SceneNode(dataset)
+RootSceneNode::RootSceneNode(ObjectCreationParams params) : SceneNode(params)
 {
 	setNodeName("Scene");
 

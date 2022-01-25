@@ -57,7 +57,7 @@ class OVITO_PARTICLES_EXPORT ReaxFFBondImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE ReaxFFBondImporter(DataSet* dataset) : ParticleImporter(dataset) {}
+	Q_INVOKABLE ReaxFFBondImporter(ObjectCreationParams params) : ParticleImporter(params) {}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("ReaxFF Bonds"); }

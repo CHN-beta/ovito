@@ -80,7 +80,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ColorLegendOverlay, fontSize, FloatParamete
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ColorLegendOverlay::ColorLegendOverlay(DataSet* dataset) : ViewportOverlay(dataset),
+ColorLegendOverlay::ColorLegendOverlay(ObjectCreationParams params) : ViewportOverlay(params),
 	_alignment(Qt::AlignHCenter | Qt::AlignBottom),
 	_orientation(Qt::Horizontal),
 	_legendSize(0.3),
@@ -96,7 +96,7 @@ ColorLegendOverlay::ColorLegendOverlay(DataSet* dataset) : ViewportOverlay(datas
 	_borderColor(0,0,0)
 {
 	// Find a ColorCodingModifier in the scene that we can connect to.
-	dataset->sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+	dataset()->sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
 		PipelineObject* obj = pipeline->dataProvider();
 		while(obj) {
 			if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
@@ -111,30 +111,11 @@ ColorLegendOverlay::ColorLegendOverlay(DataSet* dataset) : ViewportOverlay(datas
 		}
 		return true;
 	});
-}
 
-/******************************************************************************
-* Is called when the value of a property of this object has changed.
-******************************************************************************/
-void ColorLegendOverlay::propertyChanged(const PropertyFieldDescriptor* field)
-{
-	if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
-		// Automatically reset offset to zero when user changes the alignment of the overlay in the viewport.
-		setOffsetX(0);
-		setOffsetY(0);
-	}
-	ViewportOverlay::propertyChanged(field);
-}
 
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void ColorLegendOverlay::initializeObject(ObjectInitializationHints hints)
-{
 	// If there is no ColorCodingModifier in the scene, initialize the overlay to use 
 	// the first available typed property as color source.
-	if(hints.testFlag(LoadUserDefaults) && modifier() == nullptr && !sourceProperty()) {
+	if(params.loadUserDefaults() && modifier() == nullptr && !sourceProperty()) {
 		dataset()->sceneRoot()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
 			const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(false);
 			for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(PropertyObject::OOClass())) {
@@ -148,8 +129,19 @@ void ColorLegendOverlay::initializeObject(ObjectInitializationHints hints)
 			return true;
 		});
 	}
+}
 
-	ViewportOverlay::initializeObject(hints);
+/******************************************************************************
+* Is called when the value of a property of this object has changed.
+******************************************************************************/
+void ColorLegendOverlay::propertyChanged(const PropertyFieldDescriptor* field)
+{
+	if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
+		// Automatically reset offset to zero when user changes the alignment of the overlay in the viewport.
+		setOffsetX(0);
+		setOffsetY(0);
+	}
+	ViewportOverlay::propertyChanged(field);
 }
 
 /******************************************************************************

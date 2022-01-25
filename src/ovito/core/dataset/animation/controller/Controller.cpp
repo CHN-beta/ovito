@@ -89,58 +89,58 @@ void Controller::setCurrentVector3Value(const Vector3& newValue)
 /******************************************************************************
 * Creates a new float controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createFloatController(DataSet* dataset, ObjectInitializationHints hints)
+OORef<Controller> ControllerManager::createFloatController(DataSet* dataset)
 {
-	return OORef<LinearFloatController>::create(dataset, hints);
+	return OORef<LinearFloatController>::create(dataset);
 }
 
 /******************************************************************************
 * Creates a new integer controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createIntController(DataSet* dataset, ObjectInitializationHints hints)
+OORef<Controller> ControllerManager::createIntController(DataSet* dataset)
 {
-	return OORef<LinearIntegerController>::create(dataset, hints);
+	return OORef<LinearIntegerController>::create(dataset);
 }
 
 /******************************************************************************
 * Creates a new Vector3 controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createVector3Controller(DataSet* dataset, ObjectInitializationHints hints)
+OORef<Controller> ControllerManager::createVector3Controller(DataSet* dataset)
 {
-	return OORef<LinearVectorController>::create(dataset, hints);
+	return OORef<LinearVectorController>::create(dataset);
 }
 
 /******************************************************************************
 * Creates a new position controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createPositionController(DataSet* dataset, ObjectInitializationHints hints)
+OORef<Controller> ControllerManager::createPositionController(DataSet* dataset)
 {
 	//return new TCBPositionController(dataset);
-	return OORef<SplinePositionController>::create(dataset, hints);
+	return OORef<SplinePositionController>::create(dataset);
 }
 
 /******************************************************************************
 * Creates a new rotation controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createRotationController(DataSet* dataset, ObjectInitializationHints hints)
+OORef<Controller> ControllerManager::createRotationController(DataSet* dataset)
 {
-	return OORef<LinearRotationController>::create(dataset, hints);
+	return OORef<LinearRotationController>::create(dataset);
 }
 
 /******************************************************************************
 * Creates a new scaling controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createScalingController(DataSet* dataset, ObjectInitializationHints hints)
+OORef<Controller> ControllerManager::createScalingController(DataSet* dataset)
 {
-	return OORef<LinearScalingController>::create(dataset, hints);
+	return OORef<LinearScalingController>::create(dataset);
 }
 
 /******************************************************************************
 * Creates a new transformation controller.
 ******************************************************************************/
-OORef<Controller> ControllerManager::createTransformationController(DataSet* dataset, ObjectInitializationHints hints)
+OORef<Controller> ControllerManager::createTransformationController(DataSet* dataset)
 {
-	return OORef<PRSTransformationController>::create(dataset, hints);
+	return OORef<PRSTransformationController>::create(dataset);
 }
 
 }	// End of namespace

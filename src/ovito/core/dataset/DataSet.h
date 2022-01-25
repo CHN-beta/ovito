@@ -51,7 +51,7 @@ namespace Ovito {
  * ViewportConfiguration object returned by viewportConfig(), for example, stores the list
  * of viewports.
  */
-class OVITO_CORE_EXPORT DataSet : public RefTarget
+class OVITO_CORE_EXPORT DataSet final : public RefTarget
 {
 	OVITO_CLASS(DataSet)
 
@@ -64,14 +64,10 @@ class OVITO_CORE_EXPORT DataSet : public RefTarget
 public:
 
 	/// \brief Constructs an empty dataset.
-	Q_INVOKABLE DataSet(DataSet* = nullptr);
+	Q_INVOKABLE DataSet(ObjectCreationParams params = ObjectCreationParams(nullptr));
 
 	/// \brief Destructor.
 	virtual ~DataSet();
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;
 
 	/// \brief Returns the path where this dataset is stored on disk.
 	/// \return The location where the dataset is stored or will be stored on disk.
@@ -222,7 +218,7 @@ private:
 			FrameBuffer* frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder, MainThreadOperation& operation);
 
 	/// Returns a viewport configuration that is used as template for new scenes.
-	OORef<ViewportConfiguration> createDefaultViewportConfiguration(ObjectInitializationHints initializationHints);
+	OORef<ViewportConfiguration> createDefaultViewportConfiguration(ObjectCreationParams params);
 
 	/// Requests the (re-)evaluation of all data pipelines in the current scene.
 	Q_INVOKABLE void makeSceneReady(bool forceReevaluation);

@@ -55,7 +55,7 @@ class OVITO_PARTICLES_EXPORT CastepCellImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE CastepCellImporter(DataSet* dataset) : ParticleImporter(dataset) {}
+	Q_INVOKABLE CastepCellImporter(ObjectCreationParams params) : ParticleImporter(params) {}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("CASTEP"); }

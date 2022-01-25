@@ -39,7 +39,7 @@ SET_PROPERTY_FIELD_LABEL(ManualSelectionModifierApplication, selectionSet, "Elem
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ManualSelectionModifier::ManualSelectionModifier(DataSet* dataset) : GenericPropertyModifier(dataset)
+ManualSelectionModifier::ManualSelectionModifier(ObjectCreationParams params) : GenericPropertyModifier(params)
 {
 	// Operate on particles by default.
 	setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
@@ -109,7 +109,7 @@ ElementSelectionSet* ManualSelectionModifier::getSelectionSet(ModifierApplicatio
 
 	ElementSelectionSet* selectionSet = myModApp->selectionSet();
 	if(!selectionSet && createIfNotExist)
-		myModApp->setSelectionSet(selectionSet = new ElementSelectionSet(dataset()));
+		myModApp->setSelectionSet(selectionSet = OORef<ElementSelectionSet>::create(dataset()));
 
 	return selectionSet;
 }

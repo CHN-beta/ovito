@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -67,11 +67,7 @@ public:
 	};
 
 	/// \brief Constructor.
-	Q_INVOKABLE SurfaceMeshVertices(DataSet* dataset) : PropertyContainer(dataset) {}
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
+	Q_INVOKABLE SurfaceMeshVertices(ObjectCreationParams params);
 };
 
 }	// End of namespace

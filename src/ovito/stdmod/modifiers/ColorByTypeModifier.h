@@ -52,7 +52,7 @@ class OVITO_STDMOD_EXPORT ColorByTypeModifier : public GenericPropertyModifier
 public:
 
 	/// Constructor.
-	Q_INVOKABLE ColorByTypeModifier(DataSet* dataset);
+	Q_INVOKABLE ColorByTypeModifier(ObjectCreationParams params);
 
 	/// This method is called by the system after the modifier has been inserted into a data pipeline.
 	virtual void initializeModifier(const ModifierInitializationRequest& request) override;

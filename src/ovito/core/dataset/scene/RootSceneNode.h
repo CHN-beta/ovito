@@ -39,7 +39,7 @@ class OVITO_CORE_EXPORT RootSceneNode : public SceneNode
 public:
 
 	/// \brief Creates a root node.
-	Q_INVOKABLE RootSceneNode(DataSet* dataset);
+	Q_INVOKABLE RootSceneNode(ObjectCreationParams params);
 
 	/// \brief Searches the scene for a node with the given name.
 	/// \param nodeName The name to look for.

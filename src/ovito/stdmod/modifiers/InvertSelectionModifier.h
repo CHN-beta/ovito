@@ -41,7 +41,7 @@ class OVITO_STDMOD_EXPORT InvertSelectionModifier : public GenericPropertyModifi
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE InvertSelectionModifier(DataSet* dataset);
+	Q_INVOKABLE InvertSelectionModifier(ObjectCreationParams params);
 
 	/// Modifies the input data synchronously.
 	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;

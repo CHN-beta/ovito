@@ -57,7 +57,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocationSliceModifierDelegate : public Sli
 public:
 
 	/// Constructor.
-	Q_INVOKABLE DislocationSliceModifierDelegate(DataSet* dataset) : SliceModifierDelegate(dataset) {}
+	Q_INVOKABLE DislocationSliceModifierDelegate(ObjectCreationParams params) : SliceModifierDelegate(params) {}
 
 	/// \brief Applies a slice operation to a data object.
 	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

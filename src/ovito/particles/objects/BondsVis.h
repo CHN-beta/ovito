@@ -63,7 +63,7 @@ public:
 	Q_ENUMS(ColoringMode);	
 
 	/// Constructor.
-	Q_INVOKABLE BondsVis(DataSet* dataset);
+	Q_INVOKABLE BondsVis(ObjectCreationParams params);
 
 	/// Renders the visual element.
 	virtual PipelineStatus render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;

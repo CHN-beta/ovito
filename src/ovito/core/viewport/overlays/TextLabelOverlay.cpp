@@ -61,7 +61,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(TextLabelOverlay, fontSize, FloatParameterU
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-TextLabelOverlay::TextLabelOverlay(DataSet* dataset) : ViewportOverlay(dataset),
+TextLabelOverlay::TextLabelOverlay(ObjectCreationParams params) : ViewportOverlay(params),
 		_alignment(Qt::AlignLeft | Qt::AlignTop),
 		_offsetX(0), 
 		_offsetY(0),
@@ -72,8 +72,10 @@ TextLabelOverlay::TextLabelOverlay(DataSet* dataset) : ViewportOverlay(dataset),
 		_outlineEnabled(false),
 		_valueFormatString("%.6g")
 {
-	// Automatically connect to the currently selected pipeline.
-	setSourceNode(dynamic_object_cast<PipelineSceneNode>(dataset->selection()->firstNode()));
+	if(params.createSubObjects()) {
+		// Automatically connect to the currently selected pipeline.
+		setSourceNode(dynamic_object_cast<PipelineSceneNode>(dataset()->selection()->firstNode()));
+	}
 }
 
 /******************************************************************************

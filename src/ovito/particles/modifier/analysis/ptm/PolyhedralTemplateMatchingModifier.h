@@ -46,11 +46,7 @@ class OVITO_PARTICLES_EXPORT PolyhedralTemplateMatchingModifier : public Structu
 public:
 
 	/// Constructor.
-	Q_INVOKABLE PolyhedralTemplateMatchingModifier(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
+	Q_INVOKABLE PolyhedralTemplateMatchingModifier(ObjectCreationParams params);	
 	
 protected:
 

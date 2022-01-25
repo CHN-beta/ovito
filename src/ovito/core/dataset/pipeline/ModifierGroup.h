@@ -40,7 +40,7 @@ class OVITO_CORE_EXPORT ModifierGroup : public ActiveObject
 public:
 
 	/// \brief Constructs a modifier group object.
-	Q_INVOKABLE explicit ModifierGroup(DataSet* dataset) : ActiveObject(dataset), _isCollapsed(false) {}
+	Q_INVOKABLE ModifierGroup(ObjectCreationParams params) : ActiveObject(params), _isCollapsed(false) {}
 
 	/// \brief Returns the list of modifier applications that are part of this group.
 	QVector<ModifierApplication*> modifierApplications() const;

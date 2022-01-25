@@ -93,10 +93,10 @@ public:
 public:
 
 	/// \brief Constructs a new particle type.
-	Q_INVOKABLE ParticleType(DataSet* dataset);
+	Q_INVOKABLE ParticleType(ObjectCreationParams params);
 
 	/// \brief Initializes the element type's attributes to standard values.
-	virtual void initializeType(const PropertyReference& property, ObjectInitializationHints initializationHints) override;
+	virtual void initializeType(const PropertyReference& property, bool loadUserDefaults = ExecutionContext::isInteractive()) override;
 
 	using ElementType::initializeType;
 
@@ -162,13 +162,13 @@ public:
 	}
 
 	/// Returns the default radius for a named particle type.
-	static FloatType getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ObjectInitializationHints initializationHints, RadiusVariant radiusVariant = DisplayRadius);
+	static FloatType getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, bool loadUserDefaults, RadiusVariant radiusVariant = DisplayRadius);
 
 	/// Changes the default radius for a named particle type.
 	static void setDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, FloatType radius, RadiusVariant radiusVariant = DisplayRadius);
 
 	/// Returns the default mass for a named particle type.
-	static FloatType getDefaultParticleMass(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, ObjectInitializationHints initializationHints);
+	static FloatType getDefaultParticleMass(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, bool loadUserDefaults);
 
 protected:
 

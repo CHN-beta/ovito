@@ -51,28 +51,22 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(SceneNode, nodeName, ReferenceEvent::TitleChange
 /******************************************************************************
 * Default constructor.
 ******************************************************************************/
-SceneNode::SceneNode(DataSet* dataset) : RefTarget(dataset),
+SceneNode::SceneNode(ObjectCreationParams params) : RefTarget(params),
 	_worldTransform(AffineTransformation::Identity()),
 	_worldTransformValidity(TimeInterval::empty()),
 	_boundingBoxValidity(TimeInterval::empty()),
 	_displayColor(0,0,0)
 {
-}
+	if(params.loadUserDefaults()) {
+		// Assign random color to node.
+		static std::default_random_engine rng;
+		setDisplayColor(Color::fromHSV(std::uniform_real_distribution<FloatType>()(rng), 1, 1));
+	}
 
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void SceneNode::initializeObject(ObjectInitializationHints hints)
-{
-	// Assign random color to node.
-	static std::default_random_engine rng;
-	setDisplayColor(Color::fromHSV(std::uniform_real_distribution<FloatType>()(rng), 1, 1));
-
-	// Create a transformation controller for the node.
-	setTransformationController(ControllerManager::createTransformationController(dataset(), hints));
-
-	RefTarget::initializeObject(hints);
+	if(params.createSubObjects()) {
+		// Create a transformation controller for the node.
+		setTransformationController(ControllerManager::createTransformationController(dataset()));
+	}
 }
 
 /******************************************************************************
@@ -151,7 +145,7 @@ void SceneNode::deleteNode()
 * be deleted if this scene node is deleted and vice versa.
 * Returns the newly created LookAtController assigned as rotation controller for this node.
 ******************************************************************************/
-LookAtController* SceneNode::setLookatTargetNode(SceneNode* targetNode, ObjectInitializationHints initializationHints)
+LookAtController* SceneNode::setLookatTargetNode(SceneNode* targetNode)
 {
 	_lookatTargetNode.set(this, PROPERTY_FIELD(lookatTargetNode), targetNode);
 
@@ -164,7 +158,7 @@ LookAtController* SceneNode::setLookatTargetNode(SceneNode* targetNode, ObjectIn
 			// Create a look at controller.
 			OORef<LookAtController> lookAtCtrl = dynamic_object_cast<LookAtController>(prs->rotationController());
 			if(!lookAtCtrl)
-				lookAtCtrl = OORef<LookAtController>::create(dataset(), initializationHints);
+				lookAtCtrl = OORef<LookAtController>::create(dataset());
 			lookAtCtrl->setTargetNode(targetNode);
 
 			// Assign it as rotation sub-controller.
@@ -180,7 +174,7 @@ LookAtController* SceneNode::setLookatTargetNode(SceneNode* targetNode, ObjectIn
 			prs->rotationController()->getRotationValue(time, rotation, iv);
 
 			// Reset to default rotation controller.
-			OORef<Controller> controller = ControllerManager::createRotationController(dataset(), initializationHints);
+			OORef<Controller> controller = ControllerManager::createRotationController(dataset());
 			controller->setRotationValue(time, rotation, true);
 			prs->setRotationController(std::move(controller));
 		}
@@ -410,7 +404,7 @@ OORef<RefTarget> SceneNode::clone(bool deepCopy, CloneHelper& cloneHelper) const
 		}
 
 		// Set new target for look-at controller.
-		clone->setLookatTargetNode(clone->lookatTargetNode(), LoadFactoryDefaults);
+		clone->setLookatTargetNode(clone->lookatTargetNode());
 	}
 
 	return clone;

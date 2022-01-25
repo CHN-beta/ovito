@@ -34,7 +34,7 @@ SET_PROPERTY_FIELD_LABEL(CachingPipelineObject, pipelineTrajectoryCachingEnabled
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-CachingPipelineObject::CachingPipelineObject(DataSet* dataset) : PipelineObject(dataset),
+CachingPipelineObject::CachingPipelineObject(ObjectCreationParams params) : PipelineObject(params),
 	_pipelineCache(this, false),
 	_pipelineTrajectoryCachingEnabled(false)
 {

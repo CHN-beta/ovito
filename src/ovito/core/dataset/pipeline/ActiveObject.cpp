@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(ActiveObject, title, ReferenceEvent::TitleChange
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ActiveObject::ActiveObject(DataSet* dataset) : RefTarget(dataset), _isEnabled(true)
+ActiveObject::ActiveObject(ObjectCreationParams params) : RefTarget(params), _isEnabled(true)
 {
 }
 

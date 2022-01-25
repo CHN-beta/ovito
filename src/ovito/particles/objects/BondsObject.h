@@ -103,7 +103,7 @@ class OVITO_PARTICLES_EXPORT BondsObject : public PropertyContainer
 		virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override { return this->displayName(); }
 
 		/// Returns a default color for an ElementType given its numeric type ID.
-		virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ObjectInitializationHints initializationHints) const override;
+		virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const override;
 
 	protected:
 
@@ -131,11 +131,7 @@ public:
 	};
 
 	/// \brief Constructor.
-	Q_INVOKABLE BondsObject(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
+	Q_INVOKABLE BondsObject(ObjectCreationParams params);
 	
 	/// Convinience method that returns the bond topology property.
 	const PropertyObject* getTopology() const { return getProperty(TopologyProperty); }

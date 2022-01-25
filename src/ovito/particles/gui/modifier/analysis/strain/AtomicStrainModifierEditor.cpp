@@ -167,8 +167,7 @@ void AtomicStrainModifierEditor::onSourceButtonClicked(int id)
 		if(id == 1) {
 			// Create a file source object, which can be used for loading
 			// the reference configuration from a separate file.
-			OORef<FileSource> fileSource(new FileSource(mod->dataset()));
-			mod->setReferenceConfiguration(fileSource);
+			mod->setReferenceConfiguration(OORef<FileSource>::create(mod->dataset()));
 		}
 		else {
 			mod->setReferenceConfiguration(nullptr);

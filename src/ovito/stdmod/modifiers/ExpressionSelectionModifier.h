@@ -92,11 +92,7 @@ class OVITO_STDMOD_EXPORT ExpressionSelectionModifier : public DelegatingModifie
 public:
 
 	/// Constructor.
-	Q_INVOKABLE ExpressionSelectionModifier(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;
+	Q_INVOKABLE ExpressionSelectionModifier(ObjectCreationParams params);
 
 	/// \brief Returns the list of available input variables.
 	const QStringList& inputVariableNames() const { return _variableNames; }

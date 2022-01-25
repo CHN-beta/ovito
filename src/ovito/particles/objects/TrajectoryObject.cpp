@@ -111,24 +111,14 @@ PropertyPtr TrajectoryObject::OOMetaClass::createStandardPropertyInternal(DataSe
 /******************************************************************************
 * Default constructor.
 ******************************************************************************/
-TrajectoryObject::TrajectoryObject(DataSet* dataset) : PropertyContainer(dataset)
-{
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void TrajectoryObject::initializeObject(ObjectInitializationHints hints)
+TrajectoryObject::TrajectoryObject(ObjectCreationParams params) : PropertyContainer(params)
 {
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());
 
 	// Create and attach a default visualization element for rendering the trajectory lines.
-	if(!visElement() && !hints.testFlag(WithoutVisElement))
-		setVisElement(OORef<TrajectoryVis>::create(dataset(), hints));
-
-	PropertyContainer::initializeObject(hints);
+	if(params.createVisElement())
+		setVisElement(OORef<TrajectoryVis>::create(params));
 }
 
 }	// End of namespace

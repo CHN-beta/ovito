@@ -56,7 +56,7 @@ class DislocationAffineTransformationModifierDelegate : public AffineTransformat
 public:
 
 	/// Constructor.
-	Q_INVOKABLE DislocationAffineTransformationModifierDelegate(DataSet* dataset) : AffineTransformationModifierDelegate(dataset) {}
+	Q_INVOKABLE DislocationAffineTransformationModifierDelegate(ObjectCreationParams params) : AffineTransformationModifierDelegate(params) {}
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
 	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

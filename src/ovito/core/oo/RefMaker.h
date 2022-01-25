@@ -293,16 +293,11 @@ public:
 	/// \return True if the object is found in the list of referenced targets.
 	bool vectorReferenceFieldContains(const PropertyFieldDescriptor* field, const RefTarget* target) const;
 
-	/// \brief Initializes a new object instance as part of a two-phase initialization.
+	/// \brief Initializes a new instance as part of two-phase object initialization.
 	///
-	/// This function should be called immediately after creation of the object instance.
-	/// It should loads the default value for every property field for which the user has set
-	/// a default value. This is usually the case for property fields that have the
-	/// PROPERTY_FIELD_MEMORIZE flag set.
-	///
-	/// This function is recursive, i.e., it also loads default parameter values for
-	/// referenced objects (when the PROPERTY_FIELD_MEMORIZE flag is set for this RefMaker's reference field).
-	virtual void initializeObject(ObjectInitializationHints hints);
+	/// This method is automatically called right after creation of a new object instance by the OORef<>::create() function.
+	/// It loads the initial values for property fields with user-defined default settings (those having the PROPERTY_FIELD_MEMORIZE flag set). 
+	void initializeParametersToUserDefaults();
 
 	/// Creates a snapshot of the object's parameter values that will serve as reference to detect parameter changes made by the user.
 	void freezeInitialParameterValues(std::initializer_list<const PropertyFieldDescriptor*> propertyFields);

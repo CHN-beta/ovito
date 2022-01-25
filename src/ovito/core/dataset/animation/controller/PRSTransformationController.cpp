@@ -43,22 +43,14 @@ SET_PROPERTY_FIELD_UNITS(PRSTransformationController, scalingController, Percent
 /******************************************************************************
 * Default constructor.
 ******************************************************************************/
-PRSTransformationController::PRSTransformationController(DataSet* dataset) : Controller(dataset)
+PRSTransformationController::PRSTransformationController(ObjectCreationParams params) : Controller(params)
 {
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void PRSTransformationController::initializeObject(ObjectInitializationHints hints)
-{
-	// Create sub-controllers.
-	setPositionController(ControllerManager::createPositionController(dataset(), hints));
-	setRotationController(ControllerManager::createRotationController(dataset(), hints));
-	setScalingController(ControllerManager::createScalingController(dataset(), hints));
-
-	Controller::initializeObject(hints);
+	if(params.createSubObjects()) {
+		// Create sub-controllers.
+		setPositionController(ControllerManager::createPositionController(dataset()));
+		setRotationController(ControllerManager::createRotationController(dataset()));
+		setScalingController(ControllerManager::createScalingController(dataset()));
+	}
 }
 
 /******************************************************************************

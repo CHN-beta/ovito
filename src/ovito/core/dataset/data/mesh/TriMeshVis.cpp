@@ -42,21 +42,13 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(TriMeshVis, transparencyController, PercentPa
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-TriMeshVis::TriMeshVis(DataSet* dataset) : DataVis(dataset),
+TriMeshVis::TriMeshVis(ObjectCreationParams params) : DataVis(params),
 	_color(0.85, 0.85, 1),
 	_highlightEdges(false)
 {
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void TriMeshVis::initializeObject(ObjectInitializationHints hints)
-{
-	setTransparencyController(ControllerManager::createFloatController(dataset(), hints));
-
-	DataVis::initializeObject(hints);
+	if(params.createSubObjects()) {
+		setTransparencyController(ControllerManager::createFloatController(dataset()));
+	}
 }
 
 /******************************************************************************

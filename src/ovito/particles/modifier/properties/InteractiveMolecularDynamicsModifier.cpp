@@ -47,7 +47,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(InteractiveMolecularDynamicsModifier, trans
 /******************************************************************************
 * Constructs the modifier instance.
 ******************************************************************************/
-InteractiveMolecularDynamicsModifier::InteractiveMolecularDynamicsModifier(DataSet* dataset) : Modifier(dataset),
+InteractiveMolecularDynamicsModifier::InteractiveMolecularDynamicsModifier(ObjectCreationParams params) : Modifier(params),
 	_hostName(QStringLiteral("localhost")),
 	_port(8888),
 	_transmissionInterval(1),

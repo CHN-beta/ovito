@@ -59,7 +59,7 @@ class OVITO_MESH_EXPORT STLImporter : public FileSourceImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE STLImporter(DataSet* dataset) : FileSourceImporter(dataset) {}
+	Q_INVOKABLE STLImporter(ObjectCreationParams params) : FileSourceImporter(params) {}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("STL"); }

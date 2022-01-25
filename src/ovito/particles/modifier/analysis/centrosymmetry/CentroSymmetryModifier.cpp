@@ -45,7 +45,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(CentroSymmetryModifier, numNeighbors, Integer
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-CentroSymmetryModifier::CentroSymmetryModifier(DataSet* dataset) : AsynchronousModifier(dataset),
+CentroSymmetryModifier::CentroSymmetryModifier(ObjectCreationParams params) : AsynchronousModifier(params),
 	_numNeighbors(12),
 	_mode(ConventionalMode)
 {

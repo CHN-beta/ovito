@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,13 +30,6 @@
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticleExporter);
-
-/******************************************************************************
-* Constructs a new instance of the class.
-******************************************************************************/
-ParticleExporter::ParticleExporter(DataSet* dataset) : FileExporter(dataset)
-{
-}
 
 /******************************************************************************
 * Evaluates the pipeline of an PipelineSceneNode and makes sure that the data to be

@@ -61,7 +61,7 @@ class OVITO_GRID_EXPORT VoxelGridColorCodingModifierDelegate : public ColorCodin
 public:
 
 	/// Constructor.
-	Q_INVOKABLE VoxelGridColorCodingModifierDelegate(DataSet* dataset) : ColorCodingModifierDelegate(dataset) {}
+	Q_INVOKABLE VoxelGridColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
 };
 
 }	// End of namespace

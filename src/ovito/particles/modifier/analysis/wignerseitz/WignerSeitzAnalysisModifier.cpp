@@ -40,7 +40,7 @@ SET_PROPERTY_FIELD_LABEL(WignerSeitzAnalysisModifier, outputCurrentConfig, "Outp
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-WignerSeitzAnalysisModifier::WignerSeitzAnalysisModifier(DataSet* dataset) : ReferenceConfigurationModifier(dataset),
+WignerSeitzAnalysisModifier::WignerSeitzAnalysisModifier(ObjectCreationParams params) : ReferenceConfigurationModifier(params),
 	_perTypeOccupancy(false),
 	_outputCurrentConfig(false)
 {

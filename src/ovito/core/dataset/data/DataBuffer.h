@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -66,10 +66,10 @@ public:
 public:
 
 	/// \brief Creates an empty buffer.
-	Q_INVOKABLE DataBuffer(DataSet* dataset);
+	Q_INVOKABLE DataBuffer(ObjectCreationParams params) : DataObject(params) {}
 
 	/// \brief Constructor that creates and initializes a new property array.
-	DataBuffer(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount = 1, InitializationFlags flags = NoFlags, QStringList componentNames = QStringList());
+	DataBuffer(ObjectCreationParams params, size_t elementCount, int dataType, size_t componentCount = 1, InitializationFlags flags = NoFlags, QStringList componentNames = QStringList());
 
 	/// \brief Returns the number of elements stored in the property array.
 	size_t size() const { return _numElements; }

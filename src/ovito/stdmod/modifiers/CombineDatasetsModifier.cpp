@@ -42,25 +42,16 @@ IMPLEMENT_OVITO_CLASS(CombineDatasetsModifierDelegate);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-CombineDatasetsModifier::CombineDatasetsModifier(DataSet* dataset) : MultiDelegatingModifier(dataset)
+CombineDatasetsModifier::CombineDatasetsModifier(ObjectCreationParams params) : MultiDelegatingModifier(params)
 {
-}
+	if(params.createSubObjects()) {
+		// Generate the list of delegate objects.
+		createModifierDelegates(CombineDatasetsModifierDelegate::OOClass(), params);
 
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void CombineDatasetsModifier::initializeObject(ObjectInitializationHints hints)
-{
-	// Generate the list of delegate objects.
-	createModifierDelegates(CombineDatasetsModifierDelegate::OOClass(), hints);
-
-	// Create the file source object, which will be responsible for loading
-	// and caching the data to be merged.
-	if(!secondaryDataSource())
-		setSecondaryDataSource(OORef<FileSource>::create(dataset(), hints));
-
-	MultiDelegatingModifier::initializeObject(hints);
+		// Create the file source object, which will be responsible for loading
+		// and caching the data to be merged.
+		setSecondaryDataSource(OORef<FileSource>::create(params));
+	}
 }
 
 /******************************************************************************

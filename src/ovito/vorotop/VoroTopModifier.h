@@ -52,7 +52,7 @@ class OVITO_VOROTOP_EXPORT VoroTopModifier : public StructureIdentificationModif
 public:
 
 	/// Constructor.
-	Q_INVOKABLE VoroTopModifier(DataSet* dataset);
+	Q_INVOKABLE VoroTopModifier(ObjectCreationParams params);
 
 	/// Loads a new filter definition into the modifier.
 	bool loadFilterDefinition(const QString& filepath, MainThreadOperation& operation);

@@ -38,7 +38,7 @@ class OVITO_CORE_EXPORT PipelineObject : public ActiveObject
 public:
 
 	/// \brief Constructor.
-	explicit PipelineObject(DataSet* dataset);
+	using ActiveObject::ActiveObject;
 
 	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const { return TimeInterval::infinite(); }

@@ -66,7 +66,7 @@ public:
 	};
 
 	/// \brief Constructor.
-	Q_INVOKABLE AnglesObject(DataSet* dataset);
+	Q_INVOKABLE AnglesObject(ObjectCreationParams params);
 
 	/// Convinience method that returns the angle topology property.
 	const PropertyObject* getTopology() const { return getProperty(TopologyProperty); }

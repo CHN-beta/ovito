@@ -34,7 +34,7 @@ SET_PROPERTY_FIELD_LABEL(StaticSource, dataCollection, "Data");
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-StaticSource::StaticSource(DataSet* dataset, DataCollection* data) : PipelineObject(dataset)
+StaticSource::StaticSource(ObjectCreationParams params, DataCollection* data) : PipelineObject(params)
 {
     setDataCollection(data);
 }

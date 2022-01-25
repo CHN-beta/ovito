@@ -69,7 +69,7 @@ public:
 public:
 
 	/// Constructor creating an empty SurfaceMeshTopology object.
-	Q_INVOKABLE SurfaceMeshTopology(DataSet* dataset) : DataObject(dataset) {}
+	Q_INVOKABLE SurfaceMeshTopology(ObjectCreationParams params) : DataObject(params) {}
 
     /// Removes all faces, edges and vertices from this mesh.
     void clear();

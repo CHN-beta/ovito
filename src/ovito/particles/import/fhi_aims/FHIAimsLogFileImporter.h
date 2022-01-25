@@ -56,7 +56,7 @@ class OVITO_PARTICLES_EXPORT FHIAimsLogFileImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE FHIAimsLogFileImporter(DataSet* dataset) : ParticleImporter(dataset) {
+	Q_INVOKABLE FHIAimsLogFileImporter(ObjectCreationParams params) : ParticleImporter(params) {
 		setMultiTimestepFile(true);
 	}
 

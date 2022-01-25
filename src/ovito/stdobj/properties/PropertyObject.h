@@ -69,10 +69,10 @@ public:
 public:
 
 	/// \brief Creates an empty property.
-	Q_INVOKABLE PropertyObject(DataSet* dataset);
+	Q_INVOKABLE PropertyObject(ObjectCreationParams params);
 
 	/// \brief Constructor that creates and initializes a new property array.
-	PropertyObject(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, const QString& name, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, int type = 0, QStringList componentNames = QStringList());
+	PropertyObject(ObjectCreationParams params, size_t elementCount, int dataType, size_t componentCount, const QString& name, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, int type = 0, QStringList componentNames = QStringList());
 
 	/// \brief Gets the property's name.
 	/// \return The name of property.

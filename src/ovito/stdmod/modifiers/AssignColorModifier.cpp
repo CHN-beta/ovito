@@ -43,30 +43,17 @@ SET_PROPERTY_FIELD_LABEL(AssignColorModifier, keepSelection, "Keep selection");
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-AssignColorModifier::AssignColorModifier(DataSet* dataset) : DelegatingModifier(dataset),
-	_keepSelection(true)
+AssignColorModifier::AssignColorModifier(ObjectCreationParams params) : DelegatingModifier(params),
+	// In the graphical environment, we clear the selection by default to make the assigned colors visible.
+	_keepSelection(!params.loadUserDefaults())
 {
-}
+	if(params.createSubObjects()) {
+		setColorController(ControllerManager::createColorController(dataset()));
+		colorController()->setColorValue(0, Color(0.3f, 0.3f, 1.0f));
 
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void AssignColorModifier::initializeObject(ObjectInitializationHints hints)
-{
-	if(!colorController())
-		setColorController(ControllerManager::createColorController(dataset(), hints));
-	colorController()->setColorValue(0, Color(0.3f, 0.3f, 1.0f));
-
-	// Let this modifier operate on particles by default.
-	createDefaultModifierDelegate(AssignColorModifierDelegate::OOClass(), QStringLiteral("ParticlesAssignColorModifierDelegate"), hints);
-
-	if(hints.testFlag(LoadUserDefaults)) {
-		// In the graphical environment, we clear the selection by default to make the assigned colors visible.
-		setKeepSelection(false);
+		// Let this modifier operate on particles by default.
+		createDefaultModifierDelegate(AssignColorModifierDelegate::OOClass(), QStringLiteral("ParticlesAssignColorModifierDelegate"), params);
 	}
-
-	DelegatingModifier::initializeObject(hints);
 }
 
 /******************************************************************************

@@ -56,9 +56,17 @@ SET_PROPERTY_FIELD_LABEL(DataSet, globalObjects, "Global objects");
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DataSet::DataSet(DataSet*) : RefTarget(this), _unitsManager(this)
+DataSet::DataSet(ObjectCreationParams params) : RefTarget(ObjectCreationParams(this, params.flags())), _unitsManager(this)
 {
 	connect(&_pipelineEvaluationWatcher, &TaskWatcher::finished, this, &DataSet::pipelineEvaluationFinished);
+
+	if(params.createSubObjects()) {
+		setViewportConfig(createDefaultViewportConfiguration(ObjectCreationParams(this, params.flags())));
+		setAnimationSettings(OORef<AnimationSettings>::create(ObjectCreationParams(this, params.flags())));
+		setSceneRoot(OORef<RootSceneNode>::create(ObjectCreationParams(this, params.flags())));
+		setSelection(OORef<SelectionSet>::create(ObjectCreationParams(this, params.flags())));
+		setRenderSettings(OORef<RenderSettings>::create(ObjectCreationParams(this, params.flags())));
+	}
 }
 
 /******************************************************************************
@@ -72,63 +80,43 @@ DataSet::~DataSet()
 }
 
 /******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void DataSet::initializeObject(ObjectInitializationHints hints)
-{
-	if(!viewportConfig())
-		setViewportConfig(createDefaultViewportConfiguration(hints));
-	if(!animationSettings())
-		setAnimationSettings(new AnimationSettings(this));
-	if(!sceneRoot())
-		setSceneRoot(new RootSceneNode(this));
-	if(!selection())
-		setSelection(new SelectionSet(this));
-	if(!renderSettings())
-		setRenderSettings(new RenderSettings(this));
-
-	RefTarget::initializeObject(hints);
-}
-
-/******************************************************************************
 * Returns a viewport configuration that is used as template for new scenes.
 ******************************************************************************/
-OORef<ViewportConfiguration> DataSet::createDefaultViewportConfiguration(ObjectInitializationHints initializationHints)
+OORef<ViewportConfiguration> DataSet::createDefaultViewportConfiguration(ObjectCreationParams params)
 {
 	UndoSuspender noUndo(undoStack());
 
-	OORef<ViewportConfiguration> viewConfig = new ViewportConfiguration(this);
+	OORef<ViewportConfiguration> viewConfig = OORef<ViewportConfiguration>::create(params);
 
 	if(!StandaloneApplication::instance() || !StandaloneApplication::instance()->cmdLineParser().isSet("noviewports")) {
 
 		// Create the 4 standard viewports.
-		OORef<Viewport> topView = new Viewport(this);
+		OORef<Viewport> topView = OORef<Viewport>::create(params);
 		topView->setViewType(Viewport::VIEW_TOP);
 
-		OORef<Viewport> frontView = new Viewport(this);
+		OORef<Viewport> frontView = OORef<Viewport>::create(params);
 		frontView->setViewType(Viewport::VIEW_FRONT);
 
-		OORef<Viewport> leftView = new Viewport(this);
+		OORef<Viewport> leftView = OORef<Viewport>::create(params);
 		leftView->setViewType(Viewport::VIEW_LEFT);
 
-		OORef<Viewport> perspectiveView = new Viewport(this);
+		OORef<Viewport> perspectiveView = OORef<Viewport>::create(params);
 		perspectiveView->setViewType(Viewport::VIEW_PERSPECTIVE);
 		perspectiveView->setCameraTransformation(ViewportSettings::getSettings().coordinateSystemOrientation() * AffineTransformation::lookAlong({90, -120, 100}, {-90, 120, -100}, {0,0,1}).inverse());
 
 		// Set up the 4-pane layout of the viewports.
-		OORef<ViewportLayoutCell> rootLayoutCell = OORef<ViewportLayoutCell>::create(this, initializationHints);
+		OORef<ViewportLayoutCell> rootLayoutCell = OORef<ViewportLayoutCell>::create(params);
 		rootLayoutCell->setSplitDirection(ViewportLayoutCell::Horizontal);
-		rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create(this, initializationHints));
-		rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create(this, initializationHints));
+		rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create(params));
+		rootLayoutCell->addChild(OORef<ViewportLayoutCell>::create(params));
 		rootLayoutCell->children()[0]->setSplitDirection(ViewportLayoutCell::Vertical);
-		rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(this, initializationHints));
-		rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(this, initializationHints));
+		rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(params));
+		rootLayoutCell->children()[0]->addChild(OORef<ViewportLayoutCell>::create(params));
 		rootLayoutCell->children()[0]->children()[0]->setViewport(topView);
 		rootLayoutCell->children()[0]->children()[1]->setViewport(leftView);
 		rootLayoutCell->children()[1]->setSplitDirection(ViewportLayoutCell::Vertical);
-		rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(this, initializationHints));
-		rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(this, initializationHints));
+		rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(params));
+		rootLayoutCell->children()[1]->addChild(OORef<ViewportLayoutCell>::create(params));
 		rootLayoutCell->children()[1]->children()[0]->setViewport(frontView);
 		rootLayoutCell->children()[1]->children()[1]->setViewport(perspectiveView);
 		viewConfig->setLayoutRootCell(std::move(rootLayoutCell));

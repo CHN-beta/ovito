@@ -41,8 +41,8 @@ public:
 	using typename BaseKeyClass::value_type;
 
 	/// Constructor.
-	TCBAnimationKey(DataSet* dataset, TimePoint time, const value_type& value)
-		: BaseKeyClass(dataset, time, value), _easeTo(0), _easeFrom(0), _tension(0), _continuity(0), _bias(0) {}
+	TCBAnimationKey(ObjectCreationParams params, TimePoint time, const value_type& value)
+		: BaseKeyClass(params, time, value), _easeTo(0), _easeFrom(0), _tension(0), _continuity(0), _bias(0) {}
 
 public:
 
@@ -72,7 +72,8 @@ class OVITO_CORE_EXPORT FloatTCBAnimationKey : public TCBAnimationKey<FloatAnima
 public:
 
 	/// Constructor.
-	Q_INVOKABLE FloatTCBAnimationKey(DataSet* dataset, TimePoint time = 0, FloatType value = 0) : TCBAnimationKey<FloatAnimationKey>(dataset, time, value) {}
+	Q_INVOKABLE FloatTCBAnimationKey(ObjectCreationParams params, TimePoint time = 0, FloatType value = 0) 
+		: TCBAnimationKey<FloatAnimationKey>(params, time, value) {}
 };
 
 /**
@@ -85,7 +86,8 @@ class OVITO_CORE_EXPORT PositionTCBAnimationKey : public TCBAnimationKey<Positio
 public:
 
 	/// Constructor.
-	Q_INVOKABLE PositionTCBAnimationKey(DataSet* dataset, TimePoint time = 0, const Vector3& value = Vector3::Zero()) : TCBAnimationKey<PositionAnimationKey>(dataset, time, value) {}
+	Q_INVOKABLE PositionTCBAnimationKey(ObjectCreationParams params, TimePoint time = 0, const Vector3& value = Vector3::Zero()) 
+		: TCBAnimationKey<PositionAnimationKey>(params, time, value) {}
 };
 
 /**
@@ -119,8 +121,8 @@ class TCBControllerBase : public KeyframeControllerTemplate<KeyType, TCBKeyInter
 public:
 
 	/// Constructor.
-	TCBControllerBase(DataSet* dataset)
-		: KeyframeControllerTemplate<KeyType, TCBKeyInterpolator<KeyType>, ctrlType>(dataset) {}
+	TCBControllerBase(ObjectCreationParams params)
+		: KeyframeControllerTemplate<KeyType, TCBKeyInterpolator<KeyType>, ctrlType>(params) {}
 };
 
 /**
@@ -134,8 +136,8 @@ class OVITO_CORE_EXPORT TCBPositionController
 public:
 
 	/// Constructor.
-	Q_INVOKABLE TCBPositionController(DataSet* dataset)
-		: TCBControllerBase<PositionTCBAnimationKey, Controller::ControllerTypePosition>(dataset) {}
+	Q_INVOKABLE TCBPositionController(ObjectCreationParams params)
+		: TCBControllerBase<PositionTCBAnimationKey, Controller::ControllerTypePosition>(params) {}
 
 	/// \brief Gets the controller's value at a certain animation time.
 	virtual void getPositionValue(TimePoint time, Vector3& value, TimeInterval& validityInterval) override {

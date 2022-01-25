@@ -39,13 +39,6 @@ IMPLEMENT_OVITO_CLASS(AsynchronousModifier);
 template class OVITO_CORE_EXPORT Future<AsynchronousModifier::EnginePtr>;
 
 /******************************************************************************
-* Constructs the modifier object.
-******************************************************************************/
-AsynchronousModifier::AsynchronousModifier(DataSet* dataset) : Modifier(dataset)
-{
-}
-
-/******************************************************************************
 * Asks the object for the result of the data pipeline.
 ******************************************************************************/
 Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)

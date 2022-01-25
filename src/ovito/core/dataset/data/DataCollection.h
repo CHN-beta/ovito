@@ -43,7 +43,7 @@ class OVITO_CORE_EXPORT DataCollection : public DataObject
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE DataCollection(DataSet* dataset) : DataObject(dataset) {}
+	Q_INVOKABLE DataCollection(ObjectCreationParams params) : DataObject(params) {}
 
 	/// \brief Discards all contents of this data collection.
 	void clear() {
@@ -334,8 +334,18 @@ public:
 	/// assign a unique identifier to the object, assigns the given data source object and visual element, and
 	/// finally inserts the data object into this pipeline flow state.
 	template<class DataObjectType, typename... Args>
-	DataObjectType* createObject(const QString& baseName, const PipelineObject* dataSource, DataVis* visElement, Args&&... args) {
-		DataObjectType* obj = createObject<DataObjectType, Args...>(baseName, dataSource, ObjectInitializationHint::WithoutVisElement, std::forward<Args>(args)...);
+	DataObjectType* createObjectWithVis(const QString& baseName, const PipelineObject* dataSource, DataVis* visElement, Args&&... args) {
+		DataObjectType* obj = createObject<DataObjectType>(baseName, dataSource, ObjectCreationParams::WithoutVisElement, std::forward<Args>(args)...);
+		obj->setVisElement(visElement);
+		return obj;
+	}
+
+	/// Instantiates a new data object, passes the given parameters to its class constructor,
+	/// assigns the given data source object and visual element, and
+	/// finally inserts the data object into this pipeline flow state.
+	template<class DataObjectType, typename... Args>
+	DataObjectType* createObjectWithVis(const PipelineObject* dataSource, DataVis* visElement, Args&&... args) {
+		DataObjectType* obj = createObject<DataObjectType>(dataSource, ObjectCreationParams::WithoutVisElement, std::forward<Args>(args)...);
 		obj->setVisElement(visElement);
 		return obj;
 	}

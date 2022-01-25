@@ -40,7 +40,7 @@ class OVITO_CORE_EXPORT CachingPipelineObject : public PipelineObject
 public:
 
 	/// Constructor.
-	CachingPipelineObject(DataSet* dataset);
+	CachingPipelineObject(ObjectCreationParams params);
 
 	/// Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;

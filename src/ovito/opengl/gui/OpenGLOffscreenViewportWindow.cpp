@@ -80,11 +80,11 @@ OpenGLOffscreenViewportWindow::OpenGLOffscreenViewportWindow(Viewport* vp, const
 	_offscreenContext.doneCurrent();
 
 	// Create the viewport renderer.
-	_viewportRenderer = new OpenGLSceneRenderer(viewport()->dataset());
+	_viewportRenderer = OORef<OpenGLSceneRenderer>::create(viewport()->dataset());
 	_viewportRenderer->setInteractive(true);
 
 	// Create the object picking renderer.
-	_pickingRenderer = new PickingOpenGLSceneRenderer(viewport()->dataset());
+	_pickingRenderer = OORef<PickingOpenGLSceneRenderer>::create(viewport()->dataset());
 	_pickingRenderer->setInteractive(true);
 
 	// Tell the renderers about the FBO we are rendering into.

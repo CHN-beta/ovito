@@ -59,7 +59,7 @@ public:
 public:
 
 	/// Standard constructor.
-	Q_INVOKABLE MicrostructurePhase(DataSet* dataset);
+	Q_INVOKABLE MicrostructurePhase(ObjectCreationParams params);
 
 	/// Returns the lotitleng name of this phase.
 	const QString& longName() const { return name(); }

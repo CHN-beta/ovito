@@ -53,7 +53,7 @@ QVector<DataObjectReference> ParticlesComputePropertyModifierDelegate::OOMetaCla
 /******************************************************************************
 * Constructs a new instance of this class.
 ******************************************************************************/
-ParticlesComputePropertyModifierDelegate::ParticlesComputePropertyModifierDelegate(DataSet* dataset) : ComputePropertyModifierDelegate(dataset),
+ParticlesComputePropertyModifierDelegate::ParticlesComputePropertyModifierDelegate(ObjectCreationParams params) : ComputePropertyModifierDelegate(params),
 	_cutoff(3),
 	_useMultilineFields(false)
 {

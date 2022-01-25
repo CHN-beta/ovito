@@ -52,13 +52,6 @@ ModifierApplication::Registry& ModifierApplication::registry()
 }
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-ModifierApplication::ModifierApplication(DataSet* dataset) : CachingPipelineObject(dataset)
-{
-}
-
-/******************************************************************************
 * Asks this object to delete itself.
 ******************************************************************************/
 void ModifierApplication::deleteReferenceObject() 

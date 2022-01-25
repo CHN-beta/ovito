@@ -47,15 +47,10 @@ class OVITO_STDOBJ_EXPORT ElementType : public DataObject
 public:
 
 	/// \brief Constructs a new type.
-	Q_INVOKABLE ElementType(DataSet* dataset);
+	Q_INVOKABLE ElementType(ObjectCreationParams params);
 
 	/// Initializes the element type to default parameter values.
-	virtual void initializeType(const PropertyReference& property, ObjectInitializationHints initializationHints);
-
-	/// Initializes the element type to default parameter values.
-	void initializeType(const PropertyReference& property) {
-		initializeType(property, ExecutionContext::isInteractive() ? ObjectInitializationHint::LoadUserDefaults : ObjectInitializationHint::LoadFactoryDefaults);
-	}
+	virtual void initializeType(const PropertyReference& property, bool loadUserDefaults = ExecutionContext::isInteractive());
 
 	/// Creates an editable proxy object for this DataObject and synchronizes its parameters.
 	virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
@@ -78,7 +73,7 @@ public:
 	virtual QString objectTitle() const override { return nameOrNumericId(); }
 
 	/// Returns the default color for a named element type.
-	static Color getDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ObjectInitializationHints initializationHints);
+	static Color getDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults);
 
 	/// Changes the default color for a named element type.
 	static void setDefaultColor(const PropertyReference& property, const QString& typeName, const Color& color);

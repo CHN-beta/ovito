@@ -40,7 +40,8 @@ class OVITO_MESH_EXPORT RenderableSurfaceMesh : public TransformedDataObject
 public:
 
 	/// Constructor.
-	Q_INVOKABLE RenderableSurfaceMesh(DataSet* dataset, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr, DataOORef<const TriMeshObject> surfaceMesh = {}, DataOORef<const TriMeshObject> capPolygonsMesh = {}, bool backfaceCulling = false) : TransformedDataObject(dataset, creator, sourceData), 
+	Q_INVOKABLE RenderableSurfaceMesh(ObjectCreationParams params, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr, DataOORef<const TriMeshObject> surfaceMesh = {}, DataOORef<const TriMeshObject> capPolygonsMesh = {}, bool backfaceCulling = false) 
+		: TransformedDataObject(params, creator, sourceData), 
 		_surfaceMesh(std::move(surfaceMesh)),
 		_capPolygonsMesh(std::move(capPolygonsMesh)),
 		_backfaceCulling(backfaceCulling) 

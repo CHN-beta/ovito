@@ -45,7 +45,7 @@ class OVITO_PARTICLES_EXPORT AtomicStrainModifier : public ReferenceConfiguratio
 public:
 
 	/// Constructor.
-	Q_INVOKABLE AtomicStrainModifier(DataSet* dataset);
+	Q_INVOKABLE AtomicStrainModifier(ObjectCreationParams params);
 
 protected:
 

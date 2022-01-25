@@ -55,26 +55,18 @@ SET_MODIFIER_APPLICATION_TYPE(ComputePropertyModifier, ComputePropertyModifierAp
 /******************************************************************************
 * Constructs a new instance of this class.
 ******************************************************************************/
-ComputePropertyModifier::ComputePropertyModifier(DataSet* dataset) : AsynchronousDelegatingModifier(dataset),
+ComputePropertyModifier::ComputePropertyModifier(ObjectCreationParams params) : AsynchronousDelegatingModifier(params),
 	_expressions(QStringList("0")),
 	_onlySelectedElements(false),
 	_useMultilineFields(false)
 {
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void ComputePropertyModifier::initializeObject(ObjectInitializationHints hints)
-{
-	// Let this modifier act on particles by default.
-	createDefaultModifierDelegate(ComputePropertyModifierDelegate::OOClass(), QStringLiteral("ParticlesComputePropertyModifierDelegate"), hints);
-	// Set default output property.
-	if(delegate())
-		setOutputProperty(PropertyReference(delegate()->inputContainerClass(), QStringLiteral("My property")));
-
-	AsynchronousDelegatingModifier::initializeObject(hints);
+	if(params.createSubObjects()) {
+		// Let this modifier act on particles by default.
+		createDefaultModifierDelegate(ComputePropertyModifierDelegate::OOClass(), QStringLiteral("ParticlesComputePropertyModifierDelegate"), params);
+		// Set default output property.
+		if(delegate())
+			setOutputProperty(PropertyReference(delegate()->inputContainerClass(), QStringLiteral("My property")));
+	}
 }
 
 /******************************************************************************

@@ -56,7 +56,7 @@ class OVITO_PARTICLES_EXPORT DLPOLYImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE DLPOLYImporter(DataSet* dataset) : ParticleImporter(dataset) {
+	Q_INVOKABLE DLPOLYImporter(ObjectCreationParams params) : ParticleImporter(params) {
 		setMultiTimestepFile(true);
 	}
 

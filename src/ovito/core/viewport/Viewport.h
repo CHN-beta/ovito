@@ -68,7 +68,7 @@ public:
 public:
 
 	/// \brief Constructs a new viewport.
-	Q_INVOKABLE Viewport(DataSet* dataset);
+	Q_INVOKABLE Viewport(ObjectCreationParams params);
 
 	/// \brief Destructor.
 	virtual ~Viewport();

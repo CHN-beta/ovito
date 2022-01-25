@@ -58,7 +58,7 @@ class OVITO_PARTICLES_EXPORT ParaViewVTPParticleImporter : public ParticleImport
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE ParaViewVTPParticleImporter(DataSet *dataset) : ParticleImporter(dataset) {}
+	Q_INVOKABLE ParaViewVTPParticleImporter(ObjectCreationParams params) : ParticleImporter(params) {}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("VTP"); }

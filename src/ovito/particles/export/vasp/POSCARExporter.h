@@ -52,7 +52,7 @@ class OVITO_PARTICLES_EXPORT POSCARExporter : public ParticleExporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE POSCARExporter(DataSet* dataset) : ParticleExporter(dataset) {}
+	Q_INVOKABLE POSCARExporter(ObjectCreationParams params) : ParticleExporter(params) {}
 
 protected:
 

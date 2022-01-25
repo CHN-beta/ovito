@@ -67,7 +67,7 @@ class OVITO_STDMOD_EXPORT SimulationCellAffineTransformationModifierDelegate : p
 public:
 
 	/// Constructor.
-	Q_INVOKABLE SimulationCellAffineTransformationModifierDelegate(DataSet* dataset) : AffineTransformationModifierDelegate(dataset) {}
+	Q_INVOKABLE SimulationCellAffineTransformationModifierDelegate(ObjectCreationParams params) : AffineTransformationModifierDelegate(params) {}
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
 	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
@@ -103,11 +103,7 @@ public:
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE AffineTransformationModifier(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;
+	Q_INVOKABLE AffineTransformationModifier(ObjectCreationParams params);
 
 	/// This method is called by the system after the modifier has been inserted into a data pipeline.
 	virtual void initializeModifier(const ModifierInitializationRequest& request) override;

@@ -58,7 +58,7 @@ class OVITO_PARTICLES_EXPORT LAMMPSBinaryDumpImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE LAMMPSBinaryDumpImporter(DataSet* dataset) : ParticleImporter(dataset) {}
+	Q_INVOKABLE LAMMPSBinaryDumpImporter(ObjectCreationParams params) : ParticleImporter(params) {}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("LAMMPS Dump File"); }

@@ -39,7 +39,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT ClusterGraphObject : public DataObject
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE ClusterGraphObject(DataSet* dataset);
+	Q_INVOKABLE ClusterGraphObject(ObjectCreationParams params);
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("Clusters"); }

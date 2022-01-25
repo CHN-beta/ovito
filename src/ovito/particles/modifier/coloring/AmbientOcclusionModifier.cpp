@@ -48,7 +48,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(AmbientOcclusionModifier, bufferResolution, I
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-AmbientOcclusionModifier::AmbientOcclusionModifier(DataSet* dataset) : AsynchronousModifier(dataset),
+AmbientOcclusionModifier::AmbientOcclusionModifier(ObjectCreationParams params) : AsynchronousModifier(params),
 	_intensity(0.7),
 	_samplingCount(40),
 	_bufferResolution(3)
@@ -98,7 +98,7 @@ Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(c
 	OvitoClassPtr rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "OffscreenOpenGLSceneRenderer");
 	if(!rendererClass)
 		throwException(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
-	OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClass->createInstance(dataset(), ObjectInitializationHint::LoadFactoryDefaults));
+	OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClass->createInstance(dataset()));
 
 	// Activate picking mode, because we want to render particles using false colors.
 	renderer->setPicking(true);

@@ -69,7 +69,7 @@ public:
 public:
 
 	/// Constructor.
-	Q_INVOKABLE CentroSymmetryModifier(DataSet* dataset);
+	Q_INVOKABLE CentroSymmetryModifier(ObjectCreationParams params);
 
 protected:
 

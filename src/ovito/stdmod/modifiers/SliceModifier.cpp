@@ -65,36 +65,28 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SliceModifier, widthController, WorldParame
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-SliceModifier::SliceModifier(DataSet* dataset) : MultiDelegatingModifier(dataset),
+SliceModifier::SliceModifier(ObjectCreationParams params) : MultiDelegatingModifier(params),
 	_createSelection(false),
 	_inverse(false),
 	_applyToSelection(false),
 	_enablePlaneVisualization(false),
 	_reducedCoordinates(false)
 {
-}
+	if(params.createSubObjects()) {
+		setNormalController(ControllerManager::createVector3Controller(dataset()));
+		setDistanceController(ControllerManager::createFloatController(dataset()));
+		setWidthController(ControllerManager::createFloatController(dataset()));
+		if(normalController()) normalController()->setVector3Value(0, Vector3(1,0,0));
 
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void SliceModifier::initializeObject(ObjectInitializationHints hints)
-{
-	setNormalController(ControllerManager::createVector3Controller(dataset(), hints));
-	setDistanceController(ControllerManager::createFloatController(dataset(), hints));
-	setWidthController(ControllerManager::createFloatController(dataset(), hints));
-	if(normalController()) normalController()->setVector3Value(0, Vector3(1,0,0));
+		// Generate the list of delegate objects.
+		createModifierDelegates(SliceModifierDelegate::OOClass(), params);
 
-	// Generate the list of delegate objects.
-	createModifierDelegates(SliceModifierDelegate::OOClass(), hints);
-
-	MultiDelegatingModifier::initializeObject(hints);
-
-	// Create the vis element for the plane.
-	setPlaneVis(OORef<TriMeshVis>::create(dataset(), hints));
-	planeVis()->setTitle(tr("Plane"));
-	planeVis()->setHighlightEdges(true);
-	planeVis()->setTransparency(0.5);
+		// Create the vis element for the plane.
+		setPlaneVis(OORef<TriMeshVis>::create(params));
+		planeVis()->setTitle(tr("Plane"));
+		planeVis()->setHighlightEdges(true);
+		planeVis()->setTransparency(0.5);
+	}
 }
 
 /******************************************************************************
@@ -308,8 +300,7 @@ void SliceModifier::evaluateSynchronous(const ModifierEvaluationRequest& request
 		const AffineTransformation& cellMatrix = cellObj->cellMatrix();
 
 		// Create an output mesh for visualizing the cutting plane.
-		TriMeshObject* mesh = state.createObject<TriMeshObject>(QStringLiteral("plane"), request.modApp(), ObjectInitializationHint::WithoutVisElement);
-		mesh->setVisElement(planeVis());
+		TriMeshObject* mesh = state.createObjectWithVis<TriMeshObject>(QStringLiteral("plane"), request.modApp(), planeVis());
 
 		// Compute intersection lines of slicing plane and simulation cell.
 		auto createIntersectionPolygon = [&](const Plane3& plane) {

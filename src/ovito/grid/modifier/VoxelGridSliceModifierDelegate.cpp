@@ -40,27 +40,19 @@ DEFINE_REFERENCE_FIELD(VoxelGridSliceModifierDelegate, surfaceMeshVis);
 /******************************************************************************
 * Constructs the object.
 ******************************************************************************/
-VoxelGridSliceModifierDelegate::VoxelGridSliceModifierDelegate(DataSet* dataset) : SliceModifierDelegate(dataset)
+VoxelGridSliceModifierDelegate::VoxelGridSliceModifierDelegate(ObjectCreationParams params) : SliceModifierDelegate(params)
 {
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void VoxelGridSliceModifierDelegate::initializeObject(ObjectInitializationHints hints)
-{
-	// Create the vis element for rendering the mesh.
-	setSurfaceMeshVis(OORef<SurfaceMeshVis>::create(dataset(), hints));
-	surfaceMeshVis()->setShowCap(false);
-	surfaceMeshVis()->setHighlightEdges(false);
-	surfaceMeshVis()->setSmoothShading(false);
-	surfaceMeshVis()->setSurfaceIsClosed(false);
-	if(hints.testFlag(ObjectInitializationHint::LoadUserDefaults))
-		surfaceMeshVis()->setColorMappingMode(SurfaceMeshVis::VertexPseudoColoring);
-	surfaceMeshVis()->setObjectTitle(tr("Volume slice"));
-
-	SliceModifierDelegate::initializeObject(hints);
+	if(params.createSubObjects()) {
+		// Create the vis element for rendering the mesh.
+		setSurfaceMeshVis(OORef<SurfaceMeshVis>::create(params));
+		surfaceMeshVis()->setShowCap(false);
+		surfaceMeshVis()->setHighlightEdges(false);
+		surfaceMeshVis()->setSmoothShading(false);
+		surfaceMeshVis()->setSurfaceIsClosed(false);
+		if(params.loadUserDefaults())
+			surfaceMeshVis()->setColorMappingMode(SurfaceMeshVis::VertexPseudoColoring);
+		surfaceMeshVis()->setObjectTitle(tr("Volume slice"));
+	}
 }
 
 /******************************************************************************
@@ -114,9 +106,8 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 			}
 
 			// Create an empty surface mesh object.
-			SurfaceMesh* meshObj = state.createObject<SurfaceMesh>(QStringLiteral("volume-slice"), request.modApp(), ObjectInitializationHint::WithoutVisElement, tr("Volume slice"));
+			SurfaceMesh* meshObj = state.createObjectWithVis<SurfaceMesh>(QStringLiteral("volume-slice"), request.modApp(), surfaceMeshVis(), tr("Volume slice"));
 			meshObj->setDomain(cell);
-			meshObj->setVisElement(surfaceMeshVis());
 
 			// Construct cross section mesh using a special version of the marching cubes algorithm.
 			SurfaceMeshAccess mesh(meshObj);

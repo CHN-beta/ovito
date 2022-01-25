@@ -56,7 +56,7 @@ class OVITO_PARTICLES_EXPORT PDBImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE PDBImporter(DataSet* dataset) : ParticleImporter(dataset) {
+	Q_INVOKABLE PDBImporter(ObjectCreationParams params) : ParticleImporter(params) {
 		setGenerateBonds(true); 
 	}
 

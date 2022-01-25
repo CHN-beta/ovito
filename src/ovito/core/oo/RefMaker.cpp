@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -640,66 +640,41 @@ void RefMaker::walkNode(QSet<RefTarget*>& nodes, const RefMaker* node)
 }
 
 /******************************************************************************
-* Loads the user-defined default values of this object's parameter fields from the
-* application's settings store.
-*
-* This function should be called immediately after creation of the object instance.
-* It loads the default value for every property field for which the user has set
-* a default value. This is usually the case for property fields that have the
-* PROPERTY_FIELD_MEMORIZE flag set.
-*
-* This function is recursive, i.e., it also loads default parameter values for
-* referenced objects (when the PROPERTY_FIELD_MEMORIZE flag is set for this RefMaker's reference field).
+* Initializes a new instance as part of two-phase object initialization.
+* This method is automatically called right after creation of a new object instance 
+* by the OORef<>::create() function. It loads the initial values for property fields 
+* with user-defined default settings (those having the PROPERTY_FIELD_MEMORIZE flag set). 
 ******************************************************************************/
-void RefMaker::initializeObject(ObjectInitializationHints hints)
+void RefMaker::initializeParametersToUserDefaults()
 {
 	// Iterate over all property fields in the class hierarchy.
 	for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
 		if(field->flags().testFlag(PROPERTY_FIELD_MEMORIZE)) {
-			if(field->isReferenceField()) {
-				// If it's a reference field, recursively call initializeObject() on the reference object(s).
-				if(!field->isVector()) {
-					if(RefTarget* target = field->_singleReferenceReadFunc(this)) {
-						target->initializeObject(hints);
-
-						if(hints.testFlag(LoadUserDefaults)) {
-#ifndef OVITO_DISABLE_QSETTINGS
-							// If it's a controller type, load default controller value.
-							if(Controller* ctrl = dynamic_object_cast<Controller>(target)) {
-								QSettings settings;
-								settings.beginGroup(getOOClass().plugin()->pluginId());
-								settings.beginGroup(getOOClass().name());
-								QVariant v = settings.value(field->identifier());
-								if(!v.isNull()) {
-									if(ctrl->controllerType() == Controller::ControllerTypeFloat) {
-										ctrl->setFloatValue(0, v.value<FloatType>());
-									}
-									else if(ctrl->controllerType() == Controller::ControllerTypeInt) {
-										ctrl->setIntValue(0, v.value<int>());
-									}
-									else if(ctrl->controllerType() == Controller::ControllerTypeVector3) {
-										ctrl->setVector3Value(0, v.value<Vector3>());
-									}
-								}
-							}
-#endif
-						}
-					}
-				}
-				else {
-					int count = getVectorReferenceFieldSize(field);
-					for(int i = 0; i < count; i++) {
-						if(RefTarget* target = getVectorReferenceFieldTarget(field, i)) {
-							target->initializeObject(hints);
-						}
-					}
-				}
-			}
-			else {
+			if(!field->isReferenceField()) {
 				// If it's a property field, load the user-defined default value.
-				if(hints.testFlag(LoadUserDefaults)) {
-					field->loadDefaultValue(this);
+				field->loadDefaultValue(this);
+			}
+			else if(!field->isVector()) {
+#ifndef OVITO_DISABLE_QSETTINGS
+				// If it's a controller type, load default controller value.
+				if(Controller* ctrl = dynamic_object_cast<Controller>(field->_singleReferenceReadFunc(this))) {
+					QSettings settings;
+					settings.beginGroup(getOOClass().plugin()->pluginId());
+					settings.beginGroup(getOOClass().name());
+					QVariant v = settings.value(field->identifier());
+					if(!v.isNull()) {
+						if(ctrl->controllerType() == Controller::ControllerTypeFloat) {
+							ctrl->setFloatValue(0, v.value<FloatType>());
+						}
+						else if(ctrl->controllerType() == Controller::ControllerTypeInt) {
+							ctrl->setIntValue(0, v.value<int>());
+						}
+						else if(ctrl->controllerType() == Controller::ControllerTypeVector3) {
+							ctrl->setVector3Value(0, v.value<Vector3>());
+						}
+					}
 				}
+#endif
 			}
 		}
 	}

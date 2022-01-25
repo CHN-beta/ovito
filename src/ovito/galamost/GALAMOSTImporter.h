@@ -57,7 +57,7 @@ class OVITO_GALAMOST_EXPORT GALAMOSTImporter : public ParticleImporter
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE GALAMOSTImporter(DataSet *dataset) : ParticleImporter(dataset) {}
+	Q_INVOKABLE GALAMOSTImporter(ObjectCreationParams params) : ParticleImporter(params) {}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("GALAMOST"); }

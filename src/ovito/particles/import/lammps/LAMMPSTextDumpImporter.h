@@ -58,7 +58,7 @@ class OVITO_PARTICLES_EXPORT LAMMPSTextDumpImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE LAMMPSTextDumpImporter(DataSet* dataset) : ParticleImporter(dataset), _useCustomColumnMapping(false) {}
+	Q_INVOKABLE LAMMPSTextDumpImporter(ObjectCreationParams params) : ParticleImporter(params), _useCustomColumnMapping(false) {}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("LAMMPS Dump"); }

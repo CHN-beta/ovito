@@ -58,7 +58,7 @@ class ParticlesSliceModifierDelegate : public SliceModifierDelegate
 public:
 
 	/// Constructor.
-	Q_INVOKABLE ParticlesSliceModifierDelegate(DataSet* dataset) : SliceModifierDelegate(dataset) {}
+	Q_INVOKABLE ParticlesSliceModifierDelegate(ObjectCreationParams params) : SliceModifierDelegate(params) {}
 
 	/// Applies a slice operation to a data object.
 	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

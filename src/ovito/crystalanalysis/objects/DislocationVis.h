@@ -107,7 +107,7 @@ public:
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE DislocationVis(DataSet* dataset);
+	Q_INVOKABLE DislocationVis(ObjectCreationParams params);
 
 	/// \brief Lets the vis element render a data object.
 	virtual PipelineStatus render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;

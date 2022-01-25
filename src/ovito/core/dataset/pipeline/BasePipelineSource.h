@@ -37,7 +37,7 @@ class OVITO_CORE_EXPORT BasePipelineSource : public CachingPipelineObject
 public:
 
 	/// \brief Constructor.
-	BasePipelineSource(DataSet* dataset);
+	BasePipelineSource(ObjectCreationParams params);
 
 	/// Returns the list of data objects that are managed by this data source.
 	/// The returned data objects will be displayed as sub-objects of the data source in the pipeline editor.

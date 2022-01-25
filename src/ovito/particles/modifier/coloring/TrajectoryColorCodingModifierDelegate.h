@@ -61,7 +61,7 @@ class TrajectoryColorCodingModifierDelegate : public ColorCodingModifierDelegate
 public:
 
 	/// Constructor.
-	Q_INVOKABLE TrajectoryColorCodingModifierDelegate(DataSet* dataset) : ColorCodingModifierDelegate(dataset) {}
+	Q_INVOKABLE TrajectoryColorCodingModifierDelegate(ObjectCreationParams params) : ColorCodingModifierDelegate(params) {}
 };
 
 }	// End of namespace

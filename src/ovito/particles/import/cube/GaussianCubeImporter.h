@@ -56,7 +56,7 @@ class OVITO_PARTICLES_EXPORT GaussianCubeImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE GaussianCubeImporter(DataSet* dataset) : ParticleImporter(dataset) {}
+	Q_INVOKABLE GaussianCubeImporter(ObjectCreationParams params) : ParticleImporter(params) {}
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("Cube"); }

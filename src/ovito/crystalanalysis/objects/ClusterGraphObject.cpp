@@ -31,7 +31,7 @@ DEFINE_RUNTIME_PROPERTY_FIELD(ClusterGraphObject, storage);
 /******************************************************************************
 * Constructs a cluster graph object.
 ******************************************************************************/
-ClusterGraphObject::ClusterGraphObject(DataSet* dataset) : DataObject(dataset)
+ClusterGraphObject::ClusterGraphObject(ObjectCreationParams params) : DataObject(params)
 {
 }
 

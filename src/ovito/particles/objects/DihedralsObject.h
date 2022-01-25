@@ -66,7 +66,7 @@ public:
 	};
 
 	/// \brief Constructor.
-	Q_INVOKABLE DihedralsObject(DataSet* dataset);
+	Q_INVOKABLE DihedralsObject(ObjectCreationParams params);
 
 	/// Convinience method that returns the dihedral topology property.
 	const PropertyObject* getTopology() const { return getProperty(TopologyProperty); }

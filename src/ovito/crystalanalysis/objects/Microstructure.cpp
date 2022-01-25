@@ -28,18 +28,17 @@ namespace Ovito::CrystalAnalysis {
 IMPLEMENT_OVITO_CLASS(Microstructure);
 
 /******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
+* Constructor.
 ******************************************************************************/
-void Microstructure::initializeObject(ObjectInitializationHints hints)
+Microstructure::Microstructure(ObjectCreationParams params) : SurfaceMesh(params)
 {
-	SurfaceMesh::initializeObject(hints);
-
-    makeFacesMutable()->createProperty(SurfaceMeshFaces::RegionProperty);
-    makeFacesMutable()->createProperty(SurfaceMeshFaces::BurgersVectorProperty);
-    makeFacesMutable()->createProperty(SurfaceMeshFaces::FaceTypeProperty);
-    makeFacesMutable()->createProperty(SurfaceMeshFaces::CrystallographicNormalProperty);
-    makeRegionsMutable()->createProperty(SurfaceMeshRegions::PhaseProperty);
+    if(params.createSubObjects()) {
+        makeFacesMutable()->createProperty(SurfaceMeshFaces::RegionProperty);
+        makeFacesMutable()->createProperty(SurfaceMeshFaces::BurgersVectorProperty);
+        makeFacesMutable()->createProperty(SurfaceMeshFaces::FaceTypeProperty);
+        makeFacesMutable()->createProperty(SurfaceMeshFaces::CrystallographicNormalProperty);
+        makeRegionsMutable()->createProperty(SurfaceMeshRegions::PhaseProperty);
+    }
 }
 
 /******************************************************************************

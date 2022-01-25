@@ -33,13 +33,6 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(TransformingDataVis);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-TransformingDataVis::TransformingDataVis(DataSet* dataset) : DataVis(dataset)
-{
-}
-
-/******************************************************************************
 * Lets the vis element transform a data object in preparation for rendering.
 ******************************************************************************/
 Future<PipelineFlowState> TransformingDataVis::transformData(const PipelineEvaluationRequest& request, const DataObject* dataObject, PipelineFlowState&& flowState, const std::vector<OORef<TransformedDataObject>>& cachedTransformedDataObjects)

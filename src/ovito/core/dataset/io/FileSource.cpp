@@ -75,7 +75,7 @@ static int countNumberOfFiles(const QVector<FileSourceImporter::Frame>& frames)
 /******************************************************************************
 * Constructs the object.
 ******************************************************************************/
-FileSource::FileSource(DataSet* dataset) : BasePipelineSource(dataset),
+FileSource::FileSource(ObjectCreationParams params) : BasePipelineSource(params),
 	_playbackSpeedNumerator(1),
 	_playbackSpeedDenominator(1),
 	_playbackStartTime(0),

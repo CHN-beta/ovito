@@ -92,21 +92,11 @@ PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataSet* data
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-VoxelGrid::VoxelGrid(DataSet* dataset, const QString& title) : PropertyContainer(dataset, title)
-{
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void VoxelGrid::initializeObject(ObjectInitializationHints hints)
+VoxelGrid::VoxelGrid(ObjectCreationParams params, const QString& title) : PropertyContainer(params, title)
 {
 	// Create and attach a default visualization element for rendering the grid.
-	if(!visElement() && !hints.testFlag(WithoutVisElement))
-		setVisElement(OORef<VoxelGridVis>::create(dataset(), hints));
-
-	PropertyContainer::initializeObject(hints);
+	if(params.createVisElement())
+		setVisElement(OORef<VoxelGridVis>::create(params));
 }
 
 /******************************************************************************

@@ -70,11 +70,7 @@ public:
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE VectorVis(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
+	Q_INVOKABLE VectorVis(ObjectCreationParams params);
 
 	/// \brief Lets the visualization element render the data object.
 	virtual PipelineStatus render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
@@ -97,6 +93,9 @@ protected:
 
 	/// Computes the bounding box of the arrows.
 	Box3 arrowBoundingBox(const PropertyObject* vectorProperty, const PropertyObject* positionProperty) const;
+
+	/// This method is called once for this object after it has been completely loaded from a stream.
+	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
 protected:
 

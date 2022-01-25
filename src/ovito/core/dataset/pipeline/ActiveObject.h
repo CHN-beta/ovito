@@ -44,7 +44,7 @@ class OVITO_CORE_EXPORT ActiveObject : public RefTarget
 protected:
 
 	/// \brief Constructor.
-	ActiveObject(DataSet* dataset);
+	ActiveObject(ObjectCreationParams params);
 
 public:
 

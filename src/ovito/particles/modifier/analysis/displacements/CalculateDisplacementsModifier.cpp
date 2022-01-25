@@ -34,32 +34,26 @@ DEFINE_REFERENCE_FIELD(CalculateDisplacementsModifier, vectorVis);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-CalculateDisplacementsModifier::CalculateDisplacementsModifier(DataSet* dataset) : ReferenceConfigurationModifier(dataset)
+CalculateDisplacementsModifier::CalculateDisplacementsModifier(ObjectCreationParams params) : ReferenceConfigurationModifier(params)
 {
-}
+	if(params.createSubObjects()) {
+		// Create vis element for vectors.
+		setVectorVis(OORef<VectorVis>::create(params));
+		vectorVis()->setObjectTitle(tr("Displacements"));
 
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void CalculateDisplacementsModifier::initializeObject(ObjectInitializationHints hints)
-{
-	// Create vis element for vectors.
-	setVectorVis(OORef<VectorVis>::create(dataset(), hints));
-	vectorVis()->setObjectTitle(tr("Displacements"));
+		// Don't show vectors by default, because too many vectors can make the
+		// program freeze. User has to enable the display manually.
+		vectorVis()->setEnabled(false);
 
-	// Don't show vectors by default, because too many vectors can make the
-	// program freeze. User has to enable the display manually.
-	vectorVis()->setEnabled(false);
+		// Configure vector display such that arrows point from the reference particle positions
+		// to the current particle positions.
+		vectorVis()->setReverseArrowDirection(false);
+		vectorVis()->setArrowPosition(VectorVis::Head);
 
-	// Configure vector display such that arrows point from the reference particle positions
-	// to the current particle positions.
-	vectorVis()->setReverseArrowDirection(false);
-	vectorVis()->setArrowPosition(VectorVis::Head);
-	if(hints.testFlag(LoadUserDefaults))
-		vectorVis()->colorMapping()->setSourceProperty(ParticlePropertyReference(ParticlesObject::DisplacementMagnitudeProperty));
-
-	ReferenceConfigurationModifier::initializeObject(hints);
+		// In GUI mode, visualize the displacement magnitude by default.
+		if(params.loadUserDefaults())
+			vectorVis()->colorMapping()->setSourceProperty(ParticlePropertyReference(ParticlesObject::DisplacementMagnitudeProperty));
+	}
 }
 
 /******************************************************************************

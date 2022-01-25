@@ -39,8 +39,8 @@ class OVITO_CORE_EXPORT AttributeDataObject : public DataObject
 public:
 
 	/// Constructor.
-	Q_INVOKABLE AttributeDataObject(DataSet* dataset, QVariant value = {})
-		: DataObject(dataset), _value(std::move(value)) {}
+	Q_INVOKABLE AttributeDataObject(ObjectCreationParams params, QVariant value = {})
+		: DataObject(params), _value(std::move(value)) {}
 
 	/// Returns the display title of this object.
 	virtual QString objectTitle() const override {

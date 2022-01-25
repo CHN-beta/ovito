@@ -51,7 +51,7 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(PipelineSceneNode, dataProvider, ReferenceEvent:
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PipelineSceneNode::PipelineSceneNode(DataSet* dataset) : SceneNode(dataset), 
+PipelineSceneNode::PipelineSceneNode(ObjectCreationParams params) : SceneNode(params), 
 	_pipelineCache(this, false), 
 	_pipelineRenderingCache(this, true),
 	_pipelineTrajectoryCachingEnabled(false)

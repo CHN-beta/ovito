@@ -111,7 +111,7 @@ public:
 public:
 
 	/// Constructor.
-	Q_INVOKABLE AmbientOcclusionModifier(DataSet* dataset);
+	Q_INVOKABLE AmbientOcclusionModifier(ObjectCreationParams params);
 
 protected:
 

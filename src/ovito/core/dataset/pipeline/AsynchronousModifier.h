@@ -104,7 +104,7 @@ public:
 public:
 
 	/// Constructor.
-	AsynchronousModifier(DataSet* dataset);
+	using Modifier::Modifier;
 
 	/// Modifies the input data synchronously.
 	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;

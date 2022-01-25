@@ -30,7 +30,7 @@ IMPLEMENT_OVITO_CLASS(DihedralsObject);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DihedralsObject::DihedralsObject(DataSet* dataset) : PropertyContainer(dataset)
+DihedralsObject::DihedralsObject(ObjectCreationParams params) : PropertyContainer(params)
 {
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());

@@ -55,7 +55,7 @@ class OVITO_PARTICLES_EXPORT CastepMDImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE CastepMDImporter(DataSet* dataset) : ParticleImporter(dataset) {
+	Q_INVOKABLE CastepMDImporter(ObjectCreationParams params) : ParticleImporter(params) {
 		setMultiTimestepFile(true);
 	}
 

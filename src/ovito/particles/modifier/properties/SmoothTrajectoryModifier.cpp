@@ -45,7 +45,7 @@ IMPLEMENT_OVITO_CLASS(InterpolateTrajectoryModifierApplication);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-SmoothTrajectoryModifier::SmoothTrajectoryModifier(DataSet* dataset) : Modifier(dataset),
+SmoothTrajectoryModifier::SmoothTrajectoryModifier(ObjectCreationParams params) : Modifier(params),
 	_useMinimumImageConvention(true),
 	_smoothingWindowSize(1)
 {

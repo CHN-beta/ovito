@@ -38,7 +38,7 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(PeriodicDomainDataObject, title, ReferenceEvent:
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PeriodicDomainDataObject::PeriodicDomainDataObject(DataSet* dataset, const QString& title) : DataObject(dataset),
+PeriodicDomainDataObject::PeriodicDomainDataObject(ObjectCreationParams params, const QString& title) : DataObject(params),
     _title(title)
 {
 }

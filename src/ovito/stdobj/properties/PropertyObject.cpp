@@ -36,15 +36,15 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(PropertyObject, title, ReferenceEvent::TitleChan
 /******************************************************************************
 * Constructor creating an empty property array.
 ******************************************************************************/
-PropertyObject::PropertyObject(DataSet* dataset) : DataBuffer(dataset)
+PropertyObject::PropertyObject(ObjectCreationParams params) : DataBuffer(params)
 {
 }
 
 /******************************************************************************
 * Constructor allocating a property array with given size and data layout.
 ******************************************************************************/
-PropertyObject::PropertyObject(DataSet* dataset, size_t elementCount, int dataType, size_t componentCount, const QString& name, DataBuffer::InitializationFlags flags, int type, QStringList componentNames) :
-	DataBuffer(dataset, elementCount, dataType, componentCount, flags, std::move(componentNames)),
+PropertyObject::PropertyObject(ObjectCreationParams params, size_t elementCount, int dataType, size_t componentCount, const QString& name, DataBuffer::InitializationFlags flags, int type, QStringList componentNames) :
+	DataBuffer(params, elementCount, dataType, componentCount, flags, std::move(componentNames)),
 	_name(name),
 	_type(type)
 {
@@ -358,7 +358,7 @@ void PropertyObject::updateEditableProxies(PipelineFlowState& state, ConstDataOb
 	else if(!self->elementTypes().empty()) {
 		// Create and initialize a new proxy property object. 
 		// Note: We avoid copying the property data here by constructing the proxy PropertyObject from scratch instead of cloning the original data object.
-		OORef<PropertyObject> newProxy = OORef<PropertyObject>::create(self->dataset(), ObjectInitializationHints(LoadFactoryDefaults | WithoutVisElement), 0, self->dataType(), self->componentCount(), self->name(), DataBuffer::NoFlags, self->type(), self->componentNames());
+		OORef<PropertyObject> newProxy = OORef<PropertyObject>::create(self->dataset(), ObjectCreationParams::WithoutVisElement, 0, self->dataType(), self->componentCount(), self->name(), DataBuffer::NoFlags, self->type(), self->componentNames());
 		newProxy->setTitle(self->title());
 
 		// Adopt the proxy objects corresponding to the element types, which have already been created by

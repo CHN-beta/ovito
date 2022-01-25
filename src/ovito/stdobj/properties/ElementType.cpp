@@ -48,7 +48,7 @@ SET_PROPERTY_FIELD_LABEL(ElementType, ownerProperty, "Property");
 /******************************************************************************
 * Constructs a new ElementType.
 ******************************************************************************/
-ElementType::ElementType(DataSet* dataset) : DataObject(dataset),
+ElementType::ElementType(ObjectCreationParams params) : DataObject(params),
 	_numericId(0),
 	_color(1,1,1),
 	_enabled(true)
@@ -58,7 +58,7 @@ ElementType::ElementType(DataSet* dataset) : DataObject(dataset),
 /******************************************************************************
 * Initializes the element type to default parameter values.
 ******************************************************************************/
-void ElementType::initializeType(const PropertyReference& property, ObjectInitializationHints initializationHints)
+void ElementType::initializeType(const PropertyReference& property, bool loadUserDefaults)
 {
 	OVITO_ASSERT(!property.isNull());
 
@@ -66,10 +66,11 @@ void ElementType::initializeType(const PropertyReference& property, ObjectInitia
 	_ownerProperty.set(this, PROPERTY_FIELD(ownerProperty), property);
 
 	// Assign a standard color to this element type.
-	setColor(getDefaultColor(property, nameOrNumericId(), numericId(), LoadFactoryDefaults));
+	// First load the hardcoded default color and freeze it, then load the user-defined default color.
+	setColor(getDefaultColor(property, nameOrNumericId(), numericId(), false));
 	freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::color)});
-	if(initializationHints.testFlag(LoadUserDefaults))
-		setColor(getDefaultColor(property, nameOrNumericId(), numericId(), LoadUserDefaults));
+	if(loadUserDefaults)
+		setColor(getDefaultColor(property, nameOrNumericId(), numericId(), true));
 }
 
 /******************************************************************************
@@ -91,17 +92,17 @@ QString ElementType::getElementSettingsKey(const PropertyReference& property, co
 /******************************************************************************
 * Returns the default color for a element type name.
 ******************************************************************************/
-Color ElementType::getDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ObjectInitializationHints initializationHints)
+Color ElementType::getDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults)
 {
 	OVITO_ASSERT(!typeName.isEmpty());
 
 	if(property.isNull()) {
-		return PropertyContainer::OOClass().getElementTypeDefaultColor(property, typeName, numericTypeId, initializationHints);
+		return PropertyContainer::OOClass().getElementTypeDefaultColor(property, typeName, numericTypeId, loadUserDefaults);
 	}
 
 	// Interactive execution context means that we are supposed to load the user-defined
 	// settings from the settings store.
-	if(initializationHints.testFlag(ObjectInitializationHint::LoadUserDefaults)) {
+	if(loadUserDefaults) {
 
 #ifndef OVITO_DISABLE_QSETTINGS
 		// Use the type's name, property type and container class to look up the 
@@ -134,7 +135,7 @@ Color ElementType::getDefaultColor(const PropertyReference& property, const QStr
 	}
 
 	// Otherwise fall back to a hard-coded default colors provided by the property container class.
-	return property.containerClass()->getElementTypeDefaultColor(property, typeName, numericTypeId, initializationHints);
+	return property.containerClass()->getElementTypeDefaultColor(property, typeName, numericTypeId, loadUserDefaults);
 }
 
 /******************************************************************************
@@ -146,7 +147,7 @@ void ElementType::setDefaultColor(const PropertyReference& property, const QStri
 	QSettings settings;
 	QString settingsKey = getElementSettingsKey(property, QStringLiteral("color"), typeName);
 
-	if(getDefaultColor(property, typeName, 0, ObjectInitializationHint::LoadFactoryDefaults).equals(color, 1.0/256.0) == false) {
+	if(getDefaultColor(property, typeName, 0, false).equals(color, 1.0/256.0) == false) {
 		settings.setValue(settingsKey, QVariant::fromValue(static_cast<QColor>(color)));
 	}
 	else {

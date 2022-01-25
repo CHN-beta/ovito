@@ -46,11 +46,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT ElasticStrainModifier : public StructureIdent
 public:
 
 	/// Constructor.
-	Q_INVOKABLE ElasticStrainModifier(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
+	Q_INVOKABLE ElasticStrainModifier(ObjectCreationParams params);
 	
 protected:
 

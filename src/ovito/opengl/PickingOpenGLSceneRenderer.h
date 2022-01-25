@@ -47,7 +47,7 @@ public:
 public:
 
 	/// Constructor.
-	explicit PickingOpenGLSceneRenderer(DataSet* dataset);
+	PickingOpenGLSceneRenderer(ObjectCreationParams params);
 
 	/// Renders the current animation frame.
 	virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;

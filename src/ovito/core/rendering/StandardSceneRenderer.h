@@ -41,7 +41,7 @@ class OVITO_CORE_EXPORT StandardSceneRenderer : public SceneRenderer
 public:
 
 	/// Constructor.
-	Q_INVOKABLE StandardSceneRenderer(DataSet* dataset);
+	Q_INVOKABLE StandardSceneRenderer(ObjectCreationParams params);
 
 	/// Prepares the renderer for rendering an image or animation and sets the dataset being rendered.
 	virtual bool startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize) override;

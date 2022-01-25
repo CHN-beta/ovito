@@ -42,19 +42,11 @@ SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, sourceProperty, "Source property"
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PropertyColorMapping::PropertyColorMapping(DataSet* dataset) : RefTarget(dataset),
+PropertyColorMapping::PropertyColorMapping(ObjectCreationParams params) : RefTarget(params),
 	_startValue(0.0),
 	_endValue(0.0)
 {
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void PropertyColorMapping::initializeObject(ObjectInitializationHints hints)
-{
-	if(hints.testFlag(LoadUserDefaults)) {
+	if(params.loadUserDefaults()) {
 #ifndef OVITO_DISABLE_QSETTINGS
 		// Load the default gradient type set by the user.
 		QSettings settings;
@@ -65,7 +57,7 @@ void PropertyColorMapping::initializeObject(ObjectInitializationHints hints)
 			try {
 				OvitoClassPtr gradientType = OvitoClass::decodeFromString(typeString);
 				if(!colorGradient() || colorGradient()->getOOClass() != *gradientType) {
-					OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(dataset(), hints));
+					OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(params));
 					if(gradient) setColorGradient(std::move(gradient));
 				}
 			}
@@ -75,10 +67,8 @@ void PropertyColorMapping::initializeObject(ObjectInitializationHints hints)
 	}
 
 	// Select the rainbow color gradient by default.
-	if(!colorGradient())
-		setColorGradient(OORef<ColorCodingHSVGradient>::create(dataset(), hints));
-
-	RefTarget::initializeObject(hints);
+	if(params.createSubObjects())
+		setColorGradient(OORef<ColorCodingHSVGradient>::create(params));
 }
 
 /******************************************************************************

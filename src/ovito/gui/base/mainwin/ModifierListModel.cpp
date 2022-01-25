@@ -438,7 +438,7 @@ void ModifierListModel::insertModifier()
 
 		if(action->modifierClass()) {
 			// Create an instance of the modifier.
-			OORef<Modifier> modifier = static_object_cast<Modifier>(action->modifierClass()->createInstance(dataset, ObjectInitializationHint::LoadUserDefaults));
+			OORef<Modifier> modifier = static_object_cast<Modifier>(action->modifierClass()->createInstance(dataset));
 			// Insert modifier into the data pipeline.
 			_pipelineListModel->applyModifiers({modifier});
 		}
@@ -471,7 +471,7 @@ void ModifierListModel::insertModifier()
 
 					// Instantiate the PythonScriptModifier class.
 					UndoSuspender noUndo(dataset->undoStack());
-					OORef<Modifier> modifier = static_object_cast<Modifier>(modifierClass->createInstance(dataset, ObjectInitializationHint::LoadUserDefaults));
+					OORef<Modifier> modifier = static_object_cast<Modifier>(modifierClass->createInstance(dataset));
 					OVITO_CHECK_OBJECT_POINTER(modifier);
 					modifier->setTitle(action->text());
 

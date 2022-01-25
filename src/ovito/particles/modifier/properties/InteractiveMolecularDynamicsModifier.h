@@ -61,7 +61,7 @@ class OVITO_PARTICLES_EXPORT InteractiveMolecularDynamicsModifier : public Modif
 public:
 
 	/// Constructor.
-	Q_INVOKABLE InteractiveMolecularDynamicsModifier(DataSet* dataset);
+	Q_INVOKABLE InteractiveMolecularDynamicsModifier(ObjectCreationParams params);
 
 	/// Destructor.
 	virtual ~InteractiveMolecularDynamicsModifier();

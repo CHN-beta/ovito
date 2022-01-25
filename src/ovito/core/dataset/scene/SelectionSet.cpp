@@ -30,13 +30,6 @@ DEFINE_VECTOR_REFERENCE_FIELD(SelectionSet, nodes);
 SET_PROPERTY_FIELD_LABEL(SelectionSet, nodes, "Nodes");
 
 /******************************************************************************
-* Default constructor.
-******************************************************************************/
-SelectionSet::SelectionSet(DataSet* dataset) : RefTarget(dataset)
-{
-}
-
-/******************************************************************************
 * Adds a scene node to this selection set.
 ******************************************************************************/
 void SelectionSet::push_back(SceneNode* node)

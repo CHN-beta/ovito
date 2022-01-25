@@ -47,7 +47,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(CoordinationAnalysisModifier, numberOfBins, I
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-CoordinationAnalysisModifier::CoordinationAnalysisModifier(DataSet* dataset) : AsynchronousModifier(dataset),
+CoordinationAnalysisModifier::CoordinationAnalysisModifier(ObjectCreationParams params) : AsynchronousModifier(params),
 	_cutoff(3.2),
 	_numberOfBins(200),
 	_computePartialRDF(false),

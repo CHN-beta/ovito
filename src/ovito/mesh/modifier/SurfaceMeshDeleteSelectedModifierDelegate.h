@@ -58,7 +58,7 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshRegionsDeleteSelectedModifierDelegate : pu
 public:
 
 	/// Constructor.
-	Q_INVOKABLE SurfaceMeshRegionsDeleteSelectedModifierDelegate(DataSet* dataset) : DeleteSelectedModifierDelegate(dataset) {}
+	Q_INVOKABLE SurfaceMeshRegionsDeleteSelectedModifierDelegate(ObjectCreationParams params) : DeleteSelectedModifierDelegate(params) {}
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
 	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

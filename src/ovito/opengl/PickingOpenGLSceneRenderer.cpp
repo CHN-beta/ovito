@@ -34,7 +34,7 @@ IMPLEMENT_OVITO_CLASS(PickingOpenGLSceneRenderer);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PickingOpenGLSceneRenderer::PickingOpenGLSceneRenderer(DataSet* dataset) : OffscreenInteractiveOpenGLSceneRenderer(dataset) 
+PickingOpenGLSceneRenderer::PickingOpenGLSceneRenderer(ObjectCreationParams params) : OffscreenInteractiveOpenGLSceneRenderer(params) 
 {
 	setPicking(true);
 }

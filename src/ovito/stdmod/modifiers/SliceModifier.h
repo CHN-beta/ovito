@@ -40,7 +40,7 @@ class OVITO_STDMOD_EXPORT SliceModifierDelegate : public ModifierDelegate
 protected:
 
 	/// Abstract class constructor.
-	SliceModifierDelegate(DataSet* dataset) : ModifierDelegate(dataset) {}
+	using ModifierDelegate::ModifierDelegate;
 };
 
 /**
@@ -69,12 +69,8 @@ class OVITO_STDMOD_EXPORT SliceModifier : public MultiDelegatingModifier
 public:
 
 	/// Constructor.
-	Q_INVOKABLE SliceModifier(DataSet* dataset);
+	Q_INVOKABLE SliceModifier(ObjectCreationParams params);
 
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
-	
 	/// Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 

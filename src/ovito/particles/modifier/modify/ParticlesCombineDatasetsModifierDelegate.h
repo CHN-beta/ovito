@@ -57,7 +57,7 @@ class OVITO_PARTICLES_EXPORT ParticlesCombineDatasetsModifierDelegate : public C
 public:
 
 	/// Constructor.
-	Q_INVOKABLE ParticlesCombineDatasetsModifierDelegate(DataSet* dataset) : CombineDatasetsModifierDelegate(dataset) {}
+	Q_INVOKABLE ParticlesCombineDatasetsModifierDelegate(ObjectCreationParams params) : CombineDatasetsModifierDelegate(params) {}
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
 	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

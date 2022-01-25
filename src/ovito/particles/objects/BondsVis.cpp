@@ -51,7 +51,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondsVis, bondWidth, WorldParameterUnit, 0)
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-BondsVis::BondsVis(DataSet* dataset) : DataVis(dataset),
+BondsVis::BondsVis(ObjectCreationParams params) : DataVis(params),
 	_bondWidth(0.4),
 	_bondColor(0.6, 0.6, 0.6),
 	_shadingMode(NormalShading),

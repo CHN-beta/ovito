@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,8 +51,8 @@ public:
 
 protected:
 
-	/// \brief Constructs a new instance of this class.
-	ParticleExporter(DataSet* dataset);
+	/// \brief Constructor.
+	using FileExporter::FileExporter;
 
 	/// \brief This is called once for every output file to be written and before exportFrame() is called.
 	virtual bool openOutputFile(const QString& filePath, int numberOfFrames, MainThreadOperation& operation) override;

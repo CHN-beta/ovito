@@ -39,7 +39,7 @@ class OVITO_CORE_EXPORT TransformingDataVis : public DataVis
 protected:
 
 	/// \brief Constructor.
-	TransformingDataVis(DataSet* dataset);
+	using DataVis::DataVis;
 
 public:
 

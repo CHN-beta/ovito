@@ -61,11 +61,7 @@ class OVITO_PARTICLES_EXPORT VoronoiAnalysisModifier : public AsynchronousModifi
 public:
 
 	/// Constructor.
-	Q_INVOKABLE VoronoiAnalysisModifier(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
+	Q_INVOKABLE VoronoiAnalysisModifier(ObjectCreationParams params);
 	
 protected:
 

@@ -62,9 +62,8 @@ public:
 
 protected:
 
-	/// \brief Constructor.
-	/// \param dataset The context dataset.
-	Controller(DataSet* dataset) : RefTarget(dataset) {}
+	/// Constructor.
+	using RefTarget::RefTarget;
 
 	/// This method is called once for this object after it has been completely loaded from a stream.
 	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override {
@@ -304,28 +303,28 @@ class OVITO_CORE_EXPORT ControllerManager
 public:
 
 	/// \brief Creates a new float controller.
-	static OORef<Controller> createFloatController(DataSet* dataset, ObjectInitializationHints hints);
+	static OORef<Controller> createFloatController(DataSet* dataset);
 
 	/// \brief Creates a new integer controller.
-	static OORef<Controller> createIntController(DataSet* dataset, ObjectInitializationHints hints);
+	static OORef<Controller> createIntController(DataSet* dataset);
 
 	/// \brief Creates a new Vector3 controller.
-	static OORef<Controller> createVector3Controller(DataSet* dataset, ObjectInitializationHints hints);
+	static OORef<Controller> createVector3Controller(DataSet* dataset);
 
 	/// \brief Creates a new Color controller.
-	static OORef<Controller> createColorController(DataSet* dataset, ObjectInitializationHints hints) { return createVector3Controller(dataset, hints); }
+	static OORef<Controller> createColorController(DataSet* dataset) { return createVector3Controller(dataset); }
 
 	/// \brief Creates a new position controller.
-	static OORef<Controller> createPositionController(DataSet* dataset, ObjectInitializationHints hints);
+	static OORef<Controller> createPositionController(DataSet* dataset);
 
 	/// \brief Creates a new rotation controller.
-	static OORef<Controller> createRotationController(DataSet* dataset, ObjectInitializationHints hints);
+	static OORef<Controller> createRotationController(DataSet* dataset);
 
 	/// \brief Creates a new scaling controller.
-	static OORef<Controller> createScalingController(DataSet* dataset, ObjectInitializationHints hints);
+	static OORef<Controller> createScalingController(DataSet* dataset);
 
 	/// \brief Creates a new transformation controller.
-	static OORef<Controller> createTransformationController(DataSet* dataset, ObjectInitializationHints hints);
+	static OORef<Controller> createTransformationController(DataSet* dataset);
 };
 
 }	// End of namespace

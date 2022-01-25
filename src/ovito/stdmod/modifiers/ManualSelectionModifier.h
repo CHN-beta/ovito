@@ -48,7 +48,7 @@ class OVITO_STDMOD_EXPORT ManualSelectionModifier : public GenericPropertyModifi
 public:
 
 	/// Constructor.
-	Q_INVOKABLE ManualSelectionModifier(DataSet* dataset);
+	Q_INVOKABLE ManualSelectionModifier(ObjectCreationParams params);
 
 	/// This method is called by the system after the modifier has been inserted into a data pipeline.
 	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -94,7 +94,7 @@ class OVITO_STDMOD_EXPORT ManualSelectionModifierApplication : public ModifierAp
 public:
 
 	/// \brief Constructs a modifier application.
-	Q_INVOKABLE ManualSelectionModifierApplication(DataSet* dataset) : ModifierApplication(dataset) {}
+	Q_INVOKABLE ManualSelectionModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
 
 private:
 

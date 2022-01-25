@@ -40,24 +40,14 @@ IMPLEMENT_OVITO_CLASS(BondsObject);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-BondsObject::BondsObject(DataSet* dataset) : PropertyContainer(dataset)
-{
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void BondsObject::initializeObject(ObjectInitializationHints hints)
+BondsObject::BondsObject(ObjectCreationParams params) : PropertyContainer(params)
 {
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());
 
 	// Create and attach a default visualization element for rendering the bonds.
-	if(!visElement() && !hints.testFlag(WithoutVisElement))
-		setVisElement(OORef<BondsVis>::create(dataset(), hints));
-
-	PropertyContainer::initializeObject(hints);
+	if(params.createVisElement())
+		setVisElement(OORef<BondsVis>::create(params));
 }
 
 /******************************************************************************
@@ -372,7 +362,7 @@ void BondsObject::OOMetaClass::initialize()
 /******************************************************************************
 * Returns the default color for a numeric type ID.
 ******************************************************************************/
-Color BondsObject::OOMetaClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ObjectInitializationHints initializationHints) const
+Color BondsObject::OOMetaClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const
 {
 	if(property.type() == BondsObject::TypeProperty) {
 
@@ -391,7 +381,7 @@ Color BondsObject::OOMetaClass::getElementTypeDefaultColor(const PropertyReferen
 		return defaultTypeColors[std::abs(numericTypeId) % (sizeof(defaultTypeColors) / sizeof(defaultTypeColors[0]))];
 	}
 
-	return PropertyContainerClass::getElementTypeDefaultColor(property, typeName, numericTypeId, initializationHints);
+	return PropertyContainerClass::getElementTypeDefaultColor(property, typeName, numericTypeId, loadUserDefaults);
 }
 
 /******************************************************************************

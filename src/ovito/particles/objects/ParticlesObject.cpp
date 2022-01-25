@@ -57,24 +57,14 @@ SET_PROPERTY_FIELD_LABEL(ParticlesObject, impropers, "Impropers");
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ParticlesObject::ParticlesObject(DataSet* dataset) : PropertyContainer(dataset)
-{
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void ParticlesObject::initializeObject(ObjectInitializationHints hints)
+ParticlesObject::ParticlesObject(ObjectCreationParams params) : PropertyContainer(params)
 {
 	// Assign the default data object identifier.
 	setIdentifier(OOClass().pythonName());
 
 	// Create and attach a default visualization element for rendering the particles.
-	if(!visElement() && !hints.testFlag(WithoutVisElement))
-		setVisElement(OORef<ParticlesVis>::create(dataset(), hints));
-
-	PropertyContainer::initializeObject(hints);
+	if(params.createVisElement())
+		setVisElement(OORef<ParticlesVis>::create(params));
 }
 
 /******************************************************************************
@@ -807,7 +797,7 @@ void ParticlesObject::OOMetaClass::initialize()
 /******************************************************************************
 * Returns the default color for a numeric type ID.
 ******************************************************************************/
-Color ParticlesObject::OOMetaClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ObjectInitializationHints initializationHints) const
+Color ParticlesObject::OOMetaClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const
 {
 	if(property.type() == ParticlesObject::TypeProperty) {
 		for(int predefType = 0; predefType < ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES; predefType++) {
@@ -817,7 +807,7 @@ Color ParticlesObject::OOMetaClass::getElementTypeDefaultColor(const PropertyRef
 
 		// Sometimes atom type names have additional letters/numbers appended.
 		if(typeName.length() > 1 && typeName.length() <= 5) {
-			return ElementType::getDefaultColor(property, typeName.left(typeName.length() - 1), numericTypeId, initializationHints);
+			return ElementType::getDefaultColor(property, typeName.left(typeName.length() - 1), numericTypeId, loadUserDefaults);
 		}
 	}
 	else if(property.type() == ParticlesObject::StructureTypeProperty) {
@@ -828,7 +818,7 @@ Color ParticlesObject::OOMetaClass::getElementTypeDefaultColor(const PropertyRef
 		return Color(1,1,1);
 	}
 
-	return PropertyContainerClass::getElementTypeDefaultColor(property, typeName, numericTypeId, initializationHints);
+	return PropertyContainerClass::getElementTypeDefaultColor(property, typeName, numericTypeId, loadUserDefaults);
 }
 
 /******************************************************************************

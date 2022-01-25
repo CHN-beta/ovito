@@ -66,7 +66,7 @@ public:
 public:
 
 	/// \brief Constructs a modifier application.
-	Q_INVOKABLE explicit ModifierApplication(DataSet* dataset);
+	Q_INVOKABLE ModifierApplication(ObjectCreationParams params) : CachingPipelineObject(params) {}
 
 	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;

@@ -61,7 +61,7 @@ class OVITO_PARTICLES_EXPORT SmoothTrajectoryModifier : public Modifier
 public:
 
 	/// Constructor.
-	Q_INVOKABLE SmoothTrajectoryModifier(DataSet* dataset);
+	Q_INVOKABLE SmoothTrajectoryModifier(ObjectCreationParams params);
 
 	/// Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
@@ -105,7 +105,7 @@ class OVITO_PARTICLES_EXPORT InterpolateTrajectoryModifierApplication : public M
 public:
 
 	/// Constructor.
-	Q_INVOKABLE InterpolateTrajectoryModifierApplication(DataSet* dataset) : ModifierApplication(dataset) {}
+	Q_INVOKABLE InterpolateTrajectoryModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
 };
 
 }	// End of namespace

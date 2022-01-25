@@ -49,7 +49,7 @@ ViewportSuspender::ViewportSuspender(RefMaker* object) noexcept : ViewportSuspen
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ViewportConfiguration::ViewportConfiguration(DataSet* dataset) : RefTarget(dataset),
+ViewportConfiguration::ViewportConfiguration(ObjectCreationParams params) : RefTarget(params),
 	_orbitCenterMode(ORBIT_SELECTION_CENTER),
 	_userOrbitCenter(Point3::Origin())
 {

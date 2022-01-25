@@ -59,7 +59,7 @@ class SurfaceMeshRegionsExpressionSelectionModifierDelegate : public ExpressionS
 public:
 
 	/// Constructor.
-	Q_INVOKABLE SurfaceMeshRegionsExpressionSelectionModifierDelegate(DataSet* dataset) : ExpressionSelectionModifierDelegate(dataset) {}
+	Q_INVOKABLE SurfaceMeshRegionsExpressionSelectionModifierDelegate(ObjectCreationParams params) : ExpressionSelectionModifierDelegate(params) {}
 };
 
 }	// End of namespace

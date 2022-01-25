@@ -31,22 +31,13 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(TriMeshObject);
 
 /******************************************************************************
-* Default constructor.
+* Constructor.
 ******************************************************************************/
-TriMeshObject::TriMeshObject(DataSet* dataset) : DataObject(dataset)
+TriMeshObject::TriMeshObject(ObjectCreationParams params) : DataObject(params)
 {
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void TriMeshObject::initializeObject(ObjectInitializationHints hints)
-{
-	if(!visElement() && !hints.testFlag(WithoutVisElement))
-		setVisElement(OORef<TriMeshVis>::create(dataset(), hints));
-
-	DataObject::initializeObject(hints);
+	if(params.createVisElement()) {
+		setVisElement(OORef<TriMeshVis>::create(params));
+	}
 }
 
 /******************************************************************************
@@ -358,7 +349,7 @@ void TriMeshObject::saveToOBJ(CompressedTextWriter& stream)
 ******************************************************************************/
 void TriMeshObject::clipAtPlane(const Plane3& plane)
 {
-	TriMeshObject clippedMesh(dataset());
+	TriMeshObject clippedMesh(ObjectCreationParams(dataset(), ObjectCreationParams::WithoutVisElement));
 	clippedMesh.setHasVertexColors(hasVertexColors());
 	clippedMesh.setHasVertexPseudoColors(hasVertexPseudoColors());
 	clippedMesh.setHasFaceColors(hasFaceColors());

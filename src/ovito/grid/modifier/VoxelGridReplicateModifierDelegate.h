@@ -57,7 +57,7 @@ class VoxelGridReplicateModifierDelegate : public ReplicateModifierDelegate
 public:
 
 	/// Constructor.
-	Q_INVOKABLE VoxelGridReplicateModifierDelegate(DataSet* dataset) : ReplicateModifierDelegate(dataset) {}
+	Q_INVOKABLE VoxelGridReplicateModifierDelegate(ObjectCreationParams params) : ReplicateModifierDelegate(params) {}
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
 	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

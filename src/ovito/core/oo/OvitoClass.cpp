@@ -134,29 +134,37 @@ OORef<OvitoObject> OvitoClass::createInstance() const
 	OVITO_ASSERT_MSG(!isDerivedFrom(RefTarget::OOClass()), "OvitoClass::createInstance()", "This method overload must not be used to instantiate RefTarget derived classes.");
 
 	// Instantiate the class.
-	return createInstanceImpl(nullptr);
+	return createInstanceImpl(ObjectCreationParams(nullptr));
 }
-
 
 /******************************************************************************
 * Creates an instance of this object class.
-* Throws an exception if the containing plugin failed to load.
 ******************************************************************************/
 OORef<RefTarget> OvitoClass::createInstance(DataSet* dataset) const
 {
-	ObjectInitializationHints hints = ExecutionContext::isInteractive()
-		? ObjectInitializationHint::LoadUserDefaults
-		: ObjectInitializationHint::LoadFactoryDefaults;
+	return createInstance(ObjectCreationParams(dataset, 
+		ExecutionContext::isInteractive() 
+			? ObjectCreationParams::LoadUserDefaults 
+			: ObjectCreationParams::NoFlags));
+}
 
-	return createInstance(dataset, hints);
+/******************************************************************************
+* Creates an instance of this object class.
+******************************************************************************/
+OORef<RefTarget> OvitoClass::createInstance(DataSet* dataset, ObjectCreationParams::InitializationFlags initFlags) const
+{
+	return createInstance(ObjectCreationParams(dataset, initFlags));
 }
 
 /******************************************************************************
 * Creates an instance of this object class.
 * Throws an exception if the containing plugin failed to load.
 ******************************************************************************/
-OORef<RefTarget> OvitoClass::createInstance(DataSet* dataset, ObjectInitializationHints hints) const
+OORef<RefTarget> OvitoClass::createInstance(ObjectCreationParams params) const
 {
+	// Cannot use this method to create DataSet instances.
+	OVITO_ASSERT(*this != DataSet::OOClass());
+
 	if(plugin()) {
 		OVITO_CHECK_POINTER(plugin());
 		if(!plugin()->isLoaded()) {
@@ -172,16 +180,20 @@ OORef<RefTarget> OvitoClass::createInstance(DataSet* dataset, ObjectInitializati
 		}
 	}
 	if(isAbstract())
-		throw Exception(OvitoObject::tr("Cannot instantiate abstract class '%1'.").arg(name()), dataset);
+		throw Exception(OvitoObject::tr("Cannot instantiate abstract class '%1'.").arg(name()), params.dataset());
 
 	OVITO_ASSERT_MSG(isDerivedFrom(RefTarget::OOClass()), "OvitoClass::createInstance()", "This method overload must only be used to instantiate RefTarget-derived classes.");
-	OVITO_ASSERT_MSG(dataset != nullptr || *this == DataSet::OOClass(), "OvitoClass::createInstance()", "Tried to create instance of RefTarget derived class without passing a DatSet.");
+	OVITO_ASSERT_MSG(params.dataset() != nullptr, "OvitoClass::createInstance()", "Tried to create instance of RefTarget derived class without passing a DatSet.");
+
+	// Don't record object initialization on the undo stack.
+	UndoSuspender noUndo(params.dataset());
 
 	// Instantiate the class.
-	OORef<RefTarget> obj = static_object_cast<RefTarget>(createInstanceImpl(dataset));
+	OORef<RefTarget> obj = static_object_cast<RefTarget>(createInstanceImpl(params));
 
 	// Initialize the parameters of the new object to default values.
-	obj->initializeObject(hints);
+	if(params.loadUserDefaults())
+		obj->initializeParametersToUserDefaults();
 
 	return obj;
 }
@@ -189,7 +201,7 @@ OORef<RefTarget> OvitoClass::createInstance(DataSet* dataset, ObjectInitializati
 /******************************************************************************
 * Creates an instance of this object class.
 ******************************************************************************/
-OvitoObject* OvitoClass::createInstanceImpl(DataSet* dataset) const
+OvitoObject* OvitoClass::createInstanceImpl(ObjectCreationParams params) const
 {
 #ifdef OVITO_DEBUG
 	// Check if class hierarchy is consistent.
@@ -206,16 +218,15 @@ OvitoObject* OvitoClass::createInstanceImpl(DataSet* dataset) const
 	OvitoObject* obj;
 
 	if(isDerivedFrom(RefTarget::OOClass()) && *this != DataSet::OOClass()) {
-		OVITO_ASSERT(dataset != nullptr);
-		UndoSuspender noUndo(dataset);
-		obj = qobject_cast<OvitoObject*>(qtMetaObject()->newInstance(Q_ARG(DataSet*, dataset)));
+		OVITO_ASSERT(params.dataset() != nullptr);
+		obj = qobject_cast<OvitoObject*>(qtMetaObject()->newInstance(Q_ARG(ObjectCreationParams, params)));
 	}
 	else {
 		obj = qobject_cast<OvitoObject*>(qtMetaObject()->newInstance());
 	}
 
 	if(!obj)
-		throw Exception(OvitoObject::tr("Failed to instantiate class '%1'.").arg(name()), dataset);
+		throw Exception(OvitoObject::tr("Failed to instantiate class '%1'.").arg(name()), params.dataset());
 
 	return obj;
 }

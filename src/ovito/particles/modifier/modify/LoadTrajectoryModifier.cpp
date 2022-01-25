@@ -39,21 +39,13 @@ SET_PROPERTY_FIELD_LABEL(LoadTrajectoryModifier, trajectorySource, "Trajectory s
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-LoadTrajectoryModifier::LoadTrajectoryModifier(DataSet* dataset) : Modifier(dataset)
+LoadTrajectoryModifier::LoadTrajectoryModifier(ObjectCreationParams params) : Modifier(params)
 {
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void LoadTrajectoryModifier::initializeObject(ObjectInitializationHints hints)
-{
-	// Create the file source object, which will be responsible for loading
-	// and caching the trajectory data.
-	setTrajectorySource(OORef<FileSource>::create(dataset(), hints));
-
-	Modifier::initializeObject(hints);
+	if(params.createSubObjects()) {
+		// Create the file source object, which will be responsible for loading
+		// and caching the trajectory data.
+		setTrajectorySource(OORef<FileSource>::create(params));
+	}
 }
 
 /******************************************************************************

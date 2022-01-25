@@ -43,7 +43,7 @@ class OVITO_CORE_EXPORT PipelineSceneNode : public SceneNode
 public:
 
 	/// \brief Constructs an object node.
-	Q_INVOKABLE explicit PipelineSceneNode(DataSet* dataset);
+	Q_INVOKABLE PipelineSceneNode(ObjectCreationParams params);
 
 	/// \brief Destructor.
 	virtual ~PipelineSceneNode();

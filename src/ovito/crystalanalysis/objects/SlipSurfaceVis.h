@@ -43,7 +43,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT SlipSurfaceVis : public SurfaceMeshVis
 public:
 
 	/// Constructor.
-	Q_INVOKABLE SlipSurfaceVis(DataSet* dataset);
+	Q_INVOKABLE SlipSurfaceVis(ObjectCreationParams params);
 
 protected:
 

@@ -35,7 +35,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondType, radius, WorldParameterUnit, 0);
 /******************************************************************************
 * Constructs a new BondType.
 ******************************************************************************/
-BondType::BondType(DataSet* dataset) : ElementType(dataset), _radius(0.0)
+BondType::BondType(ObjectCreationParams params) : ElementType(params), _radius(0.0)
 {
 }
 

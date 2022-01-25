@@ -41,7 +41,7 @@ SET_PROPERTY_FIELD_LABEL(MicrostructurePhase, burgersVectorFamilies, "Burgers ve
 /******************************************************************************
 * Constructs the MicrostructurePhase object.
 ******************************************************************************/
-MicrostructurePhase::MicrostructurePhase(DataSet* dataset) : ElementType(dataset),
+MicrostructurePhase::MicrostructurePhase(ObjectCreationParams params) : ElementType(params),
 	_dimensionality(Dimensionality::None),
 	_crystalSymmetryClass(CrystalSymmetryClass::NoSymmetry)
 {

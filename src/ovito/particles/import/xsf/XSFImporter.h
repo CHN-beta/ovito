@@ -56,7 +56,7 @@ class OVITO_PARTICLES_EXPORT XSFImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE XSFImporter(DataSet* dataset) : ParticleImporter(dataset) {
+	Q_INVOKABLE XSFImporter(ObjectCreationParams params) : ParticleImporter(params) {
 		setMultiTimestepFile(true);
 	}
 

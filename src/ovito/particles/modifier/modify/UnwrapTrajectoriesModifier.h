@@ -57,7 +57,7 @@ class OVITO_PARTICLES_EXPORT UnwrapTrajectoriesModifier : public Modifier
 public:
 
 	/// Constructs a new instance of this class.
-	Q_INVOKABLE UnwrapTrajectoriesModifier(DataSet* dataset) : Modifier(dataset) {}
+	Q_INVOKABLE UnwrapTrajectoriesModifier(ObjectCreationParams params) : Modifier(params) {}
 
 	/// Modifies the input data.
 	virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
@@ -84,7 +84,7 @@ public:
 	using UnflipData = std::vector<std::pair<TimePoint, std::array<int,3>>>;
 
 	/// Constructor.
-	Q_INVOKABLE UnwrapTrajectoriesModifierApplication(DataSet* dataset) : ModifierApplication(dataset) {}
+	Q_INVOKABLE UnwrapTrajectoriesModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
 
 	/// Indicates the animation time up to which trajectories have already been unwrapped.
 	TimePoint unwrappedUpToTime() const { return _unwrappedUpToTime; }

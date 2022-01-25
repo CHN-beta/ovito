@@ -61,12 +61,8 @@ public:
 public:
 
 	/// Constructor.
-	Q_INVOKABLE AcklandJonesModifier(DataSet* dataset);
+	Q_INVOKABLE AcklandJonesModifier(ObjectCreationParams params);
 
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
-	
 protected:
 
 	/// Creates a computation engine that will compute the modifier's results.

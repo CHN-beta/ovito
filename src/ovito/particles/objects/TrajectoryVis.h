@@ -56,11 +56,7 @@ public:
 	Q_ENUMS(ColoringMode);	
 
 	/// \brief Constructor.
-	Q_INVOKABLE TrajectoryVis(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;		
+	Q_INVOKABLE TrajectoryVis(ObjectCreationParams params);
 
 	/// \brief Renders the associated data object.
 	virtual PipelineStatus render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
@@ -71,6 +67,11 @@ public:
 public:
 
     Q_PROPERTY(Ovito::Particles::TrajectoryVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
+
+protected:
+
+	/// This method is called once for this object after it has been completely loaded from a stream.
+	virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
 private:
 

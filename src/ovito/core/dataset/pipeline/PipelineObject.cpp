@@ -34,13 +34,6 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(PipelineObject);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-PipelineObject::PipelineObject(DataSet* dataset) : ActiveObject(dataset)
-{
-}
-
-/******************************************************************************
 * Asks the pipeline stage to compute the preliminary results in a synchronous 
 * fashion at the current animation time.
 ******************************************************************************/

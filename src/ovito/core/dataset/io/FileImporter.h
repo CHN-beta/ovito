@@ -80,7 +80,7 @@ class OVITO_CORE_EXPORT FileImporter : public RefTarget
 protected:
 
 	/// \brief The constructor.
-	FileImporter(DataSet* dataset) : RefTarget(dataset) {}
+	using RefTarget::RefTarget;
 
 public:
 

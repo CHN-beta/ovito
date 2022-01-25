@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DataTablePlotExporter, plotDPI, IntegerPara
 /******************************************************************************
 * Constructs a new instance of the class.
 ******************************************************************************/
-DataTablePlotExporter::DataTablePlotExporter(DataSet* dataset) : FileExporter(dataset),
+DataTablePlotExporter::DataTablePlotExporter(ObjectCreationParams params) : FileExporter(params),
 	_plotWidth(150),
 	_plotHeight(100),
 	_plotDPI(200)

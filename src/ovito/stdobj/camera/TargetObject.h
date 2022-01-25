@@ -41,11 +41,7 @@ class OVITO_STDOBJ_EXPORT TargetObject : public DataObject
 public:
 
 	/// Constructor.
-	Q_INVOKABLE TargetObject(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
+	Q_INVOKABLE TargetObject(ObjectCreationParams params);
 };
 
 /**
@@ -59,7 +55,7 @@ class OVITO_STDOBJ_EXPORT TargetVis : public DataVis
 public:
 
 	/// \brief Constructor.
-	Q_INVOKABLE TargetVis(DataSet* dataset) : DataVis(dataset) {}
+	Q_INVOKABLE TargetVis(ObjectCreationParams params) : DataVis(params) {}
 
 	/// \brief Lets the vis element render a data object.
 	virtual PipelineStatus render(TimePoint time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;

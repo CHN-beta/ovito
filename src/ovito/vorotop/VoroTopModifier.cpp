@@ -45,7 +45,7 @@ SET_PROPERTY_FIELD_LABEL(VoroTopModifier, filterFile, "Filter file");
 /******************************************************************************
  * Constructs the modifier object.
  ******************************************************************************/
-VoroTopModifier::VoroTopModifier(DataSet* dataset) : StructureIdentificationModifier(dataset),
+VoroTopModifier::VoroTopModifier(ObjectCreationParams params) : StructureIdentificationModifier(params),
        _useRadii(false)
 {
 }

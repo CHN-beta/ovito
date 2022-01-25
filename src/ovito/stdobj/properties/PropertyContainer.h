@@ -43,7 +43,7 @@ class OVITO_STDOBJ_EXPORT PropertyContainer : public DataObject
 public:
 
 	/// Constructor.
-	PropertyContainer(DataSet* dataset, const QString& title = {});
+	PropertyContainer(ObjectCreationParams params, const QString& title = {});
 
 	/// Returns the display title of this object.
 	virtual QString objectTitle() const override;

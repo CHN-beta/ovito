@@ -100,11 +100,7 @@ public:
 public:
 
 	/// Constructor.
-	Q_INVOKABLE ColorCodingModifier(DataSet* dataset);
-
-	/// Loads the user-defined default values of this object's parameter fields from the
-	/// application's settings store.
-	virtual void initializeObject(ObjectInitializationHints hints) override;
+	Q_INVOKABLE ColorCodingModifier(ObjectCreationParams params);
 
 	/// Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;

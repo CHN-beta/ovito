@@ -46,7 +46,7 @@ class OVITO_CORE_EXPORT Modifier : public RefTarget
 protected:
 
 	/// \brief Constructor.
-	explicit Modifier(DataSet* dataset);
+	Modifier(ObjectCreationParams params);
 
 public:
 

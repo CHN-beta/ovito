@@ -71,7 +71,7 @@ public:
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE ExpandSelectionModifier(DataSet* dataset);
+	Q_INVOKABLE ExpandSelectionModifier(ObjectCreationParams params);
 
 protected:
 

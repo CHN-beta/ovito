@@ -57,7 +57,7 @@ class OVITO_NETCDFPLUGIN_EXPORT AMBERNetCDFImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE AMBERNetCDFImporter(DataSet *dataset) : ParticleImporter(dataset), _useCustomColumnMapping(false) {
+	Q_INVOKABLE AMBERNetCDFImporter(ObjectCreationParams params) : ParticleImporter(params), _useCustomColumnMapping(false) {
 		setMultiTimestepFile(true);
 	}
 

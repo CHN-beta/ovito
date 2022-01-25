@@ -94,7 +94,7 @@ SET_PROPERTY_FIELD_LABEL(SpatialCorrelationFunctionModifier, reciprocalSpaceYAxi
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-SpatialCorrelationFunctionModifier::SpatialCorrelationFunctionModifier(DataSet* dataset) : AsynchronousModifier(dataset),
+SpatialCorrelationFunctionModifier::SpatialCorrelationFunctionModifier(ObjectCreationParams params) : AsynchronousModifier(params),
 	_averagingDirection(RADIAL),
 	_fftGridSpacing(3.0),
 	_applyWindow(true),

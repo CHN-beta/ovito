@@ -171,11 +171,7 @@ class OVITO_CORE_EXPORT TriMeshObject : public DataObject
 public:
 
 	/// Constructor that creates an object with an empty triangle mesh.
-	Q_INVOKABLE TriMeshObject(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;
+	Q_INVOKABLE TriMeshObject(ObjectCreationParams params);
 	
 	/// \brief Returns the title of this object.
 	virtual QString objectTitle() const override { return tr("Triangle mesh"); }

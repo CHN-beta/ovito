@@ -57,7 +57,7 @@ class OVITO_PARTICLES_EXPORT XTCImporter : public ParticleImporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE XTCImporter(DataSet* dataset) : ParticleImporter(dataset) {
+	Q_INVOKABLE XTCImporter(ObjectCreationParams params) : ParticleImporter(params) {
 		setMultiTimestepFile(true);
 		setRecenterCell(true);
 	}

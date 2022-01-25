@@ -52,7 +52,7 @@ class OVITO_PARTICLES_EXPORT LAMMPSDumpExporter : public FileColumnParticleExpor
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE LAMMPSDumpExporter(DataSet* dataset) : FileColumnParticleExporter(dataset) {}
+	Q_INVOKABLE LAMMPSDumpExporter(ObjectCreationParams params) : FileColumnParticleExporter(params) {}
 
 	/// \brief Indicates whether this file exporter can write more than one animation frame into a single output file.
 	virtual bool supportsMultiFrameFiles() const override { return true; }

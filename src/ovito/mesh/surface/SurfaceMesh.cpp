@@ -44,34 +44,27 @@ constexpr SurfaceMesh::size_type SurfaceMesh::InvalidIndex;
 /******************************************************************************
 * Constructs an empty surface mesh object.
 ******************************************************************************/
-SurfaceMesh::SurfaceMesh(DataSet* dataset, const QString& title) : PeriodicDomainDataObject(dataset, title),
+SurfaceMesh::SurfaceMesh(ObjectCreationParams params, const QString& title) : PeriodicDomainDataObject(params, title),
 	_spaceFillingRegion(SurfaceMesh::InvalidIndex)
 {
-}
+	if(params.createVisElement()) {
+		// Attach a visualization element for rendering the surface mesh.
+		setVisElement(OORef<SurfaceMeshVis>::create(params));
+	}
 
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void SurfaceMesh::initializeObject(ObjectInitializationHints hints)
-{
-	// Attach a visualization element for rendering the surface mesh.
-	if(!visElement() && !hints.testFlag(WithoutVisElement))
-		setVisElement(OORef<SurfaceMeshVis>::create(dataset(), hints));
+	if(params.createSubObjects()) {
+		// Create the sub-object for storing the mesh topology.
+		setTopology(DataOORef<SurfaceMeshTopology>::create(params));
 
-	// Create the sub-object for storing the mesh topology.
-	setTopology(DataOORef<SurfaceMeshTopology>::create(dataset(), hints));
+		// Create the sub-object for storing the vertex properties.
+		setVertices(DataOORef<SurfaceMeshVertices>::create(params));
 
-	// Create the sub-object for storing the vertex properties.
-	setVertices(DataOORef<SurfaceMeshVertices>::create(dataset(), hints));
+		// Create the sub-object for storing the face properties.
+		setFaces(DataOORef<SurfaceMeshFaces>::create(params));
 
-	// Create the sub-object for storing the face properties.
-	setFaces(DataOORef<SurfaceMeshFaces>::create(dataset(), hints));
-
-	// Create the sub-object for storing the region properties.
-	setRegions(DataOORef<SurfaceMeshRegions>::create(dataset(), hints));
-
-	PeriodicDomainDataObject::initializeObject(hints);
+		// Create the sub-object for storing the region properties.
+		setRegions(DataOORef<SurfaceMeshRegions>::create(params));
+	}
 }
 
 /******************************************************************************

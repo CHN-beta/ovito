@@ -43,8 +43,8 @@ public:
 	using typename BaseKeyClass::tangent_type;
 
 	/// Constructor.
-	SplineAnimationKey(DataSet* dataset, TimePoint time, const value_type& value)
-		: BaseKeyClass(dataset, time, value), _inTangent(nullvalue_type()), _outTangent(nullvalue_type()) {}
+	SplineAnimationKey(ObjectCreationParams params, TimePoint time, const value_type& value)
+		: BaseKeyClass(params, time, value), _inTangent(nullvalue_type()), _outTangent(nullvalue_type()) {}
 
 	/// \brief Returns the point that defines the incoming tangent.
 	value_type inPoint() const { return this->value() + inTangent(); }
@@ -71,8 +71,8 @@ class OVITO_CORE_EXPORT FloatSplineAnimationKey : public SplineAnimationKey<Floa
 public:
 
 	/// Constructor.
-	Q_INVOKABLE FloatSplineAnimationKey(DataSet* dataset, TimePoint time = 0, FloatType value = 0) :
-		SplineAnimationKey<FloatAnimationKey>(dataset, time, value) {}
+	Q_INVOKABLE FloatSplineAnimationKey(ObjectCreationParams params, TimePoint time = 0, FloatType value = 0) :
+		SplineAnimationKey<FloatAnimationKey>(params, time, value) {}
 };
 
 /**
@@ -85,8 +85,8 @@ class OVITO_CORE_EXPORT PositionSplineAnimationKey : public SplineAnimationKey<P
 public:
 
 	/// Constructor.
-	Q_INVOKABLE PositionSplineAnimationKey(DataSet* dataset, TimePoint time = 0, const Vector3& value = Vector3::Zero()) :
-		SplineAnimationKey<PositionAnimationKey>(dataset, time, value) {}
+	Q_INVOKABLE PositionSplineAnimationKey(ObjectCreationParams params, TimePoint time = 0, const Vector3& value = Vector3::Zero()) :
+		SplineAnimationKey<PositionAnimationKey>(params, time, value) {}
 };
 
 /**
@@ -113,8 +113,8 @@ class SplineControllerBase : public KeyframeControllerTemplate<KeyType, SplineKe
 public:
 
 	/// Constructor.
-	SplineControllerBase(DataSet* dataset) :
-		KeyframeControllerTemplate<KeyType, SplineKeyInterpolator<KeyType>, ctrlType>(dataset) {}
+	SplineControllerBase(ObjectCreationParams params) :
+		KeyframeControllerTemplate<KeyType, SplineKeyInterpolator<KeyType>, ctrlType>(params) {}
 
 protected:
 
@@ -160,8 +160,8 @@ class OVITO_CORE_EXPORT SplinePositionController
 public:
 
 	/// Constructor.
-	Q_INVOKABLE SplinePositionController(DataSet* dataset) :
-		SplineControllerBase<PositionSplineAnimationKey, Controller::ControllerTypePosition>(dataset) {}
+	Q_INVOKABLE SplinePositionController(ObjectCreationParams params) :
+		SplineControllerBase<PositionSplineAnimationKey, Controller::ControllerTypePosition>(params) {}
 
 	/// \brief Gets the controller's value at a certain animation time.
 	virtual void getPositionValue(TimePoint time, Vector3& value, TimeInterval& validityInterval) override {

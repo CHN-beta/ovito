@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(PropertyContainer, title, ReferenceEvent::TitleC
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PropertyContainer::PropertyContainer(DataSet* dataset, const QString& title) : DataObject(dataset), 
+PropertyContainer::PropertyContainer(ObjectCreationParams params, const QString& title) : DataObject(params), 
 	_elementCount(0),
 	_title(title)
 {

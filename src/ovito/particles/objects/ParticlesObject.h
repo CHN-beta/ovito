@@ -71,7 +71,7 @@ class OVITO_PARTICLES_EXPORT ParticlesObject : public PropertyContainer
 		virtual void validateInputColumnMapping(const InputColumnMapping& mapping) const override;
 
 		/// Returns a default color for an ElementType given its numeric type ID.
-		virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, ObjectInitializationHints initializationHints) const override;
+		virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const override;
 
 	protected:
 
@@ -135,11 +135,7 @@ public:
 	};
 
 	/// \brief Constructor.
-	Q_INVOKABLE ParticlesObject(DataSet* dataset);
-
-	/// Initializes the object's parameter fields with default values and loads 
-	/// user-defined default values from the application's settings store (GUI only).
-	virtual void initializeObject(ObjectInitializationHints hints) override;	
+	Q_INVOKABLE ParticlesObject(ObjectCreationParams params);
 	
 	/// Deletes the particles for which bits are set in the given bit-mask.
 	/// Returns the number of deleted particles.

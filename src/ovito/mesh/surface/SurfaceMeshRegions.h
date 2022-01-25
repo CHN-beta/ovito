@@ -71,7 +71,7 @@ public:
 	};
 
 	/// \brief Constructor.
-	Q_INVOKABLE SurfaceMeshRegions(DataSet* dataset) : PropertyContainer(dataset) {
+	Q_INVOKABLE SurfaceMeshRegions(ObjectCreationParams params) : PropertyContainer(params) {
 		// Assign the default data object identifier.
 		setIdentifier(OOClass().pythonName());
 	}

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ class OVITO_CORE_EXPORT KeyframeController : public Controller
 public:
 
 	/// Constructor.
-	KeyframeController(DataSet* dataset) : Controller(dataset) {}
+	using Controller::Controller;
 
 	/// \brief Returns whether the value of this controller is changing over time.
 	virtual bool isAnimated() const override { return keys().size() >= 2; }
@@ -99,7 +99,7 @@ public:
 	typedef typename KeyType::nullvalue_type nullvalue_type;
 
 	/// Constructor.
-	KeyframeControllerTemplate(DataSet* dataset) : KeyframeController(dataset) {}
+	using KeyframeController::KeyframeController;
 
 	/// Returns the value type of the controller.
 	virtual ControllerType controllerType() const override { return ctrlType; }
@@ -125,7 +125,7 @@ public:
 		TimeInterval iv;
 		value_type currentValue;
 		getInterpolatedValue(time, currentValue, iv);
-		insertKey(OORef<KeyType>(new KeyType(dataset(), time, currentValue)), index);
+		insertKey(OORef<KeyType>::create(dataset(), time, currentValue), index);
 		OVITO_ASSERT(areKeysSorted());
 		return index;
 	}
@@ -192,7 +192,7 @@ protected:
 				break;
 			}
 		}
-		insertKey(OORef<KeyType>(new KeyType(dataset(), time, newValue)), index);
+		insertKey(OORef<KeyType>::create(dataset(), time, newValue), index);
 	}
 
 	/// Sets the controller's value at the specified time.
@@ -200,11 +200,11 @@ protected:
 		if(keys().empty()) {
 			// Create an additional key at time 0 if the controller doesn't have any keys yet.
 			if(time != 0 && dataset()->animationSettings()->isAnimating() && newValue != nullvalue_type()) {
-				insertKey(OORef<KeyType>(new KeyType(dataset())), 0);
-				insertKey(OORef<KeyType>(new KeyType(dataset(), time, newValue)), time > 0 ? 1 : 0);
+				insertKey(OORef<KeyType>::create(dataset()), 0);
+				insertKey(OORef<KeyType>::create(dataset(), time, newValue), time > 0 ? 1 : 0);
 			}
 			else {
-				insertKey(OORef<KeyType>(new KeyType(dataset(), 0, newValue)), 0);
+				insertKey(OORef<KeyType>::create(dataset(), 0, newValue), 0);
 			}
 		}
 		else if(!dataset()->animationSettings()->isAnimating()) {
@@ -240,11 +240,11 @@ protected:
 		if(keys().empty()) {
 			// Create an additional key at time 0 if the controller doesn't have any keys yet.
 			if(time != 0 && dataset()->animationSettings()->isAnimating()) {
-				insertKey(OORef<KeyType>(new KeyType(dataset())), 0);
-				insertKey(OORef<KeyType>(new KeyType(dataset(), time, deltaValue)), time > 0 ? 1 : 0);
+				insertKey(OORef<KeyType>::create(dataset()), 0);
+				insertKey(OORef<KeyType>::create(dataset(), time, deltaValue), time > 0 ? 1 : 0);
 			}
 			else {
-				insertKey(OORef<KeyType>(new KeyType(dataset(), 0, deltaValue)), 0);
+				insertKey(OORef<KeyType>::create(dataset(), 0, deltaValue), 0);
 			}
 		}
 		else if(!dataset()->animationSettings()->isAnimating()) {

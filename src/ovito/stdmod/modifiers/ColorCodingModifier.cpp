@@ -57,46 +57,42 @@ SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, sourceProperty, "Source property")
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ColorCodingModifier::ColorCodingModifier(DataSet* dataset) : DelegatingModifier(dataset),
+ColorCodingModifier::ColorCodingModifier(ObjectCreationParams params) : DelegatingModifier(params),
 	_colorOnlySelected(false),
 	_keepSelection(true),
 	_autoAdjustRange(false)
 {
-}
+	if(params.createSubObjects()) {
+		setColorGradient(OORef<ColorCodingHSVGradient>::create(dataset()));
+		setStartValueController(ControllerManager::createFloatController(dataset()));
+		setEndValueController(ControllerManager::createFloatController(dataset()));
 
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void ColorCodingModifier::initializeObject(ObjectInitializationHints hints)
-{
-	setColorGradient(OORef<ColorCodingHSVGradient>::create(dataset(), hints));
-	setStartValueController(ControllerManager::createFloatController(dataset(), hints));
-	setEndValueController(ControllerManager::createFloatController(dataset(), hints));
+		// Let this modifier act on particles by default.
+		createDefaultModifierDelegate(ColorCodingModifierDelegate::OOClass(), QStringLiteral("ParticlesColorCodingModifierDelegate"), params);
+	}
 
 	// When the modifier is created by a Python script, enable automatic range adjustment.
-	if(hints.testFlag(LoadUserDefaults) == false)
+	if(params.loadUserDefaults() == false) {
 		setAutoAdjustRange(true);
-
-	// Let this modifier act on particles by default.
-	createDefaultModifierDelegate(ColorCodingModifierDelegate::OOClass(), QStringLiteral("ParticlesColorCodingModifierDelegate"), hints);
-
-	if(hints.testFlag(LoadUserDefaults)) {
+	}
+	else {
 #ifndef OVITO_DISABLE_QSETTINGS
-		// Load the default gradient type set by the user.
-		QSettings settings;
-		settings.beginGroup(ColorCodingModifier::OOClass().plugin()->pluginId());
-		settings.beginGroup(ColorCodingModifier::OOClass().name());
-		QString typeString = settings.value(PROPERTY_FIELD(colorGradient)->identifier()).toString();
-		if(!typeString.isEmpty()) {
-			try {
-				OvitoClassPtr gradientType = OvitoClass::decodeFromString(typeString);
-				if(!colorGradient() || colorGradient()->getOOClass() != *gradientType) {
-					OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(dataset(), hints));
-					if(gradient) setColorGradient(gradient);
+		if(params.createSubObjects()) {
+			// Load the default gradient type set by the user.
+			QSettings settings;
+			settings.beginGroup(ColorCodingModifier::OOClass().plugin()->pluginId());
+			settings.beginGroup(ColorCodingModifier::OOClass().name());
+			QString typeString = settings.value(PROPERTY_FIELD(colorGradient)->identifier()).toString();
+			if(!typeString.isEmpty()) {
+				try {
+					OvitoClassPtr gradientType = OvitoClass::decodeFromString(typeString);
+					if(!colorGradient() || colorGradient()->getOOClass() != *gradientType) {
+						OORef<ColorCodingGradient> gradient = dynamic_object_cast<ColorCodingGradient>(gradientType->createInstance(params));
+						if(gradient) setColorGradient(gradient);
+					}
 				}
+				catch(...) {}
 			}
-			catch(...) {}
 		}
 	#endif
 
@@ -104,8 +100,6 @@ void ColorCodingModifier::initializeObject(ObjectInitializationHints hints)
 		// in order to make the newly assigned colors visible.
 		setKeepSelection(false);
 	}
-
-	DelegatingModifier::initializeObject(hints);
 }
 
 /******************************************************************************

@@ -31,13 +31,6 @@ IMPLEMENT_OVITO_CLASS(GenericPropertyModifier);
 DEFINE_PROPERTY_FIELD(GenericPropertyModifier, subject);
 
 /******************************************************************************
-* Constructs the modifier object.
-******************************************************************************/
-GenericPropertyModifier::GenericPropertyModifier(DataSet* dataset) : Modifier(dataset)
-{
-}
-
-/******************************************************************************
 * Sets the subject property container.
 ******************************************************************************/
 void GenericPropertyModifier::setDefaultSubject(const QString& pluginId, const QString& containerClassName)

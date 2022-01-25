@@ -151,7 +151,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 								if(!property->elementType(t)) {
 									DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance(dataset()));
 									elementType->setNumericId(t);
-									elementType->initializeType(PropertyReference(&ParticlesObject::OOClass(), property));
+									elementType->initializeType(PropertyReference(&ParticlesObject::OOClass(), property), ExecutionContext::isInteractive());
 									if(elementTypeClass == &ParticleType::OOClass()) {
 										// Load mesh-based shape of the particle type as specified in the VTM container file.
 										loadParticleShape(static_object_cast<ParticleType>(elementType.get()));
@@ -384,7 +384,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
 	if(!meshObj) {
 		if(const SurfaceMesh* surfaceMesh = state.getObject<SurfaceMesh>()) {
 			// Convert surface mesh to triangle mesh.
-			DataOORef<TriMeshObject> triMesh = DataOORef<TriMeshObject>::create(dataset(), ObjectInitializationHint::WithoutVisElement);
+			DataOORef<TriMeshObject> triMesh = DataOORef<TriMeshObject>::create(dataset(), ObjectCreationParams::WithoutVisElement);
 			SurfaceMeshAccess(surfaceMesh).convertToTriMesh(*triMesh, false);
 			meshObj.reset(std::move(triMesh));
 		}

@@ -40,7 +40,7 @@ class OVITO_CORE_EXPORT DataVis : public ActiveObject
 protected:
 
 	/// \brief Constructor.
-	DataVis(DataSet* dataset);
+	using ActiveObject::ActiveObject;
 
 public:
 

@@ -48,34 +48,27 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(StandardCameraSource, zoomController, World
 /******************************************************************************
 * Constructs a camera object.
 ******************************************************************************/
-StandardCameraSource::StandardCameraSource(DataSet* dataset) : PipelineObject(dataset), _isPerspective(true)
+StandardCameraSource::StandardCameraSource(ObjectCreationParams params) : PipelineObject(params), 
+	_isPerspective(true)
 {
-}
+	if(params.createSubObjects()) {
+		setFovController(ControllerManager::createFloatController(params.dataset()));
+		fovController()->setFloatValue(0, FLOATTYPE_PI/4);
 
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void StandardCameraSource::initializeObject(ObjectInitializationHints hints)
-{
-	setFovController(ControllerManager::createFloatController(dataset(), hints));
-	fovController()->setFloatValue(0, FLOATTYPE_PI/4);
+		setZoomController(ControllerManager::createFloatController(params.dataset()));
+		zoomController()->setFloatValue(0, 200);
 
-	setZoomController(ControllerManager::createFloatController(dataset(), hints));
-	zoomController()->setFloatValue(0, 200);
-
-	// Adopt the view parameters from the currently active Viewport.
-	if(hints.testFlag(LoadUserDefaults)) {
-		if(Viewport* vp = dataset()->viewportConfig()->activeViewport()) {
-			setIsPerspective(vp->isPerspectiveProjection());
-			if(vp->isPerspectiveProjection())
-				fovController()->setFloatValue(0, vp->fieldOfView());
-			else
-				zoomController()->setFloatValue(0, vp->fieldOfView());
+		// Adopt the view parameters from the currently active Viewport.
+		if(params.loadUserDefaults()) {
+			if(Viewport* vp = dataset()->viewportConfig()->activeViewport()) {
+				setIsPerspective(vp->isPerspectiveProjection());
+				if(vp->isPerspectiveProjection())
+					fovController()->setFloatValue(0, vp->fieldOfView());
+				else
+					zoomController()->setFloatValue(0, vp->fieldOfView());
+			}
 		}
 	}
-
-	PipelineObject::initializeObject(hints);
 }
 
 /******************************************************************************
@@ -179,7 +172,7 @@ FloatType StandardCameraSource::targetDistance() const
 /******************************************************************************
 * Changes the type of the camera to a target camera or a free camera.
 ******************************************************************************/
-void StandardCameraSource::setIsTargetCamera(bool enable, ObjectInitializationHints initializationHints)
+void StandardCameraSource::setIsTargetCamera(bool enable)
 {
 	dataset()->undoStack().pushIfRecording<TargetChangedUndoOperation>(this);
 
@@ -187,10 +180,10 @@ void StandardCameraSource::setIsTargetCamera(bool enable, ObjectInitializationHi
 		if(node->lookatTargetNode() == nullptr && enable) {
 			if(SceneNode* parentNode = node->parentNode()) {
 				AnimationSuspender noAnim(this);
-				DataOORef<DataCollection> dataCollection = DataOORef<DataCollection>::create(dataset(), initializationHints);
-				dataCollection->addObject(DataOORef<TargetObject>::create(dataset(), initializationHints));
-				OORef<StaticSource> targetSource = OORef<StaticSource>::create(dataset(), initializationHints, dataCollection);
-				OORef<PipelineSceneNode> targetNode = OORef<PipelineSceneNode>::create(dataset(), initializationHints);
+				DataOORef<DataCollection> dataCollection = DataOORef<DataCollection>::create(dataset());
+				dataCollection->addObject(DataOORef<TargetObject>::create(dataset()));
+				OORef<StaticSource> targetSource = OORef<StaticSource>::create(dataset(), dataCollection);
+				OORef<PipelineSceneNode> targetNode = OORef<PipelineSceneNode>::create(dataset());
 				targetNode->setDataProvider(targetSource);
 				targetNode->setNodeName(tr("%1.target").arg(node->nodeName()));
 				parentNode->addChildNode(targetNode);
@@ -201,7 +194,7 @@ void StandardCameraSource::setIsTargetCamera(bool enable, ObjectInitializationHi
 				Vector3 cameraDir = cameraTM.column(2).normalized();
 				Vector3 targetPos = cameraPos - targetDistance() * cameraDir;
 				targetNode->transformationController()->translate(0, targetPos, AffineTransformation::Identity());
-				node->setLookatTargetNode(targetNode, initializationHints);
+				node->setLookatTargetNode(targetNode);
 			}
 		}
 		else if(node->lookatTargetNode() != nullptr && !enable) {

@@ -57,7 +57,7 @@ class ParticlesAffineTransformationModifierDelegate : public AffineTransformatio
 public:
 
 	/// Constructor.
-	Q_INVOKABLE ParticlesAffineTransformationModifierDelegate(DataSet* dataset) : AffineTransformationModifierDelegate(dataset) {}
+	Q_INVOKABLE ParticlesAffineTransformationModifierDelegate(ObjectCreationParams params) : AffineTransformationModifierDelegate(params) {}
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
 	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
@@ -90,7 +90,7 @@ class VectorParticlePropertiesAffineTransformationModifierDelegate : public Affi
 public:
 
 	/// Constructor.
-	Q_INVOKABLE VectorParticlePropertiesAffineTransformationModifierDelegate(DataSet* dataset) : AffineTransformationModifierDelegate(dataset) {}
+	Q_INVOKABLE VectorParticlePropertiesAffineTransformationModifierDelegate(ObjectCreationParams params) : AffineTransformationModifierDelegate(params) {}
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
 	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

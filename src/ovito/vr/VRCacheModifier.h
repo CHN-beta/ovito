@@ -43,7 +43,7 @@ class VRCacheModifier : public Modifier
 public:
 
 	/// \brief Default constructor.
-	Q_INVOKABLE VRCacheModifier(DataSet* dataset) : Modifier(dataset) {}
+	Q_INVOKABLE VRCacheModifier(ObjectCreationParams params) : Modifier(params) {}
 
 	/// \brief This modifies the input object in a specific way.
 	virtual PipelineStatus modifyObject(TimePoint time, ModifierApplication* modApp, PipelineFlowState& state) override;

@@ -258,11 +258,11 @@ void ViewportMenu::onCreateCamera()
 			if(!cameraSourceType)
 				_viewport->throwException(tr("OVITO has been built without support for camera objects."));
 
-			// Note: The StandardCameraSource::initializeObject() method will adopt the current parameters of this Viewport automatically.
-			OORef<PipelineObject> cameraSource = static_object_cast<PipelineObject>(cameraSourceType->createInstance(_viewport->dataset(), ObjectInitializationHint::LoadUserDefaults));
+			// Note: The StandardCameraSource constructor will adopt the current parameters of this Viewport automatically.
+			OORef<PipelineObject> cameraSource = static_object_cast<PipelineObject>(cameraSourceType->createInstance(_viewport->dataset()));
 
 			// Create an object node with a data source for the camera.
-			cameraNode = OORef<PipelineSceneNode>::create(_viewport->dataset(), ObjectInitializationHint::LoadUserDefaults);
+			cameraNode = OORef<PipelineSceneNode>::create(_viewport->dataset());
 			cameraNode->setDataProvider(std::move(cameraSource));
 
 			// Give the new node a name.
@@ -307,7 +307,7 @@ void ViewportMenu::onSplitViewport(ViewportLayoutCell::SplitDirection direction)
 {
 	UndoableTransaction::handleExceptions(_layoutCell->dataset()->undoStack(), tr("Split viewport"), [&]() {
 
-		OORef<ViewportLayoutCell> newCell = OORef<ViewportLayoutCell>::create(_layoutCell->dataset(), ObjectInitializationHint::LoadUserDefaults);
+		OORef<ViewportLayoutCell> newCell = OORef<ViewportLayoutCell>::create(_layoutCell->dataset());
 		newCell->setViewport(CloneHelper().cloneObject(_viewport, true));
 
 		if(ViewportLayoutCell* parentCell = _layoutCell->parentCell()) {
@@ -319,7 +319,7 @@ void ViewportMenu::onSplitViewport(ViewportLayoutCell::SplitDirection direction)
 			}
 		}
 
-		OORef<ViewportLayoutCell> newCell2 = OORef<ViewportLayoutCell>::create(_layoutCell->dataset(), ObjectInitializationHint::LoadUserDefaults);
+		OORef<ViewportLayoutCell> newCell2 = OORef<ViewportLayoutCell>::create(_layoutCell->dataset());
 		newCell2->setViewport(_viewport);
 
 		_layoutCell->setSplitDirection(direction);

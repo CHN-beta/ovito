@@ -81,7 +81,7 @@ public:
 protected:
 
 	/// \brief Constructor.
-	explicit ModifierDelegate(DataSet* dataset, const DataObjectReference& inputDataObj = DataObjectReference()) : RefTarget(dataset), _isEnabled(true), _inputDataObject(inputDataObj) {}
+	explicit ModifierDelegate(ObjectCreationParams params, const DataObjectReference& inputDataObj = DataObjectReference()) : RefTarget(params), _isEnabled(true), _inputDataObject(inputDataObj) {}
 
 public:
 
@@ -147,7 +147,7 @@ public:
 public:
 
 	/// Constructor.
-	DelegatingModifier(DataSet* dataset);
+	using Modifier::Modifier;
 
 	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
@@ -158,7 +158,7 @@ public:
 protected:
 
 	/// Creates a default delegate for this modifier.
-	void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectInitializationHints initializationHints);
+	void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectCreationParams params);
 
 	/// Lets the modifier's delegate operate on a pipeline flow state.
 	void applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
@@ -204,7 +204,7 @@ public:
 public:
 
 	/// Constructor.
-	MultiDelegatingModifier(DataSet* dataset);
+	using Modifier::Modifier;
 
 	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
 	virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
@@ -215,7 +215,7 @@ public:
 protected:
 
 	/// Creates the list of delegate objects for this modifier.
-	void createModifierDelegates(const OvitoClass& delegateType, ObjectInitializationHints initializationHints);
+	void createModifierDelegates(const OvitoClass& delegateType, ObjectCreationParams params);
 
 	/// Lets the registered modifier delegates operate on a pipeline flow state.
 	void applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});

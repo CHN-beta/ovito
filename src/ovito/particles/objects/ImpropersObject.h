@@ -66,7 +66,7 @@ public:
 	};
 
 	/// \brief Constructor.
-	Q_INVOKABLE ImpropersObject(DataSet* dataset);
+	Q_INVOKABLE ImpropersObject(ObjectCreationParams params);
 
 	/// Convinience method that returns the improper topology property.
 	const PropertyObject* getTopology() const { return getProperty(TopologyProperty); }

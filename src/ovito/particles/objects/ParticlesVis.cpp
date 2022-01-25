@@ -49,7 +49,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticlesVis, radiusScaleFactor, PercentPar
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ParticlesVis::ParticlesVis(DataSet* dataset) : DataVis(dataset),
+ParticlesVis::ParticlesVis(ObjectCreationParams params) : DataVis(params),
 	_defaultParticleRadius(1.2),
 	_radiusScaleFactor(1.0),
 	_renderingQuality(ParticlePrimitive::AutoQuality),

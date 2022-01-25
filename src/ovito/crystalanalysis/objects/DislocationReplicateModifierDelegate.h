@@ -57,7 +57,7 @@ class DislocationReplicateModifierDelegate : public ReplicateModifierDelegate
 public:
 
 	/// Constructor.
-	Q_INVOKABLE DislocationReplicateModifierDelegate(DataSet* dataset) : ReplicateModifierDelegate(dataset) {}
+	Q_INVOKABLE DislocationReplicateModifierDelegate(ObjectCreationParams params) : ReplicateModifierDelegate(params) {}
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
 	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

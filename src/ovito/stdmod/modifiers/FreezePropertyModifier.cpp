@@ -50,7 +50,7 @@ SET_MODIFIER_APPLICATION_TYPE(FreezePropertyModifier, FreezePropertyModifierAppl
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-FreezePropertyModifier::FreezePropertyModifier(DataSet* dataset) : GenericPropertyModifier(dataset),
+FreezePropertyModifier::FreezePropertyModifier(ObjectCreationParams params) : GenericPropertyModifier(params),
 	_freezeTime(0)
 {
 	// Operate on particles by default.

@@ -509,9 +509,9 @@ bool ParticleImporter::importFurtherFiles(std::vector<std::pair<QUrl, OORef<File
 			return {};
 
 		// Create a modifier for injecting the trajectory data into the existing pipeline.
-		OORef<LoadTrajectoryModifier> loadTrjMod = new LoadTrajectoryModifier(dataset());
+		OORef<LoadTrajectoryModifier> loadTrjMod = OORef<LoadTrajectoryModifier>::create(dataset());
 		loadTrjMod->setTrajectorySource(std::move(fileSource));
-		pipeline->applyModifier(loadTrjMod);
+		pipeline->applyModifier(std::move(loadTrjMod));
 
 		if(sourceUrlsAndImporters.empty())
 			return true;

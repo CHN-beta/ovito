@@ -63,7 +63,7 @@ SET_PROPERTY_FIELD_LABEL(ScatterPlotModifier, yAxisProperty, "Y-axis property");
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ScatterPlotModifier::ScatterPlotModifier(DataSet* dataset) : GenericPropertyModifier(dataset),
+ScatterPlotModifier::ScatterPlotModifier(ObjectCreationParams params) : GenericPropertyModifier(params),
 	_selectXAxisInRange(false),
 	_selectionXAxisRangeStart(0),
 	_selectionXAxisRangeEnd(1),
@@ -227,7 +227,7 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
 	DataTable* table = state.createObject<DataTable>(QStringLiteral("scatter"), request.modApp(),
 		DataTable::Scatter, tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()),
 		out_y.take(), out_x.take());
-	OVITO_ASSERT(table == state.getObjectBy<DataTable>(modApp, QStringLiteral("scatter")));
+	OVITO_ASSERT(table == state.getObjectBy<DataTable>(request.modApp(), QStringLiteral("scatter")));
 
 	QString statusMessage;
 	if(outputSelection) {

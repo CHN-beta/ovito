@@ -70,7 +70,7 @@ SET_PROPERTY_FIELD_UNITS(VectorVis, offset, WorldParameterUnit);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-VectorVis::VectorVis(DataSet* dataset) : DataVis(dataset),
+VectorVis::VectorVis(ObjectCreationParams params) : DataVis(params),
 	_reverseArrowDirection(false),
 	_arrowPosition(Base),
 	_arrowColor(1, 1, 0),
@@ -81,23 +81,27 @@ VectorVis::VectorVis(DataSet* dataset) : DataVis(dataset),
 	_offset(Vector3::Zero()),
 	_coloringMode(UniformColoring)
 {
+	if(params.createSubObjects()) {
+		// Create animation controller for the transparency parameter.
+		setTransparencyController(ControllerManager::createFloatController(dataset()));
+
+		// Create a color mapping object for pseudo-color visualization of a particle property.
+		setColorMapping(OORef<PropertyColorMapping>::create(params));
+	}
 }
 
 /******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
+* This method is called once for this object after it has been completely
+* loaded from a stream.
 ******************************************************************************/
-void VectorVis::initializeObject(ObjectInitializationHints hints)
+void VectorVis::loadFromStreamComplete(ObjectLoadStream& stream)
 {
-	// Create animation controller for the transparency parameter.
-	if(!transparencyController())
-		setTransparencyController(ControllerManager::createFloatController(dataset(), hints));
+	DataVis::loadFromStreamComplete(stream);
 
-	// Create a color mapping object for pseudo-color visualization of a particle property.
+	// For backward compatibility with OVITO 3.5.4.
+	// Create a color mapping sub-object if it wasn't loaded from the state file.
 	if(!colorMapping())
-		setColorMapping(OORef<PropertyColorMapping>::create(dataset(), hints));
-
-	DataVis::initializeObject(hints);
+		setColorMapping(OORef<PropertyColorMapping>::create(dataset()));
 }
 
 /******************************************************************************

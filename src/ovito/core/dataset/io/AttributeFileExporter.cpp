@@ -33,6 +33,26 @@ IMPLEMENT_OVITO_CLASS(AttributeFileExporter);
 DEFINE_PROPERTY_FIELD(AttributeFileExporter, attributesToExport);
 
 /******************************************************************************
+* Constructor
+*****************************************************************************/
+AttributeFileExporter::AttributeFileExporter(ObjectCreationParams params) : FileExporter(params)
+{
+	if(params.loadUserDefaults()) {
+		// This exporter is typically used to export attributes as functions of time.
+		if(dataset()->animationSettings()->animationInterval().duration() != 0)
+			setExportAnimation(true);
+
+#ifndef OVITO_DISABLE_QSETTINGS
+		// Restore last output column mapping.
+		QSettings settings;
+		settings.beginGroup("exporter/attributes/");
+		setAttributesToExport(settings.value("attrlist", QVariant::fromValue(QStringList())).toStringList());
+		settings.endGroup();
+#endif
+	}
+}
+
+/******************************************************************************
  * This is called once for every output file to be written and before
  * exportData() is called.
 *****************************************************************************/
@@ -65,29 +85,6 @@ void AttributeFileExporter::closeOutputFile(bool exportCompleted)
 
 	if(!exportCompleted)
 		_outputFile.remove();
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-*****************************************************************************/
-void AttributeFileExporter::initializeObject(ObjectInitializationHints hints)
-{
-	if(hints.testFlag(LoadUserDefaults)) {
-		// This exporter is typically used to export attributes as functions of time.
-		if(dataset()->animationSettings()->animationInterval().duration() != 0)
-			setExportAnimation(true);
-
-#ifndef OVITO_DISABLE_QSETTINGS
-		// Restore last output column mapping.
-		QSettings settings;
-		settings.beginGroup("exporter/attributes/");
-		setAttributesToExport(settings.value("attrlist", QVariant::fromValue(QStringList())).toStringList());
-		settings.endGroup();
-#endif
-	}
-
-	FileExporter::initializeObject(hints);
 }
 
 /******************************************************************************

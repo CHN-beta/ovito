@@ -63,7 +63,7 @@ class OVITO_PARTICLES_EXPORT BondsComputePropertyModifierDelegate : public Compu
 public:
 
 	/// Constructor.
-	Q_INVOKABLE BondsComputePropertyModifierDelegate(DataSet* dataset) : ComputePropertyModifierDelegate(dataset) {}
+	Q_INVOKABLE BondsComputePropertyModifierDelegate(ObjectCreationParams params) : ComputePropertyModifierDelegate(params) {}
 
 	/// Creates a computation engine that will compute the property values.
 	virtual std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> createEngine(

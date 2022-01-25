@@ -40,7 +40,7 @@ class VRSettingsObject : public RefTarget
 public:
 
 	/// \brief Default constructor.
-	Q_INVOKABLE VRSettingsObject(DataSet* dataset) : RefTarget(dataset),
+	Q_INVOKABLE VRSettingsObject(ObjectCreationParams params) : RefTarget(params),
 		_supersamplingEnabled(true),
 		_scaleFactor(1e-1),
 		_showFloor(false),

@@ -48,25 +48,17 @@ IMPLEMENT_OVITO_CLASS(SimulationCellAffineTransformationModifierDelegate);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-AffineTransformationModifier::AffineTransformationModifier(DataSet* dataset) : MultiDelegatingModifier(dataset),
+AffineTransformationModifier::AffineTransformationModifier(ObjectCreationParams params) : MultiDelegatingModifier(params),
 	_selectionOnly(false),
 	_transformationTM(AffineTransformation::Identity()),
 	_targetCell(AffineTransformation::Zero()),
 	_relativeMode(true),
 	_translationReducedCoordinates(false)
 {
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void AffineTransformationModifier::initializeObject(ObjectInitializationHints hints)
-{
-	// Generate the list of delegate objects.
-	createModifierDelegates(AffineTransformationModifierDelegate::OOClass(), hints);
-	
-	MultiDelegatingModifier::initializeObject(hints);
+	if(params.createSubObjects()) {
+		// Generate the list of delegate objects.
+		createModifierDelegates(AffineTransformationModifierDelegate::OOClass(), params);
+	}
 }
 
 /******************************************************************************

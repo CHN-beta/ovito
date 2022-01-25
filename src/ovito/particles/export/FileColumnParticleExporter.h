@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,8 +40,8 @@ class OVITO_PARTICLES_EXPORT FileColumnParticleExporter : public ParticleExporte
 
 protected:
 
-	/// \brief Constructs a new instance of this class.
-	FileColumnParticleExporter(DataSet* dataset) : ParticleExporter(dataset) {}
+	/// \brief Constructor.
+	FileColumnParticleExporter(ObjectCreationParams params);
 
 public:
 
@@ -50,10 +50,6 @@ public:
 
 	/// \brief Sets the mapping of particle properties to output file columns.
 	void setColumnMapping(const ParticlesOutputColumnMapping& mapping) { _columnMapping = mapping; }
-
-	/// \brief Loads the user-defined default values of this object's parameter fields from the
-	///        application's settings store.
-	virtual void initializeObject(ObjectInitializationHints hints) override;
 
 public:
 

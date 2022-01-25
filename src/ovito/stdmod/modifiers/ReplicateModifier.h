@@ -38,7 +38,7 @@ class OVITO_STDMOD_EXPORT ReplicateModifierDelegate : public ModifierDelegate
 protected:
 
 	/// Abstract class constructor.
-	ReplicateModifierDelegate(DataSet* dataset) : ModifierDelegate(dataset) {}
+	using ModifierDelegate::ModifierDelegate;
 };
 
 /**
@@ -72,11 +72,7 @@ public:
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE ReplicateModifier(DataSet* dataset);
-
-	/// Loads the user-defined default values of this object's parameter fields from the
-	/// application's settings store.
-	virtual void initializeObject(ObjectInitializationHints hints) override;
+	Q_INVOKABLE ReplicateModifier(ObjectCreationParams params);
 
 	/// Modifies the input data synchronously.
 	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;

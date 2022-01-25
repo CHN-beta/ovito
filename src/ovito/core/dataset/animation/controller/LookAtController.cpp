@@ -38,20 +38,12 @@ SET_PROPERTY_FIELD_UNITS(LookAtController, rollController, AngleParameterUnit);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-LookAtController::LookAtController(DataSet* dataset) : Controller(dataset)
+LookAtController::LookAtController(ObjectCreationParams params) : Controller(params)
 {
-}
-
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void LookAtController::initializeObject(ObjectInitializationHints hints)
-{
-	// Create sub-controller.
-	setRollController(ControllerManager::createFloatController(dataset(), hints));
-
-	Controller::initializeObject(hints);
+	if(params.createSubObjects()) {
+		// Create sub-controller.
+		setRollController(ControllerManager::createFloatController(dataset()));
+	}
 }
 
 /******************************************************************************

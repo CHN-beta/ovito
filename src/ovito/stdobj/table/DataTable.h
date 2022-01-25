@@ -73,7 +73,7 @@ public:
 	Q_ENUM(PlotMode);
 
 	/// Constructor.
-	Q_INVOKABLE DataTable(DataSet* dataset, PlotMode plotMode = Line, const QString& title = QString(), ConstPropertyPtr y = {}, ConstPropertyPtr x = {});
+	Q_INVOKABLE DataTable(ObjectCreationParams params, PlotMode plotMode = Line, const QString& title = QString(), ConstPropertyPtr y = {}, ConstPropertyPtr x = {});
 
 	/// Returns the property object containing the y-coordinates of the data points.
 	const PropertyObject* getY() const { return getProperty(Type::YProperty); }

@@ -77,7 +77,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(RenderSettings, layoutSeperatorWidth, Integ
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-RenderSettings::RenderSettings(DataSet* dataset) : RefTarget(dataset),
+RenderSettings::RenderSettings(ObjectCreationParams params) : RefTarget(params),
 	_outputImageWidth(640),
 	_outputImageHeight(480),
 	_generateAlphaChannel(false),
@@ -95,23 +95,14 @@ RenderSettings::RenderSettings(DataSet* dataset) : RefTarget(dataset),
 	_layoutSeperatorWidth(2),
 	_layoutSeperatorColor(0.5, 0.5, 0.5)
 {
-}
+	if(params.createSubObjects()) {
+		// Setup default background color.
+		setBackgroundColorController(ControllerManager::createColorController(dataset()));
+		setBackgroundColor(Color(1,1,1));
 
-/******************************************************************************
-* Initializes the object's parameter fields with default values and loads 
-* user-defined default values from the application's settings store (GUI only).
-******************************************************************************/
-void RenderSettings::initializeObject(ObjectInitializationHints hints)
-{
-	// Setup default background color.
-	setBackgroundColorController(ControllerManager::createColorController(dataset(), hints));
-	setBackgroundColor(Color(1,1,1));
-
-	// Create an instance of the default renderer class.
-	if(!renderer())
-		setRenderer(OORef<StandardSceneRenderer>::create(dataset(), hints));
-
-	RefTarget::initializeObject(hints);
+		// Create an instance of the default renderer class.
+		setRenderer(OORef<StandardSceneRenderer>::create(params));
+	}
 }
 
 /******************************************************************************

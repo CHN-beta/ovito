@@ -35,8 +35,8 @@ SET_PROPERTY_FIELD_LABEL(BurgersVectorFamily, burgersVector, "Burgers vector");
 /******************************************************************************
 * Constructs a new BurgersVectorFamily.
 ******************************************************************************/
-BurgersVectorFamily::BurgersVectorFamily(DataSet* dataset, int id, const QString& name, const Vector3& burgersVector, const Color& color)
-	: ElementType(dataset), _burgersVector(burgersVector)
+BurgersVectorFamily::BurgersVectorFamily(ObjectCreationParams params, int id, const QString& name, const Vector3& burgersVector, const Color& color)
+	: ElementType(params), _burgersVector(burgersVector)
 {
 	setNumericId(id);
 	setName(name);
