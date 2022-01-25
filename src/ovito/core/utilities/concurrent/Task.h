@@ -42,6 +42,12 @@ class OVITO_CORE_EXPORT Task : public std::enable_shared_from_this<Task>
 {
 public:
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    using MutexLocker = QMutexLocker<QMutex>;
+#else
+    using MutexLocker = QMutexLocker;
+#endif
+
     /// The different states a task can be in.
     enum State {
         NoState       = 0,
@@ -66,16 +72,16 @@ public:
 #endif
 
     /// Returns whether this shared state has been canceled by a previous call to cancel().
-    bool isCanceled() const { return (_state.loadRelaxed() & Canceled); }
+    bool isCanceled() const { return (_state.load(std::memory_order_relaxed) & Canceled); }
 
     /// Returns true if the promise is in the 'started' state.
-    bool isStarted() const { return (_state.loadRelaxed() & Started); }
+    bool isStarted() const { return (_state.load(std::memory_order_relaxed) & Started); }
 
     /// Returns true if the promise is in the 'finished' state.
-    bool isFinished() const { return (_state.loadRelaxed() & Finished); }
+    bool isFinished() const { return (_state.load(std::memory_order_relaxed) & Finished); }
 
     /// Indicates whether this task's class is derived from the ProgressingTask base class.
-    bool isProgressingTask() const { return (_state.loadRelaxed() & IsProgressing); }
+    bool isProgressingTask() const { return (_state.load(std::memory_order_relaxed) & IsProgressing); }
 
     /// \brief Requests cancellation of the task.
     void cancel() noexcept;
@@ -100,10 +106,10 @@ public:
     /// \brief Switches the task into the 'exception' state to signal that an exception has occurred.
     /// \param ex The exception to store into the task object.
     void setException(std::exception_ptr&& ex) {
-        const QMutexLocker locker(&taskMutex());
+        const MutexLocker locker(&taskMutex());
 
         // Check if task is already canceled or finished.
-        if(_state.loadRelaxed() & (Canceled | Finished))
+        if(_state.load() & (Canceled | Finished))
             return;
 
         exceptionLocked(std::move(ex));
@@ -114,10 +120,10 @@ public:
     /// This method should be called from within an exception handler. It saves a copy of the current exception
     /// being handled into the task object.
     void captureExceptionAndFinish() {
-        QMutexLocker locker(&taskMutex());
+        MutexLocker locker(&taskMutex());
 
         // Check if task is already canceled or finished.
-        if(_state.loadRelaxed() & (Canceled | Finished))
+        if(_state.load() & (Canceled | Finished))
             return;
 
         exceptionLocked(std::current_exception());
@@ -129,7 +135,7 @@ public:
     /// The callable may take one optional parameter: a reference to the Task object that completed.
     template<typename Executor, typename Function>
     void finally(Executor&& executor, Function&& f) {
-        QMutexLocker locker(&taskMutex());
+        MutexLocker locker(&taskMutex());
         addContinuation(std::forward<Executor>(executor).schedule(std::forward<Function>(f)), locker);
     }
 
@@ -138,7 +144,7 @@ public:
     /// The callable may take one optional parameter: a reference to the Task object that completed.
     template<typename Function>
     void finally(Function&& f) { 
-        QMutexLocker locker(&taskMutex());
+        MutexLocker locker(&taskMutex());
         addContinuation(std::forward<Function>(f), locker); 
     }
 
@@ -224,7 +230,7 @@ protected:
     /// Registers a callback function that will be run when this task reaches the 'finished' state. 
     /// If the task is already in one of these states, the continuation function is invoked immediately.
     template<typename Function>
-    void addContinuation(Function&& f, QMutexLocker<QMutex>& locker) {
+    void addContinuation(Function&& f, MutexLocker& locker) {
         // Check if task is already finished.
         if(isFinished()) {
             // Run continuation function immediately.
@@ -260,13 +266,13 @@ protected:
     void exceptionLocked(std::exception_ptr&& ex) noexcept;
 
     /// Puts this task into the 'canceled' state (without newly locking the task).
-    void cancelLocked(QMutexLocker<QMutex>& locker) noexcept;
+    void cancelLocked(MutexLocker& locker) noexcept;
 
     /// Puts this task into the 'finished' state (without newly locking the task).
-    void finishLocked(QMutexLocker<QMutex>& locker) noexcept;
+    void finishLocked(MutexLocker& locker) noexcept;
 
     /// Puts this task into the 'canceled' and 'finished' states (without newly locking the task).
-    void cancelAndFinishLocked(QMutexLocker<QMutex>& locker) noexcept;
+    void cancelAndFinishLocked(MutexLocker& locker) noexcept;
 
     /// Increments the counter of futures or parent tasks currently waiting for this task to complete.
     void incrementDependentsCount() noexcept { _dependentsCount.ref(); }
@@ -286,7 +292,7 @@ protected:
     QMutex& taskMutex() const { return _mutex; }
 
     /// The current state this task is in.
-    QAtomicInt _state;
+    std::atomic_int _state;
 
     /// The number of other parties currently waiting for this task to complete.
     QAtomicInt _dependentsCount{0};
@@ -308,7 +314,7 @@ protected:
 
 #ifdef OVITO_DEBUG
     /// Indicates whether the result value of the task has been set.
-    std::atomic<bool> _hasResultsStored{false};
+    std::atomic_bool _hasResultsStored{false};
 
     /// Global counter of Task instances that exist at a time. Used only in debug builds to detect memory leaks.
     static std::atomic_size_t _globalTaskCounter;

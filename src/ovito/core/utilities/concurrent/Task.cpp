@@ -61,7 +61,7 @@ Task::~Task()
 ******************************************************************************/
 bool Task::setStarted() noexcept
 {
-	const QMutexLocker locker(&_mutex);
+	const MutexLocker locker(&_mutex);
 	return startLocked();
 }
 
@@ -71,12 +71,12 @@ bool Task::setStarted() noexcept
 bool Task::startLocked() noexcept
 {
 	// Check if already started.
-	auto state = _state.loadRelaxed();
+	auto state = _state.load(std::memory_order_relaxed);
     if(state & Started)
         return false;
 
     OVITO_ASSERT(!(state & Finished));
-    _state.fetchAndOrRelaxed(Started);
+    _state.fetch_or(Started, std::memory_order_relaxed);
 
 	// Inform the registered task watchers.
 	callCallbacks(Started);
@@ -89,7 +89,7 @@ bool Task::startLocked() noexcept
 ******************************************************************************/
 void Task::setFinished() noexcept
 {
-	QMutexLocker locker(&taskMutex());
+	MutexLocker locker(&taskMutex());
 	if(!isFinished())
 		finishLocked(locker);
 }
@@ -97,13 +97,13 @@ void Task::setFinished() noexcept
 /******************************************************************************
 * Puts this task into the 'finished' state (without newly locking the task).
 ******************************************************************************/
-void Task::finishLocked(QMutexLocker<QMutex>& locker) noexcept
+void Task::finishLocked(MutexLocker& locker) noexcept
 {
 	OVITO_ASSERT(!isFinished());
     OVITO_ASSERT(isStarted());
 
 	// Put this task into the 'finished' state.
-	int state = _state.fetchAndOrRelaxed(Finished);
+	int state = _state.fetch_or(Finished, std::memory_order_relaxed);
 
 	// Make sure that the result has been set (if not in canceled or error state).
 	OVITO_ASSERT_MSG(_exceptionStore || isCanceled() || _hasResultsStored.load() || !_resultsStorage,
@@ -135,24 +135,24 @@ void Task::finishLocked(QMutexLocker<QMutex>& locker) noexcept
 ******************************************************************************/
 void Task::cancel() noexcept
 {
-	QMutexLocker locker(&taskMutex());
+	MutexLocker locker(&taskMutex());
 	cancelAndFinishLocked(locker);
 }
 
 /******************************************************************************
 * Puts this task into the 'canceled' and 'finished' states (without newly locking the task).
 ******************************************************************************/
-void Task::cancelAndFinishLocked(QMutexLocker<QMutex>& locker) noexcept
+void Task::cancelAndFinishLocked(MutexLocker& locker) noexcept
 {
 	// Put this task into the 'finished' state.
-	auto state = _state.fetchAndOrRelaxed(Finished);
+	auto state = _state.fetch_or(Finished, std::memory_order_relaxed);
 
 	// Do nothing if task was already in the 'finished' state.
 	if(state & Finished)
 		return;
 
 	// Put the task into the 'canceled' state as well.
-	state = _state.fetchAndOrRelaxed(Canceled);
+	state = _state.fetch_or(Canceled, std::memory_order_relaxed);
 
 	// Inform the registered callbacks.
 	callCallbacks(!(state & Canceled) ? (Canceled | Finished) : Finished);
@@ -181,7 +181,7 @@ void Task::exceptionLocked(std::exception_ptr&& ex) noexcept
 	OVITO_ASSERT(ex != std::exception_ptr());
 
 	// Make sure the task isn't already canceled or finished.
-    OVITO_ASSERT(!(_state.loadRelaxed() & (Canceled | Finished)));
+    OVITO_ASSERT(!(_state.load(std::memory_order_relaxed) & (Canceled | Finished)));
 
 	_exceptionStore = std::move(ex); // NOLINT
 }
@@ -193,7 +193,7 @@ void Task::addCallback(detail::TaskCallbackBase* cb, bool replayStateChanges) no
 {
 	OVITO_ASSERT(cb != nullptr);
 	
-    const QMutexLocker locker(&_mutex);
+    const MutexLocker locker(&_mutex);
 
 	// Insert into linked list of callbacks.
 	cb->_nextInList = _callbacks;
@@ -201,7 +201,7 @@ void Task::addCallback(detail::TaskCallbackBase* cb, bool replayStateChanges) no
 
 	// Replay past state changes to the new callback if requested.
 	if(replayStateChanges) {
-		if(!cb->callStateChanged(_state.loadRelaxed())) {
+		if(!cb->callStateChanged(_state.load(std::memory_order_relaxed))) {
 			// The callback requested to be removed from the list.
 			_callbacks = cb->_nextInList;
 		}
@@ -228,7 +228,7 @@ void Task::callCallbacks(int state)
 ******************************************************************************/
 void Task::removeCallback(detail::TaskCallbackBase* cb) noexcept
 {
-    const QMutexLocker locker(&_mutex);
+    const MutexLocker locker(&_mutex);
 
 	// Remove from linked list of callbacks.
 	if(_callbacks == cb) {

@@ -138,13 +138,13 @@ bool AsynchronousTaskBase::waitForFuture(const FutureBase& future)
 
 		QWaitCondition wc;
 		QMutex waitMutex;
-		QAtomicInt alreadyDone{0};
+		std::atomic_bool alreadyDone{false};
 
 		// Register a callback function with the waiting task, which sets the wait condition in case the waiting task gets canceled.
 		detail::FunctionTaskCallback thisTaskCallback(this, [&](int state) {
 			if(state & (Task::Canceled | Task::Finished)) {
 				QMutexLocker locker(&waitMutex);
-				alreadyDone.storeRelaxed(true);
+				alreadyDone.store(true);
 				wc.wakeAll();
 			}
 			return true;
@@ -154,7 +154,7 @@ bool AsynchronousTaskBase::waitForFuture(const FutureBase& future)
 		detail::FunctionTaskCallback awaitedfTaskCallback(awaitedTaskPtr.get(), [&](int state) {
 			if(state & Task::Finished) {
 				QMutexLocker locker(&waitMutex);
-				alreadyDone.storeRelaxed(true);
+				alreadyDone.store(true);
 				wc.wakeAll();
 			}
 			return true;
@@ -162,7 +162,7 @@ bool AsynchronousTaskBase::waitForFuture(const FutureBase& future)
 
 		// Wait now until one of the tasks are done.
 		waitMutex.lock();
-		if(!alreadyDone.loadRelaxed())
+		if(!alreadyDone.load())
 			wc.wait(&waitMutex);
 		waitMutex.unlock();
 

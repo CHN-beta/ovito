@@ -160,11 +160,11 @@ bool MainThreadOperation::waitForTask(const TaskPtr& awaitedTask)
 	userInterrupt.storeRelease(0);
 
 	// Install POSIX signal handler to catch Ctrl+C key signal.
-	static QAtomicPointer<QEventLoop> activeEventLoop;
-	QEventLoop* previousEventLoop = activeEventLoop.fetchAndStoreRelease(&eventLoop);
+	static std::atomic<QEventLoop*> activeEventLoop;
+	QEventLoop* previousEventLoop = activeEventLoop.exchange(&eventLoop, std::memory_order_release);
 	auto oldSignalHandler = ::signal(SIGINT, [](int) {
 		userInterrupt.storeRelease(1);
-		if(QEventLoop* eventLoop = activeEventLoop.loadAcquire())
+		if(QEventLoop* eventLoop = activeEventLoop.load(std::memory_order_acquire))
 			QMetaObject::invokeMethod(eventLoop, &QEventLoop::quit, Qt::QueuedConnection);
 	});
 #endif
@@ -187,7 +187,7 @@ bool MainThreadOperation::waitForTask(const TaskPtr& awaitedTask)
 #ifdef Q_OS_UNIX
 	// Cancel the task if user pressed Ctrl+C.
 	::signal(SIGINT, oldSignalHandler);
-	activeEventLoop.storeRelaxed(previousEventLoop);
+	activeEventLoop.store(previousEventLoop, std::memory_order_relaxed);
 	if(userInterrupt.loadAcquire()) {
 		thisTaskPtr->cancelAndFinishLocked(thisTaskLocker);
 		return false;

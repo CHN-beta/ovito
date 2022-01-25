@@ -52,7 +52,7 @@ bool ProgressingTask::setProgressValue(qlonglong value)
 {
     const QMutexLocker locker(&taskMutex());
 
-	auto state = _state.loadRelaxed();
+	auto state = _state.load(std::memory_order_relaxed);
     if(state & (Canceled | Finished) || value == _progressValue)
         return !(state & Canceled);
 
@@ -76,7 +76,7 @@ bool ProgressingTask::incrementProgressValue(qlonglong increment)
 {
     const QMutexLocker locker(&taskMutex());
 
-	auto state = _state.loadRelaxed();
+	auto state = _state.load(std::memory_order_relaxed);
     if(state & (Canceled | Finished))
         return !(state & Canceled);
 
@@ -115,7 +115,7 @@ void ProgressingTask::setProgressText(const QString& progressText)
 {
     const QMutexLocker locker(&taskMutex());
 
-    if(auto state = _state.loadRelaxed(); state & (Canceled | Finished))
+    if(auto state = _state.load(std::memory_order_relaxed); state & (Canceled | Finished))
         return;
 
     _progressText = progressText;
@@ -170,7 +170,7 @@ void ProgressingTask::nextProgressSubStep()
 {
     const QMutexLocker locker(&taskMutex());
 
-    if(auto state = _state.loadRelaxed(); state & (Canceled | Finished))
+    if(auto state = _state.load(std::memory_order_relaxed); state & (Canceled | Finished))
         return;
 
 	OVITO_ASSERT(!_subTaskProgressStack.empty());
