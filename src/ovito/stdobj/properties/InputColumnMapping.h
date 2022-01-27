@@ -214,11 +214,12 @@ class OVITO_STDOBJ_EXPORT InputColumnReader : public QObject
 public:
 
 	/// \brief Initializes the object.
+	/// \param frameLoader The file reader that created this column reader object. 
 	/// \param mapping Defines the mapping of columns of the input file
 	///        to the target properties.
 	/// \param container The property container where the parsed data will be stored in.
 	/// \throws Exception if the mapping is not valid.
-	InputColumnReader(const InputColumnMapping& mapping, PropertyContainer* container, bool removeExistingProperties = true);
+	InputColumnReader(StandardFrameLoader& frameLoader, const InputColumnMapping& mapping, PropertyContainer* container, bool removeExistingProperties = true);
 
 	/// \brief Tells the parser to read the names of element types from the given file column
 	void readTypeNamesFromColumn(int nameColumn, int numericIdColumn);
@@ -259,6 +260,9 @@ private:
 
 	/// The container that receives the parsed data.
 	PropertyContainer* _container;
+
+	/// The file reader that called this column reader.
+	StandardFrameLoader& _frameLoader;
 
 	struct TargetPropertyRecord {
 		PropertyObject* property = nullptr;

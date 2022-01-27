@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -99,8 +99,7 @@ public:
 		/// The local handle to the input file.
 		FileHandle fileHandle;
 
-		/// The storage container for the loaded file data, which is initialized with the state 
-		/// from a previous load operation. 
+		/// Holds the data objects loaded from the file. DataCollection contains the data from a previous trajectory frame if any. 
 		PipelineFlowState state;
 
 		/// Pointer to the FileSource that initiated the load operation.
@@ -111,8 +110,8 @@ public:
 		QString dataBlockPrefix;
 
 		/// Indicates that the file reader should append the loaded data to existing data objects
-		/// instead of replacing their contents. This is used for multi-block datasets that 
-		/// consist of several files.
+		/// instead of replacing their contents. This is used for loading multi-block datasets  
+		/// consisting of several files.
 		bool appendData = false;
 
 		/// Indicates whether the file is being loaded for the first time or a subsequent frame is being loaded. 

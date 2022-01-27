@@ -47,6 +47,7 @@ namespace Ovito::StdObj
     class SimulationCellVis;
     class DataTable;
     class PropertyColorMapping;
+    class StandardFrameLoader;
 }
 
 #endif

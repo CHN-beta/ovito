@@ -58,8 +58,9 @@ public:
 	/// \param sourceUrls The new source location(s).
 	/// \param importer The importer object that will parse the input file.
 	/// \param autodetectFileSequences Enables the automatic detection of file sequences.
+	/// \param keepExistingDataCollection Tells the file source to maintain the existing data objects and visual elements when importing a new file.
 	/// \return false if the operation has been canceled by the user.
-	bool setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences);
+	bool setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection = false);
 
 	/// \brief This triggers a reload of input data from the external file for the given frame or all frames.
 	/// \param refetchFiles Clears the remote file cache so that file data will be retreived again from the remote location. 
@@ -166,10 +167,10 @@ private:
 	/// Restricts the timeline to a single static frame of the loaded trajectory. 
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, restrictToFrame, setRestrictToFrame);
 
-	/// The list of frames of the data source.
+	/// The list of trajectory frames.
 	QVector<FileSourceImporter::Frame> _frames;
 
-	/// The human-readable labels associated with animation frames (e.g. the simulation timestep numbers).
+	/// The human-readable labels associated with trajectory frames (e.g. the simulation timestep numbers).
 	mutable QMap<int, QString> _frameLabels;
 
 	/// The number of different source files from which the trajectory frames get loaded. 

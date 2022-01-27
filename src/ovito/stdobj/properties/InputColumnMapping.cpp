@@ -22,6 +22,7 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
+#include <ovito/stdobj/io/StandardFrameLoader.h>
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include "InputColumnMapping.h"
 
@@ -189,8 +190,8 @@ void InputColumnMapping::validate() const
 /******************************************************************************
  * Initializes the object.
  *****************************************************************************/
-InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, PropertyContainer* container, bool removeExistingProperties)
-	: _mapping(mapping), _container(container)
+InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const InputColumnMapping& mapping, PropertyContainer* container, bool removeExistingProperties)
+	: _frameLoader(frameLoader), _mapping(mapping), _container(container)
 {
 	mapping.validate();
 
@@ -213,8 +214,9 @@ InputColumnReader::InputColumnReader(const InputColumnMapping& mapping, Property
 			if(pref.type() != PropertyObject::GenericUserProperty) {
 				// Create standard property.
 				property = container->createProperty(pref.type(), DataBuffer::InitializeMemory);
-				// File reader may be overriden the property name.
+				// File reader may want to override the property's name.
 				property->setName(pref.name());
+				// If this is a typed property, determine the kind of ElementType objects to create for it.
 				rec.elementTypeClass = container->getOOMetaClass().typedPropertyElementClass(pref.type());
 			}
 			else {
@@ -402,32 +404,11 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
 			// Automatically register a new element type if a new type identifier is encountered.
 			if(ok) {
 				// Instantiate a new element type with a numeric ID and add it to the property's type list.
-				if(!prec.property->elementType(d)) {
-					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset()));
-					elementType->setNumericId(d);
-					elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec.property));
-					prec.property->addElementType(std::move(elementType));
-				}
+				_frameLoader.addNumericType(_container->getOOMetaClass(), prec.property, d, QString{}, prec.elementTypeClass);
 			}
 			else {
 				// Instantiate a new named element type and add it to the property's type list.
-				QLatin1String typeName(token, token_end);
-				if(const ElementType* t = prec.property->elementType(typeName)) {
-					d = t->numericId();
-				}
-				else {
-					DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec.elementTypeClass->createInstance(_container->dataset()));
-					elementType->setName(typeName);
-					elementType->setNumericId(prec.property->generateUniqueElementTypeId());
-					elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec.property));
-
-					// Log in type name assigned by the file reader as default value for the element type.
-					// This is needed for the Python code generator to detect manual changes subsequently made by the user.
-					elementType->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name)});
-										
-					d = elementType->numericId();
-					prec.property->addElementType(std::move(elementType));
-				}
+				d = _frameLoader.addNamedType(_container->getOOMetaClass(), prec.property, QLatin1String(token, token_end), prec.elementTypeClass)->numericId();
 				prec.numericElementTypes = false;
 			}
 			prec.lastTypeId = d;

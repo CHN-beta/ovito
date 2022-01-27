@@ -254,7 +254,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 						.arg(columnMapping.size()));
 
 				// Parse data in the Atoms section line by line:
-				InputColumnReader columnParser(columnMapping, particles());
+				InputColumnReader columnParser(*this, columnMapping, particles());
 				try {
 					for(size_t i = 0; i < (size_t)natoms; i++) {
 						if(!setProgressValueIntermittent(i)) return;

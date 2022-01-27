@@ -245,7 +245,7 @@ void XSFImporter::FrameLoader::loadFile()
 			stream.seek(atomsListOffset, atomsLineNumber);
 
 			// Parse atoms data.
-			InputColumnReader columnParser(columnMapping, particles());
+			InputColumnReader columnParser(*this, columnMapping, particles());
 			setProgressMaximum(natoms);
 			for(size_t i = 0; i < natoms; i++) {
 				if(!setProgressValueIntermittent(i)) return;

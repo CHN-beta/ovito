@@ -100,6 +100,15 @@ public:
 		return nullptr;
 	}
 
+	/// Looks up the property with the same name and type as the given property from a different container.
+	const PropertyObject* getPropertyLike(const PropertyObject* property) const {
+		OVITO_ASSERT(property);
+		if(property->type() == 0)
+			return getProperty(property->name());
+		else
+			return getProperty(property->type());
+	}
+
 	/// Looks up the standard property with the given ID and makes it mutable if necessary.
 	PropertyObject* getMutableProperty(int typeId) {
 		if(const PropertyObject* p = getProperty(typeId))

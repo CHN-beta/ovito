@@ -263,7 +263,7 @@ void OXDNAImporter::FrameLoader::loadFile()
 	columnMapping.mapStandardColumn(14, ParticlesObject::AngularVelocityProperty, 2);
 
 	// Parse data table.
-	InputColumnReader columnParser(columnMapping, particles(), false);
+	InputColumnReader columnParser(*this, columnMapping, particles(), false);
 	for(size_t i = 0; i < numNucleotidesLong; i++) {
 		if(!setProgressValueIntermittent(i)) return;
 		try {

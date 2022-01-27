@@ -317,6 +317,26 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 	if(!newImporter)
 		fileSource->throwException(tr("The selected file type is not compatible."));
 
+	// Ask user whether existing data objects should be maintained.
+	bool keepExistingDataCollection = false;
+	if(fileSource->dataCollection()) {
+		QMessageBox msgBox(QMessageBox::Question, tr("Import new file"), 
+			tr("Do you want to keep visual elements and user changes?"),
+			QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel,
+			parentWindow());
+		msgBox.setDefaultButton(QMessageBox::Yes);
+		msgBox.setEscapeButton(QMessageBox::Cancel);
+		msgBox.setInformativeText(tr("<p>Select <b>Yes</b> to preserve existing objects and any direct adjustments you've made to "
+			"visual elements, particle types, etc. Data will be updated from the newly selected file(s).</p>"
+			"<p>Select <b>No</b> to start over and reset all imported objects to their default state.</p>"
+			"<p>In either case, modifiers you have added to the pipeline will be preserved.</p>"));
+		int result = msgBox.exec();
+		if(result == QMessageBox::Cancel)
+			return false; // Operation canceled by user.
+		else if(result == QMessageBox::Yes)
+			keepExistingDataCollection = true;
+	}
+
 	// Temporarily suppress viewport updates while setting up the newly imported data.
 	ViewportSuspender noVPUpdate(fileSource->dataset()->viewportConfig());
 
@@ -333,7 +353,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 	}
 
 	// Set the new input location.
-	return fileSource->setSource({url}, newImporter, false);
+	return fileSource->setSource({url}, newImporter, false, keepExistingDataCollection);
 }
 
 /******************************************************************************

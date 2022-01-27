@@ -36,18 +36,16 @@ Toolbar functions
 
 Pick new file
   Selects a different data file on disk, which will subsequently serve as new input for the current
-  data pipeline. All modifiers in the pipeline are retained but the data they operate on gets replaced.
+  data pipeline. All modifiers in the pipeline are preserved but the input data they operate on gets replaced.
 
-  Note that OVITO will *not* automatically detect whether the file you picked is part of a numbered sequence of files in the same directory. 
-  In order to load a series of files as a new animation, you need to manually enter a search pattern into the "File pattern" input field.
-  Furthermore, note that OVITO will automatically adjust the viewports to fully show the newly loaded input dataset. If you would like to preserve the current view configuration,
-  first use the :menuselection:`Create Camera` function from the :ref:`viewport menu <usage.viewports.menu>` before loading the new data file.
+  Note that OVITO is *not* going to detect whether the new file you've picked is part of a numbered file sequence in the same directory. 
+  You should manually check the :guilabel:`auto-generate` box if you want to load a numbered file sequence.
 
 Pick new remote file 
-  Same as above, but allows you to load data from a new remote URL instead of picking a file from the local filesystem.
+  Same as above, but lets you load simulation data from a new remote URL instead of picking a file in the local filesystem.
        
 Reload file   
-  Reloads the data for the current animation frame from the external file. This function is useful
+  Refreshes the data for the current animation frame from the external file. This function is useful
   if the file contents have been updated or replaced, for example after re-running a simulation or editing the file in an external program.
    
 Update trajectory frames   

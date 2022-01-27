@@ -87,7 +87,7 @@ FileSource::FileSource(ObjectCreationParams params) : BasePipelineSource(params)
 /******************************************************************************
 * Sets the source location for importing data.
 ******************************************************************************/
-bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences)
+bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection)
 {
 	// Make relative file paths absolute.
 	for(QUrl& url : sourceUrls) {
@@ -154,9 +154,6 @@ bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
 			_oldUrls = std::move(urls);
 			_oldImporter = importer;
 		}
-		QString displayName() const override {
-			return QStringLiteral("Set file source URL");
-		}
 	private:
 		std::vector<QUrl> _oldUrls;
 		OORef<FileSourceImporter> _oldImporter;
@@ -168,7 +165,7 @@ bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
 	_importer.set(this, PROPERTY_FIELD(importer), importer);
 
 	// Discard previously loaded data.
-	if(!dataset()->undoStack().isUndoingOrRedoing())
+	if(!keepExistingDataCollection && !dataset()->undoStack().isUndoingOrRedoing())
 		setDataCollection(nullptr);
 	setDataCollectionFrame(-1);
 
@@ -272,7 +269,7 @@ void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
 	// Adjust the global animation length to match the new number of source frames.
 	notifyDependents(ReferenceEvent::AnimationFramesChanged);
 
-	if(!dataCollection() && !_originallySelectedFilename.contains(QChar('*'))) {
+	if(dataCollectionFrame() < 0 && !_originallySelectedFilename.contains(QChar('*'))) {
 		// Position time slider to the frame that corresponds to the file initially picked by the user
 		// in the file selection dialog.
 		for(int frameIndex = 0; frameIndex < _frames.size(); frameIndex++) {
@@ -514,7 +511,7 @@ Future<PipelineFlowState> FileSource::requestFrameInternal(int frame)
 					loadRequest.fileHandle = fileHandle;
 					loadRequest.frame = frameInfo;
 					loadRequest.isNewlyImportedFile = (dataCollection() == nullptr);
-					loadRequest.state.setData(dataCollection() 
+					loadRequest.state.setData(dataCollection()
 						? DataOORef<const DataCollection>(dataCollection()) 
 						: DataOORef<const DataCollection>::create(dataset()));
 

@@ -68,6 +68,11 @@ public:
 		mutableData()->removeObject(obj);
 	}
 
+	/// \brief Removes a data object from this state.
+	void removeObjectByIndex(int index) {
+		mutableData()->removeObjectByIndex(index);
+	}
+
 	/// \brief Replaces a data object with a new one.
 	bool replaceObject(const DataObject* oldObj, const DataObject* newObj) {
 		if(newObj != oldObj)

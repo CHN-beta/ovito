@@ -24,6 +24,7 @@
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/scene/RootSceneNode.h>
 #include <ovito/core/dataset/data/DataObject.h>
+#include <ovito/core/dataset/data/AttributeDataObject.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -184,7 +185,7 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(std::vector<std::pair
 	if(!fileSource)
 		fileSource = OORef<FileSource>::create(dataset());
 
-	// Create a new object node in the scene for the linked data.
+	// Create a new pipeline node in the scene for the linked data.
 	OORef<PipelineSceneNode> pipeline;
 	if(existingPipeline == nullptr) {
 		{
@@ -222,7 +223,8 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(std::vector<std::pair
 	sourceUrlsAndImporters.erase(sourceUrlsAndImporters.begin(), iter);
 
 	// Set the input file location(s) and importer.
-	if(!fileSource->setSource(std::move(sourceUrls), this, autodetectFileSequences && (sourceUrls.size() == 1 && sourceUrlsAndImporters.empty())))
+	bool keepExistingDataCollection = true;
+	if(!fileSource->setSource(std::move(sourceUrls), this, autodetectFileSequences && (sourceUrls.size() == 1 && sourceUrlsAndImporters.empty()), keepExistingDataCollection))
 		return {};
 
 	if(importMode != ReplaceSelected && importMode != DontAddToScene) {

@@ -215,23 +215,24 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadO
 	const QUrl& url = urlImporters.front().first;
 	OORef<FileImporter> importer = urlImporters.front().second;
 	if(importer->isReplaceExistingPossible(urls)) {
-		// Ask user if the current import node including any applied modifiers should be kept.
+		// Ask user if the existing pipeline should be preserved or reset.
 		QMessageBox msgBox(QMessageBox::Question, tr("Import file"),
-				tr("When importing the selected file, do you want to keep the existing objects?"),
-				QMessageBox::NoButton, &mainWindow());
-
-		QPushButton* cancelButton = msgBox.addButton(QMessageBox::Cancel);
-		QPushButton* resetSceneButton = msgBox.addButton(tr("No"), QMessageBox::NoRole);
-		QPushButton* addToSceneButton = msgBox.addButton(tr("Add to scene"), QMessageBox::YesRole);
-		QPushButton* replaceSourceButton = msgBox.addButton(tr("Replace selected"), QMessageBox::AcceptRole);
-		msgBox.setDefaultButton(resetSceneButton);
-		msgBox.setEscapeButton(cancelButton);
+				tr("Do you want to reset the existing pipeline?"),
+				QMessageBox::Yes | QMessageBox::Cancel, &mainWindow());
+		msgBox.setInformativeText(tr(
+			"<p>Select <b>Yes</b> to start over and discard the existing pipeline before importing the new file.</p>"
+			"<p>Select <b>No</b> to keep modifiers in the current pipeline and replace the input data with the selected file.</p>"
+			"<p>Select <b>Add to scene</b> to create an additional pipeline and visualize multiple datasets.</p>"));
+		QPushButton* noButton = msgBox.addButton(tr("No"), QMessageBox::NoRole);
+		QPushButton* addToSceneButton = msgBox.addButton(tr("Add to scene"), QMessageBox::NoRole);
+		msgBox.setDefaultButton(QMessageBox::Yes);
+		msgBox.setEscapeButton(QMessageBox::Cancel);
 		msgBox.exec();
 
-		if(msgBox.clickedButton() == cancelButton) {
+		if(msgBox.clickedButton() == msgBox.button(QMessageBox::Cancel)) {
 			return false; // Operation canceled by user.
 		}
-		else if(msgBox.clickedButton() == resetSceneButton) {
+		else if(msgBox.clickedButton() == msgBox.button(QMessageBox::Yes)) {
 			importMode = FileImporter::ResetScene;
 			// Ask user if current scene should be saved before it is replaced by the imported data.
 			if(!askForSaveChanges())
@@ -241,6 +242,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadO
 			importMode = FileImporter::AddToScene;
 		}
 		else {
+			// No button
 			importMode = FileImporter::ReplaceSelected;
 		}
 	}
@@ -248,7 +250,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadO
 		// Ask user if the current scene should be completely replaced by the imported data.
 		QMessageBox::StandardButton result = QMessageBox::question(&mainWindow(), tr("Import file"),
 			tr("Do you want to keep the existing objects in the current scene?"),
-			QMessageBox::Yes|QMessageBox::No|QMessageBox::Cancel, QMessageBox::Cancel);
+			QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::Cancel);
 
 		if(result == QMessageBox::Cancel) {
 			return false; // Operation canceled by user.
