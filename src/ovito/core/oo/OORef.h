@@ -42,6 +42,10 @@ public:
 	};
 	Q_DECLARE_FLAGS(InitializationFlags, InitializationFlag);
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    // Qt5 still requires the class to have a default constructor for Q_DECLARE_METATYPE.
+    constexpr ObjectCreationParams() noexcept : _dataset(nullptr) {}
+#endif
 	constexpr explicit ObjectCreationParams(DataSet* dataset) noexcept : _dataset(dataset) {}
 	constexpr explicit ObjectCreationParams(DataSet* dataset, InitializationFlags flags) noexcept : _dataset(dataset), _flags(flags) {}
 

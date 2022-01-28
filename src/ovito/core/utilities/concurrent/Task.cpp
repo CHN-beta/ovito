@@ -120,7 +120,8 @@ void Task::finishLocked(MutexLocker& locker) noexcept
 	OVITO_ASSERT(_continuations.empty());
 #else
 	decltype(_continuations) continuations;
-	std::move(_continuations.begin(), _continuations.end(), std::back_inserter(continuations));
+	for(auto& c : _continuations)
+		continuations.append(std::move(c));
 	_continuations.clear();
 #endif
 	locker.unlock();
@@ -163,7 +164,8 @@ void Task::cancelAndFinishLocked(MutexLocker& locker) noexcept
 	OVITO_ASSERT(_continuations.empty());
 #else
 	decltype(_continuations) continuations;
-	std::move(_continuations.begin(), _continuations.end(), std::back_inserter(continuations));
+	for(auto& c : _continuations)
+		continuations.append(std::move(c));
 	_continuations.clear();
 #endif
 	locker.unlock();

@@ -36,7 +36,7 @@ OVITO_REGISTER_VIEWPORT_WINDOW_IMPLEMENTATION(VulkanViewportWindow);
 * Constructor.
 ******************************************************************************/
 VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, UserInterface* userInterface, QWidget* parentWidget) : 
-		BaseViewportWindow(*userInterface, vp)
+		BaseViewportWindow(*userInterface, viewport)
 {
     // Create the VulkanContext, a wrapper for the Vulkan logical device.
 	// Share the same device with by all viewport windows.

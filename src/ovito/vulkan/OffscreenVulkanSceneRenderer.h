@@ -38,7 +38,7 @@ class OVITO_VULKANRENDERER_EXPORT OffscreenVulkanSceneRenderer : public VulkanSc
 public:
 
 	/// Constructor.
-	Q_INVOKABLE OffscreenVulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanContext> vulkanDevice = {}, bool grabDepthBuffer = false);
+	Q_INVOKABLE OffscreenVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanDevice = {}, bool grabDepthBuffer = false);
 
 	/// Prepares the renderer for rendering and sets the data set that is being rendered.
 	virtual bool startRender(DataSet* dataset, RenderSettings* settings, const QSize& frameBufferSize) override;
@@ -47,7 +47,7 @@ public:
 	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
 	/// Renders the current animation frame.
-	virtual bool renderFrame(const QRect& viewportRect, SynchronousOperation operation) override;
+	virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
 
 	/// This method is called after renderFrame() has been called.
 	virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;

@@ -246,7 +246,7 @@ public:
 	Ovito::NativePropertyFieldDescriptor classname::fieldname##__propdescr_instance( \
 			const_cast<classname::OOMetaClass*>(&classname::OOClass()), \
 			#fieldname, \
-			static_cast<Ovito::PropertyFieldFlags>(decltype(classname::_##fieldname)::property_field_flags), \
+			static_cast<Ovito::PropertyFieldFlags>((Ovito::PropertyFieldFlag)decltype(classname::_##fieldname)::property_field_flags), \
 			[](Ovito::RefMaker* obj, const Ovito::RefMaker* other) { \
 				static_cast<classname*>(obj)->_##fieldname.set(obj, PROPERTY_FIELD(classname::fieldname), static_cast<const classname*>(other)->_##fieldname.get()); \
 			}, \
@@ -309,7 +309,7 @@ public:
 	Ovito::NativePropertyFieldDescriptor classname::fieldname##__propdescr_instance( \
 			const_cast<classname::OOMetaClass*>(&classname::OOClass()), \
 			#fieldname, \
-			static_cast<Ovito::PropertyFieldFlags>(decltype(classname::_##fieldname)::property_field_flags), \
+			static_cast<Ovito::PropertyFieldFlags>((Ovito::PropertyFieldFlag)decltype(classname::_##fieldname)::property_field_flags), \
 			[](Ovito::RefMaker* obj, const Ovito::RefMaker* other) { \
 				static_cast<classname*>(obj)->_##fieldname.set(obj, PROPERTY_FIELD(classname::fieldname), static_cast<const classname*>(other)->_##fieldname.get()); \
 			}, \

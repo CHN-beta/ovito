@@ -33,8 +33,8 @@ IMPLEMENT_OVITO_CLASS(PickingVulkanSceneRenderer);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PickingVulkanSceneRenderer::PickingVulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanContext> vulkanDevice, ViewportWindowInterface* window) 
-	: OffscreenVulkanSceneRenderer(dataset, std::move(vulkanDevice), true), _window(window) 
+PickingVulkanSceneRenderer::PickingVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanDevice, ViewportWindowInterface* window) 
+	: OffscreenVulkanSceneRenderer(params, std::move(vulkanDevice), true), _window(window) 
 {
 	setPicking(true);
 	setInteractive(true);
@@ -57,7 +57,7 @@ void PickingVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjection
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool PickingVulkanSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOperation operation)
+bool PickingVulkanSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
 {
 	// Caller should never provide an external frame buffer.
 	OVITO_ASSERT(frameBuffer() == &_frameBuffer);
@@ -66,7 +66,7 @@ bool PickingVulkanSceneRenderer::renderFrame(const QRect& viewportRect, Synchron
 	resetPickingBuffer();
 
 	// Let the base class do the main rendering work.
-	if(!OffscreenVulkanSceneRenderer::renderFrame(viewportRect, std::move(operation)))
+	if(!OffscreenVulkanSceneRenderer::renderFrame(viewportRect, operation))
 		return false;
 
 	return true;

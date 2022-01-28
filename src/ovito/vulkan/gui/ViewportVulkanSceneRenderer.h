@@ -38,7 +38,7 @@ class ViewportVulkanSceneRenderer : public VulkanSceneRenderer
 public:
 
 	/// Constructor.
-	explicit ViewportVulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanContext> vulkanDevice);
+	explicit ViewportVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanDevice);
 };
 
 }	// End of namespace

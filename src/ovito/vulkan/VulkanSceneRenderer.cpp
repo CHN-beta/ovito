@@ -23,6 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/app/UserInterface.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/rendering/RenderSettings.h>
@@ -110,8 +111,8 @@ void VulkanSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-VulkanSceneRenderer::VulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanContext> vulkanContext, int concurrentFrameCount) 
-    : SceneRenderer(dataset), 
+VulkanSceneRenderer::VulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanContext, int concurrentFrameCount) 
+    : SceneRenderer(params), 
     _context(std::move(vulkanContext)),
     _concurrentFrameCount(concurrentFrameCount)
 {
@@ -196,10 +197,10 @@ void VulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjectionParamet
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool VulkanSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOperation operation)
+bool VulkanSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
 {
 	// Render the 3D scene objects.
-	if(renderScene(operation.subOperation())) {
+	if(renderScene(operation)) {
 
 		// Call virtual method to render additional content that is only visible in the interactive viewports.
         if(viewport() && isInteractive()) {
@@ -230,13 +231,13 @@ bool VulkanSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOper
 /******************************************************************************
 * Renders the overlays/underlays of the viewport into the framebuffer.
 ******************************************************************************/
-bool VulkanSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation)
+bool VulkanSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
 {
 	// Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
 	QRect vulkanViewportRect(physicalViewportRect.x() * antialiasingLevel(), physicalViewportRect.y() * antialiasingLevel(), physicalViewportRect.width() * antialiasingLevel(), physicalViewportRect.height() * antialiasingLevel());
 
 	// Delegate rendering work to base class.
-	return SceneRenderer::renderOverlays(underlays, logicalViewportRect, vulkanViewportRect, std::move(operation));
+	return SceneRenderer::renderOverlays(underlays, logicalViewportRect, vulkanViewportRect, operation);
 }
 
 /******************************************************************************

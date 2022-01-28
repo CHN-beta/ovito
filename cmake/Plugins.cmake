@@ -81,8 +81,17 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 			PRIVATE "/wd4267" # Suppress warning on conversion from size_t to int, possible loss of data.
 			PRIVATE "/bigobj" # Compiling template code leads to large object files.
 		)
+		
 		# Do not warn about use of unsafe CRT Library functions.
 		TARGET_COMPILE_DEFINITIONS(${target_name} PRIVATE "_CRT_SECURE_NO_WARNINGS=")
+
+		# Activate newer lambda function processor of MSVC (needed for correct copy-of-this captures).
+		# (https://docs.microsoft.com/en-us/cpp/build/reference/zc-lambda?view=msvc-170)
+		#IF(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.29)
+		#	TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "/Zc:lambda")
+		#ELSEIF(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.23)
+		#	TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "/experimental:newLambdaProcessor")
+		#ENDIF()
 	ENDIF()
 
 	# Make the name of current plugin available to the source code.

@@ -65,14 +65,14 @@ public:
 			/// Event destructor, which runs the work function.
 			virtual ~WorkEvent() {
 				// Qt events should only get destroyed in the main thread.
-				OVITO_ASSERT(QThread::currentThread() == this->object()->thread());
+				OVITO_ASSERT(QThread::currentThread() == object()->thread());
 
 				if(!QCoreApplication::closingDown()) {
 					// Temporarily activate the original execution context under which the work was submitted.
 					ExecutionContext::Scope execScope(_executionContext);
 
 					// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
-					UndoSuspender noUndo(this->object());
+					UndoSuspender noUndo(object());
 
 					// Execute the work function.
 					if constexpr(std::is_invocable_v<Function, Task&>)
@@ -88,21 +88,21 @@ public:
 		};
 				
 		if constexpr(std::is_invocable_v<Function, Task&>) {
-			return [f = std::forward<Function>(f), *this](Task& task) mutable noexcept {					
-				OVITO_ASSERT(this->object()); 
-				if(_deferredExecution || QThread::currentThread() != object()->thread()) {
+			return [f = std::forward<Function>(f), executor = *this](Task& task) mutable noexcept {					
+				OVITO_ASSERT(executor.object()); 
+				if(executor._deferredExecution || QThread::currentThread() != executor.object()->thread()) {
 					// When not in the main thread, schedule work for later execution in the main thread.
-					WorkEvent* event = new WorkEvent(std::move(*this), std::move(f), task.shared_from_this());
+					WorkEvent* event = new WorkEvent(std::move(executor), std::move(f), task.shared_from_this());
 					QCoreApplication::postEvent(const_cast<RefTarget*>(event->object()), event);
 				}
 				else {
 					// When already in the main thread, execute work immediately.
 
 					// Temporarily activate the original execution context under which the work was submitted.
-					ExecutionContext::Scope execScope(_executionContext);
+					ExecutionContext::Scope execScope(executor._executionContext);
 
 					// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
-					UndoSuspender noUndo(this->object());
+					UndoSuspender noUndo(executor.object());
 
 					// Execute the work function.
 					std::move(f)(task);
@@ -110,21 +110,21 @@ public:
 			};
 		}
 		else {
-			return [f = std::forward<Function>(f), *this]() mutable noexcept {
-				OVITO_ASSERT(this->object()); 
-				if(_deferredExecution || QThread::currentThread() != object()->thread()) {
+			return [f = std::forward<Function>(f), executor = *this]() mutable noexcept {
+				OVITO_ASSERT(executor.object()); 
+				if(executor._deferredExecution || QThread::currentThread() != executor.object()->thread()) {
 					// When not in the main thread, schedule work for later execution in the main thread.
-					WorkEvent* event = new WorkEvent(std::move(*this), std::move(f), nullptr);
+					WorkEvent* event = new WorkEvent(std::move(executor), std::move(f), nullptr);
 					QCoreApplication::postEvent(const_cast<RefTarget*>(event->object()), event);
 				}
 				else {
 					// When already in the main thread, execute work immediately.
 
 					// Temporarily activate the original execution context under which the work was submitted.
-					ExecutionContext::Scope execScope(_executionContext);
+					ExecutionContext::Scope execScope(executor._executionContext);
 
 					// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
-					UndoSuspender noUndo(this->object());
+					UndoSuspender noUndo(executor.object());
 
 					// Execute the work function.
 					std::move(f)();

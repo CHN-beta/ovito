@@ -53,8 +53,8 @@ static std::shared_ptr<VulkanContext> selectVulkanContext(DataSet* dataset)
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OffscreenVulkanSceneRenderer::OffscreenVulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanContext> vulkanContext, bool grabDepthBuffer) 
-	: VulkanSceneRenderer(dataset, vulkanContext ? std::move(vulkanContext) : selectVulkanContext(dataset)), _grabDepthBuffer(grabDepthBuffer) 
+OffscreenVulkanSceneRenderer::OffscreenVulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanContext, bool grabDepthBuffer) 
+	: VulkanSceneRenderer(params, vulkanContext ? std::move(vulkanContext) : selectVulkanContext(params.dataset())), _grabDepthBuffer(grabDepthBuffer) 
 {
 }
 
@@ -327,7 +327,7 @@ void OffscreenVulkanSceneRenderer::beginFrame(TimePoint time, const ViewProjecti
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool OffscreenVulkanSceneRenderer::renderFrame(const QRect& viewportRect, SynchronousOperation operation)
+bool OffscreenVulkanSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
 {
 	// This method must be called from the main thread where the Vulkan device lives.
 	OVITO_ASSERT(QThread::currentThread() == context()->thread());
@@ -338,7 +338,7 @@ bool OffscreenVulkanSceneRenderer::renderFrame(const QRect& viewportRect, Synchr
 	shiftedViewportRect.moveTo(0,0);
 
 	// Let the base class do the main rendering work.
-	if(!VulkanSceneRenderer::renderFrame(shiftedViewportRect, std::move(operation)))
+	if(!VulkanSceneRenderer::renderFrame(shiftedViewportRect, operation))
 		return false;
 
 	return true;

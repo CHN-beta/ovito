@@ -54,7 +54,7 @@ public:
 public:
 
 	/// Constructor.
-	explicit VulkanSceneRenderer(DataSet* dataset, std::shared_ptr<VulkanContext> vulkanContext, int concurrentFrameCount = 2);
+	explicit VulkanSceneRenderer(ObjectCreationParams params, std::shared_ptr<VulkanContext> vulkanContext, int concurrentFrameCount = 2);
 
 	/// Destructor.
 	virtual ~VulkanSceneRenderer();
@@ -75,10 +75,10 @@ public:
 	virtual qreal devicePixelRatio() const override { return antialiasingLevel() * SceneRenderer::devicePixelRatio(); }
 
 	/// Renders the current animation frame.
-	virtual bool renderFrame(const QRect& viewportRect, SynchronousOperation operation) override;
+	virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
 
 	/// Renders the overlays/underlays of the viewport into the framebuffer.
-	virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, SynchronousOperation operation) override;
+	virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;
 
 	/// This method is called just before renderFrame() is called.
 	virtual void beginFrame(TimePoint time, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
