@@ -31,7 +31,7 @@ namespace Ovito {
 /**
  * \brief The file manager provides transparent access to remote files.
  */
-class GuiFileManager : public FileManager
+class OVITO_GUI_EXPORT GuiFileManager : public FileManager
 {
 	Q_OBJECT
 
