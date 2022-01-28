@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -139,6 +139,13 @@ LoadStream& operator>>(LoadStream& stream, PropertyReference& r)
 	stream >> r._vectorComponent;
 	if(!r._containerClass)
 		r = PropertyReference();
+	else {
+		// For backward compatibility with older OVITO versions:
+		// If the reference is to a standard property type that has been deprecated, 
+		// we should turn the reference into a user-property reference.
+		if(r._type != 0 && !r._containerClass->isValidStandardPropertyId(r._type))
+			r._type = 0;
+	}
 	stream.closeChunk();
 	return stream;
 }

@@ -62,7 +62,7 @@ QWidget* DataTableInspectionApplet::createWidget()
 
 	QActionGroup* plotTypeActionGroup = new QActionGroup(this);
 	_switchToPlotAction = plotTypeActionGroup->addAction(QIcon::fromTheme("inspector_view_chart"), tr("Chart view"));
-	_switchToTableAction = plotTypeActionGroup->addAction(QIcon::fromTheme("inspector_view_table"), tr("Data table view"));
+	_switchToTableAction = plotTypeActionGroup->addAction(QIcon::fromTheme("inspector_view_table"), tr("Table view"));
 	toolbar->addAction(_switchToPlotAction);
 	toolbar->addAction(_switchToTableAction);
 	_switchToPlotAction->setCheckable(true);
@@ -102,7 +102,7 @@ QWidget* DataTableInspectionApplet::createWidget()
 ConstPropertyPtr DataTableInspectionApplet::createHeaderColumnProperty(const PropertyContainer* container)
 {
 	const DataTable* table = static_object_cast<DataTable>(container);
-	if(!table->getX())
+	if(!table->x())
 		return table->getXValues();
 	return {};
 }

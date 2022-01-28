@@ -168,7 +168,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
 	FloatType intervalEnd = xAxisRangeEnd();
 
 	// Allocate output data array.
-	PropertyAccessAndRef<qlonglong> histogram = DataTable::OOClass().createUserProperty(dataset(), std::max(1, numberOfBins()), PropertyObject::Int64, 1, tr("Count"), DataBuffer::InitializeMemory, DataTable::YProperty);
+	PropertyAccessAndRef<qlonglong> histogram = DataTable::OOClass().createUserProperty(dataset(), std::max(1, numberOfBins()), PropertyObject::Int64, 1, tr("Count"), DataBuffer::InitializeMemory);
 	qlonglong* histogramData = histogram.begin();
 	int histogramSizeMin1 = histogram.size() - 1;
 

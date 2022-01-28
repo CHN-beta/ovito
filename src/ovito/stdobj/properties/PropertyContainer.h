@@ -94,7 +94,10 @@ public:
 	const PropertyObject* getProperty(const QString& name) const {
 		OVITO_ASSERT(!name.isEmpty());
 		for(const PropertyObject* property : properties()) {
-			if(property->type() == 0 && property->name() == name)
+			// Note: Prior to OVITO 3.7, we required the type id of candidate properties to be 0 here,
+			// which prevented the method from finding the X and Y properties of a DataTable, 
+			// which have a user-defined name but a non-zero type id.
+			if(property->name() == name)
 				return property;
 		}
 		return nullptr;

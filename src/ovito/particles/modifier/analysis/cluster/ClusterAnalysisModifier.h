@@ -97,8 +97,8 @@ private:
 			_selection(std::move(selection)),
 			_periodicImageBondProperty(std::move(periodicImageBondProperty)),
 			_bondTopology(std::move(bondTopology)),
-			_clusterSizes(DataTable::OOClass().createUserProperty(request.dataset(), 0, PropertyObject::Int64, 1, QStringLiteral("Cluster Size"), DataBuffer::InitializeMemory, DataTable::YProperty)),
-			_clusterIds(DataTable::OOClass().createUserProperty(request.dataset(), 0, PropertyObject::Int64, 1, QStringLiteral("Cluster Identifier"), DataBuffer::NoFlags, DataTable::XProperty)),
+			_clusterSizes(DataTable::OOClass().createUserProperty(request.dataset(), 0, PropertyObject::Int64, 1, QStringLiteral("Cluster Size"), DataBuffer::InitializeMemory)),
+			_clusterIds(DataTable::OOClass().createUserProperty(request.dataset(), 0, PropertyObject::Int64, 1, QStringLiteral("Cluster Identifier"))),
 			_particleClusters(ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::ClusterProperty)),
 			_inputFingerprint(std::move(fingerprint)) {}
 

@@ -93,7 +93,7 @@ Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngi
 	if(computePartialRDF()) {
 		typeProperty = particles->getProperty(ParticlesObject::TypeProperty);
 		if(!typeProperty)
-			throwException(tr("Partial RDF calculation requires the '%1' property.").arg(ParticlesObject::OOClass().standardPropertyName(ParticlesObject::TypeProperty)));
+			throwException(tr("Calculation of partial RDFs requires the '%1' property, but particles don't have types assigned.").arg(ParticlesObject::OOClass().standardPropertyName(ParticlesObject::TypeProperty)));
 
 		// Build the set of unique particle type IDs.
 		for(const ElementType* pt : typeProperty->elementTypes()) {

@@ -83,7 +83,7 @@ void StructureListParameterUI::updateStructureCounts()
 
 		// Access the data table in the pipeline state containing the structure counts.
 		if(const DataTable* table = state.getObjectBy<DataTable>(modApp, QStringLiteral("structures"))) {
-			_structureCounts = table->getY();
+			_structureCounts = table->y();
 			if(_structureCounts && _structureCounts->dataType() == PropertyObject::Int64)
 				return;
 		}

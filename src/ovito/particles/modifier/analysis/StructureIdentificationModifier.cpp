@@ -169,20 +169,19 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 	}
 
 	// Create the property arrays for the bar chart.
-	PropertyPtr typeCounts = DataTable::OOClass().createUserProperty(request.dataset(), maxTypeId + 1, PropertyObject::Int64, 1, tr("Count"), DataBuffer::NoFlags, DataTable::YProperty);
+	PropertyPtr typeCounts = DataTable::OOClass().createUserProperty(request.dataset(), maxTypeId + 1, PropertyObject::Int64, 1, tr("Count"));
 	boost::copy(_typeCounts, PropertyAccess<qlonglong>(typeCounts).begin());
-	PropertyPtr typeIds = DataTable::OOClass().createUserProperty(request.dataset(), maxTypeId + 1, PropertyObject::Int, 1, tr("Structure type"), DataBuffer::NoFlags, DataTable::XProperty);
+	PropertyPtr typeIds = DataTable::OOClass().createUserProperty(request.dataset(), maxTypeId + 1, PropertyObject::Int, 1, tr("Structure type"));
 	boost::algorithm::iota_n(PropertyAccess<int>(typeIds).begin(), 0, typeIds->size());
+
+	// Use the structure types as labels for the output bar chart.
+	for(const ElementType* type : structureProperty->elementTypes()) {
+		if(type->enabled())
+			typeIds->addElementType(type);
+	}
 
 	// Output a bar chart with the type counts.
 	DataTable* table = state.createObject<DataTable>(QStringLiteral("structures"), request.modApp(), DataTable::BarChart, tr("Structure counts"), std::move(typeCounts), std::move(typeIds));
-
-	// Use the structure types as labels for the output bar chart.
-	PropertyObject* xProperty = table->expectMutableProperty(DataTable::XProperty);
-	for(const ElementType* type : structureProperty->elementTypes()) {
-		if(type->enabled())
-			xProperty->addElementType(type);
-	}
 }
 
 #ifdef OVITO_QML_GUI

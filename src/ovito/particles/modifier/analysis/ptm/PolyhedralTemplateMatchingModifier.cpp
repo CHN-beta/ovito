@@ -142,7 +142,7 @@ PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(const ModifierEvaluatio
 	_deformationGradients(outputDeformationGradient ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), positions->size(), ParticlesObject::ElasticDeformationGradientProperty, DataBuffer::InitializeMemory) : nullptr),
 	_orderingTypes(particleTypes ? ParticlesObject::OOClass().createUserProperty(request.dataset(), positions->size(), PropertyObject::Int, 1, QStringLiteral("Ordering Type"), DataBuffer::InitializeMemory) : nullptr),
 	_correspondences(outputOrientation ? ParticlesObject::OOClass().createUserProperty(request.dataset(), positions->size(), PropertyObject::Int64, 1, QStringLiteral("Correspondences"), DataBuffer::InitializeMemory) : nullptr),	// only output correspondences if orientations are selected
-	_rmsdHistogram(DataTable::OOClass().createUserProperty(request.dataset(), 100, PropertyObject::Int64, 1, tr("Count"), DataBuffer::InitializeMemory, DataTable::YProperty))
+	_rmsdHistogram(DataTable::OOClass().createUserProperty(request.dataset(), 100, PropertyObject::Int64, 1, tr("Count"), DataBuffer::InitializeMemory))
 {
 	_algorithm.emplace();
 	_algorithm->setCalculateDefGradient(outputDeformationGradient);

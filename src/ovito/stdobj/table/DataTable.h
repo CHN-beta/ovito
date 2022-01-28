@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,13 +56,6 @@ class OVITO_STDOBJ_EXPORT DataTable : public PropertyContainer
 
 public:
 
-	/// \brief The list of standard data table properties.
-	enum Type {
-		UserProperty = PropertyObject::GenericUserProperty,	//< This is reserved for user-defined properties.
-		XProperty = PropertyObject::FirstSpecificProperty,
-		YProperty
-	};
-
 	enum PlotMode {
 		None,
 		Line,
@@ -75,23 +68,17 @@ public:
 	/// Constructor.
 	Q_INVOKABLE DataTable(ObjectCreationParams params, PlotMode plotMode = Line, const QString& title = QString(), ConstPropertyPtr y = {}, ConstPropertyPtr x = {});
 
-	/// Returns the property object containing the y-coordinates of the data points.
-	const PropertyObject* getY() const { return getProperty(Type::YProperty); }
+	/// Assigns a property array as x-coordinates of the data points (for the purpose of plotting).
+	void setX(const PropertyObject* property);
 
-	/// Returns the property object containing the x-coordinates of the data points (may be NULL).
-	const PropertyObject* getX() const { return getProperty(Type::XProperty); }
+	/// Assigns a property array as y-coordinates of the data points (for the purpose of plotting).
+	void setY(const PropertyObject* property);
 
 	/// Returns the data array containing the x-coordinates of the data points.
 	/// If no explicit x-coordinate data is available, the array is dynamically generated
 	/// from the x-axis interval set for this data table.
 	ConstPropertyPtr getXValues() const;
-
-	/// Creates a property for the y-values of the data points.
-	PropertyObject* createYProperty(const QString& name, int dataType, size_t componentCount = 1, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, QStringList componentNames = QStringList()) {
-		PropertyPtr property = DataTable::OOClass().createUserProperty(dataset(), elementCount(), dataType, componentCount, name, flags, DataTable::YProperty, std::move(componentNames));
-		return const_cast<PropertyObject*>(createProperty(std::move(property)));
-	}
-
+	
 private:
 
 	/// The lower bound of the x-interval of the histogram if data points have no explicit x-coordinates.
@@ -108,6 +95,12 @@ private:
 
 	/// The plotting mode for this data table.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(PlotMode, plotMode, setPlotMode);
+
+	/// Property containing the X coordinates of data points for plotting.
+	DECLARE_REFERENCE_FIELD_FLAGS(const PropertyObject*, x, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
+
+	/// Property containing the Y coordinates of data points for plotting.
+	DECLARE_REFERENCE_FIELD_FLAGS(const PropertyObject*, y, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 /**

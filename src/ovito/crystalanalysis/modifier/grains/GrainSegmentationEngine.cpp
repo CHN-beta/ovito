@@ -437,8 +437,8 @@ fclose(fout);
 	if(_algorithmType == GrainSegmentationModifier::GraphClusteringAutomatic || _algorithmType == GrainSegmentationModifier::GraphClusteringManual) {
 
 		// Create PropertyStorage objects for the output plot.
-		PropertyAccess<FloatType> mergeDistanceArray = _mergeDistance = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, GrainSegmentationModifier::tr("Log merge distance"), DataBuffer::NoFlags, DataTable::XProperty);
-		PropertyAccess<FloatType> mergeSizeArray = _mergeSize = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, GrainSegmentationModifier::tr("Delta merge size"), DataBuffer::NoFlags, DataTable::YProperty);
+		PropertyAccess<FloatType> mergeDistanceArray = _mergeDistance = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, GrainSegmentationModifier::tr("Log merge distance"));
+		PropertyAccess<FloatType> mergeSizeArray = _mergeSize = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, GrainSegmentationModifier::tr("Delta merge size"));
 
 		// Generate output data plot points from dendrogram data.
 		FloatType* mergeDistanceIter = mergeDistanceArray.begin();
@@ -459,8 +459,8 @@ fclose(fout);
 			numPlot += (y > 0) ? 1 : 0; // plot positive distances only, for clarity
 		}
 
-		PropertyAccess<FloatType> logMergeSizeArray = _logMergeSize = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, GrainSegmentationModifier::tr("Log geometric merge size"), DataBuffer::NoFlags, DataTable::XProperty);
-		PropertyAccess<FloatType> logMergeDistanceArray = _logMergeDistance = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, GrainSegmentationModifier::tr("Log merge distance"), DataBuffer::NoFlags, DataTable::YProperty);
+		PropertyAccess<FloatType> logMergeSizeArray = _logMergeSize = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, GrainSegmentationModifier::tr("Log geometric merge size"));
+		PropertyAccess<FloatType> logMergeDistanceArray = _logMergeDistance = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, GrainSegmentationModifier::tr("Log merge distance"));
 
 		// Generate output data plot points from dendrogram data.
 		FloatType* logMergeDistanceIter = logMergeDistanceArray.begin();
@@ -475,8 +475,8 @@ fclose(fout);
 	}
 	else {
 		// Create PropertyStorage objects for the output plot.
-		PropertyAccess<FloatType> mergeDistanceArray = _mergeDistance = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, GrainSegmentationModifier::tr("Misorientation (degrees)"), DataBuffer::NoFlags, DataTable::XProperty);
-		PropertyAccess<FloatType> mergeSizeArray = _mergeSize = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, GrainSegmentationModifier::tr("Merge size"), DataBuffer::NoFlags, DataTable::YProperty);
+		PropertyAccess<FloatType> mergeDistanceArray = _mergeDistance = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, GrainSegmentationModifier::tr("Misorientation (degrees)"));
+		PropertyAccess<FloatType> mergeSizeArray = _mergeSize = DataTable::OOClass().createUserProperty(dataset(), numPlot, PropertyObject::Float, 1, GrainSegmentationModifier::tr("Merge size"));
 
 		// Generate output data plot points from dendrogram data.
 		FloatType* mergeDistanceIter = mergeDistanceArray.begin();
@@ -589,13 +589,13 @@ void GrainSegmentationEngine2::perform()
 		return;
 
 	// Allocate and fill output array storing the grain IDs (1-based identifiers). 
-	_grainIds =  DataTable::OOClass().createUserProperty(dataset(), _numClusters - 1, PropertyObject::Int64, 1, QStringLiteral("Grain Identifier"), DataBuffer::NoFlags, DataTable::XProperty);
+	_grainIds =  DataTable::OOClass().createUserProperty(dataset(), _numClusters - 1, PropertyObject::Int64, 1, QStringLiteral("Grain Identifier"));
 	boost::algorithm::iota_n(PropertyAccess<qlonglong>(_grainIds).begin(), size_t(1), _grainIds->size());
 	if(isCanceled()) 
 		return;
 
 	// Allocate output array storing the grain sizes.
-	_grainSizes = DataTable::OOClass().createUserProperty(dataset(), _numClusters - 1, PropertyObject::Int64, 1, QStringLiteral("Grain Size"), DataBuffer::InitializeMemory, DataTable::YProperty);
+	_grainSizes = DataTable::OOClass().createUserProperty(dataset(), _numClusters - 1, PropertyObject::Int64, 1, QStringLiteral("Grain Size"), DataBuffer::InitializeMemory);
 
 	// Allocate output array storing the structure type of grains.
 	_grainStructureTypes = DataTable::OOClass().createUserProperty(dataset(), _numClusters - 1, PropertyObject::Int, 1, QStringLiteral("Structure Type"));

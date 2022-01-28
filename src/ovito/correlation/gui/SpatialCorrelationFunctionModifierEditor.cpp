@@ -290,12 +290,13 @@ std::pair<FloatType,FloatType> SpatialCorrelationFunctionModifierEditor::plotDat
 	CloneHelper cloneHelper;
 	OORef<DataTable> clonedTable = cloneHelper.cloneObject(table, false);
 	clonedTable->makePropertiesMutable();
+	OVITO_ASSERT(clonedTable->y());
 
 	// Normalize function values.
 	if(normalization) {
 		OVITO_ASSERT(normalization.size() == clonedTable->elementCount());
 		auto pf = normalization.cbegin();
-		PropertyAccess<FloatType> valueArray = clonedTable->expectMutableProperty(DataTable::YProperty);
+		PropertyAccess<FloatType> valueArray = clonedTable->makeMutable(clonedTable->y());
 		for(FloatType& v : valueArray) {
 			FloatType factor = *pf++;
 			v = (factor > FloatType(1e-12)) ? (v / factor) : FloatType(0);
@@ -304,13 +305,13 @@ std::pair<FloatType,FloatType> SpatialCorrelationFunctionModifierEditor::plotDat
 
 	// Scale and shift function values.
 	if(fac != 1 || offset != 0) {
-		PropertyAccess<FloatType> valueArray = clonedTable->expectMutableProperty(DataTable::YProperty);
+		PropertyAccess<FloatType> valueArray = clonedTable->makeMutable(clonedTable->y());
 		for(FloatType& v :valueArray)
 			v = fac * (v - offset);
 	}
 
 	// Determine value range.
-	ConstPropertyAccess<FloatType> yarray = clonedTable->getY();
+	ConstPropertyAccess<FloatType> yarray = clonedTable->y();
 	auto minmax = std::minmax_element(yarray.cbegin(), yarray.cend());
 
 	// Hand data table over to plot widget.
@@ -392,9 +393,9 @@ void SpatialCorrelationFunctionModifierEditor::plotAllData()
 	if(modifier && modifierApplication() && modifier->doComputeNeighCorrelation() && neighCorrelation && neighRDF) {
 		const auto& xStorage = neighCorrelation->getXValues();
 		ConstPropertyAccess<FloatType> xData(xStorage);
-		const auto& yStorage = neighCorrelation->getY();
+		const auto& yStorage = neighCorrelation->y();
 		ConstPropertyAccess<FloatType> yData(yStorage);
-		const auto& rdfStorage = neighRDF->getY();
+		const auto& rdfStorage = neighRDF->y();
 		ConstPropertyAccess<FloatType> rdfData(rdfStorage);
 		size_t numberOfDataPoints = yData.size();
 		QVector<QPointF> plotData(numberOfDataPoints);
@@ -420,7 +421,7 @@ void SpatialCorrelationFunctionModifierEditor::plotAllData()
 	const DataTable* realSpaceRDF = state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("correlation-real-space-rdf"));
 	if(modifier && modifierApplication() && realSpaceCorrelation) {
 		auto realSpaceYRange = plotData(realSpaceCorrelation, _realSpacePlot, offset, uniformFactor,
-			(realSpaceRDF && modifier->normalizeRealSpaceByRDF()) ? realSpaceRDF->getY() : nullptr);
+			(realSpaceRDF && modifier->normalizeRealSpaceByRDF()) ? realSpaceRDF->y() : nullptr);
 
 		UndoSuspender noUndo(modifier);
 		if(!modifier->fixRealSpaceXAxisRange()) {

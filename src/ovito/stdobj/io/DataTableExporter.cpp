@@ -81,9 +81,9 @@ bool DataTableExporter::exportFrame(int frameNumber, TimePoint time, const QStri
 	operation.setProgressText(tr("Writing file %1").arg(filePath));
 
 	ConstPropertyPtr xstorage = table->getXValues();
-	ConstPropertyPtr ystorage = table->getY();
-	const PropertyObject* xprop = table->getX();
-	const PropertyObject* yprop = table->getY();
+	ConstPropertyPtr ystorage = table->y();
+	const PropertyObject* xprop = table->x();
+	const PropertyObject* yprop = table->y();
 	if(!ystorage || !yprop)
 		throwException(tr("Data table to be exported contains no valid data columns."));
 
@@ -116,8 +116,8 @@ bool DataTableExporter::exportFrame(int frameNumber, TimePoint time, const QStri
 	std::vector<ConstPropertyAccess<void,true>> outputProperties;
 	outputProperties.emplace_back(ystorage);
 	for(const PropertyObject* propObj : table->properties()) {
-		if(propObj->type() == DataTable::XProperty) continue;
-		if(propObj->type() == DataTable::YProperty) continue;
+		if(propObj == table->x()) continue;
+		if(propObj == table->y()) continue;
 		outputProperties.emplace_back(propObj);
 		if(propObj->componentNames().size() == propObj->componentCount()) {
 			for(size_t col = 0; col < propObj->componentCount(); col++) {

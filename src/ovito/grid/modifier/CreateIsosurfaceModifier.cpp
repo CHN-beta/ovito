@@ -256,13 +256,14 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
 
 	// Compute a histogram of the input field values.
 	_histogram->setElementCount(64);
-	PropertyAccess<qlonglong> histogramData = _histogram->createYProperty(tr("Count"), PropertyObject::Int64, 1, DataBuffer::InitializeMemory);
+	PropertyAccessAndRef<qlonglong> histogramData = DataTable::OOClass().createUserProperty(dataset(), _histogram->elementCount(), PropertyObject::Int64, 1, tr("Count"), DataBuffer::InitializeMemory);
 	FloatType binSize = (maxValue - minValue) / histogramData.size();
 	int histogramSizeMin1 = histogramData.size() - 1;
 	for(FloatType v : data.componentRange(_vectorComponent)) {
 		int binIndex = (v - minValue) / binSize;
 		histogramData[std::max(0, std::min(binIndex, histogramSizeMin1))]++;
 	}
+	_histogram->setY(histogramData.take());
 	_histogram->setIntervalStart(minValue);
 	_histogram->setIntervalEnd(maxValue);
 

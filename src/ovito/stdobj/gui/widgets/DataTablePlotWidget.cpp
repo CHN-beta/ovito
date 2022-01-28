@@ -109,8 +109,8 @@ void DataTablePlotWidget::updateDataPlot()
 
 	// Determine the current plotting mode.
 	DataTable::PlotMode plotMode = DataTable::None;
-	const PropertyObject* y = table() ? table()->getY() : nullptr;
-	const PropertyObject* x = table() ? table()->getX() : nullptr;
+	const PropertyObject* y = table() ? table()->y() : nullptr;
+	const PropertyObject* x = table() ? table()->x() : nullptr;
 	if(y) {
 		if(y->size() > (size_t)std::numeric_limits<int>::max())
 			qWarning() << "Number of plot data points exceeds limit:" << y->size() << ">" << std::numeric_limits<int>::max();

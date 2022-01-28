@@ -155,7 +155,7 @@ public:
 	DECLARE_REFERENCE_FIELD_FLAGS(type, name, flags) \
 	public: \
 		template<typename U> inline void setterName(U&& newValue) { _##name.set(this, PROPERTY_FIELD(name), std::forward<U>(newValue)); } \
-		inline void setterName##PYTHON(__##name##_target_object_type* newValue) { _##name.set(this, PROPERTY_FIELD(name), newValue); } \
+		inline void setterName##PYTHON(typename std::pointer_traits<type>::element_type* newValue) { _##name.set(this, PROPERTY_FIELD(name), newValue); } \
 	private:
 
 /// Adds a settable reference field to a class definition.

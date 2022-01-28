@@ -117,16 +117,16 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
 	if(cspHistogramBinSize <= 0) cspHistogramBinSize = 1;
 	
 	// Perform binning of CSP values.
-	_histogram->setElementCount(numHistogramBins);
-	_histogram->setIntervalStart(0);
-	_histogram->setIntervalEnd(cspHistogramBinSize * numHistogramBins);
-	PropertyAccess<qlonglong> histogramCounts = _histogram->createYProperty(tr("Count"), PropertyObject::Int64, 1, DataBuffer::InitializeMemory);
+	PropertyAccessAndRef<qlonglong> histogramCounts = DataTable::OOClass().createUserProperty(dataset(), numHistogramBins, PropertyObject::Int64, 1, tr("Count"), DataBuffer::InitializeMemory);
 	for(FloatType cspValue : cspArray) {
 		OVITO_ASSERT(cspValue >= 0);
 		int binIndex = cspValue / cspHistogramBinSize;
 		if(binIndex < numHistogramBins)
 			histogramCounts[binIndex]++;
 	}
+	_histogram->setY(histogramCounts.take());
+	_histogram->setIntervalStart(0);
+	_histogram->setIntervalEnd(cspHistogramBinSize * numHistogramBins);
 
 	// Release data that is no longer needed.
 	_positions.reset();

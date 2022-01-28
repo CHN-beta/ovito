@@ -140,6 +140,7 @@ DataObject* DataObject::makeMutable(const DataObject* subObject)
 		OORef<DataObject> clone = CloneHelper().cloneObject(subObject, false);
 		replaceReferencesTo(subObject, clone);
 		OVITO_ASSERT(hasReferenceTo(clone));
+		OVITO_ASSERT(!hasReferenceTo(subObject));
 		subObject = clone;
 	}
 #ifdef OVITO_DEBUG

@@ -350,12 +350,15 @@ public:
 
 	/// Write access to the RefTarget pointer. Changes the value of the reference field.
 	inline void set(RefMaker* owner, const PropertyFieldDescriptor* descriptor, fancy_pointer newPointer) {
-		base_class::set(owner, descriptor, std::move(newPointer));
+		if constexpr(!std::is_pointer_v<fancy_pointer> || !std::is_const_v<std::remove_pointer_t<fancy_pointer>>)
+			base_class::set(owner, descriptor, std::move(newPointer));
+		else
+			base_class::set(owner, descriptor, const_cast<RefTarget*>(static_cast<const RefTarget*>(newPointer)));
 	}
 
 	/// Returns the target object currently being referenced by the reference field.
 	inline raw_pointer get() const noexcept { 
-		return static_object_cast<target_object_type>(base_class::get()); 
+		return static_object_cast<target_object_type>(base_class::to_address(base_class::get())); 
 	}
 };
 

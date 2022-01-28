@@ -83,7 +83,7 @@ SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
 	else if(url.scheme() == QStringLiteral("sftp") || url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https")) {
 #ifndef OVITO_SSH_CLIENT
 		if(url.scheme() == QStringLiteral("sftp"))
-			return Future<FileHandle>::createFailed(Exception(tr("URL scheme not supported. This version of OVITO was built without support for the sftp:// protocol."), taskManager.datasetContainer()));
+			return Future<FileHandle>::createFailed(Exception(tr("URL scheme not supported. This version of OVITO was built without support for the sftp:// protocol.")));
 #endif
 		QUrl normalizedUrl = normalizeUrl(url);
 		QMutexLocker lock(&mutex());

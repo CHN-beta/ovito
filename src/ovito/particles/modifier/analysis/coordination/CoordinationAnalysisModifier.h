@@ -98,7 +98,7 @@ private:
 					}
 				}
 			}
-			_rdfY = DataTable::OOClass().createUserProperty(request.dataset(), rdfSampleCount, PropertyObject::Float, componentCount, tr("g(r)"), DataBuffer::InitializeMemory, DataTable::YProperty, std::move(componentNames));
+			_rdfY = DataTable::OOClass().createUserProperty(request.dataset(), rdfSampleCount, PropertyObject::Float, componentCount, tr("g(r)"), DataBuffer::InitializeMemory, 0, std::move(componentNames));
 		}
 
 		/// Computes the modifier's results.

@@ -335,7 +335,9 @@ void RefMaker::replaceReferencesTo(const RefTarget* oldTarget, const RefTarget* 
 	OVITO_CHECK_OBJECT_POINTER(oldTarget);
 
 	// Iterate over all reference fields in the class hierarchy.
+#ifdef OVITO_DEBUG
 	bool hasBeenReplaced = false;
+#endif
 	const OvitoClass& oldTargetClass = oldTarget->getOOClass();
 	for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
 		if(!field->isReferenceField()) continue;
@@ -346,7 +348,9 @@ void RefMaker::replaceReferencesTo(const RefTarget* oldTarget, const RefTarget* 
 				if(newTarget && (!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES) || !field->isWeakReference()) && isReferencedBy(newTarget, true))
 					throw CyclicReferenceError();
 				field->_singleReferenceWriteFunc(this, newTarget);
+#ifdef OVITO_DEBUG
 				hasBeenReplaced = true;
+#endif
 			}
 		}
 		else {
@@ -357,7 +361,9 @@ void RefMaker::replaceReferencesTo(const RefTarget* oldTarget, const RefTarget* 
 					if(newTarget && (!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES) || !field->isWeakReference()) && isReferencedBy(newTarget, true))
 						throw CyclicReferenceError();
 					setVectorReferenceFieldTarget(field, i, newTarget);
+#ifdef OVITO_DEBUG
 					hasBeenReplaced = true;
+#endif
 				}
 			}
 		}

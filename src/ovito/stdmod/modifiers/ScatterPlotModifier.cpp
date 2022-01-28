@@ -186,10 +186,8 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
 	}
 
 	// Create output arrays.
-	PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createStandardProperty(dataset(), container->elementCount(), DataTable::XProperty);
-	PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createStandardProperty(dataset(), container->elementCount(), DataTable::YProperty);
-	out_x.buffer()->setName(xAxisProperty().nameWithComponent());
-	out_y.buffer()->setName(yAxisProperty().nameWithComponent());
+	PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createUserProperty(dataset(), container->elementCount(), PropertyObject::Float, 1, xAxisProperty().nameWithComponent());
+	PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createUserProperty(dataset(), container->elementCount(), PropertyObject::Float, 1, yAxisProperty().nameWithComponent());
 
 	// Collect X coordinates.
 	if(!xProperty->copyTo(out_x.begin(), xVecComponent))
