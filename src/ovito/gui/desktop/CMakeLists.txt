@@ -148,5 +148,15 @@ IF(OVITO_USE_GIT_REVISION_NUMBER)
 	TARGET_COMPILE_DEFINITIONS(Gui PRIVATE "OVITO_DEVELOPMENT_BUILD_DATE=\"${current_date}\"")
 ENDIF()
 
+# Workaround for missing image files in the Qt 6.2 library on macOS.
+# qtbase/src/plugins/styles/mac/qmacstyle_mac.mm, line 6702 references the embedded image resource "toolbar-ext.png", which
+# doesn't exist. Probably it has been renamed to "toolbar-ext-macstyle.png" without updating the source code.
+# We include our own version of "toolbar-ext.png" here to silence the Qt warning message.
+IF(APPLE AND OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
+	qt_add_resources(Gui "qt_missing_images" PREFIX "/qt-project.org/styles/macstyle/images/"
+		BASE "resources/mainwin/qt/"
+		FILES "resources/mainwin/qt/toolbar-ext.png" "resources/mainwin/qt/toolbar-ext@2x.png")
+ENDIF()
+
 # Propagate list of plugins to parent scope.
 SET(OVITO_PLUGIN_LIST ${OVITO_PLUGIN_LIST} PARENT_SCOPE)

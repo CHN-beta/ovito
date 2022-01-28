@@ -9,12 +9,12 @@ In accordance with the requirements of this license, this section gives instruct
 Windows
 """""""
 
-OVITO for Windows is built against the original, unmodified binary DLLs of Qt 6.2.2 (MSVC 2019 64-bit) distributed by the Qt Company.
+OVITO for Windows is built against the original, unmodified binary DLLs of Qt 6.2.3 (MSVC 2019 64-bit) distributed by the Qt Company.
 
 Linux
 """""
 
-OVITO for Linux includes Qt libraries that have been built from the unmodified sources of Qt 6.2.2 distributed by the Qt Company.
+OVITO for Linux includes Qt libraries that have been built from the unmodified sources of Qt 6.2.3 distributed by the Qt Company.
 The following commands have been used to generate them::
 
   # Build platform: CentOS 6.10
@@ -75,10 +75,10 @@ The following commands have been used to generate them::
       -skip qtscxml \
       -no-use-gold-linker \
       -prefix $HOME/progs/qt6
-  make
-  make install
+  cmake --build . 
+  cmake --install .
 
 macOS
 """""
 
-OVITO for macOS ships with a standard installation of the Qt 6.2.2 framework distributed by the Qt Company.
+OVITO for macOS ships with a standard installation of the Qt 6.2.3 framework distributed by the Qt Company.
