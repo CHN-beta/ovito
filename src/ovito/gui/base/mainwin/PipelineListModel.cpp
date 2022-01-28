@@ -68,7 +68,10 @@ PipelineListModel::PipelineListModel(DataSetContainer& datasetContainer, ActionM
 		_sectionHeaderFont.setPixelSize(_sectionHeaderFont.pixelSize() * 4 / 5);
 	_sharedObjectFont.setItalic(true);
 	updateColorPalette(QGuiApplication::palette());
-	QT_IGNORE_DEPRECATIONS(connect(qGuiApp, &QGuiApplication::paletteChanged, this, &PipelineListModel::updateColorPalette));
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+	connect(qGuiApp, &QGuiApplication::paletteChanged, this, &PipelineListModel::updateColorPalette);
+QT_WARNING_POP
 
 	// Create list item actions.
 	_deleteItemAction = actionManager->createCommandAction(ACTION_MODIFIER_DELETE, tr("Delete Modifier"), "modify_delete_modifier", tr("Delete the selected modifier from the pipeline."));

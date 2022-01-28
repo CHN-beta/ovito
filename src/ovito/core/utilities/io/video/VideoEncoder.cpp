@@ -49,11 +49,14 @@ VideoEncoder::VideoEncoder(QObject* parent) : QObject(parent)
 ******************************************************************************/
 void VideoEncoder::initCodecs()
 {
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
 	static std::once_flag initFlag;
 	std::call_once(initFlag, []() {
-		QT_IGNORE_DEPRECATIONS(::av_register_all());
-		QT_IGNORE_DEPRECATIONS(::avcodec_register_all());
+		::av_register_all();
+		::avcodec_register_all();
 	});
+QT_WARNING_POP
 }
 
 /******************************************************************************
@@ -79,7 +82,10 @@ QList<VideoEncoder::Format> VideoEncoder::supportedFormats()
 	initCodecs();
 
 	AVOutputFormat* fmt = nullptr;
-	while((fmt = QT_IGNORE_DEPRECATIONS(::av_oformat_next(fmt)))) {
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+	while((fmt = ::av_oformat_next(fmt))) {
+QT_WARNING_POP
 
 		if(fmt->flags & AVFMT_NOFILE || fmt->flags & AVFMT_NEEDNUMBER)
 			continue;

@@ -235,7 +235,7 @@ protected:
         if(isFinished()) {
             // Run continuation function immediately.
             locker.unlock();
-            if constexpr(std::is_invocable_v<Function, Task&>)
+            if constexpr(detail::is_invocable_v<Function, Task&>)
                 std::forward<Function>(f)(*this);
             else
                 std::forward<Function>(f)();
@@ -252,7 +252,7 @@ protected:
     void registerContinuation(Function&& f) {
         OVITO_ASSERT(!isFinished());
         // Insert into list. Will run continuation function once the task finishes.
-        if constexpr(std::is_invocable_v<Function, Task&>)
+        if constexpr(detail::is_invocable_v<Function, Task&>)
             _continuations.push_back(fu2::unique_function<void(Task&) noexcept>{std::forward<Function>(f)});
         else
             _continuations.push_back(fu2::unique_function<void(Task&) noexcept>{

@@ -75,7 +75,7 @@ public:
 					UndoSuspender noUndo(object());
 
 					// Execute the work function.
-					if constexpr(std::is_invocable_v<Function, Task&>)
+					if constexpr(detail::is_invocable_v<Function, Task&>)
 						std::move(_callable)(*_task);
 					else
 						std::move(_callable)();
@@ -87,7 +87,7 @@ public:
 			const TaskPtr _task;
 		};
 				
-		if constexpr(std::is_invocable_v<Function, Task&>) {
+		if constexpr(detail::is_invocable_v<Function, Task&>) {
 			return [f = std::forward<Function>(f), executor = *this](Task& task) mutable noexcept {					
 				OVITO_ASSERT(executor.object()); 
 				if(executor._deferredExecution || QThread::currentThread() != executor.object()->thread()) {

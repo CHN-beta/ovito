@@ -46,7 +46,10 @@ OverlayListModel::OverlayListModel(QObject* parent) : QAbstractListModel(parent)
 		_sectionHeaderFont.setPixelSize(_sectionHeaderFont.pixelSize() * 4 / 5);
 
 	updateColorPalette(QGuiApplication::palette());
-	QT_IGNORE_DEPRECATIONS(connect(qGuiApp, &QGuiApplication::paletteChanged, this, &OverlayListModel::updateColorPalette));
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+	connect(qGuiApp, &QGuiApplication::paletteChanged, this, &OverlayListModel::updateColorPalette);
+QT_WARNING_POP
 }
 
 /******************************************************************************

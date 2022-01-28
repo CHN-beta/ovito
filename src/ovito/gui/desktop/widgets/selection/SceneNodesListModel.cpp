@@ -55,7 +55,10 @@ SceneNodesListModel::SceneNodesListModel(DataSetContainer& datasetContainer, Act
 	_selectedNodeFont.setBold(true);
 
 	updateColorPalette(QGuiApplication::palette());
-	QT_IGNORE_DEPRECATIONS(connect(qGuiApp, &QGuiApplication::paletteChanged, this, &SceneNodesListModel::updateColorPalette));
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+	connect(qGuiApp, &QGuiApplication::paletteChanged, this, &SceneNodesListModel::updateColorPalette);
+QT_WARNING_POP
 
 	for(QAction* action : actionManager->actions()) {
 		if(action->objectName().startsWith("NewPipeline."))

@@ -140,7 +140,10 @@ ModifierListModel::ModifierListModel(QObject* parent, UserInterface& userInterfa
 
 	// Initialize UI colors.
 	updateColorPalette(QGuiApplication::palette());
-	QT_IGNORE_DEPRECATIONS(connect(qGuiApp, &QGuiApplication::paletteChanged, this, &ModifierListModel::updateColorPalette));
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+	connect(qGuiApp, &QGuiApplication::paletteChanged, this, &ModifierListModel::updateColorPalette);
+QT_WARNING_POP
 
 	// Enumerate all built-in modifier classes.
 	for(ModifierClassPtr clazz : PluginManager::instance().metaclassMembers<Modifier>()) {

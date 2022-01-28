@@ -109,9 +109,6 @@
 #ifndef Q_OS_WASM
     #include <QNetworkAccessManager>
 #endif
-#ifndef QT_IGNORE_DEPRECATIONS // For backward compatibility with Qt 5.x:
-    #define QT_IGNORE_DEPRECATIONS(statement) statement
-#endif
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 12, 0)
 #  error "OVITO requires Qt 5.12 or newer."
@@ -139,6 +136,7 @@
 * Our own basic headers
 ******************************************************************************/
 #include <ovito/core/utilities/Debugging.h>
+#include <ovito/core/utilities/Invoke.h>
 #include <ovito/core/utilities/FloatType.h>
 #include <ovito/core/utilities/Exception.h>
 #include <ovito/core/utilities/linalg/LinAlg.h>

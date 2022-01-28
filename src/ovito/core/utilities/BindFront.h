@@ -52,24 +52,24 @@ public:
 	constexpr explicit FrontBinder(std::in_place_t, Ts&&... ts)
 		: bound_args_(std::forward<Ts>(ts)...) {}
 
-	template <class... FreeArgs, class R = std::invoke_result_t<F&, BoundArgs&..., FreeArgs&&...>>
+	template <class... FreeArgs, class R = detail::invoke_result_t<F&, BoundArgs&..., FreeArgs&&...>>
 	R operator()(FreeArgs&&... free_args) & {
 		return Apply<R>(bound_args_, Idx(), std::forward<FreeArgs>(free_args)...);
 	}
 
-	template <class... FreeArgs, class R = std::invoke_result_t<const F&, const BoundArgs&..., FreeArgs&&...>>
+	template <class... FreeArgs, class R = detail::invoke_result_t<const F&, const BoundArgs&..., FreeArgs&&...>>
 	R operator()(FreeArgs&&... free_args) const& {
 		return Apply<R>(bound_args_, Idx(), std::forward<FreeArgs>(free_args)...);
 	}
 
-	template <class... FreeArgs, class R = std::invoke_result_t<F&&, BoundArgs&&..., FreeArgs&&...>>
+	template <class... FreeArgs, class R = detail::invoke_result_t<F&&, BoundArgs&&..., FreeArgs&&...>>
 	R operator()(FreeArgs&&... free_args) && {
 		// This overload is called when *this is an rvalue. If some of the bound
 		// arguments are stored by value or rvalue reference, we move them.
 		return Apply<R>(std::move(bound_args_), Idx(), std::forward<FreeArgs>(free_args)...);
 	}
 
-	template <class... FreeArgs, class R = std::invoke_result_t<const F&&, const BoundArgs&&..., FreeArgs&&...>>
+	template <class... FreeArgs, class R = detail::invoke_result_t<const F&&, const BoundArgs&&..., FreeArgs&&...>>
 	R operator()(FreeArgs&&... free_args) const&& {
 		// This overload is called when *this is an rvalue. If some of the bound
 		// arguments are stored by value or rvalue reference, we move them.

@@ -300,7 +300,7 @@ Future<R...>::then(Executor&& executor, Function&& f)
 
 		// Don't execute continuation function in case an error occurred in the preceding task and unless the continuation function takes a Future.
 		// Forward any preceding exception state directly to the continuation task.
-		if constexpr(!std::is_invocable_v<Function, Future<R...>>) {
+		if constexpr(!detail::is_invocable_v<Function, Future<R...>>) {
 			if(finishedTask->exceptionStore()) {
 				continuationTask->exceptionLocked(finishedTask->copyExceptionStore());
 				continuationTask->finishLocked(locker);
