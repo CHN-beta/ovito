@@ -27,6 +27,7 @@
 #include "UserInterface.h"
 
 #include <QOperatingSystemVersion>
+#include <QProcess>
 
 namespace Ovito {
 
