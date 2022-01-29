@@ -139,10 +139,14 @@ auto for_each_sequential(
 
 			try {
 				// Invoke the user function that completes this iteration by processing the results returned by the future.
-				if constexpr(std::tuple_size_v<typename output_future_type::tuple_type> == 1 && detail::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result()), std::decay_t<ResultType>&...> && std::tuple_size_v<task_tuple_type> == 1)
-					_completeFunc(*_iterator, std::move(future).result(), resultsStorage());
-				else if constexpr(std::tuple_size_v<typename output_future_type::tuple_type> == 1 && detail::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result())>)
-					_completeFunc(*_iterator, std::move(future).result());
+				if constexpr(std::tuple_size_v<typename output_future_type::tuple_type> == 1) {
+					if constexpr(detail::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result()), std::decay_t<ResultType>&...> && std::tuple_size_v<task_tuple_type> == 1)
+						_completeFunc(*_iterator, std::move(future).result(), resultsStorage());
+					else if constexpr(detail::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result())>)
+						_completeFunc(*_iterator, std::move(future).result());
+					else
+						_completeFunc(*_iterator);
+				}
 				else
 					_completeFunc(*_iterator);
 			}
