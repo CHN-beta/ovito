@@ -138,8 +138,15 @@ void PipelineSceneNode::updateVisElementList(const PipelineFlowState& state)
 
 	// Perform the replacement of vis elements.
 	if(!replacedVisElements().empty()) {
-		for(DataVis*& vis : newVisElements)
+		for(DataVis*& vis : newVisElements) {
+			DataVis* oldVis = vis;
 			vis = getReplacementVisElement(vis);
+			if(vis != oldVis) {
+				// Make the same replacement in the output list to maintain the original ordering.
+				if(auto index = _visElements.indexOf(oldVis); index >= 0)
+					_visElements.set(this, PROPERTY_FIELD(visElements), index, vis);
+			}
+		}
 	}
 
 	// To maintain a stable ordering, first discard those elements from the old list which are not in the new list.
