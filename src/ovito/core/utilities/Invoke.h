@@ -13,7 +13,8 @@
 #include <type_traits>
 #include <utility>
 
-#if defined(Q_OS_MAC) && __clang_major__ <= 10 
+// Fall back to using eggs::is_invocable instead of std::is_invocable on macOS 10.14 (Clang 10) and on Windows (Visual C++ 2017). 
+#if (defined(Q_OS_MAC) && __clang_major__ <= 10) || (defined(Q_OS_WIN) && defined(_MSC_VER) && _MSC_VER < 1920)
 
 namespace eggs { namespace detail
 {
