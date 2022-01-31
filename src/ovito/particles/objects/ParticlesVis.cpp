@@ -76,7 +76,9 @@ Box3 ParticlesVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, 
 		ConstDataObjectRef,	// Radius property
 		ConstDataObjectRef,	// Type property
 		ConstDataObjectRef,	// Aspherical shape property
-		FloatType 			// Default particle radius
+		FloatType, 			// Default particle radius
+		FloatType, 			// Uniform scaling factor
+		ParticleShape		// Standard particle shape
 	>;
 
 	// Look up the bounding box in the vis cache.
@@ -85,7 +87,9 @@ Box3 ParticlesVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, 
 			radiusProperty,
 			typeProperty,
 			shapeProperty,
-			defaultParticleRadius()));
+			defaultParticleRadius(),
+			radiusScaleFactor(),
+			particleShape()));
 
 	// Check if the cached bounding box information is still up to date.
 	if(bbox.isEmpty()) {
@@ -714,10 +718,30 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 	primitive.setPositions(positionProperty);
 	primitive.setTransparencies(transparencyProperty);
 	primitive.setSelection(selectionProperty);
-	primitive.setAsphericalShapes(asphericalShapeProperty);
 	primitive.setOrientations(orientationProperty);
 	primitive.setRoundness(roundnessProperty);
 	primitive.setSelectionColor(selectionParticleColor());
+
+	// Aspherical shape arrays mau require extra work, because it is affected by the uniform particle scaling factor.
+	if(radiusScaleFactor() == 1.0 || !asphericalShapeProperty) {
+		primitive.setAsphericalShapes(asphericalShapeProperty);
+	}
+	else {
+		// The lookup key for the cached particle indices for the current shape type:
+		using ParticleShapeCacheKey = RendererResourceKey<struct ParticlesVisShapeCache,
+			ConstDataObjectRef,		// Aspherical shape property
+			FloatType				// Scaling factor
+		>;
+		// Look up the scaled aspherical shape array in the vis cache, which have been multipled with the uniform scaling factor.
+		ConstDataBufferPtr& scaledShapes = dataset()->visCache().get<ConstDataBufferPtr>(ParticleShapeCacheKey(asphericalShapeProperty, radiusScaleFactor()));
+		if(!scaledShapes) {
+			// Make a copy of the original aspherical shape array and multiple all vectors with the scaling factor.
+			DataBufferAccessAndRef<Vector3> values = ConstDataBufferPtr::makeCopy(asphericalShapeProperty);
+			for(Vector3& s : values) s *= radiusScaleFactor();
+			scaledShapes = values.take();
+		}
+		primitive.setAsphericalShapes(scaledShapes);
+	}
 
 	// Create separate rendering primitives for the different shapes supported by the method.
 	for(ParticlesVis::ParticleShape shape : {ParticleShape::Sphere, ParticleShape::Box, ParticleShape::Circle, ParticleShape::Square}) {
@@ -730,7 +754,7 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
 		using ParticleCacheKey = RendererResourceKey<struct ParticlesVisPrimitiveCache,
 			ConstDataObjectRef,					// Particle type property
 			ParticlesVis::ParticleShape,		// Current particle shape
-			ParticlesVis::ParticleShape,			// Global particle shape
+			ParticlesVis::ParticleShape,		// Global particle shape
 			size_t								// Particle count
 		>;
 
@@ -966,7 +990,7 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 			
 			// Determine cylinder radii (only needed if aspherical shape property is not present).
 			if(!radiusBuffer && !asphericalShapeProperty)
-				radiusBuffer = particleRadii(particles, true);
+				radiusBuffer = particleRadii(particles, false);
 
 			// Allocate cylinder data buffers.
 			DataBufferAccessAndRef<Point3> cylinderBasePositions = DataBufferPtr::create(dataset(), effectiveParticleCount, DataBuffer::Float, 3);
@@ -983,16 +1007,17 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 			ConstPropertyAccess<Color> colorsArray(colorBuffer);
 			ConstPropertyAccess<FloatType> radiiArray(radiusBuffer);
 			ConstPropertyAccess<FloatType> transparencies(transparencyProperty);
+			const FloatType scalingFactor = radiusScaleFactor();
 			for(int index = 0; index < effectiveParticleCount; index++) {
 				int effectiveParticleIndex = activeParticleIndices ? activeParticleIndices[index] : index;
 				const Point3& center = positionArray[effectiveParticleIndex];
 				FloatType radius, length;
 				if(asphericalShapeArray) {
-					radius = std::abs(asphericalShapeArray[effectiveParticleIndex].x());
-					length = asphericalShapeArray[effectiveParticleIndex].z();
+					radius = std::abs(asphericalShapeArray[effectiveParticleIndex].x()) * scalingFactor;
+					length = asphericalShapeArray[effectiveParticleIndex].z() * scalingFactor;
 				}
 				else {
-					radius = radiiArray[effectiveParticleIndex];
+					radius = radiiArray[effectiveParticleIndex] * scalingFactor;
 					length = radius * 2;
 				}
 				Vector3 dir = Vector3(0, 0, length);

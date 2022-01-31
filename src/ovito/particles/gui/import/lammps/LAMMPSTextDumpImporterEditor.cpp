@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -78,7 +78,7 @@ bool LAMMPSTextDumpImporterEditor::showEditColumnMappingDialog(LAMMPSTextDumpImp
 void LAMMPSTextDumpImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("LAMMPS dump reader"), rolloutParams);
+	QWidget* rollout = createRollout(tr("LAMMPS dump reader"), rolloutParams, "manual:file_formats.input.lammps_dump");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);

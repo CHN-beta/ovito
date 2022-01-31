@@ -3,6 +3,10 @@
 LAMMPS dump file reader
 -----------------------
 
+.. image:: /images/io/lammps_dump_reader.*
+  :width: 30%
+  :align: right
+
 Reads trajectory files written by the `LAMMPS dump command <https://docs.lammps.org/dump.html>`__.
 
 .. _file_formats.input.lammps_dump.variants:

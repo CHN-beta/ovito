@@ -205,6 +205,10 @@ void GuiApplication::postStartupInitialization(MainThreadOperation& operation)
 {
 	DataSetContainer& datasetContainer = operation.userInterface().datasetContainer();
 
+	// This is to quit the application's event loop right after we are done executing the startup actions
+	// (only when running in console mode). In GUI mode, the main window will keep the event loop going.
+	QEventLoopLocker eventLoopLocker;
+
 	// Load session state file specified on the command line.
 	if(!cmdLineParser().positionalArguments().empty()) {
 		QString startupFilename = cmdLineParser().positionalArguments().front();
