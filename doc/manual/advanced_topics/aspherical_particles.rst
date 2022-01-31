@@ -64,18 +64,21 @@ allows you to output this per-particle information to a dump file using the foll
 :: 
 
   compute orient all property/atom quati quatj quatk quatw
-  compute shape all property/atom shapex shapey shapez
+  compute diameter all property/atom shapex shapey shapez
   dump 1 all custom 100 ellipsoid.dump id type x y z &
                                        c_orient[1] c_orient[2] c_orient[3] c_orient[4] &
-                                       c_shape[1] c_shape[2] c_shape[3]
+                                       c_diameter[1] c_diameter[2] c_diameter[3]
 
 You should map the ``quati``, ``quatj``, ``quatj``, and ``quatw`` atom properties of LAMMPS  
 to the ``Orientation.X``, ``Orientation.Y``, ``Orientation.Z``, and ``Orientation.W`` properties of OVITO 
-when importing the dump file. 
+during import of the dump file. 
 
-Similarly, the ``shapex``, ``shapey``, and ``shapez`` columns need to be mapped to the properties ``Aspherical Shape.X``, ``Aspherical Shape.Y``, and ``Aspherical Shape.Z``
-in OVITO if you are using one of the particle shapes described below where they play a role. 
-Typically, you have to set up the mapping by hand in the :guilabel:`Edit column mapping` dialog, which is accessible from the :ref:`file import panel <scene_objects.file_source>` after opening the dump or xyz file.
+Similarly, the ``shapex``, ``shapey``, and ``shapez`` columns should be mapped to the properties ``Aspherical Shape.X``, ``Aspherical Shape.Y``, and ``Aspherical Shape.Z``
+within OVITO. This property plays a role for some of the particle display shapes described below. 
+
+When importing a dump file, the correct mapping :ref:`is set up automatically <file_formats.input.lammps_dump.property_mapping>` if you name your computes in LAMMPS as in the above example. 
+Otherwise, you may have to adjust the mapping by hand in the :guilabel:`Edit column mapping` dialog, which is accessible from the :ref:`file import panel <scene_objects.file_source>` 
+after opening the dump or xyz file.
 
 .. _howto.aspherical_particles.spheres:
 

@@ -11,7 +11,7 @@ OVITO can export data to the following file formats:
 
   * - Format name 
     - Description 
-    - Data type(s) 
+    - Exported data types 
 
   * - LAMMPS data 
     - File format read by the `LAMMPS <https://www.lammps.org/>`__ molecular dynamics code.  
