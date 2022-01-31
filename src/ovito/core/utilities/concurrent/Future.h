@@ -275,7 +275,7 @@ Future<R...>::then(Executor&& executor, Function&& f)
 	continuationTask->whenTaskFinishes(
 			this->takeTaskReference(), // The reference to the existing task is moved from this future into the continuation task.
 			std::forward<Executor>(executor), 
-			[f = std::forward<Function>(f), promise = std::move(promise)]() mutable noexcept {
+			[f = std::forward<Function>(f), promise = std::move(promise)](UNUSED_CONTINUATION_FUNC_PARAM) mutable noexcept {
 
 		// Get the task that is about to continue.
 		continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());

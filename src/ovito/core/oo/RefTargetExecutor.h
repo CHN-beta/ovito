@@ -75,10 +75,14 @@ public:
 					UndoSuspender noUndo(object());
 
 					// Execute the work function.
+#ifndef OVITO_MSVC_2017_COMPATIBILITY
 					if constexpr(detail::is_invocable_v<Function, Task&>)
 						std::move(_callable)(*_task);
 					else
 						std::move(_callable)();
+#else // Workaround for compiler deficiency in MSVC 2017. std::is_invocable<> doesn't return correct results.
+					std::move(_callable)(*_task);
+#endif
 				}
 			}
 
@@ -88,6 +92,7 @@ public:
 		};
 				
 		if constexpr(detail::is_invocable_v<Function, Task&>) {
+			// Note: Avoiding the use of C++17 capture this-by-copy here, because it is not fully supported by the MSVC 2017 compiler.
 			return [f = std::forward<Function>(f), executor = *this](Task& task) mutable noexcept {					
 				OVITO_ASSERT(executor.object()); 
 				if(executor._deferredExecution || QThread::currentThread() != executor.object()->thread()) {
@@ -110,6 +115,7 @@ public:
 			};
 		}
 		else {
+			// Note: Avoiding the use of C++17 capture this-by-copy here, because it is not fully supported by the MSVC 2017 compiler.
 			return [f = std::forward<Function>(f), executor = *this]() mutable noexcept {
 				OVITO_ASSERT(executor.object()); 
 				if(executor._deferredExecution || QThread::currentThread() != executor.object()->thread()) {

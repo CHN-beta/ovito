@@ -88,7 +88,12 @@ public:
 	/// Returns the results computed by the associated Promise.
 	/// This function may only be called after the Promise was fulfilled (and not canceled).
 	decltype(auto) result() const {
-		return std::get<0>(results());
+		if constexpr(sizeof...(R) == 1) {
+			return std::get<0>(results());
+		}
+		else {
+			task()->throwPossibleException(); 
+		}
 	}
 
 	/// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the given continuation function.
@@ -131,7 +136,7 @@ SharedFuture<R...>::then(Executor&& executor, Function&& f)
 	continuationTask->whenTaskFinishes(
 			this->task(),
 			std::forward<Executor>(executor), 
-			[f = std::forward<Function>(f), promise = std::move(promise)]() mutable noexcept {
+			[f = std::forward<Function>(f), promise = std::move(promise)](UNUSED_CONTINUATION_FUNC_PARAM) mutable noexcept {
 
 		// Get the task that is about to continue.
 		continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());

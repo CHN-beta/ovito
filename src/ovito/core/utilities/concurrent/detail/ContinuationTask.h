@@ -69,7 +69,11 @@ public:
 			locker.unlock();
 			// Bail out and do not attach to the input task if this continuation task is already canceled.
 			// Still run continuation function, because the caller may depend on it.
+#ifndef OVITO_MSVC_2017_COMPATIBILITY
 			std::forward<Executor>(executor).schedule(std::forward<Function>(f))();
+#else // Workaround for compiler deficiency in MSVC 2017. std::is_invocable<> doesn't return correct results.
+			std::forward<Executor>(executor).schedule(std::forward<Function>(f))(*awaitedTask);
+#endif
 			return;
 		}
 		OVITO_ASSERT(!this->isFinished());

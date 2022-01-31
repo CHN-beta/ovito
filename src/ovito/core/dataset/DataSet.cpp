@@ -297,7 +297,7 @@ SharedFuture<> DataSet::whenSceneReady()
 		_sceneReadyPromise = Promise<>::create<Task>(true);
 
 		/// Reset the promise to the null state as soon as it gets canceled.
-		_sceneReadyPromise.finally(executor(), [this]() {
+		_sceneReadyPromise.finally(executor(), [this](UNUSED_CONTINUATION_FUNC_PARAM) {
 			if(_sceneReadyPromise.isCanceled())
 				_sceneReadyPromise.reset();
 		});

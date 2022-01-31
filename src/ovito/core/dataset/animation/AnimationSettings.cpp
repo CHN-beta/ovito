@@ -250,7 +250,7 @@ void AnimationSettings::continuePlaybackAtTime(TimePoint time)
 
 	if(isPlaybackActive()) {
 		// Once the scene is ready, schedule the next animation frame.
-		_sceneReadyFuture.finally(executor(), [this]() {
+		_sceneReadyFuture.finally(executor(), [this](UNUSED_CONTINUATION_FUNC_PARAM) {
 			if(_sceneReadyFuture.isCanceled())
 				stopAnimationPlayback();
 			else

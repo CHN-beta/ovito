@@ -91,7 +91,7 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
 
 			// Schedule next iteration upon completion of the future returned by the user function.
 			this->whenTaskFinishes(std::move(future), _modApp->executor(), 
-				[this_ = static_pointer_cast<EngineExecutionTask>(this->shared_from_this())]() noexcept { this_->executionFinished(); });
+				[this_ = static_pointer_cast<EngineExecutionTask>(this->shared_from_this())](UNUSED_CONTINUATION_FUNC_PARAM) noexcept { this_->executionFinished(); });
 		}
 
 		/// Is called by the system when the current compute engine finishes.

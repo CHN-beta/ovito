@@ -207,7 +207,7 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 #endif
 
 	// Remove evaluation record from the list of ongoing evaluations once it is finished (successfully or not).
-	future.finally(ownerObject()->executor(), [this, evaluation]() {
+	future.finally(ownerObject()->executor(), [this, evaluation](UNUSED_CONTINUATION_FUNC_PARAM) {
 		cleanupEvaluation(evaluation);
 	});
 
@@ -464,7 +464,7 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
 
 		// Automatically reset the async operation object and the current frame precomputation when the 
 		// task gets canceled by the system.
-		_precomputeFramesOperation.finally(ownerObject()->executor(), [this]() {
+		_precomputeFramesOperation.finally(ownerObject()->executor(), [this](UNUSED_CONTINUATION_FUNC_PARAM) {
 			_precomputeFrameFuture.reset();
 			_precomputeFramesOperation.reset();
 		});
