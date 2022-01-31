@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -325,14 +325,28 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
 					}
 				}
 
-				// If a "diameter" column was loaded and stored in the "Radius" particle property,
-				// we need to divide values by two.
 				if(!fileColumnNames.empty()) {
+					// If a "diameter" column was loaded and stored in the "Radius" particle property,
+					// we need to divide values by two.
 					for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
 						if(columnMapping[i].property.type() == ParticlesObject::RadiusProperty && fileColumnNames[i] == "diameter") {
 							if(PropertyAccess<FloatType> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
 								for(FloatType& r : radiusProperty)
-									r /= 2;
+									r *= 0.5;
+							}
+							break;
+						}
+					}
+
+					// Same for the "c_diameter[1..3]" columns being mapped to the "Aspherical Shape" property.
+					for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
+						if(columnMapping[i].property.type() == ParticlesObject::AsphericalShapeProperty && (fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]")) {
+							if(PropertyAccess<Vector3> shapeProperty = particles()->getMutableProperty(ParticlesObject::AsphericalShapeProperty)) {
+								for(Vector3& s : shapeProperty) {
+									s.x() *= 0.5;
+									s.y() *= 0.5;
+									s.z() *= 0.5;
+								}
 							}
 							break;
 						}
@@ -453,9 +467,9 @@ ParticleInputColumnMapping LAMMPSTextDumpImporter::generateAutomaticColumnMappin
 		else if(name == "c_orient[2]") columnMapping.mapStandardColumn(i, ParticlesObject::OrientationProperty, 1);
 		else if(name == "c_orient[3]") columnMapping.mapStandardColumn(i, ParticlesObject::OrientationProperty, 2);
 		else if(name == "c_orient[4]") columnMapping.mapStandardColumn(i, ParticlesObject::OrientationProperty, 3);
-		else if(name == "c_shape[1]") columnMapping.mapStandardColumn(i, ParticlesObject::AsphericalShapeProperty, 0);
-		else if(name == "c_shape[2]") columnMapping.mapStandardColumn(i, ParticlesObject::AsphericalShapeProperty, 1);
-		else if(name == "c_shape[3]") columnMapping.mapStandardColumn(i, ParticlesObject::AsphericalShapeProperty, 2);
+		else if(name == "c_shape[1]" || name == "c_diameter[1]") columnMapping.mapStandardColumn(i, ParticlesObject::AsphericalShapeProperty, 0);
+		else if(name == "c_shape[2]" || name == "c_diameter[2]") columnMapping.mapStandardColumn(i, ParticlesObject::AsphericalShapeProperty, 1);
+		else if(name == "c_shape[3]" || name == "c_diameter[3]") columnMapping.mapStandardColumn(i, ParticlesObject::AsphericalShapeProperty, 2);
 		else if(name == "selection") columnMapping.mapStandardColumn(i, ParticlesObject::SelectionProperty, 0);
 		else {
 			columnMapping.mapCustomColumn(i, name, PropertyObject::Float);

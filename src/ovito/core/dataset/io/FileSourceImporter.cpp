@@ -185,6 +185,10 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(std::vector<std::pair
 	if(!fileSource)
 		fileSource = OORef<FileSource>::create(dataset());
 
+	// Inherit multi-timestep flag from existing importer.
+	if(existingFileSource && existingFileSource->importer() && existingFileSource->importer()->isMultiTimestepFile())
+		setMultiTimestepFile(true);
+
 	// Create a new pipeline node in the scene for the linked data.
 	OORef<PipelineSceneNode> pipeline;
 	if(existingPipeline == nullptr) {
@@ -220,7 +224,7 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(std::vector<std::pair
 			break;
 		sourceUrls.push_back(std::move(iter->first));		
 	}
-	sourceUrlsAndImporters.erase(sourceUrlsAndImporters.begin(), iter);
+	sourceUrlsAndImporters.erase(sourceUrlsAndImporters.begin(), iter); 
 
 	// Set the input file location(s) and importer.
 	bool keepExistingDataCollection = true;
@@ -369,7 +373,7 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
 
 	// If the parser has detects additional frames following the first frame in the 
 	// input file being loaded, automatically turn on scanning of the input file.
-	// Only automatically turn scanning on if the file is being newly imported, i.e. if the file source has no data collection yet.
+	// Only automatically turn scanning on if the file is being newly imported, i.e. if the file source has not loaded a data collection yet.
 	if(request.isNewlyImportedFile) {
 		// Note: Changing a parameter of the file importer must be done in the correct thread.
 		future.finally(executor(), [this](Task& task) {

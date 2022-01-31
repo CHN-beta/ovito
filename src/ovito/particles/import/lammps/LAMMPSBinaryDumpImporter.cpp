@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -489,18 +489,39 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 		}
 	}
 
-	// If a "diameter" column was loaded and stored in the "Radius" particle property,
-	// we need to divide values by two.
 	if(!fileColumnNames.empty()) {
+		// If a "diameter" column was loaded and stored in the "Radius" particle property,
+		// we need to divide values by two.
 		for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
 			if(_columnMapping[i].property.type() == ParticlesObject::RadiusProperty && fileColumnNames[i] == "diameter") {
 				if(PropertyAccess<FloatType> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
 					for(FloatType& r : radiusProperty)
-						r /= 2;
+						r *= 0.5;
 				}
 				break;
 			}
 		}
+
+		// Same for the "c_diameter[1..3]" columns being mapped to the "Aspherical Shape" property.
+		for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
+			if(_columnMapping[i].property.type() == ParticlesObject::AsphericalShapeProperty && (fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]")) {
+				if(PropertyAccess<Vector3> shapeProperty = particles()->getMutableProperty(ParticlesObject::AsphericalShapeProperty)) {
+					for(Vector3& s : shapeProperty) {
+						s.x() *= 0.5;
+						s.y() *= 0.5;
+						s.z() *= 0.5;
+					}
+				}
+				break;
+			}
+		}
+	}
+
+	// Detect dimensionality of system. It's a 2D system if no file column has been mapped to the Position.Z particle property.
+	if(std::none_of(_columnMapping.begin(), _columnMapping.end(), [](const InputColumnInfo& column) {
+		return column.property.type() == ParticlesObject::PositionProperty && column.property.vectorComponent() == 2;
+	})) {
+		simulationCell()->setIs2D(true);
 	}
 
 	// Detect when there are more simulation frames following in the file.
