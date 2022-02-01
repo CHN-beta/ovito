@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,6 +29,7 @@
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/FileManager.h>
+#include <ovito/core/utilities/io/NumberParsing.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include "LAMMPSDataImporter.h"
 
@@ -270,7 +271,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				// Range-check atom types.
 				for(const int t : ConstPropertyAccess<int>(particles()->expectProperty(ParticlesObject::TypeProperty))) {
 					if(t < 1 || t > natomtypes)
-						throw Exception(tr("Atom type out of range in Atoms section of LAMMPS data file. Encountered atom type %1 but number of atom types in this file is %2.").arg(t).arg(natomtypes));
+						throw Exception(tr("Atom type %1 is out of range in Atoms section of LAMMPS data file. Number of types is %2.").arg(t).arg(natomtypes));
 				}
 
 				// Build look-up map of atom identifiers.
@@ -320,6 +321,110 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				velocityProperty[atomIndex] = v;
 			}
 		}
+		else if(keyword.startsWith("Atom Type Labels")) {
+			// Parse atom type names.
+			for(int i = 1; i <= natomtypes; i++) {
+				// Parse the type's numeric ID.
+				int typeId, charCount;
+				const char* line = stream.readLine();
+    			if(sscanf(line, "%i%n", &typeId, &charCount) != 1 || typeId < 1 || typeId > natomtypes)
+					throw Exception(tr("Invalid atom type entry in line %1: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+				line += charCount;
+
+				// Parse type name.
+				while(*line && *line <= 32) line++; // Skip whitespace
+				const char* nameBegin = line;
+				while(*line > 32 && *line != '#') line++; // Read non-whitespace characters (up to optional comment)
+				const char* nameEnd = line;
+
+				// Register the type.
+				addNumericType(ParticlesObject::OOClass(), typeProperty, typeId, QLatin1String(nameBegin, nameEnd));
+			}
+		}
+		else if(keyword.startsWith("Bond Type Labels")) {
+			// Parse bond type names.
+			PropertyObject* bondTypeProperty = bonds()->createProperty(BondsObject::TypeProperty);
+			for(int i = 1; i <= nbondtypes; i++) {
+				// Parse the type's numeric ID.
+				int typeId, charCount;
+				const char* line = stream.readLine();
+    			if(sscanf(line, "%i%n", &typeId, &charCount) != 1 || typeId < 1 || typeId > nbondtypes)
+					throw Exception(tr("Invalid bond type entry in line %1: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+				line += charCount;
+
+				// Parse type name.
+				while(*line && *line <= 32) line++; // Skip whitespace
+				const char* nameBegin = line;
+				while(*line > 32 && *line != '#') line++; // Read non-whitespace characters (up to optional comment)
+				const char* nameEnd = line;
+
+				// Register the type.
+				addNumericType(BondsObject::OOClass(), bondTypeProperty, typeId, QLatin1String(nameBegin, nameEnd));
+			}
+		}
+		else if(keyword.startsWith("Angle Type Labels")) {
+			// Parse angle type names.
+			PropertyObject* angleTypeProperty = angles()->createProperty(AnglesObject::TypeProperty);
+			for(int i = 1; i <= nangletypes; i++) {
+				// Parse the type's numeric ID.
+				int typeId, charCount;
+				const char* line = stream.readLine();
+    			if(sscanf(line, "%i%n", &typeId, &charCount) != 1 || typeId < 1 || typeId > nangletypes)
+					throw Exception(tr("Invalid angle type entry in line %1: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+				line += charCount;
+
+				// Parse type name.
+				while(*line && *line <= 32) line++; // Skip whitespace
+				const char* nameBegin = line;
+				while(*line > 32 && *line != '#') line++; // Read non-whitespace characters (up to optional comment)
+				const char* nameEnd = line;
+
+				// Register the type.
+				addNumericType(AnglesObject::OOClass(), angleTypeProperty, typeId, QLatin1String(nameBegin, nameEnd));
+			}
+		}
+		else if(keyword.startsWith("Dihedral Type Labels")) {
+			// Parse dihedral type names.
+			PropertyObject* dihedralTypeProperty = dihedrals()->createProperty(DihedralsObject::TypeProperty);
+			for(int i = 1; i <= ndihedraltypes; i++) {
+				// Parse the type's numeric ID.
+				int typeId, charCount;
+				const char* line = stream.readLine();
+    			if(sscanf(line, "%i%n", &typeId, &charCount) != 1 || typeId < 1 || typeId > ndihedraltypes)
+					throw Exception(tr("Invalid dihedral type entry in line %1: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+				line += charCount;
+
+				// Parse type name.
+				while(*line && *line <= 32) line++; // Skip whitespace
+				const char* nameBegin = line;
+				while(*line > 32 && *line != '#') line++; // Read non-whitespace characters (up to optional comment)
+				const char* nameEnd = line;
+
+				// Register the type.
+				addNumericType(DihedralsObject::OOClass(), dihedralTypeProperty, typeId, QLatin1String(nameBegin, nameEnd));
+			}
+		}
+		else if(keyword.startsWith("Improper Type Labels")) {
+			// Parse improper type names.
+			PropertyObject* improperTypeProperty = impropers()->createProperty(ImpropersObject::TypeProperty);
+			for(int i = 1; i <= nimpropertypes; i++) {
+				// Parse the type's numeric ID.
+				int typeId, charCount;
+				const char* line = stream.readLine();
+    			if(sscanf(line, "%i%n", &typeId, &charCount) != 1 || typeId < 1 || typeId > nimpropertypes)
+					throw Exception(tr("Invalid improper type entry in line %1: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+				line += charCount;
+
+				// Parse type name.
+				while(*line && *line <= 32) line++; // Skip whitespace
+				const char* nameBegin = line;
+				while(*line > 32 && *line != '#') line++; // Read non-whitespace characters (up to optional comment)
+				const char* nameEnd = line;
+
+				// Register the type.
+				addNumericType(ImpropersObject::OOClass(), improperTypeProperty, typeId, QLatin1String(nameBegin, nameEnd));
+			}
+		}				
 		else if(keyword.startsWith("Masses")) {
 			hasTypeMasses = true;
 			// Parse atom type masses and also optional atom type names, which some data files list as comments in the Masses section.
@@ -392,11 +497,34 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 			ParticleIndexPair* bond = bondTopologyProperty.begin();
 			for(size_t i = 0; i < (size_t)nbonds; i++, ++bond, ++bondType) {
 				if(!setProgressValueIntermittent(i)) return;
-				stream.readLine();
+				const char* line = stream.readLine();
 
-				qlonglong bondId, atomId1, atomId2;
-    			if(sscanf(stream.line(), "%llu %u %llu %llu", &bondId, bondType, &atomId1, &atomId2) != 4)
-					throw Exception(tr("Invalid bond specification (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
+				qlonglong bondId;
+				int charCount;
+    			if(sscanf(line, "%llu%n", &bondId, &charCount) != 1)
+					throw Exception(tr("Invalid bond id in line %1 of LAMMPS data file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+				line += charCount;
+
+				// Parse bond type. Can be numeric or name string.
+				while(*line && *line <= 32) line++; // Skip whitespace
+				const char* tokenBegin = line;
+				while(*line > 32) line++; // Read non-whitespace characters
+				const char* tokenEnd = line;
+
+				// Try parsing numeric type id. 
+				bool ok = parseInt(tokenBegin, tokenEnd, *bondType);
+				if(!ok) {
+					// Try look-up by type name.
+					if(const ElementType* etype = typeProperty.buffer()->elementType(QLatin1String(tokenBegin, tokenEnd)))
+						*bondType = etype->numericId();
+					else
+						throw Exception(tr("Unknown bond type referenced in line %1 of LAMMPS data file: %2").arg(stream.lineNumber()).arg(QLatin1String(tokenBegin, tokenEnd)));
+				}
+
+				// Parse atom ids.
+				qlonglong atomId1, atomId2;
+    			if(sscanf(line, "%llu %llu", &atomId1, &atomId2) != 2)
+					throw Exception(tr("Invalid atom ids in bond specification line %1: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
     			if(atomId1 < 0 || atomId1 >= (qlonglong)identifierProperty.size() || atomId1 != identifierProperty[atomId1]) {
 					auto iter = atomIdMap.find(atomId1);
@@ -445,10 +573,32 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 			ParticleIndexTriplet* angle = angleTopologyProperty.begin();
 			for(size_t i = 0; i < (size_t)nangles; i++, ++angle, ++angleType) {
 				if(!setProgressValueIntermittent(i)) return;
-				stream.readLine();
+				const char* line = stream.readLine();
 
 				qlonglong angleId;
-				if(sscanf(stream.line(), "%llu %u %llu %llu %llu", &angleId, angleType, &(*angle)[0], &(*angle)[1], &(*angle)[2]) != 5)
+				int charCount;
+    			if(sscanf(line, "%llu%n", &angleId, &charCount) != 1)
+					throw Exception(tr("Invalid angle id in line %1 of LAMMPS data file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+				line += charCount;
+
+				// Parse bond type. Can be numeric or name string.
+				while(*line && *line <= 32) line++; // Skip whitespace
+				const char* tokenBegin = line;
+				while(*line > 32) line++; // Read non-whitespace characters
+				const char* tokenEnd = line;
+
+				// Try parsing numeric type id. 
+				bool ok = parseInt(tokenBegin, tokenEnd, *angleType);
+				if(!ok) {
+					// Try look-up by type name.
+					if(const ElementType* etype = typeProperty.buffer()->elementType(QLatin1String(tokenBegin, tokenEnd)))
+						*angleType = etype->numericId();
+					else
+						throw Exception(tr("Unknown angle type referenced in line %1 of LAMMPS data file: %2").arg(stream.lineNumber()).arg(QLatin1String(tokenBegin, tokenEnd)));
+				}
+
+				// Parse atom ids.
+				if(sscanf(line, "%llu %llu %llu", &(*angle)[0], &(*angle)[1], &(*angle)[2]) != 3)
 					throw Exception(tr("Invalid angle specification (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
 				for(qlonglong& idx : *angle) {
@@ -486,10 +636,32 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 			ParticleIndexQuadruplet* dihedral = dihedralTopologyProperty.begin();
 			for(size_t i = 0; i < (size_t)ndihedrals; i++, ++dihedral, ++dihedralType) {
 				if(!setProgressValueIntermittent(i)) return;
-				stream.readLine();
+				const char* line = stream.readLine();
 
 				qlonglong dihedralId;
-				if(sscanf(stream.line(), "%llu %u %llu %llu %llu %llu", &dihedralId, dihedralType, &(*dihedral)[0], &(*dihedral)[1], &(*dihedral)[2], &(*dihedral)[3]) != 6)
+				int charCount;
+    			if(sscanf(line, "%llu%n", &dihedralId, &charCount) != 1)
+					throw Exception(tr("Invalid dihedral id in line %1 of LAMMPS data file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+				line += charCount;
+
+				// Parse bond type. Can be numeric or name string.
+				while(*line && *line <= 32) line++; // Skip whitespace
+				const char* tokenBegin = line;
+				while(*line > 32) line++; // Read non-whitespace characters
+				const char* tokenEnd = line;
+
+				// Try parsing numeric type id. 
+				bool ok = parseInt(tokenBegin, tokenEnd, *dihedralType);
+				if(!ok) {
+					// Try look-up by type name.
+					if(const ElementType* etype = typeProperty.buffer()->elementType(QLatin1String(tokenBegin, tokenEnd)))
+						*dihedralType = etype->numericId();
+					else
+						throw Exception(tr("Unknown dihedral type referenced in line %1 of LAMMPS data file: %2").arg(stream.lineNumber()).arg(QLatin1String(tokenBegin, tokenEnd)));
+				}
+
+				// Parse atom ids.
+				if(sscanf(line, "%llu %llu %llu %llu", &(*dihedral)[0], &(*dihedral)[1], &(*dihedral)[2], &(*dihedral)[3]) != 4)
 					throw Exception(tr("Invalid dihedral specification (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
 				for(qlonglong& idx : *dihedral) {
@@ -527,10 +699,32 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 			ParticleIndexQuadruplet* improper = improperTopologyProperty.begin();
 			for(size_t i = 0; i < (size_t)nimpropers; i++, ++improper, ++improperType) {
 				if(!setProgressValueIntermittent(i)) return;
-				stream.readLine();
+				const char* line = stream.readLine();
 
 				qlonglong improperId;
-				if(sscanf(stream.line(), "%llu %u %llu %llu %llu %llu", &improperId, improperType, &(*improper)[0], &(*improper)[1], &(*improper)[2], &(*improper)[3]) != 6)
+				int charCount;
+    			if(sscanf(line, "%llu%n", &improperId, &charCount) != 1)
+					throw Exception(tr("Invalid improper id in line %1 of LAMMPS data file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+				line += charCount;
+
+				// Parse bond type. Can be numeric or name string.
+				while(*line && *line <= 32) line++; // Skip whitespace
+				const char* tokenBegin = line;
+				while(*line > 32) line++; // Read non-whitespace characters
+				const char* tokenEnd = line;
+
+				// Try parsing numeric type id. 
+				bool ok = parseInt(tokenBegin, tokenEnd, *improperType);
+				if(!ok) {
+					// Try look-up by type name.
+					if(const ElementType* etype = typeProperty.buffer()->elementType(QLatin1String(tokenBegin, tokenEnd)))
+						*improperType = etype->numericId();
+					else
+						throw Exception(tr("Unknown improper type referenced in line %1 of LAMMPS data file: %2").arg(stream.lineNumber()).arg(QLatin1String(tokenBegin, tokenEnd)));
+				}
+
+				// Parse atom ids.
+				if(sscanf(line, "%llu %llu %llu %llu", &(*improper)[0], &(*improper)[1], &(*improper)[2], &(*improper)[3]) != 4)
 					throw Exception(tr("Invalid improper specification (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
 				for(qlonglong& idx : *improper) {

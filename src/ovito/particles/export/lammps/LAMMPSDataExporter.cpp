@@ -36,10 +36,12 @@ DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, atomStyle);
 DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, atomSubStyles);
 DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, omitMassesSection);
 DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, ignoreParticleIdentifiers);
+DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, exportTypeNames);
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, atomStyle, "Atom style");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, atomSubStyles, "Atom sub-styles");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, omitMassesSection, "Omit 'Masses' section");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, ignoreParticleIdentifiers, "Ignore particle identifiers");
+SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, exportTypeNames, "Export type names");
 
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
@@ -228,34 +230,38 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 	}
 	else textStream() << "1 atom types\n";
 
+	int numLAMMPSBondTypes = 1;
 	if(writeBonds) {
 		if(bondTypeArray && bondTypeArray.size() > 0) {
-			int numBondTypes = qMax(bondTypeProperty->elementTypes().size(), *boost::max_element(bondTypeArray));
-			textStream() << numBondTypes << " bond types\n";
+			numLAMMPSBondTypes = qMax(bondTypeProperty->elementTypes().size(), *boost::max_element(bondTypeArray));
+			textStream() << numLAMMPSBondTypes << " bond types\n";
 		}
 		else textStream() << "1 bond types\n";
 	}
 
+	int numLAMMPSAngleTypes = 1;
 	if(writeAngles) {
 		if(angleTypeArray && angleTypeArray.size() > 0) {
-			int numAngleTypes = qMax(angleTypeProperty->elementTypes().size(), *boost::max_element(angleTypeArray));
-			textStream() << numAngleTypes << " angle types\n";
+			numLAMMPSAngleTypes = qMax(angleTypeProperty->elementTypes().size(), *boost::max_element(angleTypeArray));
+			textStream() << numLAMMPSAngleTypes << " angle types\n";
 		}
 		else textStream() << "1 angle types\n";
 	}
 
+	int numLAMMPSDihedralTypes = 1;
 	if(writeDihedrals) {
 		if(dihedralTypeArray && dihedralTypeArray.size() > 0) {
-			int numDihedralTypes = qMax(dihedralTypeProperty->elementTypes().size(), *boost::max_element(dihedralTypeArray));
-			textStream() << numDihedralTypes << " dihedral types\n";
+			numLAMMPSDihedralTypes = qMax(dihedralTypeProperty->elementTypes().size(), *boost::max_element(dihedralTypeArray));
+			textStream() << numLAMMPSDihedralTypes << " dihedral types\n";
 		}
 		else textStream() << "1 dihedral types\n";
 	}
 
+	int numLAMMPSImproperTypes = 1;
 	if(writeImpropers) {
 		if(improperTypeArray && improperTypeArray.size() > 0) {
-			int numImproperTypes = qMax(improperTypeProperty->elementTypes().size(), *boost::max_element(improperTypeArray));
-			textStream() << numImproperTypes << " improper types\n";
+			numLAMMPSImproperTypes = qMax(improperTypeProperty->elementTypes().size(), *boost::max_element(improperTypeArray));
+			textStream() << numLAMMPSImproperTypes << " improper types\n";
 		}
 		else textStream() << "1 improper types\n";
 	}
@@ -267,6 +273,69 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 		textStream() << xy << ' ' << xz << ' ' << yz << " xy xz yz\n";
 	}
 	textStream() << "\n";
+
+	if(exportTypeNames()) {
+
+		// Helper function that mangles an OVITO type name to make it a valid LAMMPS type label.
+		auto makeLAMMPSTypeLabel = [](QString typeName) {
+			for(int i = 0; i < typeName.size(); i++)
+				if(QChar c = typeName.at(i); c == QChar('#') || c == QChar('*') || c.isSpace() || !c.isPrint()) 
+					typeName[i] = QChar('_');
+			if(!typeName.isEmpty() && typeName.at(0).isNumber())
+				typeName.prepend(QChar('_'));
+			return typeName;
+		};
+
+		// Write "Atom Type Labels" sections.
+		if(particleTypeProperty) {
+			textStream() << "Atom Type Labels\n\n";
+			for(int typeId = 1; typeId <= numLAMMPSAtomTypes; typeId++) {
+				const ElementType* type = particleTypeProperty->elementType(typeId);
+				textStream() << typeId << " " << makeLAMMPSTypeLabel(type ? type->nameOrNumericId() : ElementType::generateDefaultTypeName(typeId)) << "\n";
+			}
+			textStream() << "\n";			
+		}
+
+		// Write "Bond Type Labels" sections.
+		if(writeBonds && bondTypeProperty) {
+			textStream() << "Bond Type Labels\n\n";
+			for(int typeId = 1; typeId <= numLAMMPSBondTypes; typeId++) {
+				const ElementType* type = bondTypeProperty->elementType(typeId);
+				textStream() << typeId << " " << makeLAMMPSTypeLabel(type ? type->nameOrNumericId() : ElementType::generateDefaultTypeName(typeId)) << "\n";
+			}
+			textStream() << "\n";			
+		}
+
+		// Write "Angle Type Labels" sections.
+		if(writeAngles && angleTypeProperty) {
+			textStream() << "Angle Type Labels\n\n";
+			for(int typeId = 1; typeId <= numLAMMPSAngleTypes; typeId++) {
+				const ElementType* type = angleTypeProperty->elementType(typeId);
+				textStream() << typeId << " " << makeLAMMPSTypeLabel(type ? type->nameOrNumericId() : ElementType::generateDefaultTypeName(typeId)) << "\n";
+			}
+			textStream() << "\n";			
+		}
+
+		// Write "Dihedral Type Labels" sections.
+		if(writeDihedrals && dihedralTypeProperty) {
+			textStream() << "Dihedral Type Labels\n\n";
+			for(int typeId = 1; typeId <= numLAMMPSDihedralTypes; typeId++) {
+				const ElementType* type = dihedralTypeProperty->elementType(typeId);
+				textStream() << typeId << " " << makeLAMMPSTypeLabel(type ? type->nameOrNumericId() : ElementType::generateDefaultTypeName(typeId)) << "\n";
+			}
+			textStream() << "\n";			
+		}
+
+		// Write "Improper Type Labels" sections.
+		if(writeImpropers && improperTypeProperty) {
+			textStream() << "Improper Type Labels\n\n";
+			for(int typeId = 1; typeId <= numLAMMPSImproperTypes; typeId++) {
+				const ElementType* type = improperTypeProperty->elementType(typeId);
+				textStream() << typeId << " " << makeLAMMPSTypeLabel(type ? type->nameOrNumericId() : ElementType::generateDefaultTypeName(typeId)) << "\n";
+			}
+			textStream() << "\n";			
+		}
+	} 
 
 	// Write "Masses" section.
 	// Exception: User has requested to omit Masses section or LAMMPS atom style is 'sphere'.

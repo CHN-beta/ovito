@@ -85,6 +85,9 @@ void LAMMPSDataExporterEditor::createUI(const RolloutInsertionParameters& rollou
 	BooleanParameterUI* ignoreParticleIdentifiersUI = new BooleanParameterUI(this, PROPERTY_FIELD(LAMMPSDataExporter::ignoreParticleIdentifiers));
 	layout->addWidget(ignoreParticleIdentifiersUI->checkBox(), 4, 0, 1, 2);
 
+	BooleanParameterUI* exportTypeNamesUI = new BooleanParameterUI(this, PROPERTY_FIELD(LAMMPSDataExporter::exportTypeNames));
+	layout->addWidget(exportTypeNamesUI->checkBox(), 5, 0, 1, 2);
+
 	connect(this, &PropertiesEditor::contentsChanged, this, &LAMMPSDataExporterEditor::updateUI);
 }
 

@@ -56,7 +56,8 @@ public:
 	Q_INVOKABLE LAMMPSDataExporter(ObjectCreationParams params) : ParticleExporter(params), 
 		_atomStyle(LAMMPSDataImporter::AtomStyle_Atomic), 
 		_omitMassesSection(false),
-		_ignoreParticleIdentifiers(false) {}
+		_ignoreParticleIdentifiers(false),
+		_exportTypeNames(false) {}
 
 protected:
 
@@ -76,6 +77,9 @@ private:
 
 	/// Flag that allows the user to suppress export of existing particle identifiers.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, ignoreParticleIdentifiers, setIgnoreParticleIdentifiers);
+
+	/// Exports the type names of particles, bonds, angles, etc.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, exportTypeNames, setExportTypeNames);
 };
 
 }	// End of namespace
