@@ -286,6 +286,8 @@ bool Application::initialize()
 ******************************************************************************/
 void Application::createQtApplication(int& argc, char** argv)
 {
+	qDebug() << "Application::createQtApplication";
+
 	// OVITO prefers the "C" locale over the system's default locale.
 	QLocale::setDefault(QLocale::c());
 

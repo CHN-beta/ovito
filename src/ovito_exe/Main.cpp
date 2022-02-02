@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,7 +59,13 @@ int main(int argc, char** argv)
 	if(!app.initialize(argc, argv))
 		return 1;
 
-	// Enter event loop.
+	// The Application::initialize() method may return with success but without creating a Qt application
+	// object. This happens, for example, when the --version command line parameter was specified to the user.
+	// In this case, we terminate the program immediately without even entering the event loop.
+	if(!QCoreApplication::instance())
+		return 0;
+
+	// Enter event loop if a Qt application has been created.
 	int result = app.runApplication();
 
 	// Shut application down.
