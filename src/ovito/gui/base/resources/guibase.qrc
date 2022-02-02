@@ -231,6 +231,7 @@
 	<file>mainwin/window_icon_48.png</file>
 	<file>mainwin/window_icon_48@2x.png</file>
 	<file>mainwin/window_icon_128.png</file>
+	<file>mainwin/window_icon_128@2x.png</file>
 	<file>mainwin/window_icon_256.png</file>
 
 	<file>mainwin/status/status_error.png</file>

@@ -154,7 +154,7 @@ MainThreadOperation GuiApplication::startupApplication()
 		mainWindowIcon.addFile(":/guibase/mainwin/window_icon_48.png");
 		mainWindowIcon.addFile(":/guibase/mainwin/window_icon_32.png");
 		mainWindowIcon.addFile(":/guibase/mainwin/window_icon_16.png");
-		QApplication::setWindowIcon(mainWindowIcon);
+		QGuiApplication::setWindowIcon(mainWindowIcon);
 
 		// Create the main window.
 		MainWindow* mainWin = new MainWindow();
