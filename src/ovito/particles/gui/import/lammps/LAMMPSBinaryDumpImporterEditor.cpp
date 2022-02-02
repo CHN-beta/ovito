@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,10 +45,12 @@ bool LAMMPSBinaryDumpImporterEditor::inspectNewFile(FileImporter* importer, cons
 	LAMMPSBinaryDumpImporter* lammpsImporter = static_object_cast<LAMMPSBinaryDumpImporter>(importer);
 	Future<ParticleInputColumnMapping> inspectFuture = lammpsImporter->inspectFileHeader(FileSourceImporter::Frame(sourceFile));
 
-	// Block UI until reading is done.
-	ProgressDialog progressDialog(&mainWindow, mainWindow, tr("Inspecting file header"));
-	if(!progressDialog.waitForFuture(inspectFuture))
-		return false;
+	{
+		// Block UI until reading is done.
+		ProgressDialog progressDialog(&mainWindow, mainWindow, tr("Inspecting file header"));
+		if(!progressDialog.waitForFuture(inspectFuture))
+			return false;
+	}
 
 	ParticleInputColumnMapping mapping = inspectFuture.result();
 
@@ -141,7 +143,7 @@ bool LAMMPSBinaryDumpImporterEditor::showEditColumnMappingDialog(LAMMPSBinaryDum
 void LAMMPSBinaryDumpImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("LAMMPS binary dump reader"), rolloutParams);
+	QWidget* rollout = createRollout(tr("LAMMPS binary dump reader"), rolloutParams, "manual:file_formats.input.lammps_dump");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);

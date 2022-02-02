@@ -45,10 +45,12 @@ bool LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const
 	LAMMPSDumpLocalImporter* lammpsImporter = static_object_cast<LAMMPSDumpLocalImporter>(importer);
 	Future<BondInputColumnMapping> inspectFuture = lammpsImporter->inspectFileHeader(FileSourceImporter::Frame(sourceFile));
 
-	// Block UI until reading is done.
-	ProgressDialog progressDialog(&mainWindow, mainWindow, tr("Inspecting file header"));
-	if(!progressDialog.waitForFuture(inspectFuture))
-		return false;
+	{
+		// Block UI until reading is done.
+		ProgressDialog progressDialog(&mainWindow, mainWindow, tr("Inspecting file header"));
+		if(!progressDialog.waitForFuture(inspectFuture))
+			return false;
+	}
 	
 	InputColumnMapping mapping = inspectFuture.result();
 
@@ -128,7 +130,7 @@ bool LAMMPSDumpLocalImporterEditor::showEditColumnMappingDialog(LAMMPSDumpLocalI
 void LAMMPSDumpLocalImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("LAMMPS dump local reader"), rolloutParams);
+	QWidget* rollout = createRollout(tr("LAMMPS dump local reader"), rolloutParams, "manual:file_formats.input.lammps_dump_local");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);

@@ -43,10 +43,12 @@ bool XYZImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourc
 	XYZImporter* xyzImporter = static_object_cast<XYZImporter>(importer);
 	Future<ParticleInputColumnMapping> inspectFuture = xyzImporter->inspectFileHeader(FileSourceImporter::Frame(sourceFile));
 
-	// Block UI until reading is done.
-	ProgressDialog progressDialog(&mainWindow, mainWindow, tr("Inspecting file header"));
-	if(!progressDialog.waitForFuture(inspectFuture))
-		return false;
+	{
+		// Block UI until reading is done.
+		ProgressDialog progressDialog(&mainWindow, mainWindow, tr("Inspecting file header"));
+		if(!progressDialog.waitForFuture(inspectFuture))
+			return false;
+	}
 
 	ParticleInputColumnMapping mapping = inspectFuture.result();
 

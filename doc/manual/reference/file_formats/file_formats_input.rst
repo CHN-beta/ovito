@@ -6,7 +6,9 @@ Input file formats
 .. toctree::
   :hidden:
 
+  input/lammps_data
   input/lammps_dump
+  input/lammps_dump_local
 
 OVITO can read the following file formats:
 
@@ -22,7 +24,7 @@ OVITO can read the following file formats:
   * - LAMMPS data
     - File format used by the `LAMMPS <https://docs.lammps.org/read_data.html>`__ molecular dynamics code.
     - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, angles, dihedrals, impropers
-    -
+    - :ref:`Details <file_formats.input.lammps_data>`
   
   * - LAMMPS dump
     - File format used by the `LAMMPS <https://www.lammps.org/>`__  LAMMPS molecular dynamics code. OVITO supports both text-based and binary dump files.
@@ -34,7 +36,7 @@ OVITO can read the following file formats:
       OVITO's :ref:`particles.modifiers.load_trajectory` modifier can read varying bond topology and 
       per-bond quantities from such files generated in reactive molecular dynamics simulations.  
     - :ref:`bonds <scene_objects.bonds>`
-    -
+    - :ref:`Details <file_formats.input.lammps_dump_local>`
 
   * - ReaxFF bonds
     - File format written by the LAMMPS `fix reax/c/bonds <https://docs.lammps.org/fix_reaxc_bonds.html>`__ command and the original ReaxFF code of Adri van Duin. 

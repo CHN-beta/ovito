@@ -58,7 +58,7 @@ see the example below. In simulations using the ReaxFF potential, the `fix reax/
 may be used to write the bonds list (including bond orders) to a text-based output file in regular time intervals.
 
 OVITO's *Load trajectory* modifier can read the varying bond topology from `dump local` or `reax/c/bonds` files and merge it with the molecular dataset.
-The loaded list of bonds will replace any static connectivity that may be present in the initial LAMMPS data file. Typically, you will use two instances of the 
+The loaded list of bonds will replace any static connectivity that may have been present in the initial LAMMPS data file. Typically, you will use two instances of the 
 *Load trajectory* modifier in the same pipeline, as shown on the side, to load the atomic trajectories as well as the time-varying bond information  
 from a reactive MD simulation.
 
@@ -113,4 +113,5 @@ bond and particle properties.
 
 .. seealso::
 
-  :py:class:`ovito.modifiers.LoadTrajectoryModifier` (Python API)
+  - :py:class:`ovito.modifiers.LoadTrajectoryModifier` (Python API)
+  - :ref:`file_formats.input.lammps_dump_local`

@@ -44,10 +44,12 @@ bool LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl
 	// Inspect the data file and try to detect the LAMMPS atom style.
 	Future<LAMMPSDataImporter::LAMMPSAtomStyleHints> inspectFuture = dataImporter->inspectFileHeader(FileSourceImporter::Frame(sourceFile));
 
-	// Block UI until reading is done.
-	ProgressDialog progressDialog(&mainWindow, mainWindow, tr("Inspecting file header"));
-	if(!progressDialog.waitForFuture(inspectFuture))
-		return false;
+	{
+		// Block UI until reading is done.
+		ProgressDialog progressDialog(&mainWindow, mainWindow, tr("Inspecting file header"));
+		if(!progressDialog.waitForFuture(inspectFuture))
+			return false;
+	}
 
 	LAMMPSDataImporter::LAMMPSAtomStyleHints detectedAtomStyleHints = inspectFuture.result();
 
@@ -183,7 +185,7 @@ LAMMPSAtomStyleDialog::LAMMPSAtomStyleDialog(LAMMPSDataImporter::LAMMPSAtomStyle
 	}
 	layout1->addLayout(sublayout);
 
-	label = new QLabel(tr("<html><p>For the selected atom style the column order is:</p></html>"), this);
+	label = new QLabel(tr("<html><p>The expected column order for the selected atom style is:</p></html>"), this);
 	label->setWordWrap(true);
 	layout1->addSpacing(16);
 	layout1->addWidget(label);
@@ -232,7 +234,7 @@ void LAMMPSAtomStyleDialog::updateColumnList()
 	_columnListField->setText(std::move(text));
 
 	if(mapping.size() != _atomStyleHints.atomDataColumnCount && _atomStyleHints.atomDataColumnCount != 0) {
-		_columnMismatchLabel->setText(tr("<html><p style=\"color: red\">This does not match the actual number of columns in the data file, which is %1.</p></html>").arg(_atomStyleHints.atomDataColumnCount));
+		_columnMismatchLabel->setText(tr("<html><p style=\"color: red\">This does not match the actual number of columns in the data file, which is %1. Please select the correct atom style(s).</p></html>").arg(_atomStyleHints.atomDataColumnCount));
 		_columnMismatchLabel->show();
 		_buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
 	}

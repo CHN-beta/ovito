@@ -3,18 +3,20 @@
 LAMMPS dump file reader
 -----------------------
 
-.. image:: /images/io/lammps_dump_reader.*
-  :width: 30%
+.. figure:: /images/io/lammps_dump_reader.*
+  :figwidth: 30%
   :align: right
 
-Reads trajectory files written by the `LAMMPS dump command <https://docs.lammps.org/dump.html>`__.
+  User interface of the LAMMPS dump reader, which appears as part of a pipeline's :ref:`file source <scene_objects.file_source>`.
+
+Loads particle trajectory data from files written by the `dump command <https://docs.lammps.org/dump.html>`__ of the LAMMPS simulation code.
 
 .. _file_formats.input.lammps_dump.variants:
 
 Supported format variants
 """""""""""""""""""""""""
 
-Handles files written by the following LAMMPS dump styles:
+The reader handles files written by the following LAMMPS dump styles:
 
   - ``custom``, ``custom/gz``, ``custom/mpiio``
   - ``atom``, ``atom/gz``, ``atom/mpiio``
@@ -23,18 +25,18 @@ Handles files written by the following LAMMPS dump styles:
 
   Dump styles ``cfg``, ``xyz``, ``local``, ``xtc`` and ``netcdf`` are handled by :ref:`different file format readers <file_formats.input>` of OVITO.
 
-In addition to text dump files, OVITO supports reading *binary* dump files (".bin" suffix) and *gzipped* dump files (".gz" suffix).
+In addition to text dump files, *binary* dump files (".bin" suffix) and *gzipped* dump files (".gz" suffix) can be read.
 
-OVITO can read trajectories from a single large dump file or from a sequence of smaller dump files 
-(written by LAMMPS when the output filename contains a "*" wildcard character). It can even concatenate a long trajectory from 
-several dump files, each containing multiple frames.
+OVITO can process trajectories from a single large dump file or from a sequence of smaller dump files 
+(written by LAMMPS when the output filename contains a "*" wildcard character). 
+It can even concatenate a long trajectory from several dump files, each containing multiple frames.
 
 The current program version does *not* support loading sets of parallel dump files, written by LAMMPS when the output filename contains a "%" wildcard character.
 
 .. _file_formats.input.lammps_dump.dump_modify:
 
-Support for ``dump_modify`` options
-"""""""""""""""""""""""""""""""""""
+LAMMPS ``dump_modify`` options
+""""""""""""""""""""""""""""""
 
 LAMMPS lets you configure the dump output through its `dump_modify command <https://docs.lammps.org/dump_modify.html>`__. 
 OVITO provides support for the following dump_modify keywords:
@@ -51,12 +53,12 @@ OVITO provides support for the following dump_modify keywords:
     order of atoms varies throughout a simulation (which is common in LAMMPS). OVITO maintains the original order in which atoms appear in the dump file. 
     Unique atom IDs (if present as a separate column in the dump file) are used to identify individual atoms in different trajectory frames. 
     Nevertheless, if desired, the dump file reader provides a user option requesting OVITO to sort the atoms by ID during data import 
-    (``sort_particles=True`` keyword parameter of the :py:func:`~ovito.io.import_file` Python function). This option makes the ordering of
+    (``sort_particles=True`` keyword parameter in Python, see below). This option makes the ordering of
     atoms stable within OVITO even if the `sort` keyword was not used at the time LAMMPS wrote the dump file. 
 
 .. _file_formats.input.lammps_dump.property_mapping:
 
-Column to property mapping
+Column-to-property mapping
 """"""""""""""""""""""""""
 
 The data columns of a dump file get mapped to corresponding :ref:`particle properties <usage.particle_properties>` within OVITO during file import.
@@ -107,3 +109,21 @@ Further notes
 - LAMMPS can perform 2d and 3d simulations (see `dimension <https://docs.lammps.org/dimension.html>`__ command) and OVITO can also treat a system 
   as either two- or three-dimensional (see :ref:`scene_objects.simulation_cell`). However, the dimensionality of a simulation is not encoded in the 
   dump file. OVITO assumes that the simulation is two-dimensional if the dump file contains no z-coordinates. You can override this after import if necessary.
+
+.. _file_formats.input.lammps_dump.python:
+
+Python parameters
+"""""""""""""""""
+
+The file reader accepts the following optional keyword parameters in a Python call to the :py:func:`~ovito.io.import_file` or :py:meth:`~ovito.pipeline.FileSource.load` functions.
+
+.. py:function:: import_file(location, columns = None, sort_particles = False, **kwargs)
+  :noindex:
+
+  :param columns: A list of OVITO particle property names, one for each data column in the dump file. Overrides the mapping
+                  that otherwise gets set up automatically as described above. List entries may be set to ``None``
+                  to skip individual file columns during parsing.
+  :type columns: list[str|None] or None
+  :param sort_particles: Makes the file reader reorder the loaded particles before passing them to the pipeline. 
+                         Sorting is based on the values of the ``Particle Identifier`` property loaded from the dump file. 
+  :type sort_particles: bool
