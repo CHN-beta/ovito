@@ -324,6 +324,9 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
 	});
 
 	// Release data that is no longer needed.
+	displacementsArray.reset();
+	positionsArray.reset();
+	refPositionsArray.reset();
 	releaseWorkingData();
 	_displacements.reset();
 }

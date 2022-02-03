@@ -76,6 +76,24 @@ QString DataObject::OOMetaClass::formatDataObjectPath(const ConstDataObjectPath&
 }
 
 /******************************************************************************
+* Is called when a RefTarget referenced by this object has generated an event.
+******************************************************************************/
+bool DataObject::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+{
+	if(event.type() == ReferenceEvent::TargetChanged && visElements().contains(source) && !event.sender()->isBeingLoaded()) {
+		// Inform dependents that this data object's visual element was modified.
+		// This is a separate notification event, because regular change messages from the visual element are 
+		// not propagated by the data object.
+		notifyDependents(ReferenceEvent::VisualElementModified);
+	}
+	else if(event.type() == ReferenceEvent::VisualElementModified) {
+		// Parent data objects propagate "VisualElementModified" events coming from child data objects.
+		return true;
+	}
+	return RefTarget::referenceEvent(source, event);
+}
+
+/******************************************************************************
 * Saves the class' contents to the given stream.
 ******************************************************************************/
 void DataObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const

@@ -236,7 +236,7 @@ bool RefMaker::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 	if(event.shouldPropagate()) {
 		// Check if message is comming from a reference field for which message propagation is explicitly disabled.
 		// Note that a target object may be referenced from multiple reference fields, some of which having
-		// message propagation enabled and some disabled.
+		// message propagation enabled and some not.
 		bool isSupressedField = false;
 		for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
 			if(!field->isReferenceField()) continue;

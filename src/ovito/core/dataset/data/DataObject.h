@@ -174,6 +174,9 @@ public:
 
 protected:
 
+	/// Is called when a RefTarget referenced by this object has generated an event.
+	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+
 	/// Saves the class' contents to the given stream.
 	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,6 +31,7 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(BasePipelineSource);
 DEFINE_REFERENCE_FIELD(BasePipelineSource, dataCollection);
 DEFINE_RUNTIME_PROPERTY_FIELD(BasePipelineSource, dataCollectionFrame);
+DEFINE_PROPERTY_FIELD(BasePipelineSource, userHasChangedDataCollection);
 SET_PROPERTY_FIELD_LABEL(BasePipelineSource, dataCollection, "Data");
 SET_PROPERTY_FIELD_LABEL(BasePipelineSource, dataCollectionFrame, "Active frame index");
 
@@ -38,7 +39,8 @@ SET_PROPERTY_FIELD_LABEL(BasePipelineSource, dataCollectionFrame, "Active frame 
 * Constructor.
 ******************************************************************************/
 BasePipelineSource::BasePipelineSource(ObjectCreationParams params) : CachingPipelineObject(params),
-	_dataCollectionFrame(-1)
+	_dataCollectionFrame(-1),
+	_userHasChangedDataCollection(false)
 {
 }
 
@@ -106,6 +108,7 @@ bool BasePipelineSource::referenceEvent(RefTarget* source, const ReferenceEvent&
 			UndoSuspender noUndo(this);
 			PipelineFlowState state(dataCollection(), PipelineStatus::Success);
 			_updatingEditableProxies = true;
+			_userHasChangedDataCollection.set(this, PROPERTY_FIELD(userHasChangedDataCollection), true);
 			// Temporarily detach data collection from the BasePipelineSource to ignore change signals sent by the data collection.
 			setDataCollection(nullptr);
 			ConstDataObjectPath dataPath = { state.data() };
@@ -129,6 +132,10 @@ bool BasePipelineSource::referenceEvent(RefTarget* source, const ReferenceEvent&
 			pipelineCache().invalidate();
 			notifyTargetChanged();
 		}
+	}
+	else if(event.type() == ReferenceEvent::VisualElementModified && source == dataCollection()) {
+		// Set dirty flag when user modifies on of the visual elements associated with the current data collection.
+		_userHasChangedDataCollection.set(this, PROPERTY_FIELD(userHasChangedDataCollection), true);
 	}
 	return CachingPipelineObject::referenceEvent(source, event);
 }
@@ -167,6 +174,10 @@ void BasePipelineSource::discardDataCollection()
 	setDataCollection(nullptr);
 	setDataCollectionFrame(-1);
 	pipelineCache().invalidate();
+
+	// Reset flag that keeps track of user modifications to the data collection.
+	_userHasChangedDataCollection.set(this, PROPERTY_FIELD(userHasChangedDataCollection), false);
+
 	notifyTargetChanged();
 
 	dataset()->undoStack().pushIfRecording<ResetDataCollectionOperation>(this);

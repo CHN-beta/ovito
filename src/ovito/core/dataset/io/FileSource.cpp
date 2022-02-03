@@ -165,8 +165,10 @@ bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
 	_importer.set(this, PROPERTY_FIELD(importer), importer);
 
 	// Discard previously loaded data.
-	if(!keepExistingDataCollection && !dataset()->undoStack().isUndoingOrRedoing())
-		setDataCollection(nullptr);
+	if(!keepExistingDataCollection && !dataset()->undoStack().isUndoingOrRedoing()) {
+		UndoSuspender noUndo(dataset());
+		discardDataCollection();
+	}
 	setDataCollectionFrame(-1);
 
 	// Trigger a reload of all frames.

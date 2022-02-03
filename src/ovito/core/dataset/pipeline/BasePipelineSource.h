@@ -67,6 +67,11 @@ private:
 	/// The source frame that is currently stored in the internal master data collection.
 	DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(int, dataCollectionFrame, setDataCollectionFrame, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
+	/// Indicates that the user has made manual changes to the data objects in the master data collection
+	/// or to the visual elements. If this flag is set, we'll ask the user if these changes should be preserved when
+	/// importing a whole new file or model into the source.
+	DECLARE_PROPERTY_FIELD_FLAGS(bool, userHasChangedDataCollection, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+
 	/// Flag indicating that a call to DataObject::updateEditableProxies() is currently in progress
 	/// and that change signals received from the master data collection should be ignored.
 	bool _updatingEditableProxies = false;	

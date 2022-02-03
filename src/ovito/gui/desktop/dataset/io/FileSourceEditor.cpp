@@ -319,17 +319,17 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 
 	// Ask user whether existing data objects should be maintained.
 	bool keepExistingDataCollection = false;
-	if(fileSource->dataCollection()) {
+	if(fileSource->dataCollection() && fileSource->userHasChangedDataCollection()) {
 		QMessageBox msgBox(QMessageBox::Question, tr("Import new file"), 
-			tr("Do you want to keep visual element settings?"),
+			tr("Do you want to keep your changes?"),
 			QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel,
 			parentWindow());
 		msgBox.setDefaultButton(QMessageBox::Yes);
 		msgBox.setEscapeButton(QMessageBox::Cancel);
 		msgBox.setInformativeText(tr("<p>Select <b>Yes</b> to preserve any adjustments you've made to "
-			"visual elements, particle types, etc. Data will be refreshed from the newly selected file.</p>"
-			"<p>Select <b>No</b> to start over and reset all imported data objects and visual elements to their default state.</p>"
-			"<p>In either case, all modifiers you have added to the pipeline will be preserved.</p>"));
+			"visual elements, particle types, etc. Data will be refreshed from the newly picked file.</p>"
+			"<p>Select <b>No</b> to start over and reset all visual elements and data objects to their standard state.</p>"
+			"<p>In either case, modifiers you have added to the pipeline will be preserved.</p>"));
 		int result = msgBox.exec();
 		if(result == QMessageBox::Cancel)
 			return false; // Operation canceled by user.
