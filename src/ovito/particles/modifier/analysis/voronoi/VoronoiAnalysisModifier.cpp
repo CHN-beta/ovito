@@ -426,7 +426,10 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 				while(cl.inc());
 			}
 			if(count)
-				throw Exception(tr("Voro++ failed to compute Voronoi cell for one or more particles. The input point set may represent a pathological case that cannot be processed due to numerical precision issues. Please try displacing all particles by a small amount first using the Affine Transformation modifier as a workaround."));
+				throw Exception(tr("Voro++ failed to compute Voronoi cell for one or more particles. "
+					"The input point set may represent a pathological case, which cannot be processed due to numerical precision issues. "
+					"You can try displacing all particles by a small amount first using the Affine Transformation modifier to work around this issue. "
+					"Also make sure all particles are positioned strictly inside the simulation box if it is non-periodic."));
 		}
 		else {
 			// Particles have non-uniform sizes -> Compute polydisperse Voronoi tessellation.
@@ -463,7 +466,10 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 			}
 		}
 		if(count)
-			throw Exception(tr("Voro++ failed to compute Voronoi cell for one or more particles. The input point set may represent a pathological case that cannot be processed due to numerical precision issues. Please try displacing all particles by a small amount first using the Affine Transformation modifier as a workaround."));
+			throw Exception(tr("Voro++ failed to compute Voronoi cell for one or more particles. "
+				"The input point set may represent a pathological case that cannot be processed due to numerical precision issues. "
+				"You can try displacing all particles by a small amount first using the Affine Transformation modifier to work around this issue. "
+				"Also make sure all particles are positioned strictly inside the simulation box if it is non-periodic."));
 	}
 	else {
 		// Special code path for non-orthogonal simulation cells:

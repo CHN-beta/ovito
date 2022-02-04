@@ -26,10 +26,10 @@ create an animation in which the only camera is moving around a single, static s
 one particular frame from the loaded trajectory.
 
 In the :ref:`External file <scene_objects.file_source>` panel, press the `Playback ratio` :guilabel:`Change...` button to open the 
-:ref:`Configure Trajectory Playback <scene_objects.file_source.configure_playback>` dialog. Switch to mode :guilabel:`Static frame` and select the simulation frame for which 
-you would like to create a turntable animation.
+:ref:`Configure Trajectory Playback <scene_objects.file_source.configure_playback>` dialog. 
+Activate the option :guilabel:`Extract one static frame` and choose the simulation timestep for which you would like to create a turntable animation.
 
-The timeline of OVITO no longer shows the original series of trajectory frames now - as if you had loaded a data file containing just single simulation snapshot.
+The timeline of OVITO no longer shows the original series of trajectory frames now - as if you had loaded a data file containing just a single simulation snapshot.
 
 Step 3: Adjust center of rotation
 """""""""""""""""""""""""""""""""

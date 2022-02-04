@@ -70,7 +70,7 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
 	sublayout->addLayout(playbackStartUI->createFieldLayout(), 2, 1);
 
 	sublayout->setRowMinimumHeight(3, 10);
-	sublayout->addWidget(new QLabel(tr("Trajectory length:")), 4, 0, Qt::AlignRight);
+	sublayout->addWidget(new QLabel(tr("Input trajectory length:")), 4, 0, Qt::AlignRight);
 	_numTrajectoryFramesDisplay = new QLabel();
 	sublayout->addWidget(_numTrajectoryFramesDisplay, 4, 1);
 	sublayout->addWidget(new QLabel(tr("Animation length:")), 5, 0, Qt::AlignRight);
@@ -95,7 +95,7 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
 			});
 	});
 
-	_staticFrameModeBtn = new QRadioButton(tr("Static frame:"));
+	_staticFrameModeBtn = new QRadioButton(tr("Extract one static frame:"));
 	layout->addSpacing(12);
 	layout->addWidget(_staticFrameModeBtn);
 
