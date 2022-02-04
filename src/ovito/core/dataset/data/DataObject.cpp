@@ -80,7 +80,7 @@ QString DataObject::OOMetaClass::formatDataObjectPath(const ConstDataObjectPath&
 ******************************************************************************/
 bool DataObject::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::TargetChanged && visElements().contains(source) && !event.sender()->isBeingLoaded()) {
+	if(event.type() == ReferenceEvent::TargetChanged && _visElements.contains(source) && !event.sender()->isBeingLoaded()) {
 		// Inform dependents that this data object's visual element was modified.
 		// This is a separate notification event, because regular change messages from the visual element are 
 		// not propagated by the data object.
