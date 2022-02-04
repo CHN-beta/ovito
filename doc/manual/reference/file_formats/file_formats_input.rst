@@ -9,6 +9,8 @@ Input file formats
   input/lammps_data
   input/lammps_dump
   input/lammps_dump_local
+  input/reaxff
+  input/xyz
 
 OVITO can read the following file formats:
 
@@ -39,18 +41,18 @@ OVITO can read the following file formats:
     - :ref:`Details <file_formats.input.lammps_dump_local>`
 
   * - ReaxFF bonds
-    - File format written by the LAMMPS `fix reax/c/bonds <https://docs.lammps.org/fix_reaxc_bonds.html>`__ command and the original ReaxFF code of Adri van Duin. 
+    - File format written by the LAMMPS `fix reaxff/bonds <https://docs.lammps.org/fix_reaxff_bonds.html>`__ command and the original ReaxFF code of Adri van Duin. 
       OVITO's :ref:`particles.modifiers.load_trajectory` modifier can read the bond topology, bond order and 
       atomic charges dumped during ReaxFF molecular dynamics simulations.  
     - :ref:`bonds <scene_objects.bonds>`
-    -
+    - :ref:`Details <file_formats.input.reaxff>`
 
   * - XYZ 
     - Simple column-based text format for particle data, which is documented `here <http://en.wikipedia.org/wiki/XYZ_file_format>`__. 
       OVITO can read the `extended XYZ format <https://web.archive.org/web/20190811094343/https://libatoms.github.io/QUIP/io.html#extendedxyz>`__, 
       which supports arbitrary sets of particle data columns, and can store additional information such as the simulation cell geometry and boundary conditions. 
     - :ref:`particles <scene_objects.particles>`
-    -
+    - 
   
   * - POSCAR / XDATCAR / CHGCAR 
     -  File formats used by the *ab initio* simulation package `VASP <http://www.vasp.at/>`__.

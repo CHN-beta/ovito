@@ -107,11 +107,12 @@ In contrast, if a dump local file doesn't contain pairs of particle IDs, then OV
 the file stores auxiliary per-bond values and simply adds them to the existing bonds as new properties. In this case, 
 the number of bond records in the dump local file must exactly match the number of already existing bonds in the model.
 
-File written by the `fix reax/c/bonds <https://docs.lammps.org/fix_reaxc_bonds.html>`__ command
-have a different format, which is fixed. OVITO maps the contained information automatically to the right 
-bond and particle properties.
+Files written by the `fix reaxff/bonds <https://docs.lammps.org/fix_reaxff_bonds.html>`__ command
+have a different, fully specified format. OVITO can automatically map the information from such ReaxFF files to the right 
+bond and particle properties, see :ref:`file_formats.input.reaxff` documentation.
 
 .. seealso::
 
   - :py:class:`ovito.modifiers.LoadTrajectoryModifier` (Python API)
   - :ref:`file_formats.input.lammps_dump_local`
+  - :ref:`file_formats.input.reaxff`
