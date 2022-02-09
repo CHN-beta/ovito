@@ -104,6 +104,7 @@ void GenerateTrajectoryLinesModifier::evaluateSynchronous(const ModifierEvaluati
 ******************************************************************************/
 bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& operation)
 {
+	OVITO_ASSERT(operation.isCurrent());
 	TimePoint currentTime = dataset()->animationSettings()->time();
 	
 	for(ModifierApplication* modApp : modifierApplications()) {
@@ -112,7 +113,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 
 		// Get input particles.
 		SharedFuture<PipelineFlowState> stateFuture = myModApp->evaluateInput(PipelineEvaluationRequest(currentTime));
-		if(!operation.waitForFuture(stateFuture))
+		if(!stateFuture.waitForFinished())
 			return false;
 
 		const PipelineFlowState& state = stateFuture.result();
@@ -172,7 +173,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(MainThreadOperation& 
 			operation.setProgressText(tr("Generating trajectory lines (frame %1 of %2)").arg(operation.progressValue()+1).arg(operation.progressMaximum()));
 
 			SharedFuture<PipelineFlowState> stateFuture = myModApp->evaluateInput(PipelineEvaluationRequest(time));
-			if(!operation.waitForFuture(stateFuture))
+			if(!stateFuture.waitForFinished())
 				return false;
 
 			const PipelineFlowState& state = stateFuture.result();

@@ -61,6 +61,9 @@ public:
 	/// Puts the promise into the 'finished' state and detaches it from the underlying task object.
 	void reset();
 
+	/// Returns true if this operation is the current task in the current thread.
+	bool isCurrent() const { return task().get() == Task::currentTask(); }
+
 	/// Returns the shared task, casting it to the ProgressingTask subclass.
 	ProgressingTask& progressingTask() const { 
 		OVITO_ASSERT(isValid());
@@ -70,22 +73,22 @@ public:
 
 	/// Override this method from the Promise class to keep the UI responsive during long-running tasks.
     bool setProgressValue(qlonglong progressValue) const {
-		// Yield control to the event loop to process user interface events.
-		QCoreApplication::processEvents(); 
+		// Temporarily yield control back to the event loop to process UI events.
+		processUIEvents();
 		return Promise<>::setProgressValue(progressValue);
 	}
 
 	/// Override this method from the Promise class to keep the UI responsive during long-running tasks.
     bool incrementProgressValue(qlonglong increment = 1) const { 
-		// Yield control to the event loop to process user interface events.
-		QCoreApplication::processEvents(); 
+		// Temporarily yield control back to the event loop to process UI events.
+		processUIEvents();
 		return Promise<>::incrementProgressValue(increment); 
 	}
 
 	/// Override this method from the Promise class to keep the UI responsive during long-running tasks.
     void setProgressText(const QString& progressText) const { 
-		// Yield control to the event loop to process user interface events.
-		QCoreApplication::processEvents(); 
+		// Temporarily yield control back to the event loop to process UI events.
+		processUIEvents();
 		Promise<>::setProgressText(progressText); 
 	}
 
@@ -93,24 +96,19 @@ public:
 	/// If the parent task gets canceled, the sub-task is canceled as well, and vice versa.
 	MainThreadOperation createSubTask(bool visibleInUserInterface);
 
-	/// \brief Suspends execution until the given task has reached the 'finished' state. 
-	///        If the awaited task gets canceled while waiting, this task gets canceled too.
-    /// \param task The task to wait for.
-    /// \return false if either \a task or this operation have been canceled.
-	[[nodiscard]] bool waitForTask(const TaskPtr& awaitedTask);
-
-    /// \brief Blocks execution until a future is fulfilled. 
-    /// \param future The future to wait for.
-    /// \return false if either \a future or this operation have been canceled.
-    [[nodiscard]] bool waitForFuture(const FutureBase& future) { return waitForTask(future.task()); }
-
 protected:
 
 	/// Constructor.
 	explicit MainThreadOperation(TaskPtr p, UserInterface& userInterface, bool visibleInUserInterface) noexcept;
 
+	/// Temporarily yield control back to the event loop to process UI events.
+	void processUIEvents() const;
+
 	/// The abstract user interface this operation is being performed in. 
 	UserInterface& _userInterface;
+
+	/// The task that was active when this operation was started.
+	Task* _parentTask = nullptr;
 };
 
 /**
@@ -128,9 +126,15 @@ public:
 
 	/// Destructor.
 	~MainThreadTaskWrapper() { 
-		// Discard task reference to prevent the base class destructor from setting
-		// the task to the 'finished' state automatically.
-		_task.reset(); 
+		if(_task) {
+			// This task is no longer the active one.
+			OVITO_ASSERT(Task::currentTask() == _task.get());
+			Task::setCurrentTask(_parentTask);
+
+			// Discard task reference to prevent the base class destructor from setting
+			// the task to the 'finished' state automatically.
+			_task.reset(); 
+		}
 	}
 };
 

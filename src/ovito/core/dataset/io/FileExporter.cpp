@@ -171,7 +171,7 @@ PipelineFlowState FileExporter::getPipelineDataToBeExported(TimePoint time, Main
 	// Evaluate pipeline.
 	PipelineEvaluationRequest request(time, !ignorePipelineErrors());
 	PipelineEvaluationFuture future = requestRenderState ? pipeline->evaluateRenderingPipeline(request) : pipeline->evaluatePipeline(request);
-	if(!operation.waitForFuture(future))
+	if(!future.waitForFinished())
 		return {};
 	PipelineFlowState state = future.result();
 

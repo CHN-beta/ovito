@@ -253,7 +253,7 @@ bool ColorCodingModifier::adjustRangeGlobal(MainThreadOperation& operation)
 
 			// Evaluate data pipeline up to this color coding modifier.
 			SharedFuture<PipelineFlowState> stateFuture = modApp->evaluateInput(PipelineEvaluationRequest(time));
-			if(!operation.waitForFuture(stateFuture))
+			if(!stateFuture.waitForFinished())
 				break;
 
 			// Determine min/max value of the selected property.

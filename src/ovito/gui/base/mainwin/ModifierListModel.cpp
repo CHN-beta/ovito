@@ -210,13 +210,19 @@ QT_WARNING_POP
 	connect(ModifierTemplates::get(), &QAbstractItemModel::modelReset, this, &ModifierListModel::refreshModifierTemplates);
 	connect(ModifierTemplates::get(), &QAbstractItemModel::dataChanged, this, &ModifierListModel::refreshModifierTemplates);
 
-	// Add the built-in extension script directory.
-	QDir prefixDir(QCoreApplication::applicationDirPath());
-	_modifierScriptDirectories.push_back(prefixDir.absolutePath() + QChar('/') + QStringLiteral(OVITO_SCRIPT_EXTENSIONS_RELATIVE_PATH) + QStringLiteral("/modifiers"));
-	// Add the user extension script directory.
+	// Add the built-in extension script directory below the application directory.
+	QString prefixDir = QCoreApplication::applicationDirPath();
+	_modifierScriptDirectories.push_back(prefixDir + QStringLiteral("/" OVITO_SCRIPT_EXTENSIONS_RELATIVE_PATH "/modifiers"));
+	// Add the script directories in the user's home directory.
+	for(const QString& configLocation : QStandardPaths::standardLocations(QStandardPaths::GenericConfigLocation))
+		_modifierScriptDirectories.push_back(configLocation + QStringLiteral("/Ovito/scripts/modifiers"));
+#ifdef Q_OS_MACOS
+	// For backward compatibility with OVITO 3.7.0:
 	_modifierScriptDirectories.push_back(QDir::homePath() + QStringLiteral("/.config/Ovito/scripts/modifiers"));
-	for(QDir& dir : _modifierScriptDirectories)
-		dir.makeAbsolute();
+#endif
+	// Make sure our list doesn't contain the same directory twice.
+	std::sort(_modifierScriptDirectories.begin(), _modifierScriptDirectories.end());
+	_modifierScriptDirectories.erase(std::unique(_modifierScriptDirectories.begin(), _modifierScriptDirectories.end()), _modifierScriptDirectories.end());
 
 	// Create category for script modifiers.
 #ifndef OVITO_BUILD_BASIC
@@ -227,8 +233,9 @@ QT_WARNING_POP
 	_actionsPerCategory.emplace_back();
 
 	// Load user-defined Python script modifiers.
+	const QStringList nameFilters(QStringLiteral("*.py"));
 	for(const QDir& scriptsDirectory : _modifierScriptDirectories) {
-		QStringList scriptFiles = scriptsDirectory.entryList(QStringList() << QStringLiteral("*.py"), QDir::Files, QDir::Name);
+		QStringList scriptFiles = scriptsDirectory.entryList(nameFilters, QDir::Files, QDir::Name);
 		for(const QString& fileName : scriptFiles) {
 
 			// Create action for the modifier script.

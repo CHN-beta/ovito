@@ -44,12 +44,6 @@ class OVITO_MESH_EXPORT ParaViewVTUSimulationCellImporter : public FileSourceImp
 		/// Inherit standard constructor from base meta class.
 		using FileSourceImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the file filter that specifies the files that can be imported by this service. Return empty string to hide the importer from the user.
-		virtual QString fileFilter() const override { return {}; }
-
-		/// Returns the filter description that is displayed in the drop-down box of the file dialog. Return empty string to hide the importer from the user.
-		virtual QString fileFilterDescription() const override { return {}; }
-
 		/// Checks if the given file has format that can be read by this importer.
 		virtual bool checkFileFormat(const FileHandle& file) const override;
 	};

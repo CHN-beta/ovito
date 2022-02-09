@@ -40,7 +40,7 @@ public:
 	/// Constructor.
 	explicit RefTargetExecutor(const RefTarget* obj, bool deferredExecution) noexcept : 
 			_obj(obj), 
-			_executionContext(ExecutionContext::current()), 
+			_executionContextType(ExecutionContext::current()), 
 			_deferredExecution(deferredExecution) { 
 		OVITO_ASSERT(obj != nullptr); 
 	}
@@ -69,7 +69,7 @@ public:
 
 				if(!QCoreApplication::closingDown()) {
 					// Temporarily activate the original execution context under which the work was submitted.
-					ExecutionContext::Scope execScope(_executionContext);
+					ExecutionContext::Scope execScope(_executionContextType);
 
 					// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
 					UndoSuspender noUndo(object());
@@ -104,7 +104,7 @@ public:
 					// When already in the main thread, execute work immediately.
 
 					// Temporarily activate the original execution context under which the work was submitted.
-					ExecutionContext::Scope execScope(executor._executionContext);
+					ExecutionContext::Scope execScope(executor._executionContextType);
 
 					// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
 					UndoSuspender noUndo(executor.object());
@@ -127,7 +127,7 @@ public:
 					// When already in the main thread, execute work immediately.
 
 					// Temporarily activate the original execution context under which the work was submitted.
-					ExecutionContext::Scope execScope(executor._executionContext);
+					ExecutionContext::Scope execScope(executor._executionContextType);
 
 					// Temporarily suspend undo recording, because deferred operations never get recorded by convention.
 					UndoSuspender noUndo(executor.object());
@@ -155,7 +155,7 @@ private:
 	OORef<const RefTarget> _obj;
 
 	/// The execution context (interactive or scripting) in which the work has been submitted.
-	ExecutionContext::Type _executionContext;
+	ExecutionContext::Type _executionContextType;
 
 	/// Controls whether execution of the work will be deferred even if immediate execution would be possible.
 	const bool _deferredExecution;

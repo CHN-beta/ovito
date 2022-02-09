@@ -185,15 +185,17 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	connect(loadShapeBtn, &QPushButton::clicked, this, [this]() {
 		if(OORef<ParticleType> ptype = static_object_cast<ParticleType>(editObject())) {
 
-			undoableTransaction(tr("Load mesh particle shape"), [&]() {
+			undoableTransaction(tr("Load particle shape"), [&]() {
 				QUrl selectedFile;
-				const FileImporterClass* fileImporterType = nullptr;
+				const FileImporterClass* fileImporterClass = nullptr;
+				QString fileImporterFormat;
+
 				// Put code in a block: Need to release dialog before loading the input file.
 				{
 					// Build list of file importers that can import triangle meshes.
 					QVector<const FileImporterClass*> meshImporters;
 					for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileSourceImporter>()) {
-						if(importerClass->supportsDataType(TriMeshObject::OOClass()))
+						if(importerClass->importsDataType(TriMeshObject::OOClass()))
 							meshImporters.push_back(importerClass);
 					}
 
@@ -203,11 +205,12 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 						return;
 
 					selectedFile = fileDialog.urlToImport();
-					fileImporterType = fileDialog.selectedFileImporterType();
+					std::tie(fileImporterClass, fileImporterFormat) = fileDialog.selectedFileImporter();
 				}
+
 				// Load the geometry from the selected file.
 				ProgressDialog progressDialog(container(), mainWindow(), tr("Loading geometry file"));
-				ptype->loadShapeMesh(selectedFile, progressDialog, fileImporterType);
+				ptype->loadShapeMesh(selectedFile, progressDialog, fileImporterClass, fileImporterFormat);
 			});
 		}
 	});

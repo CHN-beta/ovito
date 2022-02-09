@@ -41,9 +41,6 @@ public:
 
 public Q_SLOTS:
 
-	/// \brief Shows the progress indicator widgets.
-	void showIndicator();
-
 	/// \brief Updates the displayed information in the indicator widget.
 	void updateIndicator();
 
@@ -79,5 +76,3 @@ private:
 };
 
 }	// End of namespace
-
-

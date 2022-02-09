@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,15 +50,12 @@ public:
 	/// \brief Returns the list of files to import after the dialog has been closed with "OK".
 	std::vector<QUrl> urlsToImport() const;
 
-	/// \brief Returns the selected importer type or NULL if auto-detection is requested.
-	const FileImporterClass* selectedFileImporterType() const;
+	/// \brief Returns the selected importer class and sub-format name.
+	const std::pair<const FileImporterClass*, QString>& selectedFileImporter() const;
 
 private:
 
-	QVector<const FileImporterClass*> _importerTypes;
-	QStringList _filterStrings;
-	QString _selectedFile;
-	QString _selectedFilter;
+	std::vector<std::pair<const FileImporterClass*, QString>> _importerFormats;
 };
 
 }	// End of namespace

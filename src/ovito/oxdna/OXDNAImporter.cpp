@@ -146,7 +146,7 @@ void OXDNAImporter::FrameLoader::loadFile()
 
 	// Fetch the oxDNA topology file if it is stored on a remote location.
 	SharedFuture<FileHandle> localTopologyFileFuture = Application::instance()->fileManager().fetchUrl(topoFileUrl);
-	if(!waitForFuture(localTopologyFileFuture))
+	if(!localTopologyFileFuture.waitForFinished())
 		return;
 
 	// Open oxDNA topology file for reading.

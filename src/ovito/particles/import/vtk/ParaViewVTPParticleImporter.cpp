@@ -371,7 +371,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
 		// Let the importer parse the geometry file.
 		return importer->loadFrame(loadRequest);
 	});
-	if(!waitForFuture(stateFuture))
+	if(!stateFuture.waitForFinished())
 		return;
 
 	// Check if the importer has loaded any data.

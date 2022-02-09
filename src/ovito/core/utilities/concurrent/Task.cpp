@@ -23,13 +23,19 @@
 #include <ovito/core/Core.h>
 #include "Task.h"
 #include "Future.h"
+#include "AsynchronousTask.h"
 #include "detail/TaskCallback.h"
+
+#include <QWaitCondition>
 
 namespace Ovito {
 
 #ifdef OVITO_DEBUG
 std::atomic_size_t Task::_globalTaskCounter{0};
 #endif
+
+// The task that is currently the active one in the current thread.
+thread_local Task* Task::_currentTask = nullptr;
 
 #ifdef OVITO_DEBUG
 /*******************************************************x***********************
@@ -53,6 +59,8 @@ Task::~Task()
 	// In debug builds we keep track of how many task objects exist to check whether they all get destroyed correctly 
 	// at program termination. 
 	_globalTaskCounter.fetch_sub(1);
+
+	OVITO_ASSERT(currentTask() != this);
 }
 #endif
 
@@ -245,6 +253,173 @@ void Task::removeCallback(detail::TaskCallbackBase* cb) noexcept
 		}
 		OVITO_ASSERT(false); // Callback was not found in linked list. Did you try to remove a callback that was never added?
 	}
+}
+
+/******************************************************************************
+* Blocks execution until another task finishes. 
+******************************************************************************/
+bool Task::waitFor(const TaskPtr& awaitedTask)
+{
+	OVITO_ASSERT(awaitedTask);
+
+	// The task this function was called from.
+	Task* waitingTask = currentTask();
+	OVITO_ASSERT_MSG(waitingTask != nullptr, "Task::waitFor()", "No active task. This function may only be called from a task worker function.");
+
+	// Lock access to the waiting task (this function was called from).
+	QMutexLocker waitingTaskLocker(&waitingTask->taskMutex());
+
+	// No need to wait for the other task if the waiting task was already canceled.
+	if(waitingTask->isCanceled())
+		return false;
+
+	// You should never invoke waitFor() on a task object that has already finished!
+	OVITO_ASSERT(!waitingTask->isFinished());
+
+	// Quick check if the awaited task has already finished.
+	QMutexLocker awaitedTaskLocker(&awaitedTask->taskMutex());
+	if(awaitedTask->isFinished()) {
+		if(awaitedTask->isCanceled()) {
+			// If the awaited was canceled, cancel the waiting task as well.
+			waitingTask->cancelAndFinishLocked(waitingTaskLocker);
+			return false;
+		}
+		else {
+			// It's ready, no need to wait.
+			return true;
+		}
+	}
+
+	// Create shared pointers on the stack to make sure the two task don't get 
+	// destroyed during or right after the waiting phase and before we access them again below.
+	TaskPtr waitingTaskPtr(waitingTask->shared_from_this());
+	TaskPtr awaitedTaskPtr(awaitedTask);
+
+	waitingTaskLocker.unlock();
+	awaitedTaskLocker.unlock();
+
+	// Is the waiting task running in a thread pool?
+	if(waitingTask->isAsynchronousTask() && static_cast<AsynchronousTaskBase*>(waitingTask)->threadPool() != nullptr) {
+		// Are we really in a worker thread?
+		OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() != QCoreApplication::instance()->thread());
+
+		QWaitCondition wc;
+		QMutex waitMutex;
+		std::atomic_bool alreadyDone{false};
+
+		// Register a callback function with the waiting task, which sets the wait condition in case the waiting task gets canceled.
+		detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) {
+			if(state & (Task::Canceled | Task::Finished)) {
+				QMutexLocker locker(&waitMutex);
+				alreadyDone.store(true);
+				wc.wakeAll();
+			}
+			return true;
+		});
+
+		// Register a callback function with the awaited task, which sets the wait condition when the task gets canceled or finishes.
+		detail::FunctionTaskCallback awaitedTaskCallback(awaitedTaskPtr.get(), [&](int state) {
+			if(state & Task::Finished) {
+				QMutexLocker locker(&waitMutex);
+				alreadyDone.store(true);
+				wc.wakeAll();
+			}
+			return true;
+		});
+
+		// TODO: Implement work-stealing mechanism to avoid dealock when running out of threads in the thread pool.
+
+		waitMutex.lock();
+		// Last minute check if the awaited task has already completed:
+		if(!alreadyDone.load()) {
+			// Wait now until one of the tasks are done.
+			wc.wait(&waitMutex);
+		}
+		waitMutex.unlock();
+
+		waitingTaskCallback.unregisterCallback();
+		awaitedTaskCallback.unregisterCallback();
+
+		waitingTaskLocker.relock();
+	}
+	else {
+		// Otherwise we are currently in the main thread.
+		// In this case, use a local event loop to keep processing application events while waiting.
+		OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+
+		// The local event loop we are going to start.
+		QEventLoop eventLoop;
+
+		// Register a callback function with the waiting task, which makes the event loop quit in case the waiting task gets canceled.
+		detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&eventLoop](int state) {
+			if(state & (Task::Canceled | Task::Finished))
+				QMetaObject::invokeMethod(&eventLoop, &QEventLoop::quit, Qt::QueuedConnection);
+			return true;
+		});
+
+		// Register a callback function with the awaited task, which makes the event loop quit when the task gets canceled or finishes.
+		detail::FunctionTaskCallback awaitedTaskCallback(awaitedTaskPtr.get(), [&eventLoop](int state) {
+			if(state & Task::Finished)
+				QMetaObject::invokeMethod(&eventLoop, &QEventLoop::quit, Qt::QueuedConnection);
+			return true;
+		});
+
+#ifdef Q_OS_UNIX
+		// Boolean flag which is set by the POSIX signal handler when user
+		// presses Ctrl+C to interrupt the program.
+		static QAtomicInt userInterrupt;
+		userInterrupt.storeRelease(0);
+
+		// Install POSIX signal handler to catch Ctrl+C key signal.
+		static std::atomic<QEventLoop*> activeEventLoop;
+		QEventLoop* previousEventLoop = activeEventLoop.exchange(&eventLoop, std::memory_order_release);
+		auto oldSignalHandler = ::signal(SIGINT, [](int) {
+			userInterrupt.storeRelease(1);
+			if(QEventLoop* eventLoop = activeEventLoop.load(std::memory_order_acquire))
+				QMetaObject::invokeMethod(eventLoop, &QEventLoop::quit, Qt::QueuedConnection);
+		});
+#endif
+
+		{
+			// Temporarily switch back to an interactive context now, since
+			// the user may be performing other actions in the user interface while the local event loop is running.
+			ExecutionContext::Scope executionContextScope(ExecutionContext::Interactive);
+
+			// Enter the local event loop.
+			eventLoop.exec();
+		}
+
+		waitingTaskCallback.unregisterCallback();
+		awaitedTaskCallback.unregisterCallback();
+
+		waitingTaskLocker.relock();
+
+#ifdef Q_OS_UNIX
+		// Cancel the task if user pressed Ctrl+C.
+		::signal(SIGINT, oldSignalHandler);
+		activeEventLoop.store(previousEventLoop, std::memory_order_relaxed);
+		if(userInterrupt.loadAcquire()) {
+			waitingTask->cancelAndFinishLocked(waitingTaskLocker);
+			return false;
+		}
+#endif
+	}
+
+	// Check if the waiting task has been canceled.
+	if(waitingTask->isCanceled())
+		return false;
+
+	// Now check if the awaited task has been canceled.
+	awaitedTaskLocker.relock();
+
+	if(awaitedTaskPtr->isCanceled()) {
+		// If the awaited task was canceled, cancel the waiting task as well.
+		waitingTask->cancelAndFinishLocked(waitingTaskLocker);
+		return false;
+	}
+
+	OVITO_ASSERT(awaitedTaskPtr->isFinished());
+	return true;
 }
 
 }	// End of namespace

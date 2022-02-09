@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,8 +63,11 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, const F
 {
 	OVITO_ASSERT(dataset->undoStack().isRecordingThread() == false);
 
-	// This is a cache for the file formats of files that have been loaded before.
-	static std::map<QString, const FileImporterClass*> formatDetectionCache;
+	// Cache for the format of files loaded before during the current program session.
+	//
+	// Keys:   Local filesystem paths 
+	// Values: The importer class handling the file and an optional sub-format specifier.
+	static std::map<QString, std::pair<const FileImporterClass*, QString>> formatDetectionCache;
 
 	// Mutex for synchronized access to the format detection cache.
 	static QMutex formatDetectionCacheMutex;
@@ -73,19 +76,30 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, const F
 	const QString& fileIdentifier = file.localFilePath();
 	QMutexLocker locker(&formatDetectionCacheMutex);
 	if(auto entry = formatDetectionCache.find(fileIdentifier); entry != formatDetectionCache.end()) {
-		if(existingImporterHint && &existingImporterHint->getOOClass() == entry->second)
+		const FileImporterClass* clazz = entry->second.first;
+		const QString& format = entry->second.second;
+		// Can we reuse the existing importer instance?
+		if(existingImporterHint && &existingImporterHint->getOOClass() == clazz) {
+			existingImporterHint->setSelectedFileFormat(format);
 			return existingImporterHint;
-		return static_object_cast<FileImporter>(entry->second->createInstance(dataset));
+		}
+		else {
+			// Create a new importer class instance and configure it.
+			OORef<FileImporter> importer = static_object_cast<FileImporter>(clazz->createInstance(dataset));
+			importer->setSelectedFileFormat(format);
+			return importer;
+		}
 	}
 	locker.unlock();
 
 	// If caller has provided an existing importer, check it first against the file.
 	if(existingImporterHint) {
 		try {
-			if(existingImporterHint->getOOMetaClass().checkFileFormat(file)) {
+			if(std::optional<QString> formatIdentifier = existingImporterHint->getOOMetaClass().determineFileFormat(file, dataset)) {
 				// Insert detected format into cache to speed up future requests for the same file.
 				locker.relock();
-				formatDetectionCache.emplace(fileIdentifier, &existingImporterHint->getOOMetaClass());
+				formatDetectionCache.emplace(fileIdentifier, std::make_pair(&existingImporterHint->getOOMetaClass(), *formatIdentifier));
+				existingImporterHint->setSelectedFileFormat(*formatIdentifier);
 				return existingImporterHint;
 			}
 		}
@@ -97,13 +111,15 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, const F
 	// Test all installed importer types.
 	for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileImporter>()) {
 		try {
-			if(importerClass->checkFileFormat(file)) {
+			if(std::optional<QString> formatIdentifier = importerClass->determineFileFormat(file, dataset)) {
 				// Insert detected format into cache to speed up future requests for the same file.
 				locker.relock();
-				formatDetectionCache.emplace(fileIdentifier, importerClass);
+				formatDetectionCache.emplace(fileIdentifier, std::make_pair(importerClass, *formatIdentifier));
 
 				// Instantiate the file importer for this file format.
-				return static_object_cast<FileImporter>(importerClass->createInstance(dataset));
+				OORef<FileImporter> importer = static_object_cast<FileImporter>(importerClass->createInstance(dataset));
+				importer->setSelectedFileFormat(*formatIdentifier);
+				return importer;
 			}
 		}
 		catch(const Exception&) {

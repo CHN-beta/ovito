@@ -183,7 +183,7 @@ bool SceneRenderer::renderNode(SceneNode* node, MainThreadOperation& operation)
 			PipelineEvaluationFuture pipelineEvaluation;
 			if(waitForLongOperationsEnabled()) {
 				pipelineEvaluation = pipeline->evaluateRenderingPipeline(PipelineEvaluationRequest(time()));
-				if(!operation.waitForFuture(pipelineEvaluation))
+				if(!pipelineEvaluation.waitForFinished())
 					return false;
 
 				// After the rendering process has been temporarily interrupted above, rendering is resumed now.

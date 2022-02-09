@@ -153,7 +153,7 @@ bool GuiDataSetContainer::askForSaveChanges()
 /******************************************************************************
 * Imports a given file into the scene.
 ******************************************************************************/
-bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadOperation operation, const FileImporterClass* importerType)
+bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadOperation operation, const FileImporterClass* importerType, const QString& importerFormat)
 {
 	OVITO_ASSERT(currentSet() != nullptr);
 	OVITO_ASSERT(!urls.empty());
@@ -168,7 +168,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadO
 
 			// Detect file format.
 			Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(currentSet(), url);
-			if(!operation.waitForFuture(importerFuture))
+			if(!importerFuture.waitForFinished())
 				return false;
 
 			importer = importerFuture.result();
@@ -179,6 +179,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, MainThreadO
 			importer = static_object_cast<FileImporter>(importerType->createInstance(currentSet()));
 			if(!importer)
 				currentSet()->throwException(tr("Failed to import file. Could not initialize import service."));
+			importer->setSelectedFileFormat(importerFormat);
 		}
 
 		urlImporters.push_back(std::make_pair(url, std::move(importer)));

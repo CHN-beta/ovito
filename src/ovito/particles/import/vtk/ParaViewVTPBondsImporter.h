@@ -43,12 +43,6 @@ class OVITO_PARTICLES_EXPORT ParaViewVTPBondsImporter : public ParticleImporter
 		/// Inherit standard constructor from base meta class.
 		using ParticleImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the file filter that specifies the files that can be imported by this service.
-		virtual QString fileFilter() const override { return {}; }
-
-		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return {}; }
-
 		/// Checks if the given file has format that can be read by this importer.
 		virtual bool checkFileFormat(const FileHandle& file) const override;
 	};

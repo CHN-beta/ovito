@@ -48,7 +48,7 @@ bool LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const
 	{
 		// Block UI until reading is done.
 		ProgressDialog progressDialog(&mainWindow, mainWindow, tr("Inspecting file header"));
-		if(!progressDialog.waitForFuture(inspectFuture))
+		if(!inspectFuture.waitForFinished())
 			return false;
 	}
 	
@@ -97,7 +97,7 @@ bool LAMMPSDumpLocalImporterEditor::showEditColumnMappingDialog(LAMMPSDumpLocalI
 	{
 		// Block UI until reading is done.
 		ProgressDialog progressDialog(parentWindow(), mainWindow(), tr("Inspecting file header"));
-		if(!progressDialog.waitForFuture(inspectFuture))
+		if(!inspectFuture.waitForFinished())
 			return false;
 	}
 

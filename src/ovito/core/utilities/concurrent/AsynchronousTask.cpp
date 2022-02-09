@@ -22,16 +22,13 @@
 
 #include <ovito/core/Core.h>
 #include "AsynchronousTask.h"
-#include "MainThreadOperation.h"
-
-#include <QWaitCondition>
 
 namespace Ovito {
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AsynchronousTaskBase::AsynchronousTaskBase(State initialState, void* resultsStorage) noexcept : ProgressingTask(initialState, resultsStorage) 
+AsynchronousTaskBase::AsynchronousTaskBase(State initialState, void* resultsStorage) noexcept : ProgressingTask(State(initialState | Task::IsAsynchronous), resultsStorage) 
 {
 	QRunnable::setAutoDelete(false);
 }	
@@ -53,12 +50,15 @@ AsynchronousTaskBase::~AsynchronousTaskBase()
 ******************************************************************************/
 void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool) 
 {
+	OVITO_ASSERT(pool);
 	OVITO_ASSERT(!this->_thisTask);
+	OVITO_ASSERT(!this->_submittedToPool);
 	OVITO_ASSERT(!this->isStarted());
 	// Store a shared_ptr to this task to keep it alive while running.
 	this->_thisTask = this->shared_from_this();
+	this->_submittedToPool = pool;
 	// Inherit execution context from parent task.
-	_executionContext = ExecutionContext::current();
+	_executionContextType = ExecutionContext::current();
 	this->setStarted();
 	pool->start(this);
 }
@@ -69,9 +69,10 @@ void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool)
 void AsynchronousTaskBase::startInThisThread() 
 {
 	OVITO_ASSERT(!this->_thisTask);
+	OVITO_ASSERT(!this->_submittedToPool);
 	OVITO_ASSERT(!this->isStarted());
 	// Inherit execution context from parent task.
-	_executionContext = ExecutionContext::current();
+	_executionContextType = ExecutionContext::current();
 	this->setStarted();
 	this->run();
 }
@@ -82,8 +83,11 @@ void AsynchronousTaskBase::startInThisThread()
 void AsynchronousTaskBase::run() 
 {
 	OVITO_ASSERT(isStarted());
-	ExecutionContext::Scope execScope(_executionContext);
+	ExecutionContext::Scope execScope(_executionContextType);
 	try {
+		// Execute the work function in the scope of this task object.
+		Task::Scope taskScope(this);
+
 		perform();
 	}
 	catch(...) {
@@ -92,108 +96,5 @@ void AsynchronousTaskBase::run()
 	setFinished();
 	_thisTask.reset(); // No need to keep the task object alive any longer.
 }
-
-/******************************************************************************
-* Switches the task into the 'started' state.
-******************************************************************************/
-bool AsynchronousTaskBase::waitForFuture(const FutureBase& future)
-{
-	OVITO_ASSERT(future.isValid());
-
-	// Is the current task running in a thread pool?
-	if(_thisTask) {
-
-		// Lock access to this task.
-		QMutexLocker thisTaskLocker(&this->taskMutex());
-
-		// No need to wait for the other task if this task is already canceled.
-		if(isCanceled())
-			return false;
-
-		// You should never invoke waitForTask() on a task object that has already finished.
-		OVITO_ASSERT(!isFinished());
-
-		// Quick check if the awaited task has already finished.
-		const TaskPtr& awaitedTask = future.task();
-		QMutexLocker awaitedTaskLocker(&awaitedTask->taskMutex());
-		if(awaitedTask->isFinished()) {
-			if(awaitedTask->isCanceled()) {
-				// If the awaited was canceled, cancel this task as well.
-				cancelAndFinishLocked(thisTaskLocker);
-				return false;
-			}
-			else {
-				// It's ready, no need to wait.
-				return true;
-			}
-		}
-
-		// Create a shared pointer on the stack to make sure the awaited task doesn't get 
-		// destroyed during or right after the waiting phase and before we access it
-		// again below.
-		TaskPtr awaitedTaskPtr(awaitedTask);
-
-		thisTaskLocker.unlock();
-		awaitedTaskLocker.unlock();
-
-		QWaitCondition wc;
-		QMutex waitMutex;
-		std::atomic_bool alreadyDone{false};
-
-		// Register a callback function with the waiting task, which sets the wait condition in case the waiting task gets canceled.
-		detail::FunctionTaskCallback thisTaskCallback(this, [&](int state) {
-			if(state & (Task::Canceled | Task::Finished)) {
-				QMutexLocker locker(&waitMutex);
-				alreadyDone.store(true);
-				wc.wakeAll();
-			}
-			return true;
-		});
-
-		// Register a callback function with the awaited task, which sets the wait condition when the task gets canceled or finishes.
-		detail::FunctionTaskCallback awaitedfTaskCallback(awaitedTaskPtr.get(), [&](int state) {
-			if(state & Task::Finished) {
-				QMutexLocker locker(&waitMutex);
-				alreadyDone.store(true);
-				wc.wakeAll();
-			}
-			return true;
-		});
-
-		// Wait now until one of the tasks are done.
-		waitMutex.lock();
-		if(!alreadyDone.load())
-			wc.wait(&waitMutex);
-		waitMutex.unlock();
-
-		thisTaskCallback.unregisterCallback();
-		awaitedfTaskCallback.unregisterCallback();
-
-		thisTaskLocker.relock();
-
-		// Check if the waiting task has been canceled.
-		if(isCanceled())
-			return false;
-
-		// Now check if the awaited task has been canceled.
-		awaitedTaskLocker.relock();
-
-		if(awaitedTaskPtr->isCanceled()) {
-			// If the awaited task was canceled, cancel this task as well.
-			cancelAndFinishLocked(thisTaskLocker);
-			return false;
-		}
-
-		OVITO_ASSERT(awaitedTaskPtr->isFinished());
-		return true;
-	}
-	else {
-		// The current task is executing synchronously in the main thread. 
-		// Perform a wait using a local QEventLoop, similar to a MainThreadOperation.
-		UserInterface* nullUserInterface = nullptr;
-		return MainThreadTaskWrapper(this->shared_from_this(), *nullUserInterface).waitForFuture(future);
-	}
-}
-
 
 }	// End of namespace

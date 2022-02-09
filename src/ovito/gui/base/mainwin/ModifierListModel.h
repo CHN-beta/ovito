@@ -168,7 +168,7 @@ private:
 	PipelineListModel* _pipelineListModel;
 
 	/// The list of directories searched for user-defined modifier scripts.
-	QVector<QDir> _modifierScriptDirectories;
+	QStringList _modifierScriptDirectories;
 
 	/// The font used for category header items.
 	QFont _categoryFont;

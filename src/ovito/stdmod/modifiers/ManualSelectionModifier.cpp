@@ -67,7 +67,7 @@ void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor* fie
 	// Whenever the subject of this modifier is changed, reset the selection.
 	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded()) {
 		for(ModifierApplication* modApp : modifierApplications()) {
-			PipelineEvaluationRequest request(ExecutionContext::current(), dataset()->animationSettings()->time());
+			PipelineEvaluationRequest request(dataset()->animationSettings()->time());
 			resetSelection(modApp, modApp->evaluateInputSynchronous(request));
 		}
 	}

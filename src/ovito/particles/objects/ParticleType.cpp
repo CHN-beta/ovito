@@ -135,7 +135,7 @@ void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObje
 /******************************************************************************
  * Loads a user-defined display shape from a geometry file and assigns it to this particle type.
  ******************************************************************************/
-bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, MainThreadOperation& operation, const FileImporterClass* importerType)
+bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, MainThreadOperation& operation, const FileImporterClass* importerClass, const QString& importerFormat)
 {
     operation.setProgressText(tr("Loading mesh geometry file %1").arg(sourceUrl.fileName()));
 
@@ -143,17 +143,19 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, MainThreadOperation& ope
 	UndoSuspender noUndo(this);
 
 	OORef<FileSourceImporter> importer;
-	if(!importerType) {
+	if(!importerClass) {
 
 		// Inspect input file to detect its format.
 		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(dataset(), sourceUrl);
-		if(!operation.waitForFuture(importerFuture))
+		if(!importerFuture.waitForFinished())
 			return false;
 
 		importer = dynamic_object_cast<FileSourceImporter>(importerFuture.result());
 	}
 	else {
-		importer = dynamic_object_cast<FileSourceImporter>(importerType->createInstance(dataset()));
+		importer = dynamic_object_cast<FileSourceImporter>(importerClass->createInstance(dataset()));
+		if(importer)
+			importer->setSelectedFileFormat(importerFormat);
 	}
 	if(!importer)
 		throwException(tr("Could not detect the format of the geometry file. The format might not be supported."));
@@ -162,7 +164,7 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, MainThreadOperation& ope
 	OORef<FileSource> fileSource = OORef<FileSource>::create(dataset());
 	fileSource->setSource({sourceUrl}, importer, false);
 	SharedFuture<PipelineFlowState> stateFuture = fileSource->evaluate(PipelineEvaluationRequest(0));
-	if(!operation.waitForFuture(stateFuture))
+	if(!stateFuture.waitForFinished())
 		return false;
 
 	// Check if the FileSource has provided some useful data.

@@ -104,7 +104,7 @@ public:
 	virtual Future<QStringList> listDirectoryContents(const QUrl& url);
 
 	/// \brief Constructs a URL from a path entered by the user.
-	QUrl urlFromUserInput(const QString& path);
+	static QUrl urlFromUserInput(const QString& path);
 
 #ifdef OVITO_SSH_CLIENT
     /// Create a new SSH connection or returns an existing connection having the same parameters.

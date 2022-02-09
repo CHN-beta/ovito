@@ -32,7 +32,7 @@ IMPLEMENT_OVITO_CLASS(WavefrontOBJImporter);
 /******************************************************************************
 * Returns whether this importer class supports importing data of the given type.
 ******************************************************************************/
-bool WavefrontOBJImporter::OOMetaClass::supportsDataType(const DataObject::OOMetaClass& dataObjectType) const
+bool WavefrontOBJImporter::OOMetaClass::importsDataType(const DataObject::OOMetaClass& dataObjectType) const
 {
 	return TriMeshObject::OOClass().isDerivedFrom(dataObjectType);
 }

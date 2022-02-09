@@ -50,11 +50,12 @@ public:
 
     /// The different states a task can be in.
     enum State {
-        NoState       = 0,
-        Started       = (1<<0),
-        Finished      = (1<<1),
-        Canceled      = (1<<2),
-        IsProgressing = (1<<3) // Indicates that the task's class is derived from ProgressingTask and can report its progress
+        NoState        = 0,
+        Started        = (1<<0),
+        Finished       = (1<<1),
+        Canceled       = (1<<2),
+        IsProgressing  = (1<<3), // Indicates that the task is derived from ProgressingTask and can report its progress
+        IsAsynchronous = (1<<4)  // Indicates that the task is derived from AsynchronousTaskBase and will run in a worker thread.
     };
 
     /// Constructor.
@@ -82,6 +83,9 @@ public:
 
     /// Indicates whether this task's class is derived from the ProgressingTask base class.
     bool isProgressingTask() const { return (_state.load(std::memory_order_relaxed) & IsProgressing); }
+
+    /// Indicates whether this task's class is derived from the AsynchronousTaskBase class.
+    bool isAsynchronousTask() const { return (_state.load(std::memory_order_relaxed) & IsAsynchronous); }
 
     /// \brief Requests cancellation of the task.
     void cancel() noexcept;
@@ -194,6 +198,12 @@ public:
     /// \brief Returns a copy of the internal exception store, which contains an exception object in case the task has failed.
     std::exception_ptr copyExceptionStore() const { return std::exception_ptr{exceptionStore()}; }
 
+	/// \brief Suspends execution until the given task has reached the 'finished' state. 
+	///        If the awaited task gets canceled while waiting, the task waiting for it gets canceled too.
+    /// \param task The task to wait for.
+    /// \return false if either \a task or this operation have been canceled.
+	[[nodiscard]] static bool waitFor(const TaskPtr& awaitedTask);
+
 protected:
 
     /// Assigns a tuple of values to the internal results storage of the task.
@@ -291,6 +301,22 @@ protected:
     /// Returns the mutex that is used to manage concurrent access to this task.
     QMutex& taskMutex() const { return _mutex; }
 
+    /// Returns the task object that is currently making the call to this function.
+    static Task* currentTask() noexcept { return _currentTask; }
+
+    /// Registers a task object as the current task in the current thread.
+    static void setCurrentTask(Task* task) noexcept { _currentTask = task; }
+
+    /// RAII class that registers a task as the current task.
+    class OVITO_CORE_EXPORT Scope
+    {
+    public:
+        explicit Scope(Task* task) noexcept : _previous(Task::currentTask()) { Task::setCurrentTask(task); }
+        ~Scope() { Task::setCurrentTask(_previous); }
+    private:
+        Task* _previous;
+    };
+
     /// The current state this task is in.
     std::atomic_int _state;
 
@@ -312,6 +338,9 @@ protected:
     /// Pointer to a std::tuple<...> storing the result value(s) of this task.
     void* _resultsStorage = nullptr;
 
+    /// The task object that is currently executing in the current thread.
+    static thread_local Task* _currentTask;
+
 #ifdef OVITO_DEBUG
     /// Indicates whether the result value of the task has been set.
     std::atomic_bool _hasResultsStored{false};
@@ -323,6 +352,7 @@ protected:
     friend class FutureBase;
     friend class PromiseBase;
     friend class MainThreadOperation;
+    friend class MainThreadTaskWrapper;
     friend class AsynchronousTaskBase;
     friend class detail::TaskReference;
     friend class detail::TaskCallbackBase;

@@ -440,7 +440,8 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bo
 			return std::move(frameList);
 		});
 
-	// Are we already done with loading?
+	// Has loading the frames list already completed?
+	// If yes, reset the future before returning from this function.
 	if(_framesListFuture.isFinished())
 		return std::move(_framesListFuture);
 

@@ -210,6 +210,7 @@ void FileSourceEditor::onPickLocalInputFile()
 	try {
 		QUrl newSourceUrl;
 		OvitoClassPtr importerType;
+		QString importerFormat;
 
 		// Put code in a block: Need to release dialog before loading new input file.
 		{
@@ -222,17 +223,16 @@ void FileSourceEditor::onPickLocalInputFile()
 				const QUrl& url = fileSource->frames()[fileSource->dataCollectionFrame()].sourceFile;
 				if(url.isLocalFile())
 					dialog.selectFile(url.toLocalFile());
-
 			}
 			if(dialog.exec() != QDialog::Accepted)
 				return;
 
 			newSourceUrl = dialog.urlToImport();
-			importerType = dialog.selectedFileImporterType();
+			std::tie(importerType, importerFormat) = dialog.selectedFileImporter();
 		}
 
 		// Set the new input location.
-		importNewFile(fileSource, newSourceUrl, importerType, createOperation());
+		importNewFile(fileSource, newSourceUrl, importerType, importerFormat, createOperation());
 	}
 	catch(const Exception& ex) {
 		ex.reportError();
@@ -250,6 +250,7 @@ void FileSourceEditor::onPickRemoteInputFile()
 	try {
 		QUrl newSourceUrl;
 		OvitoClassPtr importerType;
+		QString importerFormat;
 
 		// Put code in a block: Need to release dialog before loading new input file.
 		{
@@ -268,11 +269,11 @@ void FileSourceEditor::onPickRemoteInputFile()
 				return;
 
 			newSourceUrl = dialog.urlToImport();
-			importerType = dialog.selectedFileImporterType();
+			std::tie(importerType, importerFormat) = dialog.selectedFileImporter();
 		}
 
 		// Set the new input location.
-		importNewFile(fileSource, newSourceUrl, importerType, createOperation());
+		importNewFile(fileSource, newSourceUrl, importerType, importerFormat, createOperation());
 	}
 	catch(const Exception& ex) {
 		ex.reportError();
@@ -282,38 +283,40 @@ void FileSourceEditor::onPickRemoteInputFile()
 /******************************************************************************
 * Loads a new file into the FileSource.
 ******************************************************************************/
-bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, OvitoClassPtr importerType, MainThreadOperation operation)
+bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, OvitoClassPtr importerType, const QString& importerFormat, MainThreadOperation operation)
 {
-	OORef<FileImporter> fileImporter;
+	OVITO_ASSERT(operation.isCurrent());
+	OORef<FileImporter> importer;
 
 	// Create file importer instance.
 	if(!importerType) {
 
 		// Detect file format.
 		Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(fileSource->dataset(), url, fileSource->importer());
-		if(!operation.waitForFuture(importerFuture))
+		if(!importerFuture.waitForFinished())
 			return false;
 
-		fileImporter = importerFuture.result();
-		if(!fileImporter)
+		importer = importerFuture.result();
+		if(!importer)
 			fileSource->throwException(tr("Could not detect the format of the file to be imported. The format might not be supported."));
 	}
 	else {
 		// Caller has provided a specific importer type.
 		// First, try to reuse existing importer if it is of the requested type.
 		if(fileSource->importer() && &fileSource->importer()->getOOClass() == importerType) {
-			fileImporter = fileSource->importer();
+			importer = fileSource->importer();
 		}
 		else {
 			// Create a new importer instance.
-			fileImporter = static_object_cast<FileImporter>(importerType->createInstance(fileSource->dataset()));
-			if(!fileImporter)
+			importer = static_object_cast<FileImporter>(importerType->createInstance(fileSource->dataset()));
+			if(!importer)
 				return false;
 		}
+		importer->setSelectedFileFormat(importerFormat);
 	}
 
 	// The importer must be a FileSourceImporter.
-	OORef<FileSourceImporter> newImporter = dynamic_object_cast<FileSourceImporter>(fileImporter);
+	OORef<FileSourceImporter> newImporter = dynamic_object_cast<FileSourceImporter>(importer);
 	if(!newImporter)
 		fileSource->throwException(tr("The selected file type is not compatible."));
 
@@ -353,7 +356,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 	}
 
 	// Set the new input location.
-	return fileSource->setSource({url}, newImporter, false, keepExistingDataCollection);
+	return fileSource->setSource({url}, std::move(newImporter), false, keepExistingDataCollection);
 }
 
 /******************************************************************************

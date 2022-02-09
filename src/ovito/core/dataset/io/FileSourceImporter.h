@@ -244,6 +244,12 @@ public:
 	/// If yes, it scans the directory to find all matching files.
 	virtual Future<QVector<Frame>> discoverFrames(const QUrl& sourceUrl);
 
+	/// Scans the given data file to find all available animation frames.
+	///
+	/// \param fileHandle The data file to scan for animation frames.
+	/// \return A Future that will yield the list of discovered animation frames.
+	virtual Future<QVector<Frame>> discoverFrames(const FileHandle& fileHandle);
+
 	/// \brief Returns the list of files that match the given wildcard pattern.
 	static Future<std::vector<QUrl>> findWildcardMatches(const QUrl& sourceUrl, DataSet* dataset);
 

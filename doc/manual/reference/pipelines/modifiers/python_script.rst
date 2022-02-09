@@ -71,22 +71,21 @@ that better summarizes the specific purpose of your Python function. In order to
 it is selected and then click the item a second time to edit its name. 
 
 Next, you have two alternative ways of making your Python modifier permanently available in future program
-sessions. One is to save the entire modifier, including the definition of the ``modify()`` function, as a :ref:`modifier template <modifier_templates>`. 
-The modifier template will appear as a new entry in the list of available modifiers, allowing you to easily access the user-defined modifier and 
-insert it into other data pipelines in the future.
+sessions. The first is to save the entire modifier, including the definition of the ``modify()`` function, as a :ref:`modifier template <modifier_templates>`. 
+Modifier templates you've saved appear as additional entries in the list of available modifiers, allowing you to easily access your user-defined modifier scripts and 
+insert them into new data pipelines.
 
-The second option is to save just the Python code as a :file:`.py` file into one of the following directories on your computer. 
-OVITO Pro automatically scans these directories at program startup and displays all :file:`.py` scripts in the list of available modifiers, 
-from where you can inserted them into a pipeline with a single click.
+The second option is to save the Python code as a :file:`.py` source file into one of the following directories on your computer. 
+OVITO Pro automatically scans these directories at program startup and displays all :file:`.py` scripts in the list of available modifiers.
 
-  * All platforms: :file:`<HOME>/.config/Ovito/scripts/modifiers/*.py`
-  * Linux: :file:`<INSTALLDIR>/share/ovito/scripts/modifiers/*.py`
-  * Windows: :file:`<INSTALLDIR>/scripts/modifiers/*.py`
-  * macOS: :file:`<INSTALLDIR>/Ovito.app/Contents/Resources/scripts/modifiers/*.py`
-  * Anaconda: :file:`<INSTALLDIR>/share/ovito/scripts/modifiers/*.py`
+  * Linux: :file:`<INSTALLDIR>/share/ovito/scripts/modifiers/*.py` and :file:`<HOME>/.config/Ovito/scripts/modifiers/*.py` (Note: The base path :file:`<HOME>/.config` may be overriden by the ``XDG_CONFIG_HOME`` environment variable)
+  * Windows: :file:`<INSTALLDIR>/scripts/modifiers/*.py` and :file:`<HOME>/AppData/Local/Ovito/scripts/modifiers/*.py`
+  * macOS: :file:`<INSTALLDIR>/Ovito.app/Contents/Resources/scripts/modifiers/*.py` and :file:`<HOME>/Library/Preferences/Ovito/scripts/modifiers/*.py`
+  * Anaconda: :file:`<INSTALLDIR>/share/ovito/scripts/modifiers/*.py` and one of the platform-dependent directories 
 
-In these paths, :file:`<HOME>` and :file:`<INSTALLDIR>` refer to your home directory and the installation location of OVITO Pro on your computer, 
-respectively. The latter location already contains a bunch of predefined Python modifier files shipping with the program.
+Here, :file:`<HOME>` and :file:`<INSTALLDIR>` refer to your home directory and the OVITO Pro installation directory, 
+respectively. The OVITO Pro installation directory already contains a bunch of predefined Python modifier files that are shipped 
+with the program.
 
 Examples
 """"""""

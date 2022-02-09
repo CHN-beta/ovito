@@ -48,10 +48,10 @@ void FileSourceImporter::propertyChanged(const PropertyFieldDescriptor* field)
 	FileImporter::propertyChanged(field);
 
 	if(field == PROPERTY_FIELD(isMultiTimestepFile)) {
-		// Automatically rescan input file for animation frames when this option has been changed.
+		// Automatically rescan input file for animation frames when this option is changed.
 		requestFramesUpdate();
 
-		// Also update the UI explicitly, because target-changed messages are supressed for this property field.
+		// Also notify the UI explicitly, because target-changed messages are supressed for this property field.
 		Q_EMIT isMultiTimestepFileChanged();
 	}
 }
@@ -322,14 +322,10 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 				});
 		}
 
-		// Fetch file.
+		// Fetch file, then scan it.
 		return Application::instance()->fileManager().fetchUrl(sourceUrl)
-			.then(executor(), [this](const FileHandle& file) {
-				// Scan file.
-				if(FrameFinderPtr frameFinder = createFrameFinder(file))
-					return frameFinder->runAsync(taskManager());
-				else
-					return Future<QVector<Frame>>::createImmediateEmplace();
+			.then(executor(), [this](const FileHandle& fileHandle) {
+				return discoverFrames(fileHandle);
 			});
 	}
 	else {
@@ -355,6 +351,19 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 			return QVector<Frame>{{ Frame(sourceUrl, 0, 1, dateTime, fileInfo.fileName()) }};
 		}
 	}
+}
+
+/******************************************************************************
+* Scans the given external path (which may be a directory and a wild-card pattern,
+* or a single file containing multiple frames) to find all available animation frames.
+******************************************************************************/
+Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(const FileHandle& fileHandle)
+{
+	// Scan file.
+	if(FrameFinderPtr frameFinder = createFrameFinder(fileHandle))
+		return frameFinder->runAsync(taskManager());
+	else
+		return Future<QVector<Frame>>::createImmediateEmplace();
 }
 
 /******************************************************************************

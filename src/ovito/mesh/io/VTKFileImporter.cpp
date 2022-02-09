@@ -32,7 +32,7 @@ IMPLEMENT_OVITO_CLASS(VTKFileImporter);
 /******************************************************************************
 * Returns whether this importer class supports importing data of the given type.
 ******************************************************************************/
-bool VTKFileImporter::OOMetaClass::supportsDataType(const DataObject::OOMetaClass& dataObjectType) const
+bool VTKFileImporter::OOMetaClass::importsDataType(const DataObject::OOMetaClass& dataObjectType) const
 {
 	return TriMeshObject::OOClass().isDerivedFrom(dataObjectType);
 }

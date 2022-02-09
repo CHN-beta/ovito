@@ -38,13 +38,13 @@ public:
     };
 
     /// Returns the type of context the current thread performs its actions in.
-    static Type current() noexcept;
+    static Type current() noexcept { return _current; }
 
     /// Returns true if the current operation is performed by the user.
     static bool isInteractive() noexcept { return current() == Interactive; }
 
     /// Sets the type of context the current thread performs its actions in.
-    static void setCurrent(Type type) noexcept;
+    static void setCurrent(Type type) noexcept { _current = type; }
 
     class OVITO_CORE_EXPORT Scope
     {
@@ -54,6 +54,11 @@ public:
     private:
         Type _previous;
     };
+
+private:
+
+    /// The active execution context in the current thread.
+    static thread_local Type _current;
 };
 
 }	// End of namespace

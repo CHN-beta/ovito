@@ -35,7 +35,7 @@ IMPLEMENT_OVITO_CLASS(STLImporter);
 /******************************************************************************
 * Returns whether this importer class supports importing data of the given type.
 ******************************************************************************/
-bool STLImporter::OOMetaClass::supportsDataType(const DataObject::OOMetaClass& dataObjectType) const
+bool STLImporter::OOMetaClass::importsDataType(const DataObject::OOMetaClass& dataObjectType) const
 {
 	return TriMeshObject::OOClass().isDerivedFrom(dataObjectType);
 }

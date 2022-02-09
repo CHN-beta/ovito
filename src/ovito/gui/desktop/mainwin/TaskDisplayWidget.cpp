@@ -106,21 +106,9 @@ void TaskDisplayWidget::timerEvent(QTimerEvent* event)
 	if(event->timerId() == _delayTimer.timerId()) {
 		OVITO_ASSERT(_delayTimer.isActive());
 		_delayTimer.stop();
-		showIndicator();
-	}
-	QWidget::timerEvent(event);
-}
-
-/******************************************************************************
-* Shows the progress indicator widget.
-******************************************************************************/
-void TaskDisplayWidget::showIndicator()
-{
-	const TaskManager& taskManager = _mainWindow->taskManager();
-	if(isHidden() && taskManager.runningTasks().empty() == false) {
-		show();
 		updateIndicator();
 	}
+	QWidget::timerEvent(event);
 }
 
 /******************************************************************************
@@ -128,9 +116,6 @@ void TaskDisplayWidget::showIndicator()
 ******************************************************************************/
 void TaskDisplayWidget::updateIndicator()
 {
-	if(isHidden())
-		return;
-
 	const TaskManager& taskManager = _mainWindow->taskManager();
 	if(taskManager.runningTasks().empty()) {
 		_delayTimer.stop();

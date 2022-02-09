@@ -40,18 +40,16 @@ public:
 	/// Destructor.
 	~AsynchronousTaskBase();
 
-    /// \brief Blocks execution until another future is complete. 
-	/// \param future The future to wait for.
-	/// \return false if either the future or this task have been canceled.
-    [[nodiscard]] bool waitForFuture(const FutureBase& future);
-	
+    /// Returns the thread pool this task has been submitted to for execution (if any).
+    QThreadPool* threadPool() const { return _submittedToPool; }
+
 	/// This virtual function is responsible for computing the results of the task.
 	virtual void perform() = 0;
 
 private:
 
 	/// Implementation of QRunnable.
-	virtual void run() override ;
+	virtual void run() final override;
 
 	/// Submits the task for execution to a thread pool.
 	void startInThreadPool(QThreadPool* pool);
@@ -60,12 +58,16 @@ private:
 	void startInThisThread();
 
 	/// A shared pointer to the task itself, which is used to keep the C++ object alive
-	/// while the task is running in a thread pool.
+	/// while the task is transferred to and executed in a thread pool.
 	TaskPtr _thisTask;
 
-	/// The type of execution context that this task inherits from its parent task.
-	ExecutionContext::Type _executionContext;
+    /// The thread pool this task has been submitted to for execution (if any).
+    QThreadPool* _submittedToPool = nullptr;
 
+	/// The type of execution context that this task inherits from its parent task.
+	ExecutionContext::Type _executionContextType;
+
+	friend class Task;
 	template<typename... R> friend class AsynchronousTask;
 };
 
@@ -84,7 +86,7 @@ public:
 	/// Schedules the task for execution in the global thread pool and returns a future for the task's results.
 	Future<R...> runAsync() {
 #ifndef OVITO_DISABLE_THREADING
-		// Submit the task for execution in a background thread.
+		// Submit the task for execution in a worker thread.
 		return runAsync(QThreadPool::globalInstance());
 #else
 		// If multi-threading is not available, run the task immediately.

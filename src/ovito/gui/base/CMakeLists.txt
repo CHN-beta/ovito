@@ -64,9 +64,10 @@ ELSE()
 		FILES "${CMAKE_CURRENT_BINARY_DIR}/objects.txt")
 ENDIF()
 
-# Compute the relative path where the Python extension scripts get installed relative to the executable. 
+# Compute the relative path where the Python extension scripts get installed relative to the executable
+# and pass this relative path to the source code, which uses it for different purposes.
 FILE(RELATIVE_PATH OVITO_SCRIPT_EXTENSIONS_RELATIVE_PATH "${OVITO_BINARY_DIRECTORY}" "${OVITO_SHARE_DIRECTORY}/scripts/")
-TARGET_COMPILE_DEFINITIONS(GuiBase PRIVATE "OVITO_SCRIPT_EXTENSIONS_RELATIVE_PATH=\"${OVITO_SCRIPT_EXTENSIONS_RELATIVE_PATH}\"")
+TARGET_COMPILE_DEFINITIONS(GuiBase PUBLIC "OVITO_SCRIPT_EXTENSIONS_RELATIVE_PATH=\"${OVITO_SCRIPT_EXTENSIONS_RELATIVE_PATH}\"")
 
 # Propagate list of plugins to parent scope.
 SET(OVITO_PLUGIN_LIST ${OVITO_PLUGIN_LIST} PARENT_SCOPE)

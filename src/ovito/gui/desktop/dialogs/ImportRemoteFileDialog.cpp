@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/utilities/io/FileManager.h>
+#include <ovito/core/utilities/SortZipped.h>
 #include "ImportRemoteFileDialog.h"
 
 namespace Ovito {
@@ -29,8 +30,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the dialog window.
 ******************************************************************************/
-ImportRemoteFileDialog::ImportRemoteFileDialog(const QVector<const FileImporterClass*>& importerTypes, DataSet* dataset, QWidget* parent, const QString& caption) : QDialog(parent),
-		_importerTypes(importerTypes)
+ImportRemoteFileDialog::ImportRemoteFileDialog(const QVector<const FileImporterClass*>& importerTypes, DataSet* dataset, QWidget* parent, const QString& caption) : QDialog(parent)
 {
 	setWindowTitle(caption);
 
@@ -76,16 +76,25 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(const QVector<const FileImporterC
 	layout1->addSpacing(10);
 
 	layout1->addWidget(new QLabel(tr("File type:")));
-	_formatSelector = new QComboBox(this);
 
-	_formatSelector->addItem(tr("<Auto-detect format>"));
-	for(const FileImporterClass* importerClass : importerTypes) {
-		// Skip importers that want to remain hidden from the user.
-		if(importerClass->fileFilterDescription().isEmpty())
-			continue;
-		_formatSelector->addItem(importerClass->fileFilterDescription());
+	// Build list of file filter strings.
+	QStringList fileFilterStrings;
+	fileFilterStrings.push_back(tr("<Auto-detect file format>"));
+	_importerFormats.emplace_back(nullptr, QString());
+
+	for(const auto& importerClass : importerTypes) {
+		for(const FileImporterClass::SupportedFormat& format : importerClass->supportedFormats()) {
+			fileFilterStrings << format.description;
+			_importerFormats.emplace_back(importerClass, format.identifier);
+		}
 	}
+	// Sort file formats alphabetically (but leave leading <Auto-detect> item in place).
+	Ovito::sort_zipped(
+		Ovito::span(fileFilterStrings).subspan(1), 
+		Ovito::span( _importerFormats).subspan(1));
 
+	_formatSelector = new QComboBox(this);
+	_formatSelector->addItems(fileFilterStrings);
 	layout1->addWidget(_formatSelector);
 	layout1->addSpacing(10);
 
@@ -147,15 +156,11 @@ QUrl ImportRemoteFileDialog::urlToImport() const
 /******************************************************************************
 * Returns the selected importer type or NULL if auto-detection is requested.
 ******************************************************************************/
-const FileImporterClass* ImportRemoteFileDialog::selectedFileImporterType() const
+const std::pair<const FileImporterClass*, QString>& ImportRemoteFileDialog::selectedFileImporter() const
 {
-	int importFilterIndex = _formatSelector->currentIndex() - 1;
-	OVITO_ASSERT(importFilterIndex >= -1 && importFilterIndex < _importerTypes.size());
-
-	if(importFilterIndex >= 0)
-		return _importerTypes[importFilterIndex];
-	else
-		return nullptr;
+	int importFilterIndex = _formatSelector->currentIndex();
+	OVITO_ASSERT(importFilterIndex >= -1 && importFilterIndex < _importerFormats.size());
+	return _importerFormats[importFilterIndex];
 }
 
 }	// End of namespace

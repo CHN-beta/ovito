@@ -23,29 +23,9 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/ExecutionContext.h>
 
-#include <QThreadStorage>
-
 namespace Ovito {
 
-static QThreadStorage<ExecutionContext::Type> currentExecutionContext;
-
-/******************************************************************************
-* Returns the type of context the current thread performs its actions in.
-******************************************************************************/
-ExecutionContext::Type ExecutionContext::current() noexcept
-{
-	if(currentExecutionContext.hasLocalData())
-		return currentExecutionContext.localData();
-	else
-		return Interactive;
-}
-
-/******************************************************************************
-* Sets the type of context the current thread performs its actions in.
-******************************************************************************/
-void ExecutionContext::setCurrent(ExecutionContext::Type type) noexcept
-{
-	currentExecutionContext.setLocalData(type);
-}
+/// The active execution context in the current thread.
+thread_local ExecutionContext::Type ExecutionContext::_current = ExecutionContext::Interactive;
 
 }	// End of namespace

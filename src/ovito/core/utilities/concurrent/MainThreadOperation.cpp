@@ -37,11 +37,14 @@ namespace Ovito {
 * Constructor.
 ******************************************************************************/
 MainThreadOperation::MainThreadOperation(TaskPtr p, UserInterface& userInterface, bool visibleInUserInterface) noexcept :
-	Promise<>(std::move(p)), _userInterface(userInterface)
+	Promise<>(std::move(p)), _userInterface(userInterface), _parentTask(Task::currentTask())
 {
 	OVITO_ASSERT(isValid());
 	OVITO_ASSERT(isStarted());
 	OVITO_ASSERT(task()->isProgressingTask());
+
+	// Make this task the active one.
+	Task::setCurrentTask(task().get());
 
 	// Register the container MainThreadOperation with the TaskManager to display its progress in the UI.
 	if(visibleInUserInterface)
@@ -54,9 +57,27 @@ MainThreadOperation::MainThreadOperation(TaskPtr p, UserInterface& userInterface
 void MainThreadOperation::reset() 
 {
 	if(TaskPtr task = std::move(_task)) {
+		// This task is no longer the active one.
+		OVITO_ASSERT(Task::currentTask() == task.get());
+		Task::setCurrentTask(_parentTask);
 		OVITO_ASSERT(task->isStarted());
 		task->setFinished();
 	}
+}
+
+/******************************************************************************
+* Temporarily yield control back to the event loop to process UI events.
+******************************************************************************/
+void MainThreadOperation::processUIEvents() const
+{
+	OVITO_ASSERT(isValid());
+	OVITO_ASSERT(Task::currentTask() == task().get());
+
+	Task::setCurrentTask(nullptr);
+	QCoreApplication::processEvents(); 
+
+	OVITO_ASSERT(Task::currentTask() == nullptr);
+	Task::setCurrentTask(task().get());
 }
 
 /******************************************************************************
@@ -66,6 +87,7 @@ void MainThreadOperation::reset()
 MainThreadOperation MainThreadOperation::createSubTask(bool visibleInUserInterface) 
 {
 	OVITO_ASSERT(isValid());
+	OVITO_ASSERT(task().get() == Task::currentTask());
 
 	class MainThreadSubTask : public ProgressingTask, public detail::TaskCallback<MainThreadSubTask>
 	{
@@ -89,126 +111,7 @@ MainThreadOperation MainThreadOperation::createSubTask(bool visibleInUserInterfa
 		}
 	};
 
-	MainThreadOperation subOp(std::make_shared<MainThreadSubTask>(task()), userInterface(), visibleInUserInterface);
-	return subOp;
-}
-
-/******************************************************************************
-* Suspends execution until the given task has reached the 'finished' state. 
-* If the awaited task gets canceled while waiting, this task gets canceled too.
-******************************************************************************/
-bool MainThreadOperation::waitForTask(const TaskPtr& awaitedTask)
-{
-	OVITO_ASSERT(isValid());
-	OVITO_ASSERT(awaitedTask);
-	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "MainThreadOperation::waitForTask", "Function may be called only from the main thread.");
-
-	// Lock access to this task.
-	QMutexLocker thisTaskLocker(&task()->taskMutex());
-
-	// No need to wait for the other task if this task is already canceled.
-	if(isCanceled())
-		return false;
-
-	// You should never invoke waitForTask() on a task object that has already finished.
-	OVITO_ASSERT(!isFinished());
-
-	// Before entering the costly local event loop, quick check if the awaited task has already finished.
-	QMutexLocker awaitedTaskLocker(&awaitedTask->taskMutex());
-	if(awaitedTask->isFinished()) {
-		if(awaitedTask->isCanceled()) {
-			// If the awaited was canceled, cancel this task as well.
-			task()->cancelAndFinishLocked(thisTaskLocker);
-			return false;
-		}
-		else {
-			// It's ready, no need to wait.
-			return true;
-		}
-	}
-
-	// Create shared pointers on the stack to make sure the two task don't get 
-	// destroyed during or right after the waiting phase and before we access them
-	// again below.
-	TaskPtr thisTaskPtr(this->task());
-	TaskPtr awaitedTaskPtr(awaitedTask);
-
-	thisTaskLocker.unlock();
-	awaitedTaskLocker.unlock();
-
-	// The local event loop we are going to start.
-	QEventLoop eventLoop;
-
-	// Register a callback function with the waiting task, which makes the event loop quit in case the waiting task gets canceled.
-	detail::FunctionTaskCallback thisTaskCallback(thisTaskPtr.get(), [&eventLoop](int state) {
-		if(state & (Task::Canceled | Task::Finished))
-			QMetaObject::invokeMethod(&eventLoop, &QEventLoop::quit, Qt::QueuedConnection);
-		return true;
-	});
-
-	// Register a callback function with the awaited task, which makes the event loop quit when the task gets canceled or finishes.
-	detail::FunctionTaskCallback awaitedfTaskCallback(awaitedTaskPtr.get(), [&eventLoop](int state) {
-		if(state & Task::Finished)
-			QMetaObject::invokeMethod(&eventLoop, &QEventLoop::quit, Qt::QueuedConnection);
-		return true;
-	});
-
-#ifdef Q_OS_UNIX
-	// Boolean flag which is set by the POSIX signal handler when user
-	// presses Ctrl+C to interrupt the program.
-	static QAtomicInt userInterrupt;
-	userInterrupt.storeRelease(0);
-
-	// Install POSIX signal handler to catch Ctrl+C key signal.
-	static std::atomic<QEventLoop*> activeEventLoop;
-	QEventLoop* previousEventLoop = activeEventLoop.exchange(&eventLoop, std::memory_order_release);
-	auto oldSignalHandler = ::signal(SIGINT, [](int) {
-		userInterrupt.storeRelease(1);
-		if(QEventLoop* eventLoop = activeEventLoop.load(std::memory_order_acquire))
-			QMetaObject::invokeMethod(eventLoop, &QEventLoop::quit, Qt::QueuedConnection);
-	});
-#endif
-
-	{
-		// Temporarily switch back to an interactive context now, since
-		// the user may be performing other actions in the user interface while the local event loop is running.
-		ExecutionContext::Scope executionContextScope(ExecutionContext::Interactive);
-
-		// Enter the local event loop.
-		eventLoop.exec();
-	}
-
-	thisTaskCallback.unregisterCallback();
-	awaitedfTaskCallback.unregisterCallback();
-
-	thisTaskLocker.relock();
-	OVITO_ASSERT(isValid());
-
-#ifdef Q_OS_UNIX
-	// Cancel the task if user pressed Ctrl+C.
-	::signal(SIGINT, oldSignalHandler);
-	activeEventLoop.store(previousEventLoop, std::memory_order_relaxed);
-	if(userInterrupt.loadAcquire()) {
-		thisTaskPtr->cancelAndFinishLocked(thisTaskLocker);
-		return false;
-	}
-#endif
-
-	// Check if the waiting task has been canceled.
-	if(isCanceled())
-		return false;
-
-	// Now check if the awaited task has been canceled.
-	awaitedTaskLocker.relock();
-
-	if(awaitedTaskPtr->isCanceled()) {
-		// If the awaited task was canceled, cancel this task as well.
-		thisTaskPtr->cancelAndFinishLocked(thisTaskLocker);
-		return false;
-	}
-
-	OVITO_ASSERT(awaitedTaskPtr->isFinished());
-	return true;
+	return MainThreadOperation(std::make_shared<MainThreadSubTask>(task()), userInterface(), visibleInUserInterface);
 }
 
 }	// End of namespace

@@ -223,11 +223,14 @@ void WidgetActionManager::on_FileImport_triggered()
 		if(dialog.exec() != QDialog::Accepted)
 			return;
 
-		// Import file(s).
+		// Selected importer class and sub-format name.
+		const auto& [importerClass, importerFormat] = dialog.selectedFileImporter();
+
+		// Import the selected file(s).
 		mainWindow().datasetContainer().importFiles(
 			dialog.urlsToImport(), 
 			MainThreadOperation::create(mainWindow(), true),
-			dialog.selectedFileImporterType());
+			importerClass, importerFormat);
 	}
 	catch(const Exception& ex) {
 		ex.reportError();
@@ -245,11 +248,14 @@ void WidgetActionManager::on_FileRemoteImport_triggered()
 		if(dialog.exec() != QDialog::Accepted)
 			return;
 
+		// Selected importer class and sub-format name.
+		const auto& [importerClass, importerFormat] = dialog.selectedFileImporter();
+
 		// Import URL.
 		mainWindow().datasetContainer().importFiles(
 			{ dialog.urlToImport() }, 
 			MainThreadOperation::create(mainWindow(), true),
-			dialog.selectedFileImporterType());
+			importerClass, importerFormat);
 	}
 	catch(const Exception& ex) {
 		ex.reportError();
@@ -329,7 +335,7 @@ void WidgetActionManager::on_FileExport_triggered()
 		// Block until the scene is ready.
 		{
 			ProgressDialog progressDialog(&mainWindow(), mainWindow(), tr("Waiting for pipelines to complete"));
-			if(!progressDialog.waitForFuture(dataset()->whenSceneReady()))
+			if(!dataset()->whenSceneReady().waitForFinished())
 				return;
 		}
 

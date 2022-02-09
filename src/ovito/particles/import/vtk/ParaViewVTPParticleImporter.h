@@ -43,11 +43,11 @@ class OVITO_PARTICLES_EXPORT ParaViewVTPParticleImporter : public ParticleImport
 		/// Inherit standard constructor from base meta class.
 		using ParticleImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the file filter that specifies the files that can be imported by this service.
-		virtual QString fileFilter() const override { return QStringLiteral("*.vtp"); }
-
-		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("Aspherix Particles Files"); }
+		/// Returns the list of file formats that can be read by this importer class.
+		virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+			static const SupportedFormat formats[] = {{ QStringLiteral("*.vtp"), tr("Aspherix Particles Files") }};
+			return formats;
+		}
 
 		/// Checks if the given file has format that can be read by this importer.
 		virtual bool checkFileFormat(const FileHandle& file) const override;

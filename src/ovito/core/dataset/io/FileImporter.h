@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,36 +36,50 @@ class OVITO_CORE_EXPORT FileImporterClass : public RefTarget::OOMetaClass
 {
 public:
 
-	/// Inherit standard constructor from base meta class.
+	/** 
+	 * Data structure describing one file format supported by this importer class.
+	 */
+	struct SupportedFormat
+	{
+		/// Filename wild-card pattern, which is used in the file selection dialog to show only files of this format.
+		QString fileFilter;
+
+		/// Human-readable description of the file format. Used for the drop-down box of the file selection dialog.
+		QString description;
+
+		/// Internal name of the file format, which is used by the file importer class. May be empty if the importer supports just a single format.
+		QString identifier;
+	};
+
+	/// Inherit constructor from base metaclass.
 	using RefTarget::OOMetaClass::OOMetaClass;
 
-	/// \brief Returns the file filter that specifies the files that can be imported by this service.
-	/// \return A wild-card pattern that specifies the file types that can be handled by this import class.
-	virtual QString fileFilter() const {
-		OVITO_ASSERT_MSG(false, "FileImporterClass::fileFilter()", "This method should be overridden by a meta-subclass of FileImporterClass.");
-		return {};
+	/// Returns the list of file formats that can be read by this importer class.
+	virtual Ovito::span<const SupportedFormat> supportedFormats() const {
+		return {}; // Returning no format descriptors indicates that this importer is non-public.
 	}
 
-	/// \brief Returns the filter description that is displayed in the drop-down box of the file dialog.
-	/// \return A string that describes the file format.
-	virtual QString fileFilterDescription() const {
-		OVITO_ASSERT_MSG(false, "FileImporterClass::fileFilterDescription()", "This method should be overridden by a meta-subclass of FileImporterClass.");
-		return {};
-	}
-
-	/// \brief Checks if the given file has format that can be read by this importer.
+	/// \brief Checks if the given file has a format that can be read by this importer.
 	/// \param input The file that contains the data to check.
 	/// \return \c true if the data can be parsed.
 	//	        \c false if the data has some unknown format.
-	/// \throw Exception when the check has failed.
+	/// \throw Exception when something went wrong.
 	virtual bool checkFileFormat(const FileHandle& input) const {
 		return false;
+	}
+
+	/// \brief Checks whether the given file has a format that can be read by this importer.
+	/// \param input The file that contains the data to check.
+	/// \return The identifier string of the format if the file format is supported by this class.
+	/// \throw Exception when something went wrong.
+	virtual std::optional<QString> determineFileFormat(const FileHandle& input, DataSet* dataset) const {
+		return checkFileFormat(input) ? std::make_optional<QString>() : std::optional<QString>{};
 	}
 
 	/// \brief Returns whether this importer class supports importing data of the given type.
 	/// \param dataObjectType A DataObject-derived class.
 	/// \return \c true if this importer can import data object the given type.
-	virtual bool supportsDataType(const DataObject::OOMetaClass& dataObjectType) const {
+	virtual bool importsDataType(const DataObject::OOMetaClass& dataObjectType) const {
 		return false;
 	}
 };
@@ -100,6 +114,10 @@ public:
 
 	/// \brief Returns the priority level of this importer, which is used to order multiple files that are imported simultaneously.
 	virtual int importerPriority() const { return 0; }
+
+	/// \brief Selects one of the sub-formats supported by this importer class. This is called when the user explicitly selects
+	///        a sub-format in the file selection dialog.
+	virtual void setSelectedFileFormat(const QString& formatIdentifier) { OVITO_ASSERT(formatIdentifier.isEmpty()); }
 
 	/// \brief Imports one or more files into the scene.
 	/// \param sourceUrlsAndImporters The location of the file(s) to import and the corresponding importers.

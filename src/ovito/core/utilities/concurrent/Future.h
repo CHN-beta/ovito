@@ -98,6 +98,10 @@ public:
 		task()->finally(std::forward<Function>(f));
 	}
 
+    /// \brief Blocks execution until this future is fulfilled. 
+    /// \return false if either this future or the task waiting for it have been canceled.
+    [[nodiscard]] bool waitForFinished() const { return Task::waitFor(this->task()); }
+
 protected:
 
 	/// Default constructor creating a future without a shared state.

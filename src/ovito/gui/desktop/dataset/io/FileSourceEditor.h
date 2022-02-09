@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -52,7 +52,7 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Loads a new file into the FileSource.
-	bool importNewFile(FileSource* fileSource, const QUrl& url, OvitoClassPtr importerType, MainThreadOperation operation);
+	bool importNewFile(FileSource* fileSource, const QUrl& url, OvitoClassPtr importerType, const QString& importerFormat, MainThreadOperation operation);
 
 protected Q_SLOTS:
 

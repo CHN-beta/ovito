@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,8 +46,8 @@ public:
 	/// \brief Returns the file to import after the dialog has been closed with "OK".
 	QUrl urlToImport() const;
 
-	/// \brief Returns the selected importer type or NULL if auto-detection is requested.
-	const FileImporterClass* selectedFileImporterType() const;
+	/// \brief Returns the selected importer class and sub-format name.
+	const std::pair<const FileImporterClass*, QString>& selectedFileImporter() const;
 
 	virtual QSize sizeHint() const override {
 		return QDialog::sizeHint().expandedTo(QSize(500, 0));
@@ -61,8 +61,7 @@ protected Q_SLOTS:
 
 private:
 
-	QVector<const FileImporterClass*> _importerTypes;
-
+	std::vector<std::pair<const FileImporterClass*, QString>> _importerFormats;
 	QComboBox* _urlEdit;
 	QComboBox* _formatSelector;
 };

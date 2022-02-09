@@ -163,7 +163,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 			// Evaulate pipeline and obtain output data collection.
 			if(!renderer->isInteractive()) {
 				PipelineEvaluationFuture pipelineEvaluation = pipeline->evaluatePipeline(PipelineEvaluationRequest(renderer->time()));
-				if(!operation.waitForFuture(pipelineEvaluation))
+				if(!pipelineEvaluation.waitForFinished())
 					return false;
 				// Look up the typed property.
 				typedProperty = pipelineEvaluation.result().getLeafObject(sourceProperty());
@@ -260,7 +260,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 				PipelineEvaluationRequest request(renderer->time());
 				if(!renderer->isInteractive()) {
 					SharedFuture<PipelineFlowState> stateFuture = modApp->evaluate(request);
-					if(!operation.waitForFuture(stateFuture))
+					if(!stateFuture.waitForFinished())
 						return;
 					const PipelineFlowState& state = stateFuture.result();
 					minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));

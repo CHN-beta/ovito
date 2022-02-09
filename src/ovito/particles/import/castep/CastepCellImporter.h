@@ -40,11 +40,11 @@ class OVITO_PARTICLES_EXPORT CastepCellImporter : public ParticleImporter
 		/// Inherit standard constructor from base meta class.
 		using ParticleImporter::OOMetaClass::OOMetaClass;
 
-		/// Returns the file filter that specifies the files that can be imported by this service.
-		virtual QString fileFilter() const override { return QStringLiteral("*.cell"); }
-
-		/// Returns the filter description that is displayed in the drop-down box of the file dialog.
-		virtual QString fileFilterDescription() const override { return tr("CASTEP Cell Files"); }
+		/// Returns the list of file formats that can be read by this importer class.
+		virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+			static const SupportedFormat formats[] = {{ QStringLiteral("*.cell"), tr("CASTEP Cell Files") }};
+			return formats;
+		}
 
 		/// Checks if the given file has format that can be read by this importer.
 		virtual bool checkFileFormat(const FileHandle& file) const override;

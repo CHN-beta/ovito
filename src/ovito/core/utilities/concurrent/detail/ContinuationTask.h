@@ -98,6 +98,9 @@ public:
 		if constexpr(!detail::returns_future_v<Function, FutureType>) {
 			// Continuation function returns a result value or void.
 			try {
+				// Execute the continuation function in the scope of this task object.
+				Task::Scope taskScope(this);
+
 				if constexpr(!detail::returns_void_v<Function, FutureType>) {
 					// Function returns non-void results.
 					if constexpr(!detail::is_invocable_v<Function, FutureType>)
@@ -126,6 +129,9 @@ public:
 			// The continuation function returns a new future, whose result will be used to fulfill this task.
 			std::decay_t<callable_result_t<Function, FutureType>> nextFuture;
 			try {
+				// Execute the continuation function in the scope of this task object.
+				Task::Scope taskScope(this);
+
 				// Call the continuation function with the results of the finished task or the finished future itself.
 				if constexpr(!detail::is_invocable_v<Function, FutureType>)
 					nextFuture = std::apply(std::forward<Function>(f), std::forward<FutureType>(future).results());
