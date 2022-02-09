@@ -27,6 +27,9 @@
 #include "detail/TaskCallback.h"
 
 #include <QWaitCondition>
+#ifdef Q_OS_UNIX
+#include <csignal>
+#endif
 
 namespace Ovito {
 

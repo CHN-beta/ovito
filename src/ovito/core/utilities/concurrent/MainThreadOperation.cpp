@@ -27,10 +27,6 @@
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/detail/TaskCallback.h>
 
-#ifdef Q_OS_UNIX
-	#include <csignal>
-#endif
-
 namespace Ovito {
 
 /******************************************************************************
