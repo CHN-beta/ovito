@@ -44,6 +44,9 @@ public:
 	/// This method is called when a new editable object has been activated.
 	virtual void resetUI() override;
 
+	/// Creates a standard QLabel displaying usage instructions for the structure list.
+	QLabel* createNotesLabel();
+
 protected:
 
 	/// Returns a data item from the list data model.

@@ -22,6 +22,7 @@
 
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/modifier/analysis/StructureIdentificationModifier.h>
+#include <ovito/particles/gui/util/ParticleSettingsPage.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
@@ -43,10 +44,11 @@ StructureListParameterUI::StructureListParameterUI(PropertiesEditor* parentEdito
 #else
 	int tableWidgetHeight = 300;
 #endif
+	QTableView* table = tableWidget(tableWidgetHeight);
 
-	connect(tableWidget(tableWidgetHeight), &QTableWidget::doubleClicked, this, &StructureListParameterUI::onDoubleClickStructureType);
-	connect(parentEditor, &PropertiesEditor::contentsReplaced, tableWidget(), &QTableView::resizeRowsToContents);
-	tableWidget()->setAutoScroll(false);
+	connect(table, &QTableWidget::doubleClicked, this, &StructureListParameterUI::onDoubleClickStructureType);
+	connect(parentEditor, &PropertiesEditor::contentsReplaced, table, &QTableView::resizeRowsToContents);
+	table->setAutoScroll(false);
 
 	// Update the structure count and fraction columns of the data model whenever the structure identification
 	// modifier has generated new results.
@@ -69,6 +71,21 @@ void StructureListParameterUI::resetUI()
 
 	// Clear initial selection by default.
 	tableWidget()->selectionModel()->clear();
+}
+
+/******************************************************************************
+* Creates a standard QLabel displaying usage instructions for the structure list.
+******************************************************************************/
+QLabel* StructureListParameterUI::createNotesLabel()
+{
+	QLabel* label = new QLabel(tr("<p style=\"font-size: small;\">Double-click to change a color or name. Defaults can be set in the <a href=\"settings\">application settings</a>.</p>"));
+	label->setWordWrap(true);
+	label->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+	connect(label, &QLabel::linkActivated, this, [this]() {
+		ApplicationSettingsDialog dlg(editor()->mainWindow(), &ParticleSettingsPage::OOClass());
+		dlg.exec();
+	});
+	return label;
 }
 
 /******************************************************************************
@@ -129,6 +146,11 @@ QVariant StructureListParameterUI::getItemData(RefTarget* target, const QModelIn
 			if(index.column() == 0)
 				return stype->enabled() ? Qt::Checked : Qt::Unchecked;
 		}
+		else if(role == Qt::EditRole) {
+			if(index.column() == 1) {
+				return stype->name();
+			}
+		}
 	}
 	return {};
 }
@@ -140,6 +162,8 @@ Qt::ItemFlags StructureListParameterUI::getItemFlags(RefTarget* target, const QM
 {
 	if(index.column() == 0 && _showCheckBoxes)
 		return RefTargetListParameterUI::getItemFlags(target, index) | Qt::ItemIsUserCheckable;
+	else if(index.column() == 1)
+		return RefTargetListParameterUI::getItemFlags(target, index) | Qt::ItemIsEditable;
 	else
 		return RefTargetListParameterUI::getItemFlags(target, index);
 }
@@ -158,6 +182,14 @@ bool StructureListParameterUI::setItemData(RefTarget* target, const QModelIndex&
 			return true;
 		}
 	}
+	else if(index.column() == 1 && role == Qt::EditRole) {
+		if(ElementType* stype = static_object_cast<ElementType>(objectAtIndex(index.row()))) {
+			undoableTransaction(tr("Rename structure type"), [&]() {
+				stype->setName(value.toString().trimmed());
+			});
+			return true;
+		}
+	}
 
 	return RefTargetListParameterUI::setItemData(target, index, value, role);
 }
@@ -168,13 +200,18 @@ bool StructureListParameterUI::setItemData(RefTarget* target, const QModelIndex&
 ******************************************************************************/
 void StructureListParameterUI::onDoubleClickStructureType(const QModelIndex& index)
 {
+	// User must click on first table column, which contains the type colors.
+	if(index.column() != 0) return;
+
 	// Let the user select a color for the structure type.
 	ElementType* stype = static_object_cast<ElementType>(selectedObject());
 	if(!stype) return;
 
 	QColor oldColor = (QColor)stype->color();
-	QColor newColor = QColorDialog::getColor(oldColor, editor()->container());
-	if(!newColor.isValid() || newColor == oldColor) return;
+	QColorDialog dlg(oldColor, editor()->container());
+	if(dlg.exec() != QDialog::Accepted) return; 
+	QColor newColor = dlg.selectedColor();
+	if(newColor == oldColor) return;
 
 	undoableTransaction(tr("Change structure type color"), [&]() {
 		stype->setColor(Color(newColor));
