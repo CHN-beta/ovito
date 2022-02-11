@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,6 +42,8 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT VideoEncoder : public QObject
 {
+	Q_OBJECT
+
 public:
 
 	/**
@@ -86,19 +88,18 @@ private:
 	std::shared_ptr<AVFormatContext> _formatContext;
 	std::unique_ptr<quint8[]> _pictureBuf;
 	std::vector<quint8> _outputBuf;
-	std::shared_ptr<AVFrame> _frame;
+	std::shared_ptr<AVFrame> _frame, _yuvFrame;
 	AVStream* _videoStream = nullptr;
 	AVCodec* _codec = nullptr;
 	std::shared_ptr<AVCodecContext> _codecContext;
 	SwsContext* _imgConvertCtx = nullptr;
+	SwsContext* _gifConvertCtx = nullptr;
 	bool _isOpen = false;
 	int _numFrames = 0;
 	int _frameDuplication = 1;
 
 	/// The list of supported video formats.
 	static QList<Format> _supportedFormats;
-
-	Q_OBJECT
 };
 
 }	// End of namespace

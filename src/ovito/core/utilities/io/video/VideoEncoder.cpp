@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,7 +31,7 @@ extern "C" {
 #include <libswscale/swscale.h>
 };
 
-namespace Ovito {
+namespace Ovito {	
 
 /// The list of supported video formats.
 QList<VideoEncoder::Format> VideoEncoder::_supportedFormats;
@@ -135,6 +135,12 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, int 
 			throw Exception(tr("Could not deduce video output format from file extension."));
 	}
 	else outputFormat = format->avformat;
+
+	// Odd image widths lead to artifacts when writing animated GIFs.
+	// Round to nearest integer in case. 
+	if(outputFormat->video_codec == AV_CODEC_ID_GIF && width > 1) {
+		width &= ~1;
+	}
 
 #if LIBAVFORMAT_VERSION_MAJOR >= 58
 	// Allocate the output media context.
@@ -242,6 +248,25 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, int 
 	_outputBuf.resize(width * height * 3);
 #endif
 
+#if LIBAVCODEC_VERSION_MAJOR >= 57
+	// For encoding GIFs, we need to perform an extra image conversion step to avoid artifacts. 
+	// The QImage is extracted in AV_PIX_FMT_BGRA format. Then we convert it to AV_PIX_FMT_YUV420P first, 
+	// before the final conversion to the AV_PIX_FMT_RGB8 format required by the .gif encoder.
+	if(outputFormat->video_codec == AV_CODEC_ID_GIF) {
+		_yuvFrame.reset(::av_frame_alloc(), [](AVFrame* frame) { ::av_frame_free(&frame); });
+		if(!_yuvFrame)
+			throw Exception(tr("Could not allocate video frame buffer."));
+		_yuvFrame->format = AV_PIX_FMT_YUV420P;
+		_yuvFrame->width  = _codecContext->width;
+		_yuvFrame->height = _codecContext->height;
+
+		// Allocate the buffers for the frame data.
+		if((errCode = ::av_frame_get_buffer(_yuvFrame.get(), 32)) < 0)
+			throw Exception(tr("Could not allocate video frame encoding buffer: %1").arg(errorMessage(errCode)));
+		OVITO_ASSERT(_yuvFrame->data);
+	}
+#endif
+
 	// Open output file (if needed).
 	if(!(outputFormat->flags & AVFMT_NOFILE)) {
 		if((errCode = ::avio_open(&_formatContext->pb, qPrintable(filename), AVIO_FLAG_WRITE)) < 0)
@@ -324,6 +349,13 @@ void VideoEncoder::closeFile()
 	// Cleanup.
 	_pictureBuf.reset();
 	_frame.reset();
+	_yuvFrame.reset();
+	if(_imgConvertCtx)
+		::sws_freeContext(_imgConvertCtx);
+	if(_gifConvertCtx)
+		::sws_freeContext(_gifConvertCtx);
+	_imgConvertCtx = nullptr;
+	_gifConvertCtx = nullptr;
 	_videoStream = nullptr;
 	_codecContext.reset();
 	_outputBuf.clear();
@@ -340,6 +372,12 @@ void VideoEncoder::writeFrame(const QImage& image)
 	if(!_isOpen)
 		return;
 
+	int videoWidth = _codecContext->width;
+	int videoHeight = _codecContext->height;
+
+	// Make sure bit format of image is correct.
+	QImage finalImage = image.convertToFormat(QImage::Format_RGB32);
+
 	for(int frameCopy = 0; frameCopy < _frameDuplication; frameCopy++) {
 
 		// Make sure the frame data is writable.
@@ -348,21 +386,19 @@ void VideoEncoder::writeFrame(const QImage& image)
 			throw Exception(tr("Making video frame buffer writable failed: %1").arg(errorMessage(errCode)));
 		_frame->pts = _numFrames++;
 
-		// Check if the image size matches.
-		int videoWidth = _codecContext->width;
-		int videoHeight = _codecContext->height;
-		OVITO_ASSERT(image.width() == videoWidth && image.height() == videoHeight);
-		if(image.width() != videoWidth || image.height() != videoHeight)
-			throw Exception(tr("Frame has wrong dimensions."));
-
-		// Make sure bit format of image is correct.
-		QImage finalImage = image.convertToFormat(QImage::Format_RGB32);
-
 		// Create conversion context.
-		_imgConvertCtx = ::sws_getCachedContext(_imgConvertCtx, videoWidth, videoHeight, AV_PIX_FMT_BGRA,
-				videoWidth, videoHeight, _codecContext->pix_fmt, SWS_BICUBIC, nullptr, nullptr, nullptr);
+		_imgConvertCtx = ::sws_getCachedContext(_imgConvertCtx, image.width(), image.height(), AV_PIX_FMT_BGRA,
+				videoWidth, videoHeight, _yuvFrame ? AV_PIX_FMT_YUV420P : _codecContext->pix_fmt, SWS_BICUBIC, nullptr, nullptr, nullptr);
 		if(!_imgConvertCtx)
 			throw Exception(tr("Cannot initialize SWS conversion context to convert video frame."));
+
+		// Create two-step conversion context for GIF encoding.
+		if(_yuvFrame) {
+			_gifConvertCtx = ::sws_getCachedContext(_gifConvertCtx, videoWidth, videoHeight, AV_PIX_FMT_YUV420P,
+					videoWidth, videoHeight, _codecContext->pix_fmt, SWS_BICUBIC, nullptr, nullptr, nullptr);
+			if(!_gifConvertCtx)
+				throw Exception(tr("Cannot initialize SWS conversion context to convert GIF frame."));
+		}
 
 		// Convert image to codec pixel format.
 		uint8_t *srcplanes[3];
@@ -375,7 +411,16 @@ void VideoEncoder::writeFrame(const QImage& image)
 		srcstride[1] = 0;
 		srcstride[2] = 0;
 
-		::sws_scale(_imgConvertCtx, srcplanes, srcstride, 0, videoHeight, _frame->data, _frame->linesize);
+		if(!_yuvFrame) {
+			::sws_scale(_imgConvertCtx, srcplanes, srcstride, 0, image.height(), _frame->data, _frame->linesize);
+		}
+		else {
+			// For encoding GIFs, we need to perform an extra image conversion step to avoid artifacts. 
+			// The QImage is extracted in AV_PIX_FMT_BGRA format. Then we convert it to AV_PIX_FMT_YUV420P first, 
+			// before the final conversion to the AV_PIX_FMT_RGB8 format required by the .gif encoder.
+			::sws_scale(_imgConvertCtx, srcplanes, srcstride, 0, image.height(), _yuvFrame->data, _yuvFrame->linesize);
+			::sws_scale(_gifConvertCtx, _yuvFrame->data, _yuvFrame->linesize, 0, videoHeight, _frame->data, _frame->linesize);
+		}
 
 #if LIBAVCODEC_VERSION_MAJOR >= 57
 
