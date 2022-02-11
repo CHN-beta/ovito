@@ -32,6 +32,9 @@ extern "C" {
 	struct AVStream;
 	struct AVCodecContext;
 	struct AVFrame;
+	struct AVFilterInOut;
+	struct AVFilterGraph;
+	struct AVFilterContext;
 	struct SwsContext;
 };
 
@@ -88,12 +91,14 @@ private:
 	std::shared_ptr<AVFormatContext> _formatContext;
 	std::unique_ptr<quint8[]> _pictureBuf;
 	std::vector<quint8> _outputBuf;
-	std::shared_ptr<AVFrame> _frame, _yuvFrame;
+	std::shared_ptr<AVFrame> _frame;
 	AVStream* _videoStream = nullptr;
 	AVCodec* _codec = nullptr;
 	std::shared_ptr<AVCodecContext> _codecContext;
 	SwsContext* _imgConvertCtx = nullptr;
-	SwsContext* _gifConvertCtx = nullptr;
+	std::shared_ptr<AVFilterGraph> _filterGraph;
+	AVFilterContext* _bufferSourceCtx = nullptr;
+	AVFilterContext* _bufferSinkCtx = nullptr;
 	bool _isOpen = false;
 	int _numFrames = 0;
 	int _frameDuplication = 1;

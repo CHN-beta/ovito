@@ -26,7 +26,11 @@
 
 extern "C" {
 #include <libavutil/mathematics.h>
+#include <libavutil/opt.h>
 #include <libavcodec/avcodec.h>
+#include <libavfilter/avfilter.h>
+#include <libavfilter/buffersrc.h>
+#include <libavfilter/buffersink.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 };
@@ -42,6 +46,10 @@ QList<VideoEncoder::Format> VideoEncoder::_supportedFormats;
 VideoEncoder::VideoEncoder(QObject* parent) : QObject(parent)
 {
 	initCodecs();
+
+#ifndef OVITO_DEBUG
+    ::av_log_set_level(AV_LOG_QUIET); // Set the FFMPEG logging level to quiet to avoid too verbose terminal output.
+#endif
 }
 
 /******************************************************************************
@@ -195,7 +203,9 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, int 
 	_videoStream->avg_frame_rate = av_inv_q(_codecContext->time_base);
 
 	// Be sure to use the correct pixel format (e.g. RGB, YUV).
-	if(_codec->pix_fmts)
+	if(outputFormat->video_codec == AV_CODEC_ID_GIF)
+		_codecContext->pix_fmt = AV_PIX_FMT_PAL8;
+	else if(_codec->pix_fmts)
 		_codecContext->pix_fmt = _codec->pix_fmts[0];
 	else
 		_codecContext->pix_fmt = AV_PIX_FMT_YUV422P;
@@ -229,7 +239,7 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, int 
 		throw Exception(tr("Could not allocate video frame buffer."));
 
 #if LIBAVCODEC_VERSION_MAJOR >= 57
-	_frame->format = _codecContext->pix_fmt;
+	_frame->format = (outputFormat->video_codec == AV_CODEC_ID_GIF) ? AV_PIX_FMT_BGRA : _codecContext->pix_fmt;
 	_frame->width  = _codecContext->width;
 	_frame->height = _codecContext->height;
 
@@ -248,25 +258,6 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, int 
 	_outputBuf.resize(width * height * 3);
 #endif
 
-#if LIBAVCODEC_VERSION_MAJOR >= 57
-	// For encoding GIFs, we need to perform an extra image conversion step to avoid artifacts. 
-	// The QImage is extracted in AV_PIX_FMT_BGRA format. Then we convert it to AV_PIX_FMT_YUV420P first, 
-	// before the final conversion to the AV_PIX_FMT_RGB8 format required by the .gif encoder.
-	if(outputFormat->video_codec == AV_CODEC_ID_GIF) {
-		_yuvFrame.reset(::av_frame_alloc(), [](AVFrame* frame) { ::av_frame_free(&frame); });
-		if(!_yuvFrame)
-			throw Exception(tr("Could not allocate video frame buffer."));
-		_yuvFrame->format = AV_PIX_FMT_YUV420P;
-		_yuvFrame->width  = _codecContext->width;
-		_yuvFrame->height = _codecContext->height;
-
-		// Allocate the buffers for the frame data.
-		if((errCode = ::av_frame_get_buffer(_yuvFrame.get(), 32)) < 0)
-			throw Exception(tr("Could not allocate video frame encoding buffer: %1").arg(errorMessage(errCode)));
-		OVITO_ASSERT(_yuvFrame->data);
-	}
-#endif
-
 	// Open output file (if needed).
 	if(!(outputFormat->flags & AVFMT_NOFILE)) {
 		if((errCode = ::avio_open(&_formatContext->pb, qPrintable(filename), AVIO_FLAG_WRITE)) < 0)
@@ -278,6 +269,64 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, int 
 		throw Exception(tr("Failed to write video file header: %1").arg(errorMessage(errCode)));
 
 	::av_dump_format(_formatContext.get(), 0, qPrintable(filename), 1);
+
+	if(outputFormat->video_codec == AV_CODEC_ID_GIF) {
+
+		const AVFilter* buffersrc = ::avfilter_get_by_name("buffer");
+		const AVFilter* buffersink = ::avfilter_get_by_name("buffersink");
+
+		AVRational time_base = { ticksPerFrame, TICKS_PER_SECOND };
+		AVRational aspect_pixel = { 1, 1 };
+
+		AVFilterInOut* inputs = ::avfilter_inout_alloc();
+		AVFilterInOut* outputs = ::avfilter_inout_alloc();
+		OVITO_ASSERT(inputs && outputs);
+
+		_filterGraph.reset(::avfilter_graph_alloc(), [](AVFilterGraph* graph) { ::avfilter_graph_free(&graph); });
+		OVITO_ASSERT(_filterGraph);
+
+		char args[512];
+		snprintf(args, sizeof(args),
+				"video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
+				width, height,
+				AV_PIX_FMT_BGRA,
+				time_base.num, time_base.den,
+				aspect_pixel.num, aspect_pixel.den);
+
+		if((errCode = ::avfilter_graph_create_filter(&_bufferSourceCtx, buffersrc, "in", args, nullptr, _filterGraph.get())) < 0)
+			throw Exception(tr("Failed to create the 'source buffer' for animated GIF encoding: %1").arg(errorMessage(errCode)));
+
+		if((errCode = ::avfilter_graph_create_filter(&_bufferSinkCtx, buffersink, "out", nullptr, nullptr, _filterGraph.get())) < 0)
+			throw Exception(tr("Failed to create the 'sink buffer' for animated GIF encoding: %1").arg(errorMessage(errCode)));
+
+		// GIF has possible output of PAL8.
+		enum AVPixelFormat pix_fmts[] = { AV_PIX_FMT_PAL8, AV_PIX_FMT_NONE };
+
+		if((errCode = av_opt_set_int_list(_bufferSinkCtx, "pix_fmts", pix_fmts, AV_PIX_FMT_NONE, AV_OPT_SEARCH_CHILDREN)) < 0)
+			throw Exception(tr("Failed to set the output pixel format for animated GIF encoding: %1").arg(errorMessage(errCode)));
+
+		outputs->name = av_strdup("in");
+		outputs->filter_ctx = _bufferSourceCtx;
+		outputs->pad_idx = 0;
+		outputs->next = nullptr;
+
+		inputs->name = av_strdup("out");
+		inputs->filter_ctx = _bufferSinkCtx;
+		inputs->pad_idx = 0;
+		inputs->next = nullptr;
+
+		static constexpr char filter_desc[] = "format=pix_fmts=rgb24,split [a][b];[a]palettegen[p];[b][p]paletteuse";
+
+		// GIF has possible output of PAL8. 
+		if((errCode = ::avfilter_graph_parse_ptr(_filterGraph.get(), filter_desc, &inputs, &outputs, nullptr)) < 0)
+			throw Exception(tr("Failed to parse the filter graph (bad string) for animated GIF encoding: %1").arg(errorMessage(errCode)));
+
+		if((errCode = ::avfilter_graph_config(_filterGraph.get(), nullptr)) < 0)
+			throw Exception(tr("Failed to configure the filter graph (bad string) for animated GIF encoding: %1").arg(errorMessage(errCode)));
+
+		::avfilter_inout_free(&inputs);
+		::avfilter_inout_free(&outputs);
+	}
 
 	// Success.
 	_isOpen = true;
@@ -296,34 +345,65 @@ void VideoEncoder::closeFile()
 
 	// Write stream trailer.
 	if(_isOpen) {
-
-#if LIBAVCODEC_VERSION_MAJOR >= 57
-		// Flush encoder.
 		int errCode;
-		if((errCode = ::avcodec_send_frame(_codecContext.get(), nullptr)) < 0)
-			qWarning() << "Error while submitting an image frame for video encoding:" << errorMessage(errCode);
 
-		do {
-			AVPacket pkt = {0};
-			::av_init_packet(&pkt);
+		if(_codecContext->codec_id == AV_CODEC_ID_GIF) {
+			// End of buffer.
+			if((errCode = ::av_buffersrc_add_frame_flags(_bufferSourceCtx, nullptr, AV_BUFFERSRC_FLAG_KEEP_REF)) < 0)
+				throw Exception(tr("Failed to add final GIF frame to global buffer: %1").arg(errorMessage(errCode)));
 
-			errCode = ::avcodec_receive_packet(_codecContext.get(), &pkt);
-			if(errCode < 0 && errCode != AVERROR(EAGAIN) && errCode != AVERROR_EOF) {
-				qWarning() << "Error while encoding video frame:" << errorMessage(errCode);
-				break;
-			}
+			do {
+				AVFrame* filter_frame = ::av_frame_alloc();
+				errCode = ::av_buffersink_get_frame(_bufferSinkCtx, filter_frame);
+				if(errCode == AVERROR(EAGAIN) || errCode == AVERROR_EOF) {
+					::av_frame_unref(filter_frame);
+					break;
+				}
 
-			if(errCode >= 0) {
-				::av_packet_rescale_ts(&pkt, _codecContext->time_base, _videoStream->time_base);
-				pkt.stream_index = _videoStream->index;
-				// Write the compressed frame to the media file.
-				if((errCode = ::av_interleaved_write_frame(_formatContext.get(), &pkt)) < 0) {
-					qWarning() << "Error while writing encoded video frame:" << errorMessage(errCode);
+				// Write the filter frame to output file
+				int ret = ::avcodec_send_frame(_codecContext.get(), filter_frame);
+				AVPacket* pkt = ::av_packet_alloc();
+				::av_init_packet(pkt);
+				while(ret >= 0) {
+					ret = ::avcodec_receive_packet(_codecContext.get(), pkt);
+					if(ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+						break;
+					}
+					::av_write_frame(_formatContext.get(), pkt);
+				}
+				::av_packet_unref(pkt);
+				::av_frame_unref(filter_frame);
+			} 
+			while(errCode >= 0);
+		}
+		else {
+#if LIBAVCODEC_VERSION_MAJOR >= 57
+			// Flush encoder.
+			if((errCode = ::avcodec_send_frame(_codecContext.get(), nullptr)) < 0)
+				qWarning() << "Error while submitting an image frame for video encoding:" << errorMessage(errCode);
+
+			do {
+				AVPacket pkt = {0};
+				::av_init_packet(&pkt);
+
+				errCode = ::avcodec_receive_packet(_codecContext.get(), &pkt);
+				if(errCode < 0 && errCode != AVERROR(EAGAIN) && errCode != AVERROR_EOF) {
+					qWarning() << "Error while encoding video frame:" << errorMessage(errCode);
+					break;
+				}
+
+				if(errCode >= 0) {
+					::av_packet_rescale_ts(&pkt, _codecContext->time_base, _videoStream->time_base);
+					pkt.stream_index = _videoStream->index;
+					// Write the compressed frame to the media file.
+					if((errCode = ::av_interleaved_write_frame(_formatContext.get(), &pkt)) < 0) {
+						qWarning() << "Error while writing encoded video frame:" << errorMessage(errCode);
+					}
 				}
 			}
-		}
-		while(errCode >= 0);
+			while(errCode >= 0);
 #endif
+		}
 		::avcodec_flush_buffers(_codecContext.get());
 		::av_write_trailer(_formatContext.get());
 	}
@@ -347,15 +427,16 @@ void VideoEncoder::closeFile()
 		::avio_close(_formatContext->pb);
 
 	// Cleanup.
+	if(_bufferSourceCtx) ::avfilter_free(_bufferSourceCtx);
+	if(_bufferSinkCtx) ::avfilter_free(_bufferSinkCtx);
+	_bufferSourceCtx = nullptr;
+	_bufferSinkCtx = nullptr;
+	_filterGraph.reset();
 	_pictureBuf.reset();
 	_frame.reset();
-	_yuvFrame.reset();
 	if(_imgConvertCtx)
 		::sws_freeContext(_imgConvertCtx);
-	if(_gifConvertCtx)
-		::sws_freeContext(_gifConvertCtx);
 	_imgConvertCtx = nullptr;
-	_gifConvertCtx = nullptr;
 	_videoStream = nullptr;
 	_codecContext.reset();
 	_outputBuf.clear();
@@ -383,22 +464,8 @@ void VideoEncoder::writeFrame(const QImage& image)
 		// Make sure the frame data is writable.
 		int errCode;
 		if((errCode = ::av_frame_make_writable(_frame.get())) < 0)
-			throw Exception(tr("Making video frame buffer writable failed: %1").arg(errorMessage(errCode)));
+			throw Exception(tr("Ffmpeg error: Making video frame buffer writable failed: %1").arg(errorMessage(errCode)));
 		_frame->pts = _numFrames++;
-
-		// Create conversion context.
-		_imgConvertCtx = ::sws_getCachedContext(_imgConvertCtx, image.width(), image.height(), AV_PIX_FMT_BGRA,
-				videoWidth, videoHeight, _yuvFrame ? AV_PIX_FMT_YUV420P : _codecContext->pix_fmt, SWS_BICUBIC, nullptr, nullptr, nullptr);
-		if(!_imgConvertCtx)
-			throw Exception(tr("Cannot initialize SWS conversion context to convert video frame."));
-
-		// Create two-step conversion context for GIF encoding.
-		if(_yuvFrame) {
-			_gifConvertCtx = ::sws_getCachedContext(_gifConvertCtx, videoWidth, videoHeight, AV_PIX_FMT_YUV420P,
-					videoWidth, videoHeight, _codecContext->pix_fmt, SWS_BICUBIC, nullptr, nullptr, nullptr);
-			if(!_gifConvertCtx)
-				throw Exception(tr("Cannot initialize SWS conversion context to convert GIF frame."));
-		}
 
 		// Convert image to codec pixel format.
 		uint8_t *srcplanes[3];
@@ -411,78 +478,96 @@ void VideoEncoder::writeFrame(const QImage& image)
 		srcstride[1] = 0;
 		srcstride[2] = 0;
 
-		if(!_yuvFrame) {
+		if(_codecContext->codec_id == AV_CODEC_ID_GIF) {
+
+			if(_formatContext->nb_streams > 0)
+				_frame->pts *= av_rescale_q(1, _codecContext->time_base, _formatContext->streams[0]->time_base);
+			else
+				_frame->pts *= av_rescale_q(1, _codecContext->time_base, { 1, 100 });
+
+			// Create conversion context.
+			_imgConvertCtx = ::sws_getCachedContext(_imgConvertCtx, image.width(), image.height(), AV_PIX_FMT_BGRA,
+					videoWidth, videoHeight, (AVPixelFormat)_frame->format, SWS_BICUBIC, nullptr, nullptr, nullptr);
+			if(!_imgConvertCtx)
+				throw Exception(tr("Cannot initialize SWS conversion context to convert video frame."));
+
 			::sws_scale(_imgConvertCtx, srcplanes, srcstride, 0, image.height(), _frame->data, _frame->linesize);
+
+			// "palettegen" filter needs a whole stream, just add frame to buffer.
+			if((errCode = ::av_buffersrc_add_frame_flags(_bufferSourceCtx, _frame.get(), AV_BUFFERSRC_FLAG_KEEP_REF)) < 0)
+				throw Exception(tr("Ffmpeg error: Failed to add GIF frame to animation in-memory buffer: %1").arg(errorMessage(errCode)));
 		}
 		else {
-			// For encoding GIFs, we need to perform an extra image conversion step to avoid artifacts. 
-			// The QImage is extracted in AV_PIX_FMT_BGRA format. Then we convert it to AV_PIX_FMT_YUV420P first, 
-			// before the final conversion to the AV_PIX_FMT_RGB8 format required by the .gif encoder.
-			::sws_scale(_imgConvertCtx, srcplanes, srcstride, 0, image.height(), _yuvFrame->data, _yuvFrame->linesize);
-			::sws_scale(_gifConvertCtx, _yuvFrame->data, _yuvFrame->linesize, 0, videoHeight, _frame->data, _frame->linesize);
-		}
+			// Create conversion context.
+			_imgConvertCtx = ::sws_getCachedContext(_imgConvertCtx, image.width(), image.height(), AV_PIX_FMT_BGRA,
+					videoWidth, videoHeight, _codecContext->pix_fmt, SWS_BICUBIC, nullptr, nullptr, nullptr);
+			if(!_imgConvertCtx)
+				throw Exception(tr("Cannot initialize SWS conversion context to convert video frame."));
+
+			::sws_scale(_imgConvertCtx, srcplanes, srcstride, 0, image.height(), _frame->data, _frame->linesize);
 
 #if LIBAVCODEC_VERSION_MAJOR >= 57
 
-		if((errCode = ::avcodec_send_frame(_codecContext.get(), _frame.get())) < 0)
-			throw Exception(tr("Error while submitting an image frame for video encoding: %1").arg(errorMessage(errCode)));
+			if((errCode = ::avcodec_send_frame(_codecContext.get(), _frame.get())) < 0)
+				throw Exception(tr("Error while submitting an image frame for video encoding: %1").arg(errorMessage(errCode)));
 
-		do {
+			do {
+				AVPacket pkt = {0};
+				::av_init_packet(&pkt);
+
+				errCode = ::avcodec_receive_packet(_codecContext.get(), &pkt);
+				if(errCode < 0 && errCode != AVERROR(EAGAIN) && errCode != AVERROR_EOF)
+					throw Exception(tr("Error while encoding video frame: %1").arg(errorMessage(errCode)));
+
+				if(errCode >= 0) {
+					::av_packet_rescale_ts(&pkt, _codecContext->time_base, _videoStream->time_base);
+					pkt.stream_index = _videoStream->index;
+					// Write the compressed frame to the media file.
+					if((errCode = ::av_interleaved_write_frame(_formatContext.get(), &pkt)) < 0) {
+						throw Exception(tr("Error while writing encoded video frame: %1").arg(errorMessage(errCode)));
+					}
+				}
+			}
+			while(errCode >= 0);
+
+#elif !defined(FF_API_OLD_ENCODE_VIDEO) && LIBAVCODEC_VERSION_MAJOR < 55
+			int out_size = ::avcodec_encode_video(_codecContext.get(), _outputBuf.data(), _outputBuf.size(), _frame.get());
+			// If zero size, it means the image was buffered.
+			if(out_size > 0) {
+				AVPacket pkt;
+				::av_init_packet(&pkt);
+				if(_codecContext->coded_frame->pts != AV_NOPTS_VALUE)
+					pkt.pts = ::av_rescale_q(_codecContext->coded_frame->pts, _codecContext->time_base, _videoStream->time_base);
+				if(_codecContext->coded_frame->key_frame)
+					pkt.flags |= AV_PKT_FLAG_KEY;
+
+				pkt.stream_index = _videoStream->index;
+				pkt.data = _outputBuf.data();
+				pkt.size = out_size;
+				if(::av_interleaved_write_frame(_formatContext.get(), &pkt) < 0) {
+					::av_free_packet(&pkt);
+					throw Exception(tr("Error while writing video frame."));
+				}
+				::av_free_packet(&pkt);
+			}
+#else
 			AVPacket pkt = {0};
 			::av_init_packet(&pkt);
 
-			errCode = ::avcodec_receive_packet(_codecContext.get(), &pkt);
-			if(errCode < 0 && errCode != AVERROR(EAGAIN) && errCode != AVERROR_EOF)
+			int got_packet_ptr;
+			if((errCode = ::avcodec_encode_video2(_codecContext.get(), &pkt, _frame.get(), &got_packet_ptr)) < 0)
 				throw Exception(tr("Error while encoding video frame: %1").arg(errorMessage(errCode)));
 
-			if(errCode >= 0) {
-				::av_packet_rescale_ts(&pkt, _codecContext->time_base, _videoStream->time_base);
+			if(got_packet_ptr && pkt.size) {
 				pkt.stream_index = _videoStream->index;
-				// Write the compressed frame to the media file.
-				if((errCode = ::av_interleaved_write_frame(_formatContext.get(), &pkt)) < 0) {
-					throw Exception(tr("Error while writing encoded video frame: %1").arg(errorMessage(errCode)));
+				if((errCode = ::av_write_frame(_formatContext.get(), &pkt)) < 0) {
+					::av_free_packet(&pkt);
+					throw Exception(tr("Error while writing video frame: %1").arg(errorMessage(errCode)));
 				}
-			}
-		}
-		while(errCode >= 0);
-
-#elif !defined(FF_API_OLD_ENCODE_VIDEO) && LIBAVCODEC_VERSION_MAJOR < 55
-		int out_size = ::avcodec_encode_video(_codecContext.get(), _outputBuf.data(), _outputBuf.size(), _frame.get());
-		// If zero size, it means the image was buffered.
-		if(out_size > 0) {
-			AVPacket pkt;
-			::av_init_packet(&pkt);
-			if(_codecContext->coded_frame->pts != AV_NOPTS_VALUE)
-				pkt.pts = ::av_rescale_q(_codecContext->coded_frame->pts, _codecContext->time_base, _videoStream->time_base);
-			if(_codecContext->coded_frame->key_frame)
-				pkt.flags |= AV_PKT_FLAG_KEY;
-
-			pkt.stream_index = _videoStream->index;
-			pkt.data = _outputBuf.data();
-			pkt.size = out_size;
-			if(::av_interleaved_write_frame(_formatContext.get(), &pkt) < 0) {
 				::av_free_packet(&pkt);
-				throw Exception(tr("Error while writing video frame."));
 			}
-			::av_free_packet(&pkt);
-		}
-#else
-		AVPacket pkt = {0};
-		::av_init_packet(&pkt);
-
-		int got_packet_ptr;
-		if((errCode = ::avcodec_encode_video2(_codecContext.get(), &pkt, _frame.get(), &got_packet_ptr)) < 0)
-			throw Exception(tr("Error while encoding video frame: %1").arg(errorMessage(errCode)));
-
-		if(got_packet_ptr && pkt.size) {
-			pkt.stream_index = _videoStream->index;
-			if((errCode = ::av_write_frame(_formatContext.get(), &pkt)) < 0) {
-				::av_free_packet(&pkt);
-				throw Exception(tr("Error while writing video frame: %1").arg(errorMessage(errCode)));
-			}
-			::av_free_packet(&pkt);
-		}
 #endif
+		}
 	}
 }
 
