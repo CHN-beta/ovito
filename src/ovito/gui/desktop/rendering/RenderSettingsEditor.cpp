@@ -341,7 +341,7 @@ void RenderSettingsEditor::onSwitchRenderer()
 	QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help);
 	connect(buttonBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
 	connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
-	connect(buttonBox, &QDialogButtonBox::helpRequested, [this]() {
+	connect(buttonBox, &QDialogButtonBox::helpRequested, []() {
 		ActionManager::openHelpTopic("usage.rendering");
 	});
 	connect(rendererListWidget, &QListWidget::itemDoubleClicked, &dlg, &QDialog::accept);

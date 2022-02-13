@@ -4,7 +4,7 @@ Particles
 ---------
 
 .. image:: /images/visual_elements/particles_panel.png
-  :width: 30%
+  :width: 24%
   :align: right
 
 This :ref:`visual element <visual_elements>` is responsible for rendering particles in the viewports.
@@ -18,20 +18,20 @@ By setting the values of these particle properties, for example using the :ref:`
 you can fully control the visualization on a per-particle basis.
 
 .. table::
-  :widths: auto
+  :widths: 20 15 65
 
-  ========================= ======================= ==============================================================================
-  Particle property         Data type               Description
-  ========================= ======================= ==============================================================================
-  ``Color``                 Real (R,G,B)            Controls the display color of individual particles. Red, green and blue components must be in the range [0,1].  
-  ``Radius``                Real                    Controls the display size on a per-particle basis.  
-  ``Particle Type``         Integer                 Used to determine size and color if the ``Radius`` or ``Color`` particle properties are not present.  
-  ``Transparency``          Real                    Controls the transparency of individual particles. Must be in the range [0,1].  
-  ``Aspherical Shape``      Real (X,Y,Z)            Controls the size of particles with a non-symmetric shape. The exact interpretation of this property depends on the selected :guilabel:`Standard shape`, see below.  
-  ``Orientation``           Real (X,Y,Z,W)          Specifies the orientation of particles with non-symmetric shapes. 
-                                                    The rotation of each particle is specified in terms of a `quaternion <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`__.
-                                                    See :ref:`this section <howto.aspherical_particles>` for further information.
-  ========================= ======================= ==============================================================================
+  ================================== ======================= ==============================================================================
+  Particle property                  Data type               Description
+  ================================== ======================= ==============================================================================
+  ``Color``                          Real (R,G,B)            Controls the display color of individual particles. Red, green and blue components must be in the range [0,1].  
+  ``Radius``                         Real                    Controls the display size on a per-particle basis.  
+  ``Particle Type``                  Integer                 Used to determine size and color if the ``Radius`` or ``Color`` particle properties are not present.  
+  ``Transparency``                   Real                    Controls the transparency of individual particles. Must be in the range [0,1].  
+  ``Aspherical Shape``               Real (X,Y,Z)            Controls the size of particles with a non-symmetric shape. The exact interpretation of this property depends on the selected :guilabel:`Standard shape`, see below.  
+  ``Orientation``                    Real (X,Y,Z,W)          Specifies the orientation of particles with non-symmetric shapes. 
+                                                             The rotation of each particle is specified in terms of a `quaternion <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`__.
+                                                             See :ref:`this section <howto.aspherical_particles>` for further information.
+  ================================== ======================= ==============================================================================
 
 Parameters
 """"""""""

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -137,7 +137,7 @@ bool XYZImporterEditor::showEditColumnMappingDialog(XYZImporter* importer, const
 void XYZImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("XYZ reader"), rolloutParams);
+	QWidget* rollout = createRollout(tr("XYZ reader"), rolloutParams, "manual:file_formats.input.xyz");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);

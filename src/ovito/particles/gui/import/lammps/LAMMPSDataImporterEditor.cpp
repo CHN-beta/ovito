@@ -26,6 +26,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include "LAMMPSDataImporterEditor.h"
 
 namespace Ovito::Particles {
@@ -96,7 +97,7 @@ bool LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl
 void LAMMPSDataImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("LAMMPS data reader"), rolloutParams);
+	QWidget* rollout = createRollout(tr("LAMMPS data reader"), rolloutParams, "manual:file_formats.input.lammps_data");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
@@ -197,9 +198,12 @@ LAMMPSAtomStyleDialog::LAMMPSAtomStyleDialog(LAMMPSDataImporter::LAMMPSAtomStyle
 	layout1->addWidget(_columnListField);
 	layout1->addWidget(_columnMismatchLabel);
 
-	_buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, this);
+	_buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
 	connect(_buttonBox, &QDialogButtonBox::accepted, this, &LAMMPSAtomStyleDialog::onOk);
 	connect(_buttonBox, &QDialogButtonBox::rejected, this, &LAMMPSAtomStyleDialog::reject);
+	connect(_buttonBox, &QDialogButtonBox::helpRequested, []() {
+		ActionManager::openHelpTopic("manual:file_formats.input.lammps_data");
+	});
 
 	updateColumnList();
 

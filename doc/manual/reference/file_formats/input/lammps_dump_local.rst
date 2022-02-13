@@ -9,7 +9,7 @@ LAMMPS dump local file reader
 
   User interface of the LAMMPS dump local reader, when attached to a :ref:`particles.modifiers.load_trajectory` modifier.
 
-Loads per-bond data from files written by the `dump command <https://docs.lammps.org/dump.html>`__ of the LAMMPS simulation code.
+For loading per-bond data from files written by the `dump command <https://docs.lammps.org/dump.html>`__ of the LAMMPS simulation code.
 
 .. _file_formats.input.lammps_dump_local.variants:
 

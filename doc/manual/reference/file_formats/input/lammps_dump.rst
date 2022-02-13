@@ -9,7 +9,7 @@ LAMMPS dump file reader
 
   User interface of the LAMMPS dump reader, which appears as part of a pipeline's :ref:`file source <scene_objects.file_source>`.
 
-Loads particle trajectory data from files written by the `dump command <https://docs.lammps.org/dump.html>`__ of the LAMMPS simulation code.
+For loading particle trajectory data from files written by the `dump command <https://docs.lammps.org/dump.html>`__ of the LAMMPS simulation code.
 
 .. _file_formats.input.lammps_dump.variants:
 

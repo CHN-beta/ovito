@@ -9,7 +9,7 @@ LAMMPS data file reader
 
   User interface of the LAMMPS data reader, which appears as part of a pipeline's :ref:`file source <scene_objects.file_source>`.
 
-Loads structure models of the `LAMMPS <https://docs.lammps.org/>`__ simulation code.
+For loading structure models of the `LAMMPS <https://docs.lammps.org/>`__ simulation code.
 
 .. _file_formats.input.lammps_data.variants:
 

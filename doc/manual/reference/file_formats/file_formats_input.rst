@@ -52,7 +52,7 @@ OVITO can read the following file formats:
       OVITO can read the `extended XYZ format <https://web.archive.org/web/20190811094343/https://libatoms.github.io/QUIP/io.html#extendedxyz>`__, 
       which supports arbitrary sets of particle data columns, and can store additional information such as the simulation cell geometry and boundary conditions. 
     - :ref:`particles <scene_objects.particles>`
-    - 
+    - :ref:`Details <file_formats.input.xyz>`
   
   * - POSCAR / XDATCAR / CHGCAR 
     -  File formats used by the *ab initio* simulation package `VASP <http://www.vasp.at/>`__.
