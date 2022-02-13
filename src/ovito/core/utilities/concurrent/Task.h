@@ -302,10 +302,10 @@ protected:
     QMutex& taskMutex() const { return _mutex; }
 
     /// Returns the task object that is currently making the call to this function.
-    static Task* currentTask() noexcept { return _currentTask; }
+    static Task* currentTask() noexcept;
 
     /// Registers a task object as the current task in the current thread.
-    static void setCurrentTask(Task* task) noexcept { _currentTask = task; }
+    static void setCurrentTask(Task* task) noexcept;
 
     /// RAII class that registers a task as the current task.
     class OVITO_CORE_EXPORT Scope
@@ -337,9 +337,6 @@ protected:
 
     /// Pointer to a std::tuple<...> storing the result value(s) of this task.
     void* _resultsStorage = nullptr;
-
-    /// The task object that is currently executing in the current thread.
-    static thread_local Task* _currentTask;
 
 #ifdef OVITO_DEBUG
     /// Indicates whether the result value of the task has been set.

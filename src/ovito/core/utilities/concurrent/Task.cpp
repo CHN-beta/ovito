@@ -38,7 +38,23 @@ std::atomic_size_t Task::_globalTaskCounter{0};
 #endif
 
 // The task that is currently the active one in the current thread.
-thread_local Task* Task::_currentTask = nullptr;
+static thread_local Task* _currentTask = nullptr;
+
+/*******************************************************x***********************
+* Returns the task object that is currently making the call to this function.
+******************************************************************************/
+Task* Task::currentTask() noexcept 
+{
+	return _currentTask; 
+}
+
+/*******************************************************x***********************
+* Registers a task object as the current task in the current thread.
+******************************************************************************/
+void Task::setCurrentTask(Task* task) noexcept 
+{
+	_currentTask = task; 
+}
 
 #ifdef OVITO_DEBUG
 /*******************************************************x***********************
