@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,6 +23,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "PropertyObject.h"
+#include "PropertyContainerClass.h"
 
 namespace Ovito::StdObj {
 
@@ -371,6 +372,40 @@ void PropertyObject::updateEditableProxies(PipelineFlowState& state, ConstDataOb
 		// Make this data object mutable and attach the proxy object to it.
 		state.makeMutableInplace(dataPath)->setEditableProxy(std::move(newProxy));
 	}
+}
+
+/******************************************************************************
+* Creates and returns a new numeric element type with the given numeric ID and, 
+* optionally, a human-readable name. If an element type with the given numeric ID 
+* already exists in this property's element type list, it will be returned instead.
+******************************************************************************/
+const ElementType* PropertyObject::addNumericType(const PropertyContainerClass& containerClass, int id, const QString& name, OvitoClassPtr elementTypeClass)
+{
+	if(const ElementType* existingType = elementType(id))
+		return existingType;
+
+	// If the caller did not specify an element type class, let the PropertyConatiner class 
+	// determine the right element type class for the given property.
+	if(elementTypeClass == nullptr) {
+		elementTypeClass = containerClass.typedPropertyElementClass(type());
+		if(elementTypeClass == nullptr)
+			elementTypeClass = &ElementType::OOClass();
+	}
+	OVITO_ASSERT(elementTypeClass->isDerivedFrom(ElementType::OOClass()));
+
+	// First initialization phase.
+	DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance(dataset()));
+	// Second initialization phase for element types, which takes into account the assigned ID and name and the property type.
+	elementType->setNumericId(id);
+	elementType->setName(name);
+	elementType->initializeType(PropertyReference(&containerClass, this));
+
+	// Log in type name assigned by the caller as default value for the element type.
+	// This is needed for the Python code generator to detect manual changes subsequently made by the user.
+	elementType->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name)});
+
+	// Add the new element type to the type list managed by this property.
+	return addElementType(std::move(elementType));
 }
 
 }	// End of namespace

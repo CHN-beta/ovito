@@ -78,6 +78,15 @@ public:
 		return static_object_cast<DataObjectClass>(getObject(DataObjectClass::OOClass()));
 	}
 
+	/// Finds an object of the given type in the list of data objects stored in this flow state.
+	/// If it exists, makes the data object mutable.
+	template<class DataObjectClass>
+	DataObjectClass* getMutableObject() {
+		if(const DataObjectClass* obj = getObject<DataObjectClass>())
+			return makeMutable<DataObjectClass>(obj);
+		return nullptr;
+	}
+
 	/// \brief Finds all objects of the given type in the list of data objects stored in this flow state.
 	std::vector<const DataObject*> getObjects(const DataObject::OOMetaClass& objectClass) const;
 
@@ -312,8 +321,7 @@ public:
 	/// assigns the given data source object, and finally inserts the data object into this pipeline flow state.
 	template<class DataObjectType, typename... Args>
 	DataObjectType* createObject(const PipelineObject* dataSource, Args&&... args) {
-		OVITO_ASSERT(dataSource != nullptr);
-		OORef<DataObjectType> obj = OORef<DataObjectType>::create(dataSource->dataset(), std::forward<Args>(args)...);
+		OORef<DataObjectType> obj = OORef<DataObjectType>::create(this->dataset(), std::forward<Args>(args)...);
 		obj->setDataSource(const_cast<PipelineObject*>(dataSource));
 		addObject(obj);
 		return obj;

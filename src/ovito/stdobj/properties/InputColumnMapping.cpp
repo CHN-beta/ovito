@@ -448,12 +448,7 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
 				int ival = (int)*token;
 				if(prec->elementTypeClass) {
 					// Instantiate a new element type with a numeric ID and add it to the property's type list.
-					if(!prec->property->elementType(ival)) {
-						DataOORef<ElementType> elementType = static_object_cast<ElementType>(prec->elementTypeClass->createInstance(_container->dataset()));
-						elementType->setNumericId(ival);
-						elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), prec->property));
-						prec->property->addElementType(std::move(elementType));
-					}
+					_frameLoader.addNumericType(_container->getOOMetaClass(), prec->property, ival, QString{}, prec->elementTypeClass);
 				}
 				*reinterpret_cast<int*>(prec->data + elementIndex * prec->stride) = ival;
 			}

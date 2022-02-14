@@ -128,6 +128,26 @@ public:
 		return type;
 	}
 
+	/// Creates and returns a new numeric element type with the given numeric ID and, optionally, a human-readable name.
+	/// If an element type with the given numeric ID already exists in this property's element type list, it will be returned instead.
+	const ElementType* addNumericType(const PropertyContainerClass& containerClass, int id, const QString& name = {}, OvitoClassPtr elementTypeClass = {});
+
+	/// Creates and returns a new element type with the given name and assigns a new unique ID to it.
+	/// If an element type with the given name already exists in this property's element type list, it will be returned instead.
+	const ElementType* addNamedType(const PropertyContainerClass& containerClass, const QString& name, OvitoClassPtr elementTypeClass = {}) {
+		if(const ElementType* existingType = elementType(name))
+			return existingType;
+		return addNumericType(containerClass, generateUniqueElementTypeId(), name, elementTypeClass);
+	}
+
+	/// Creates and returns a new element type with the given name and assigns a new unique ID to it.
+	/// If an element type with the given name already exists in this property's element type list, it will be returned instead.
+	const ElementType* addNamedType(const PropertyContainerClass& containerClass, const QLatin1String& name, OvitoClassPtr elementTypeClass = {}) {
+		if(const ElementType* existingType = elementType(name))
+			return existingType;
+		return addNumericType(containerClass, generateUniqueElementTypeId(), name, elementTypeClass);
+	}
+
 	/// Returns the element type with the given ID, or NULL if no such type exists.
 	const ElementType* elementType(int id) const {
 		for(const ElementType* type : elementTypes())

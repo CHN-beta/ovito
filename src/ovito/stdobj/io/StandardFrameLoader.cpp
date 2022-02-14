@@ -47,38 +47,6 @@ SimulationCellObject* StandardFrameLoader::simulationCell()
 }
 
 /******************************************************************************
-* Registers a new numeric element type with the given ID and an optional name string.
-******************************************************************************/
-const ElementType* StandardFrameLoader::addNumericType(const PropertyContainerClass& containerClass, PropertyObject* typedProperty, int id, const QString& name, OvitoClassPtr elementTypeClass)
-{
-	if(const ElementType* existingType = typedProperty->elementType(id))
-		return existingType;
-
-	// If the caller did not specify an element type class, let the PropertyConatiner class 
-	// determine the right element type class for the given property.
-	if(elementTypeClass == nullptr) {
-		elementTypeClass = containerClass.typedPropertyElementClass(typedProperty->type());
-		if(elementTypeClass == nullptr)
-			elementTypeClass = &ElementType::OOClass();
-	}
-	OVITO_ASSERT(elementTypeClass->isDerivedFrom(ElementType::OOClass()));
-
-	// First initialization phase.
-	DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance(dataset()));
-	// Second initialization phase for element types, which takes into account the assigned ID and name and the property type.
-	elementType->setNumericId(id);
-	elementType->setName(name);
-	elementType->initializeType(PropertyReference(&containerClass, typedProperty));
-
-	// Log in type name assigned by the file reader as default value for the element type.
-	// This is needed for the Python code generator to detect manual changes subsequently made by the user.
-	elementType->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name)});
-
-	// Add the new element type to the type list managed by the property.
-	return typedProperty->addElementType(std::move(elementType));
-}
-
-/******************************************************************************
 * Finalizes the data loaded by a sub-class.
 ******************************************************************************/
 void StandardFrameLoader::loadFile()

@@ -11,7 +11,7 @@ Binary program packages of OVITO for Linux, Windows, and macOS can be downloaded
 System Requirements
 ===================
 
-OVITO requires a 64-bit operating system and runs on processors with x86-64 architecture.
+OVITO requires a 64-bit operating system and runs on processors with x86-64 or arm64 architecture.
 The graphical user interface of OVITO requires 3D graphics hardware with support for the `OpenGL <https://en.wikipedia.org/wiki/OpenGL>`_ programming interface (OpenGL 2.1 or newer). 
 In general it is recommended that you install the latest graphics driver provided by your hardware vendor before running OVITO as some older drivers may not fully support modern OpenGL specifications, which can lead to compatibility problems.
 
@@ -21,7 +21,7 @@ Installation instructions
 =========================
 
 *Linux*:
-    Extract the downloaded :file:`.tar.xz` archive file using the `tar <https://www.computerhope.com/unix/utar.htm>`_ command: :command:`tar xJfv ovito-3.6.0-x86_64.tar.xz`.
+    Extract the downloaded :file:`.tar.xz` archive file using the `tar <https://www.computerhope.com/unix/utar.htm>`_ command: :command:`tar xJfv ovito-3.7.0-x86_64.tar.xz`.
     This will create a new sub-directory containing the program files.
     Change into that directory and start OVITO by running the executable :command:`./bin/ovito`.
 
