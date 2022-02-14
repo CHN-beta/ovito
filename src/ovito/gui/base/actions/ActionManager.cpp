@@ -317,6 +317,7 @@ QAction* ActionManager::createViewportModeAction(const QString& id, ViewportInpu
 ******************************************************************************/
 QVariant ActionManager::data(const QModelIndex& index, int role) const
 {
+	if(index.row() < 0) return {};
 	QAction* action = _actions[index.row()];
 	if(role == Qt::DisplayRole) {
 		QString text = action->text();
@@ -348,9 +349,11 @@ QVariant ActionManager::data(const QModelIndex& index, int role) const
 Qt::ItemFlags ActionManager::flags(const QModelIndex& index) const
 {
 	Qt::ItemFlags flags = QAbstractListModel::flags(index);
-	QAction* action = _actions[index.row()];
-	if(!action->isEnabled())
-		flags.setFlag(Qt::ItemIsEnabled, false);
+	if(index.row() >= 0 && index.row() < _actions.size()) {
+		QAction* action = _actions[index.row()];
+		if(!action->isEnabled())
+			flags.setFlag(Qt::ItemIsEnabled, false);
+	}
 	return flags;
 }
 
