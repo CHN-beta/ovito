@@ -29,21 +29,21 @@ In `its simplest form <https://en.wikipedia.org/wiki/XYZ_file_format>`__, an XYZ
     Si        0.00000000      2.72000000      2.72000000
     Si        1.36000000      4.08000000      4.08000000
 
-The first line specifies just the number of atoms, and the second line is some comment text (can be empty). 
-Each atom line consists of the species name and the atom's Cartesian xyz coordinates.
+The first line specifies the number of atoms and the second line is used to store an arbitrary comment text (may be an empty line). 
+Each of the following atom lines consist of the species name and the atom's Cartesian xyz coordinates.
 
 .. note::
 
-    Since this basic XYZ file format contains no information about the simulation cell dimensions, 
-    OVITO automatically computes an axis-aligned bounding box around all atoms and assumes non-periodic boundary conditions. 
-    This tight simulation box typically does not reflect the actual simulation cell used in the original simulation.
+    Since this basic XYZ file format doesn't contain any information about the simulation cell, 
+    OVITO automatically computes an ad-hoc bounding box enclosing all atoms and assumes non-periodic boundary conditions. 
+    This tight simulation box will typically not reflect the actual simulation cell used in the original simulation.
     If possible, use the :ref:`extended XYZ file format <file_formats.input.xyz.extended_format>` to import 
-    the true simulation cell dimensions into OVITO.
+    the true cell geometry into OVITO.
 
 This reader is able to load gzipped XYZ files (".gz" suffix). 
 
-XYZ files may contain simulation trajectories. Multiple frames are simply stored back-to-back in a file,
-i.e., a new two-line header directly follows after the atoms list of the preceding frame. OVITO automatically
+XYZ files may store simulation trajectories. Multiple frames are simply stored back-to-back in one file,
+i.e., the next two-line header directly follows after the atoms list of the preceding frame. OVITO automatically
 detects if the loaded XYZ file contains more than one frame.
 
 .. _file_formats.input.xyz.auxiliary_columns:
@@ -125,7 +125,7 @@ would describe a silicon atom at position :math:`(4.08, 4.08, 1.36)` with zero v
 In the current version of OVITO, text columns (data format ``S``) are only allowed for the atom species or the molecule type.
 
 The file reader automatically maps file columns to the right :ref:`particle properties <usage.particle_properties>` in OVITO if their 
-name matches any of the following standard names (case-insensitive):
+name matches one of the following standard names (case-insensitive):
 
 ================================== ==================================
 XYZ column specification           OVITO particle property    
