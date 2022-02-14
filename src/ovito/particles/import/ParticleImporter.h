@@ -123,6 +123,9 @@ protected:
 		/// Indicates that the impropers data object was newly created by this file reader.
 		bool areImpropersNewlyCreated() const { return _areImpropersNewlyCreated; }
 
+		/// Controls whether file loader should clear bonds, angles, etc. at the end of the loading process.
+		void setKeepExistingTopology(bool enable) { _keepExistingTopology = enable; }
+
 	protected:
 
 		/// Finalizes the particle data loaded by a sub-class.
@@ -170,6 +173,10 @@ protected:
 
 		/// Indicates that the impropers data object was newly created by this file reader.
 		bool _areImpropersNewlyCreated = false;
+
+		/// Indicates that the file loader should not clear bonds, angles, etc. at the end of the loading process.
+		/// It will be set to true if the file loader loads some bonds, angles, etc.
+		bool _keepExistingTopology = false;
 	};
 
 	/// Is called when the value of a property of this object has changed.

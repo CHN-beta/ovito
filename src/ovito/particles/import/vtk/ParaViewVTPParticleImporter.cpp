@@ -96,6 +96,11 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 		preserveExistingData = (baseParticleIndex != 0);
 	}
 
+	// Aspherix stores bonds in a seperate VTK file, which gets loaded alongside with this particles files.
+	// To preserve the bonds loaded by ParaViewVTPBondsImporter, we have to explicitly tell the ParticleImporter base class here 
+	// to NOT reset the bonds list (which it would otherwise do, because ParaViewVTPParticleImporter doesn't create any bonds).
+	setKeepExistingTopology(true);
+
 	// Parse the elements of the XML file.
 	while(xml.readNextStartElement()) {
 		if(isCanceled())
@@ -130,6 +135,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 				xml.raiseError(tr("Number of vertices does not match number of points. This file parser can only read datasets consisting of vertices only."));
 				break;
 			}
+			OVITO_ASSERT(baseParticleIndex + numParticles != 0); // Calling setParticleCount(0) discards an existing ParticlesObject. We never want that to happen!
 			setParticleCount(baseParticleIndex + numParticles);
 		}
 		else if(xml.name().compare(QLatin1String("PointData")) == 0 || xml.name().compare(QLatin1String("Points")) == 0 || xml.name().compare(QLatin1String("Verts")) == 0) {

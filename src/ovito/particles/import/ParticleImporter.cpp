@@ -81,6 +81,7 @@ ParticlesObject* ParticleImporter::FrameLoader::particles()
 BondsObject* ParticleImporter::FrameLoader::bonds()
 {
 	if(!_bonds) {
+		setKeepExistingTopology(true);
 		if(particles()->bonds()) {
 			_bonds = particles()->makeBondsMutable();
 		}
@@ -100,6 +101,7 @@ BondsObject* ParticleImporter::FrameLoader::bonds()
 AnglesObject* ParticleImporter::FrameLoader::angles()
 {
 	if(!_angles) {
+		setKeepExistingTopology(true);
 		if(particles()->angles()) {
 			_angles = particles()->makeAnglesMutable();
 		}
@@ -119,6 +121,7 @@ AnglesObject* ParticleImporter::FrameLoader::angles()
 DihedralsObject* ParticleImporter::FrameLoader::dihedrals()
 {
 	if(!_dihedrals) {
+		setKeepExistingTopology(true);
 		if(particles()->dihedrals()) {
 			_dihedrals = particles()->makeDihedralsMutable();
 		}
@@ -138,6 +141,7 @@ DihedralsObject* ParticleImporter::FrameLoader::dihedrals()
 ImpropersObject* ParticleImporter::FrameLoader::impropers()
 {
 	if(!_impropers) {
+		setKeepExistingTopology(true);
 		if(particles()->impropers()) {
 			_impropers = particles()->makeImpropersMutable();
 		}
@@ -279,6 +283,9 @@ void ParticleImporter::FrameLoader::generateBonds()
 	const PropertyObject* typeProperty = _particles->getProperty(ParticlesObject::TypeProperty);
 	const PropertyObject* positionProperty = _particles->getProperty(ParticlesObject::PositionProperty);
 	if(!typeProperty || !positionProperty) return;
+
+	// Do not delete the generated bonds again in FrameLoader::loadFile(). 
+	setKeepExistingTopology(true);
 
 	// Get the list of van der Waals radii.
 	std::vector<FloatType> typeVdWRadiusMap;
@@ -470,6 +477,15 @@ void ParticleImporter::FrameLoader::loadFile()
 	// Center the simulation cell on the coordinate origin if requested.
 	if(_recenterCell)
 		recenterSimulationCell();
+
+	// If the file reader did not import any bonds, then discard 
+	// any existing bonds from a previous load operation. 
+	if(!_keepExistingTopology) {
+		if(!_bonds) setBondCount(0);
+		if(!_angles) setAngleCount(0);
+		if(!_dihedrals) setDihedralCount(0);
+		if(!_impropers) setImproperCount(0);
+	}
 
 #ifdef OVITO_DEBUG
 	if(_particles) _particles->verifyIntegrity();

@@ -113,6 +113,7 @@ void ParaViewVTPBondsImporter::FrameLoader::loadFile()
 		baseBondIndex = bonds()->elementCount();
 		preserveExistingData = (baseBondIndex != 0);
 	}
+	setKeepExistingTopology(true);
 
 	// Parse the elements of the XML file.
 	while(xml.readNextStartElement()) {
@@ -148,6 +149,7 @@ void ParaViewVTPBondsImporter::FrameLoader::loadFile()
 				xml.raiseError(tr("Number of lines does not match to the number of points in the contact network."));
 				break;
 			}
+			OVITO_ASSERT(baseBondIndex + numLines != 0); // Calling setBondCount(0) discards an existing BondsObject. We never want that to happen!
 			setBondCount(baseBondIndex + numLines);
 		}
 		else if(xml.name().compare(QLatin1String("CellData")) == 0) {
