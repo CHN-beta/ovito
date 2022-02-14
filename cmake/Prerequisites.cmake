@@ -255,7 +255,7 @@ FUNCTION(deploy_qt_framework_files)
 			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qcertonlybackend${_qt_dll_suffix}.dll" "plugins/tls/")
 			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qopensslbackend${_qt_dll_suffix}.dll" "plugins/tls/")
 			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qschannelbackend${_qt_dll_suffix}.dll" "plugins/tls/")
-		ELSE()
+		ENDIF()
 
 		# Install QML modules.
 	#	IF(OVITO_QML_GUI)
