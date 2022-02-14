@@ -62,6 +62,9 @@ protected:
 
 private:
 
+	/// Returns whether there are any running tasks.
+	bool anyRunningTasks() const;
+
 	/// The window this display widget is associated with.
 	MainWindow* _mainWindow;
 

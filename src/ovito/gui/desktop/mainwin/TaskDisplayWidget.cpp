@@ -25,6 +25,7 @@
 #include <ovito/gui/desktop/widgets/general/ElidedTextLabel.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/TaskWatcher.h>
+#include <ovito/core/app/Application.h>
 #include "TaskDisplayWidget.h"
 
 namespace Ovito {
@@ -54,7 +55,17 @@ TaskDisplayWidget::TaskDisplayWidget(MainWindow* mainWindow) : _mainWindow(mainW
 
 	connect(&mainWindow->taskManager(), &TaskManager::taskStarted, this, &TaskDisplayWidget::taskStarted);
 	connect(&mainWindow->taskManager(), &TaskManager::taskFinished, this, &TaskDisplayWidget::taskFinished);
+	connect(&Application::instance()->taskManager(), &TaskManager::taskStarted, this, &TaskDisplayWidget::taskStarted);
+	connect(&Application::instance()->taskManager(), &TaskManager::taskFinished, this, &TaskDisplayWidget::taskFinished);
 	connect(this, &QObject::destroyed, _progressTextDisplay, &QObject::deleteLater);
+}
+
+/******************************************************************************
+* Returns whether there are any running tasks.
+******************************************************************************/
+bool TaskDisplayWidget::anyRunningTasks() const
+{
+	return !_mainWindow->taskManager().runningTasks().empty() || !Application::instance()->taskManager().runningTasks().empty();
 }
 
 /******************************************************************************
@@ -83,8 +94,7 @@ void TaskDisplayWidget::taskFinished(TaskWatcher* taskWatcher)
 	updateIndicator();
 
 	// Stop delay timer if no tasks are running.
-	const TaskManager& taskManager = _mainWindow->taskManager();
-	if(taskManager.runningTasks().empty())
+	if(!anyRunningTasks())
 		_delayTimer.stop();
 }
 
@@ -93,8 +103,7 @@ void TaskDisplayWidget::taskFinished(TaskWatcher* taskWatcher)
 ******************************************************************************/
 void TaskDisplayWidget::taskProgressChanged()
 {
-	const TaskManager& taskManager = _mainWindow->taskManager();
-	if(taskManager.runningTasks().empty() == false)
+	if(anyRunningTasks())
 		updateIndicator();
 }
 
@@ -116,14 +125,12 @@ void TaskDisplayWidget::timerEvent(QTimerEvent* event)
 ******************************************************************************/
 void TaskDisplayWidget::updateIndicator()
 {
-	const TaskManager& taskManager = _mainWindow->taskManager();
-	if(taskManager.runningTasks().empty()) {
+	if(!anyRunningTasks()) {
 		_delayTimer.stop();
 		hide();
 	}
 	else {
-		for(auto iter = taskManager.runningTasks().cbegin(); iter != taskManager.runningTasks().cend(); iter++) {
-			TaskWatcher* watcher = *iter;
+		auto showTask = [&](TaskWatcher* watcher) {
 			qlonglong maximum = watcher->progressMaximum();
 			if(watcher->progressMaximum() != 0 || watcher->progressText().isEmpty() == false) {
 				if(maximum < (qlonglong)std::numeric_limits<int>::max()) {
@@ -136,9 +143,17 @@ void TaskDisplayWidget::updateIndicator()
 				}
 				_progressTextDisplay->setText(watcher->progressText());
 				show();
-				break;
+				return true;
 			}
-		}
+			return false;
+		};
+
+		for(TaskWatcher* watcher : _mainWindow->taskManager().runningTasks())
+			if(showTask(watcher))
+				return;
+		for(TaskWatcher* watcher : Application::instance()->taskManager().runningTasks())
+			if(showTask(watcher))
+				return;
 	}
 }
 
