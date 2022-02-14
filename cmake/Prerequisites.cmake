@@ -244,13 +244,18 @@ FUNCTION(deploy_qt_framework_files)
 			ENDIF()
 		ENDFOREACH()
 
-		# Install Qt plugins.
+		# Install Qt plugins required by OVITO.
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platforms/qwindows${_qt_dll_suffix}.dll" "plugins/platforms/")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qjpeg${_qt_dll_suffix}.dll" "plugins/imageformats/")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qgif${_qt_dll_suffix}.dll" "plugins/imageformats/")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qsvg${_qt_dll_suffix}.dll" "plugins/imageformats/")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/iconengines/qsvgicon${_qt_dll_suffix}.dll" "plugins/iconengines/")
 		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/styles/qwindowsvistastyle${_qt_dll_suffix}.dll" "plugins/styles/")
+		IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
+			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qcertonlybackend${_qt_dll_suffix}.dll" "plugins/tls/")
+			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qopensslbackend${_qt_dll_suffix}.dll" "plugins/tls/")
+			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qschannelbackend${_qt_dll_suffix}.dll" "plugins/tls/")
+		ELSE()
 
 		# Install QML modules.
 	#	IF(OVITO_QML_GUI)
