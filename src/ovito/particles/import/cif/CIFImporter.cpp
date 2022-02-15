@@ -202,6 +202,9 @@ void CIFImporter::FrameLoader::loadFile()
 
 		state().setStatus(tr("Number of atoms: %1").arg(posProperty.size()));
 	}
+	catch(const Exception&) {
+		throw;
+	}
 	catch(const std::exception& e) {
 		throw Exception(tr("CIF file reader: %1").arg(e.what()));
 	}

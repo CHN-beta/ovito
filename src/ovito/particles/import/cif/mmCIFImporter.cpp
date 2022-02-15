@@ -249,6 +249,9 @@ void mmCIFImporter::FrameLoader::loadFile()
 		}
 		state().setStatus(tr("Number of atoms: %1").arg(natoms));
 	}
+	catch(const Exception&) {
+		throw;
+	}
 	catch(const std::exception& e) {
 		throw Exception(tr("mmCIF file reader error: %1").arg(e.what()));
 	}

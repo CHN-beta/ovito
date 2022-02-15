@@ -43,7 +43,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 	simCell = cell;
 
 	OVITO_ASSERT(!simCell->is2D() || !simCell->matrix().column(2).isZero());
-	if((simCell->is2D() ? simCell->volume2D() : simCell->volume3D()) <= FLOATTYPE_EPSILON)
+	if(simCell->isDegenerate())
 		throw Exception("Invalid input: Simulation cell is degenerate.");
 
 	AffineTransformation binCell;

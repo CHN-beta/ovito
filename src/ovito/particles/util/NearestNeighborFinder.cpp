@@ -40,7 +40,7 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
 	simCell = cellData;
 
 	OVITO_ASSERT(!simCell->is2D() || !simCell->matrix().column(2).isZero());
-	if(simCell->volume3D() <= FLOATTYPE_EPSILON)
+	if(simCell->volume3D() <= FLOATTYPE_EPSILON || simCell->isDegenerate())
 		throw Exception("Simulation cell is degenerate.");
 
 	// Compute normal vectors of simulation cell faces.

@@ -255,6 +255,13 @@ void PDBImporter::FrameLoader::loadFile()
 
 		// Parse unit cell.
 		if(structure.cell.is_crystal()) {
+
+			// Some PDB files use wrong column widths in the CRYST1 record line. These leads to invalid cell values when parsed by gemmi.
+			if(std::isnan(structure.cell.alpha) || std::isnan(structure.cell.beta) || std::isnan(structure.cell.gamma) ||
+				structure.cell.alpha < 0 || structure.cell.alpha > 180 || structure.cell.beta < 0 || structure.cell.beta > 180 || structure.cell.gamma < 0 || structure.cell.gamma > 180 ||
+				std::isnan(structure.cell.a) || std::isnan(structure.cell.b) || std::isnan(structure.cell.c))
+					throw Exception(tr("PDB file parsing error: CRYST1 record is invalid or has wrong format. Cannot parse a valid simulation cell."));
+
 			// Process periodic unit cell definition.
 			AffineTransformation cell = AffineTransformation::Identity();
 			if(structure.cell.alpha == 90 && structure.cell.beta == 90 && structure.cell.gamma == 90) {
@@ -295,6 +302,9 @@ void PDBImporter::FrameLoader::loadFile()
 					boundingBox.minc - Point3::Origin()));
 		}
 		state().setStatus(tr("Number of atoms: %1").arg(natoms));
+	}
+	catch(const Exception&) {
+		throw;
 	}
 	catch(const std::exception& e) {
 		throw Exception(tr("PDB file error: %1").arg(e.what()));

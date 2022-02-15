@@ -173,6 +173,17 @@ public:
 		return true;
 	}
 
+	/// Checks whether the simulation cell has zero volume or the cell matrix contains NaN entries.
+	bool isDegenerate() const {
+		if((is2D() ? volume2D() : volume3D()) <= FLOATTYPE_EPSILON)
+			return true;
+		for(size_t i = 0; i < 3; i++)
+			for(size_t j = 0; j < 4; j++)
+				if(std::isnan(cellMatrix()(i,j)))
+					return true;
+		return false;
+	}
+
 	/// Checks if two simulation cells are identical.
 	bool equals(const SimulationCellObject& other) const {
 		return cellMatrix() == other.cellMatrix() && pbcX() == other.pbcX() && pbcY() == other.pbcY() && pbcZ() == other.pbcZ() && is2D() == other.is2D();
