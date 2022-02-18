@@ -61,9 +61,14 @@ Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(DataSet* dataset,
 ******************************************************************************/
 OORef<FileImporter> FileImporter::autodetectFileFormat(DataSet* dataset, const FileHandle& file, FileImporter* existingImporterHint)
 {
+	// Note: FileImporter::autodetectFileFormat() may only be called from the main thread.
+	// Event though the implementation of autodetectFileFormat() itself is thread-safe,
+	// FileImporterClass::determineFileFormat() is currently limited to the main thread.
+	OVITO_ASSERT(QThread::currentThread() == dataset->thread());
+	// Note: FileSourceImporter::loadFrame() may not be called while undo recording is active.
 	OVITO_ASSERT(dataset->undoStack().isRecordingThread() == false);
 
-	// Cache for the format of files loaded before during the current program session.
+	// Cache for the format of files already loaded during the current program session.
 	//
 	// Keys:   Local filesystem paths 
 	// Values: The importer class handling the file and an optional sub-format specifier.

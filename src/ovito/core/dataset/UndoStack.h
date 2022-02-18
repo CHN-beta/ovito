@@ -138,7 +138,7 @@ public:
 	template<class UndoableOperationClass, class... Args>
 	void pushIfRecording(Args&&... args) {
 		if(isRecording())
-			push(std::unique_ptr<UndoableOperationClass>(new UndoableOperationClass(std::forward<Args>(args)...)));
+			push(std::make_unique<UndoableOperationClass>(std::forward<Args>(args)...));
 	}
 
 	/// \brief Suspends the recording of undoable operations.

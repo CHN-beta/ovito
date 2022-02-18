@@ -275,6 +275,9 @@ bool FileSourceImporter::isWildcardPattern(const QUrl& sourceUrl)
 ******************************************************************************/
 Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(const std::vector<QUrl>& sourceUrls)
 {
+	// Note: FileSourceImporter::discoverFrames() may only be called from the main thread.
+	OVITO_ASSERT(QThread::currentThread() == this->thread());
+
 	// No output if there is no input.
 	if(sourceUrls.empty())
 		return QVector<Frame>();
@@ -371,6 +374,9 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 ******************************************************************************/
 Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationRequest& request)
 {
+	// Note: FileSourceImporter::loadFrame() may only be called from the main thread.
+	OVITO_ASSERT(QThread::currentThread() == this->thread());
+	// Note: FileSourceImporter::loadFrame() may not be called while undo recording is active.
 	OVITO_ASSERT(!dataset()->undoStack().isRecordingThread());
 
 	// Create the frame loader for the requested frame.

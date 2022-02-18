@@ -73,6 +73,8 @@ public:
 	/// \return The identifier string of the format if the file format is supported by this class.
 	/// \throw Exception when something went wrong.
 	virtual std::optional<QString> determineFileFormat(const FileHandle& input, DataSet* dataset) const {
+		// Note: determineFileFormat() may only be called from the main thread.
+		OVITO_ASSERT(QThread::currentThread() == dataset->thread());
 		return checkFileFormat(input) ? std::make_optional<QString>() : std::optional<QString>{};
 	}
 

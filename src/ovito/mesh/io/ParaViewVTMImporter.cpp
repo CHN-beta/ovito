@@ -221,7 +221,8 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 		request.blockInfo = blockInfo;
 		request.appendData = (blockInfo.pieceIndex > 0); // Append data (instead of replacing it) when loading subsequent partial blocks of a piece-wise (parallel) dataset.
 
-		// Retrieve the data file.
+		// Retrieve the data file, then detect its format.
+		// Note: FileImporter::autodetectFileFormat() may only be called from the main thread.
 		return Application::instance()->fileManager().fetchUrl(blockInfo.location).then(request.dataset->executor(), [&request](const SharedFuture<FileHandle>& fileFuture) mutable -> Future<> {
 			try {
 				// Obtain a handle to the referenced data file.

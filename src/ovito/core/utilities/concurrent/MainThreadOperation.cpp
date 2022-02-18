@@ -39,6 +39,9 @@ MainThreadOperation::MainThreadOperation(TaskPtr p, UserInterface& userInterface
 	OVITO_ASSERT(isStarted());
 	OVITO_ASSERT(task()->isProgressingTask());
 
+	// Usage of MainThreadOperation is only permitted in the main thread.
+	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "MainThreadOperation", "MainThreadOperation may only be created in the main thread.");
+
 	// Make this task the active one.
 	Task::setCurrentTask(task().get());
 
