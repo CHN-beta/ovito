@@ -408,6 +408,13 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
 	// Need to turn edge highlighting and backface culling off by default.
 	particleType->setShapeBackfaceCullingEnabled(false);
 	particleType->setHighlightShapeEdges(false);
+
+	particleType->freezeInitialParameterValues({
+		SHADOW_PROPERTY_FIELD(ElementType::name), 
+		SHADOW_PROPERTY_FIELD(ParticleType::radius),
+		SHADOW_PROPERTY_FIELD(ParticleType::shape),
+		SHADOW_PROPERTY_FIELD(ParticleType::highlightShapeEdges),
+		SHADOW_PROPERTY_FIELD(ParticleType::shapeBackfaceCullingEnabled)});
 }
 
 /******************************************************************************

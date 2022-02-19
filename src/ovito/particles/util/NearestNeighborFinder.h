@@ -119,6 +119,9 @@ public:
 	/// \throw Exception on error.
 	bool prepare(ConstPropertyAccess<Point3> posProperty, const SimulationCellObject* cellData, ConstPropertyAccess<int> selectionProperty, ProgressingTask* operation);
 
+	/// Returns the maximum number of neighbors this class will find.
+	int maxNeighbors() const { return numNeighbors; }
+
 	/// Returns the number of input particles in the system for which the NearestNeighborFinder was created.
 	size_t particleCount() const {
 		return atoms.size();
