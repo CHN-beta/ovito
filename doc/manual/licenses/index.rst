@@ -167,8 +167,12 @@ Third-party software
     - :ref:`license <appendix.license.vma>`
     - 
 
-  * - `LAMMPS <https://www.lammps.org//>`__
+  * - `LAMMPS <https://www.lammps.org/>`__
     - LGPL v3
+    - 
+
+  * - `Traits <https://docs.enthought.com/traits/>`__
+    - :ref:`license <appendix.license.traits>`
     - 
 
 .. toctree::
@@ -201,3 +205,4 @@ Third-party software
   PySide6.instructions
   xdrfile
   vma
+  traits
