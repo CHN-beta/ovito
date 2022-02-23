@@ -376,7 +376,7 @@ TimeInterval FileSource::validityInterval(const PipelineEvaluationRequest& reque
 	TimeInterval iv = BasePipelineSource::validityInterval(request);
 
 	// Restrict the validity interval to the duration of the requested source frame.
-	if(restrictToFrame() < 0) {
+	if(restrictToFrame() < 0 && frames().size() > 1) {
 		int frame = animationTimeToSourceFrame(request.time());
 		if(frame > 0)
 			iv.intersect(TimeInterval(sourceFrameToAnimationTime(frame), TimePositiveInfinity()));

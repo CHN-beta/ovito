@@ -91,6 +91,7 @@ private:
 	QComboBox* _framesListBox = nullptr;
 	QStringListModel* _framesListModel = nullptr;
 	QLabel* _playbackRatioDisplay = nullptr;
+	QPushButton* _editPlaybackBtn = nullptr;
 };
 
 }	// End of namespace

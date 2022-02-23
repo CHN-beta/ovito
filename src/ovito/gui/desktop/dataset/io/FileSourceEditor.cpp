@@ -162,9 +162,9 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 		_playbackRatioDisplay = new QLabel(tr("1 / 1"));
 		sublayout->addWidget(_playbackRatioDisplay);
 		sublayout->addStretch(1);
-		QPushButton* editPlaybackBtn = new QPushButton(tr("Change..."));
-		sublayout->addWidget(editPlaybackBtn);
-		connect(editPlaybackBtn, &QPushButton::clicked, this, [&]() {
+		_editPlaybackBtn = new QPushButton(tr("Change..."));
+		sublayout->addWidget(_editPlaybackBtn);
+		connect(_editPlaybackBtn, &QPushButton::clicked, this, [&]() {
 			if(!editObject()) return;
 			ModalPropertiesEditorDialog(editObject(), new FileSourcePlaybackRateEditor(), container(), 
 				mainWindow(), tr("Configure Trajectory Playback"), tr("Change trajectory playback"), "manual:scene_objects.file_source.configure_playback").exec();
@@ -438,6 +438,8 @@ void FileSourceEditor::updateInformationLabel()
 		}
 		if(_playbackRatioDisplay)
 			_playbackRatioDisplay->setText(QString());
+		if(_editPlaybackBtn)
+			_editPlaybackBtn->setEnabled(false);
 		return;
 	}
 
@@ -483,6 +485,8 @@ void FileSourceEditor::updateFramesList()
 		// Disable all UI controls if no file source exists.
 		if(_fileSeriesLabel)
 			_fileSeriesLabel->setText(QString());
+		if(_editPlaybackBtn)
+			_editPlaybackBtn->setEnabled(false);
 		return;
 	}
 
@@ -502,6 +506,10 @@ void FileSourceEditor::updateFramesList()
 		_framesListModel->setStringList(std::move(stringList));
 		_framesListBox->setCurrentIndex(fileSource->dataCollectionFrame());
 		_framesListBox->setEnabled(_framesListBox->count() > 1);
+	}
+
+	if(_editPlaybackBtn) {
+		_editPlaybackBtn->setEnabled(fileSource->frames().size() > 1);
 	}
 }
 
