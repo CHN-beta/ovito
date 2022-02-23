@@ -100,7 +100,11 @@ public:
 
     /// \brief Blocks execution until this future is fulfilled. 
     /// \return false if either this future or the task waiting for it have been canceled.
-    [[nodiscard]] bool waitForFinished() const { return Task::waitFor(this->task()); }
+    [[nodiscard]] bool waitForFinished() const& { return Task::waitFor(this->task()); }
+
+    /// \brief Blocks execution until this future is fulfilled. 
+    /// \return false if either this future or the task waiting for it have been canceled.
+    [[nodiscard]] bool waitForFinished() && { return Task::waitFor(std::move(this->_task)); }
 
 protected:
 

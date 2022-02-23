@@ -92,10 +92,6 @@ void TaskDisplayWidget::taskStarted(TaskWatcher* taskWatcher)
 void TaskDisplayWidget::taskFinished(TaskWatcher* taskWatcher)
 {
 	updateIndicator();
-
-	// Stop delay timer if no tasks are running.
-	if(!anyRunningTasks())
-		_delayTimer.stop();
 }
 
 /******************************************************************************
@@ -103,8 +99,7 @@ void TaskDisplayWidget::taskFinished(TaskWatcher* taskWatcher)
 ******************************************************************************/
 void TaskDisplayWidget::taskProgressChanged()
 {
-	if(anyRunningTasks())
-		updateIndicator();
+	updateIndicator();
 }
 
 /******************************************************************************
@@ -125,36 +120,48 @@ void TaskDisplayWidget::timerEvent(QTimerEvent* event)
 ******************************************************************************/
 void TaskDisplayWidget::updateIndicator()
 {
-	if(!anyRunningTasks()) {
+	if(TaskWatcher* watcher = pickVisibleTask()) {
+		qlonglong maximum = watcher->progressMaximum();
+		if(maximum < (qlonglong)std::numeric_limits<int>::max()) {
+			_progressBar->setRange(0, (int)maximum);
+			_progressBar->setValue((int)watcher->progressValue());
+		}
+		else {
+			_progressBar->setRange(0, 1000);
+			_progressBar->setValue((int)(watcher->progressValue() * 1000ll / maximum));
+		}
+		_progressTextDisplay->setText(watcher->progressText());
+		show();
+	}
+	else {
 		_delayTimer.stop();
 		hide();
 	}
-	else {
-		auto showTask = [&](TaskWatcher* watcher) {
-			qlonglong maximum = watcher->progressMaximum();
-			if(watcher->progressMaximum() != 0 || watcher->progressText().isEmpty() == false) {
-				if(maximum < (qlonglong)std::numeric_limits<int>::max()) {
-					_progressBar->setRange(0, (int)maximum);
-					_progressBar->setValue((int)watcher->progressValue());
-				}
-				else {
-					_progressBar->setRange(0, 1000);
-					_progressBar->setValue((int)(watcher->progressValue() * 1000ll / maximum));
-				}
-				_progressTextDisplay->setText(watcher->progressText());
-				show();
-				return true;
-			}
-			return false;
-		};
+}
 
-		for(TaskWatcher* watcher : _mainWindow->taskManager().runningTasks())
-			if(showTask(watcher))
-				return;
-		for(TaskWatcher* watcher : Application::instance()->taskManager().runningTasks())
-			if(showTask(watcher))
-				return;
+/******************************************************************************
+* From all currently running tasks, picks which one should be displayed in the status bar. 
+******************************************************************************/
+TaskWatcher* TaskDisplayWidget::pickVisibleTask() const
+{
+	TaskWatcher* selectedTask = nullptr;
+	for(TaskWatcher* watcher : _mainWindow->taskManager().runningTasks()) {
+		if(!watcher->task()->isFinished()) {
+			if(watcher->progressMaximum() != 0)
+				return watcher;
+			else if(watcher->progressText().isEmpty() == false)
+				selectedTask = watcher;
+		}
 	}
+	for(TaskWatcher* watcher : Application::instance()->taskManager().runningTasks()) {
+		if(!watcher->task()->isFinished()) {
+			if(watcher->progressMaximum() != 0)
+				return watcher;
+			else if(watcher->progressText().isEmpty() == false)
+				selectedTask = watcher;
+		}
+	}
+	return selectedTask;
 }
 
 }	// End of namespace

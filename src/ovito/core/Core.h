@@ -99,6 +99,7 @@
 #include <QMap>
 #ifndef OVITO_DISABLE_THREADING
     #include <QThreadPool>
+    #include <QWaitCondition>
 #endif
 #ifndef OVITO_DISABLE_QSETTINGS
     #include <QSettings>

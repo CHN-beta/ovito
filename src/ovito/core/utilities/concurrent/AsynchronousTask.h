@@ -102,6 +102,43 @@ public:
 	}
 #endif
 
+	/// Schedules the given function for execution in a worker thread.
+	/// The function should accept a reference to a ProgressingTask as a parameter.
+	template<typename Function>
+	static Future<R...> runAsync(Function&& f) {
+		class FuncAsyncTask : public AsynchronousTask {
+		public:
+			FuncAsyncTask(Function&& f) : _func(std::forward<Function>(f)) {}
+			virtual void perform() override { std::move(_func)(*this); }
+		private:
+			std::decay_t<Function> _func;
+		};
+		auto task = std::make_shared<FuncAsyncTask>(std::forward<Function>(f));
+		return task->runAsync();
+	}
+
+	/// Runs the given function in a separate worker thread and waits until the function returns.
+	/// The function should accept a reference to a ProgressingTask, which allows it to be interrupted.
+	/// Returns false if execution has been canceled due to cancelation of the task calling this function.
+	template<typename Function>
+	static bool runAsyncAndJoin(Function&& f) {
+		QWaitCondition wc;
+		QMutex waitMutex;
+		bool done = false;
+		auto future = AsynchronousTask::runAsync([&wc, &waitMutex, &done, f = std::forward<Function>(f)](ProgressingTask& task) {
+			std::move(f)(task);
+			QMutexLocker locker(&waitMutex);
+			done = true;
+			wc.wakeAll();
+		});
+		bool result = std::move(future).waitForFinished();
+		waitMutex.lock();
+		if(!done)
+			wc.wait(&waitMutex);
+		waitMutex.unlock();
+		return result;
+	}
+
 	/// Runs the task in place and returns a future for the task's results.
 	Future<R...> runImmediately() {
 		this->startInThisThread();

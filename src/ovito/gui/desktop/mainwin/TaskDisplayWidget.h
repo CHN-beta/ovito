@@ -62,6 +62,11 @@ protected:
 
 private:
 
+	/// From all currently running tasks, picks which one should be displayed in the status bar. 
+	TaskWatcher* pickVisibleTask() const;
+
+private:
+
 	/// Returns whether there are any running tasks.
 	bool anyRunningTasks() const;
 

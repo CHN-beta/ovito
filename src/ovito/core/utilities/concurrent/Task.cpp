@@ -26,7 +26,6 @@
 #include "AsynchronousTask.h"
 #include "detail/TaskCallback.h"
 
-#include <QWaitCondition>
 #ifdef Q_OS_UNIX
 #include <csignal>
 #endif
@@ -277,7 +276,7 @@ void Task::removeCallback(detail::TaskCallbackBase* cb) noexcept
 /******************************************************************************
 * Blocks execution until another task finishes. 
 ******************************************************************************/
-bool Task::waitFor(const TaskPtr& awaitedTask)
+bool Task::waitFor(detail::TaskReference awaitedTask)
 {
 	OVITO_ASSERT(awaitedTask);
 
@@ -309,10 +308,10 @@ bool Task::waitFor(const TaskPtr& awaitedTask)
 		}
 	}
 
-	// Create shared pointers on the stack to make sure the two task don't get 
+	// Create shared pointers on the stack to make sure the two task objects don't get 
 	// destroyed during or right after the waiting phase and before we access them again below.
 	TaskPtr waitingTaskPtr(waitingTask->shared_from_this());
-	TaskPtr awaitedTaskPtr(awaitedTask);
+	TaskPtr awaitedTaskPtr(awaitedTask.get());
 
 	waitingTaskLocker.unlock();
 	awaitedTaskLocker.unlock();
@@ -329,6 +328,8 @@ bool Task::waitFor(const TaskPtr& awaitedTask)
 		// Register a callback function with the waiting task, which sets the wait condition in case the waiting task gets canceled.
 		detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) {
 			if(state & (Task::Canceled | Task::Finished)) {
+				// When the parent task gets canceled, discard the reference which keeps the awaited task running.
+				awaitedTask.reset();
 				QMutexLocker locker(&waitMutex);
 				alreadyDone.store(true);
 				wc.wakeAll();
@@ -370,9 +371,12 @@ bool Task::waitFor(const TaskPtr& awaitedTask)
 		QEventLoop eventLoop;
 
 		// Register a callback function with the waiting task, which makes the event loop quit in case the waiting task gets canceled.
-		detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&eventLoop](int state) {
-			if(state & (Task::Canceled | Task::Finished))
+		detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) {
+			if(state & (Task::Canceled | Task::Finished)) {
+				// When the parent task gets canceled, discard the reference which keeps the awaited task running.
+				awaitedTask.reset();
 				QMetaObject::invokeMethod(&eventLoop, &QEventLoop::quit, Qt::QueuedConnection);
+			}
 			return true;
 		});
 

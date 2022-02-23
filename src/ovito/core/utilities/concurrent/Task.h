@@ -202,7 +202,7 @@ public:
 	///        If the awaited task gets canceled while waiting, the task waiting for it gets canceled too.
     /// \param task The task to wait for.
     /// \return false if either \a task or this operation have been canceled.
-	[[nodiscard]] static bool waitFor(const TaskPtr& awaitedTask);
+	[[nodiscard]] static bool waitFor(detail::TaskReference awaitedTask);
 
 protected:
 

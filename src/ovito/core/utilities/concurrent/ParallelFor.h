@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/app/UserInterface.h>
 #include "ProgressingTask.h"
 
 #ifndef OVITO_DISABLE_THREADING
@@ -33,11 +34,11 @@
 
 namespace Ovito {
 
-template<class Function, typename T>
+template<typename T, class Function>
 bool parallelFor(
 		T loopCount,
 		ProgressingTask& promise,
-		Function kernel,
+		Function&& kernel,
 		T progressChunkSize = 1024)
 {
 	promise.setProgressMaximum(loopCount / progressChunkSize);
@@ -95,8 +96,8 @@ bool parallelFor(
 	return !promise.isCanceled();
 }
 
-template<class Function, typename T>
-void parallelFor(T loopCount, Function kernel)
+template<typename T, class Function>
+void parallelFor(T loopCount, Function&& kernel)
 {
 #ifndef OVITO_DISABLE_THREADING
 	std::vector<std::future<void>> workers;
@@ -137,6 +138,64 @@ void parallelFor(T loopCount, Function kernel)
 		kernel(i);
 	}
 #endif
+}
+
+template<typename T, class Kernel>
+Future<> parallelForAsync(UserInterface& userInterface, T loopCount, Kernel&& kernel, const QString& taskDescription, T progressChunkSize = 1024)
+{
+	class AsyncTask : public ProgressingTask 
+	{
+	public:
+		AsyncTask(Kernel&& kernel) : ProgressingTask(Task::Started), _kernel(std::forward<Kernel>(kernel)) {}
+
+		void go(T loopCount, T progressChunkSize) 
+		{
+			setProgressMaximum(loopCount / progressChunkSize);
+			size_t num_threads = Application::instance()->idealThreadCount();
+			_remainingThreads.store(num_threads);
+			T chunkSize = loopCount / num_threads;
+			T startIndex = 0;
+			T endIndex = chunkSize;
+			for(size_t t = 0; t < num_threads; t++) {
+				if(t == num_threads - 1)
+					endIndex += loopCount % num_threads;
+				std::thread([self = static_pointer_cast<AsyncTask>(this->shared_from_this()), startIndex, endIndex, progressChunkSize]() {
+					try {
+						for(T i = startIndex; i < endIndex && !self->isCanceled(); ) {
+							self->_kernel(i++);
+							if((i % progressChunkSize) == 0) {
+								OVITO_ASSERT(i != 0);
+								self->incrementProgressValue();
+							}
+						}
+						// Last thread is responsible for finishing the master task object.
+						if(self->_remainingThreads.fetch_sub(1) == 1) {
+							self->setProgressValue(self->progressMaximum());
+							self->setFinished();
+						}
+					}
+					catch(...) {
+						self->captureException();
+						self->setFinished();
+					}
+				}).detach();
+				startIndex = endIndex;
+				endIndex += chunkSize;
+			}
+		}
+	private:
+		std::decay_t<Kernel> _kernel;
+		std::atomic<size_t> _remainingThreads;
+	};
+
+	// Create the task object and start running.
+	auto task = std::make_shared<AsyncTask>(std::forward<Kernel>(kernel));
+	task->setProgressText(taskDescription);
+	task->go(loopCount, progressChunkSize);
+	// Display progress of task in the UI.
+	userInterface.taskManager().registerTask(task);
+	// Return a future to the caller.
+	return Future<>::createFromTask(std::move(task));
 }
 
 template<class Function>
