@@ -57,14 +57,12 @@ VideoEncoder::VideoEncoder(QObject* parent) : QObject(parent)
 ******************************************************************************/
 void VideoEncoder::initCodecs()
 {
-QT_WARNING_PUSH
-QT_WARNING_DISABLE_DEPRECATED
+#if LIBAVFORMAT_VERSION_MAJOR < 58
 	static std::once_flag initFlag;
 	std::call_once(initFlag, []() {
-		::av_register_all();
 		::avcodec_register_all();
 	});
-QT_WARNING_POP
+#endif
 }
 
 /******************************************************************************
@@ -89,13 +87,18 @@ QList<VideoEncoder::Format> VideoEncoder::supportedFormats()
 
 	initCodecs();
 
+#if LIBAVFORMAT_VERSION_MAJOR < 58
 	AVOutputFormat* fmt = nullptr;
-QT_WARNING_PUSH
-QT_WARNING_DISABLE_DEPRECATED
 	while((fmt = ::av_oformat_next(fmt))) {
-QT_WARNING_POP
-
+#else
+	void* opaque = nullptr;
+	const AVOutputFormat* fmt;
+	while((fmt = ::av_muxer_iterate(&opaque))) {
+#endif
 		if(fmt->flags & AVFMT_NOFILE || fmt->flags & AVFMT_NEEDNUMBER)
+			continue;
+
+		if(qstrcmp(fmt->name, "mov") != 0 && qstrcmp(fmt->name, "mp4") != 0 && qstrcmp(fmt->name, "avi") != 0 && qstrcmp(fmt->name, "gif") != 0)
 			continue;
 
 		Format format;
@@ -103,9 +106,6 @@ QT_WARNING_POP
 		format.longName = QString::fromLocal8Bit(fmt->long_name);
 		format.extensions = QString::fromLocal8Bit(fmt->extensions).split(',');
 		format.avformat = fmt;
-
-		if(format.name != "mov" && format.name != "mp4" && format.name != "avi" && format.name != "gif")
-			continue;
 
 		_supportedFormats.push_back(format);
 	}
@@ -135,7 +135,7 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, int 
 	else _frameDuplication = 1;
 	ticksPerFrame /= _frameDuplication; 
 
-	AVOutputFormat* outputFormat;
+	const AVOutputFormat* outputFormat;
 	if(format == nullptr) {
 		// Auto detect the output format from the file name.
 		outputFormat = ::av_guess_format(nullptr, qPrintable(filename), nullptr);
@@ -153,7 +153,7 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, int 
 #if LIBAVFORMAT_VERSION_MAJOR >= 58
 	// Allocate the output media context.
 	AVFormatContext* formatContext = nullptr;
-	if((errCode = ::avformat_alloc_output_context2(&formatContext, outputFormat, nullptr, qPrintable(filename))) < 0 || !formatContext)
+	if((errCode = ::avformat_alloc_output_context2(&formatContext, const_cast<AVOutputFormat*>(outputFormat), nullptr, qPrintable(filename))) < 0 || !formatContext)
 		throw Exception(tr("Failed to create video format context: %1").arg(errorMessage(errCode)));
 	_formatContext.reset(formatContext, &av_free);
 #else
@@ -363,7 +363,9 @@ void VideoEncoder::closeFile()
 				// Write the filter frame to output file
 				int ret = ::avcodec_send_frame(_codecContext.get(), filter_frame);
 				AVPacket* pkt = ::av_packet_alloc();
+#if LIBAVCODEC_VERSION_MAJOR < 58
 				::av_init_packet(pkt);
+#endif
 				while(ret >= 0) {
 					ret = ::avcodec_receive_packet(_codecContext.get(), pkt);
 					if(ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
@@ -382,29 +384,34 @@ void VideoEncoder::closeFile()
 			if((errCode = ::avcodec_send_frame(_codecContext.get(), nullptr)) < 0)
 				qWarning() << "Error while submitting an image frame for video encoding:" << errorMessage(errCode);
 
+			AVPacket* pkt = ::av_packet_alloc();
+#if LIBAVCODEC_VERSION_MAJOR < 58
+			::av_init_packet(pkt);
+#endif
 			do {
-				AVPacket pkt = {0};
-				::av_init_packet(&pkt);
-
-				errCode = ::avcodec_receive_packet(_codecContext.get(), &pkt);
+				errCode = ::avcodec_receive_packet(_codecContext.get(), pkt);
 				if(errCode < 0 && errCode != AVERROR(EAGAIN) && errCode != AVERROR_EOF) {
 					qWarning() << "Error while encoding video frame:" << errorMessage(errCode);
 					break;
 				}
 
 				if(errCode >= 0) {
-					::av_packet_rescale_ts(&pkt, _codecContext->time_base, _videoStream->time_base);
-					pkt.stream_index = _videoStream->index;
+					::av_packet_rescale_ts(pkt, _codecContext->time_base, _videoStream->time_base);
+					pkt->stream_index = _videoStream->index;
 					// Write the compressed frame to the media file.
-					if((errCode = ::av_interleaved_write_frame(_formatContext.get(), &pkt)) < 0) {
+					if((errCode = ::av_interleaved_write_frame(_formatContext.get(), pkt)) < 0) {
 						qWarning() << "Error while writing encoded video frame:" << errorMessage(errCode);
 					}
 				}
 			}
 			while(errCode >= 0);
+			::av_packet_unref(pkt);
 #endif
 		}
-		::avcodec_flush_buffers(_codecContext.get());
+		if(::av_codec_is_encoder(_codecContext->codec)) {
+			if(_codecContext->codec->capabilities & AV_CODEC_CAP_ENCODER_FLUSH)
+				::avcodec_flush_buffers(_codecContext.get());
+		}
 		::av_write_trailer(_formatContext.get());
 	}
 
@@ -511,24 +518,26 @@ void VideoEncoder::writeFrame(const QImage& image)
 			if((errCode = ::avcodec_send_frame(_codecContext.get(), _frame.get())) < 0)
 				throw Exception(tr("Error while submitting an image frame for video encoding: %1").arg(errorMessage(errCode)));
 
+			AVPacket* pkt = ::av_packet_alloc();
+#if LIBAVCODEC_VERSION_MAJOR < 58
+			::av_init_packet(pkt);
+#endif
 			do {
-				AVPacket pkt = {0};
-				::av_init_packet(&pkt);
-
-				errCode = ::avcodec_receive_packet(_codecContext.get(), &pkt);
+				errCode = ::avcodec_receive_packet(_codecContext.get(), pkt);
 				if(errCode < 0 && errCode != AVERROR(EAGAIN) && errCode != AVERROR_EOF)
 					throw Exception(tr("Error while encoding video frame: %1").arg(errorMessage(errCode)));
 
 				if(errCode >= 0) {
-					::av_packet_rescale_ts(&pkt, _codecContext->time_base, _videoStream->time_base);
-					pkt.stream_index = _videoStream->index;
+					::av_packet_rescale_ts(pkt, _codecContext->time_base, _videoStream->time_base);
+					pkt->stream_index = _videoStream->index;
 					// Write the compressed frame to the media file.
-					if((errCode = ::av_interleaved_write_frame(_formatContext.get(), &pkt)) < 0) {
+					if((errCode = ::av_interleaved_write_frame(_formatContext.get(), pkt)) < 0) {
 						throw Exception(tr("Error while writing encoded video frame: %1").arg(errorMessage(errCode)));
 					}
 				}
 			}
 			while(errCode >= 0);
+			::av_packet_unref(pkt);
 
 #elif !defined(FF_API_OLD_ENCODE_VIDEO) && LIBAVCODEC_VERSION_MAJOR < 55
 			int out_size = ::avcodec_encode_video(_codecContext.get(), _outputBuf.data(), _outputBuf.size(), _frame.get());

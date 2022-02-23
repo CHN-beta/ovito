@@ -57,7 +57,7 @@ public:
 		QByteArray name;
 		QString longName;
 		QStringList extensions;
-		AVOutputFormat* avformat;
+		const AVOutputFormat* avformat;
 	};
 
 public:
@@ -93,7 +93,7 @@ private:
 	std::vector<quint8> _outputBuf;
 	std::shared_ptr<AVFrame> _frame;
 	AVStream* _videoStream = nullptr;
-	AVCodec* _codec = nullptr;
+	const AVCodec* _codec = nullptr;
 	std::shared_ptr<AVCodecContext> _codecContext;
 	SwsContext* _imgConvertCtx = nullptr;
 	std::shared_ptr<AVFilterGraph> _filterGraph;
