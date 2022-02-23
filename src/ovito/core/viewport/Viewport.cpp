@@ -421,7 +421,7 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 ******************************************************************************/
 void Viewport::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-	if(field == PROPERTY_FIELD(viewNode)) {
+	if(field == PROPERTY_FIELD(viewNode) && !isBeingLoaded()) {
 		if(viewType() == VIEW_SCENENODE && newTarget == nullptr) {
 			// If the camera node has been deleted, switch to Orthographic or Perspective view type.
 			setViewType(isPerspectiveProjection() ? VIEW_PERSPECTIVE : VIEW_ORTHO, true);
