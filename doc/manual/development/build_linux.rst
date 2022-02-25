@@ -17,7 +17,7 @@ First install the required :ref:`build tools and third-party libraries <developm
    :header-rows: 1
 
    * - Linux distribution
-     - Installation command
+     - Commands
    * - Ubuntu / Debian
      - .. code::
 
@@ -34,6 +34,17 @@ First install the required :ref:`build tools and third-party libraries <developm
                  libQt5Widgets-devel libQt5Xml-devel libQt5Svg-devel libavutil-devel libavresample-devel \
                  libavfilter-devel libavcodec-devel libavdevice-devel netcdf-devel libssh-devel \
                  boost-devel hdf5-devel libswscale-devel
+
+   * - Fedora
+     - .. code::
+          
+          # Activate the RPMfusion repository providing the ffmpeg package (optional):
+          sudo dnf install \
+           https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
+           https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+          
+          sudo dnf install git cmake g++ qt5-qtbase-devel qt5-qtsvg-devel boost-devel zlib-devel \
+                           ffmpeg-devel netcdf-devel libssh-devel python3-sphinx python3-sphinx_rtd_theme
 
    * - CentOS / RHEL
      - .. code::
@@ -65,8 +76,9 @@ Create a build directory and let `CMake <https://www.cmake.org/>`_ generate a Ma
 If this step fails, you can now run :command:`ccmake .` to start up the
 `CMake <https://www.cmake.org/>`_ configuration program and adjust the build options as needed.
 
-The build OVITO run::
+To build OVITO run::
 
   make -j4
 
 If this step is successful, the :program:`ovito` executable can be found in the directory :file:`ovito/build/bin/`.
+The command :command:`make documentation` builds the HTML pages of the user manual (requires Sphinx Python package and Sphinx RTD theme).
