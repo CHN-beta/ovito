@@ -101,6 +101,9 @@ public:
 
 protected:
 
+	/// Is called once before the first call to paintGL() or resizeGL().
+	virtual void initializeGL() override;
+
 	/// Is called whenever the widget needs to be painted.
 	virtual void paintGL() override;
 

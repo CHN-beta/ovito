@@ -44,10 +44,6 @@ OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, UserInterface* userInte
 	setMouseTracking(true);
 	setFocusPolicy(Qt::StrongFocus);
 
-	// Determine OpenGL vendor string so other parts of the code can decide
-	// which OpenGL features are safe to use.
-	OpenGLSceneRenderer::determineOpenGLInfo();
-
 	// Create the viewport renderer.
 	_viewportRenderer = OORef<OpenGLSceneRenderer>::create(viewport()->dataset());
 	_viewportRenderer->setInteractive(true);
@@ -67,6 +63,16 @@ OpenGLViewportWindow::OpenGLViewportWindow(Viewport* vp, UserInterface* userInte
 OpenGLViewportWindow::~OpenGLViewportWindow() 
 {
 	releaseResources();
+}
+
+/******************************************************************************
+* Is called once before the first call to paintGL() or resizeGL().
+******************************************************************************/
+void OpenGLViewportWindow::initializeGL()
+{
+	// Determine OpenGL vendor string so other parts of the code can decide
+	// which OpenGL features are safe to use.
+	OpenGLSceneRenderer::determineOpenGLInfo();
 }
 
 /******************************************************************************
