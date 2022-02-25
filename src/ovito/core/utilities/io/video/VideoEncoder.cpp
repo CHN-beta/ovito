@@ -409,7 +409,9 @@ void VideoEncoder::closeFile()
 #endif
 		}
 		if(::av_codec_is_encoder(_codecContext->codec)) {
+#if LIBAVCODEC_VERSION_MAJOR >= 59
 			if(_codecContext->codec->capabilities & AV_CODEC_CAP_ENCODER_FLUSH)
+#endif
 				::avcodec_flush_buffers(_codecContext.get());
 		}
 		::av_write_trailer(_formatContext.get());
