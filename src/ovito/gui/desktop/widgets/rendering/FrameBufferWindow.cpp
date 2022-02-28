@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,28 +35,17 @@ FrameBufferWindow::FrameBufferWindow(QWidget* parent) :
 	// Note: The following setAttribute() call has been commented out, because it leads to sporadic program crashes (Qt 5.12.5).
 	// setAttribute(Qt::WA_MacAlwaysShowToolWindow);
 
-	class MyScrollArea : public QScrollArea {
-	public:
-		MyScrollArea(QWidget* parent) : QScrollArea(parent) {}
-		virtual QSize sizeHint() const override {
-			int f = 2 * frameWidth();
-			QSize sz(f, f);
-			if(widget())
-				sz += widget()->sizeHint();
-			return sz;
-		}
-	};
-
-	QScrollArea* scrollArea = new MyScrollArea(this);
 	_frameBufferWidget = new FrameBufferWidget();
-	scrollArea->setWidget(_frameBufferWidget);
-	setCentralWidget(scrollArea);
+	setCentralWidget(_frameBufferWidget);
 
 	QToolBar* toolBar = addToolBar(tr("Frame Buffer"));
-	toolBar->addAction(QIcon::fromTheme("framebuffer_save_picture"), tr("Save to file"), this, SLOT(saveImage()));
-	toolBar->addAction(QIcon::fromTheme("framebuffer_copy_picture_to_clipboard"), tr("Copy to clipboard"), this, SLOT(copyImageToClipboard()));
+	toolBar->addAction(QIcon::fromTheme("framebuffer_save_picture"), tr("Save to file"), this, &FrameBufferWindow::saveImage);
+	toolBar->addAction(QIcon::fromTheme("framebuffer_copy_picture_to_clipboard"), tr("Copy to clipboard"), this, &FrameBufferWindow::copyImageToClipboard);
 	toolBar->addSeparator();
-	toolBar->addAction(QIcon::fromTheme("framebuffer_auto_crop"), tr("Auto-crop image"), this, SLOT(autoCrop()));
+	toolBar->addAction(QIcon::fromTheme("framebuffer_auto_crop"), tr("Auto-crop image"), this, &FrameBufferWindow::autoCrop);
+	toolBar->addSeparator();
+	toolBar->addAction(QIcon::fromTheme("framebuffer_zoom_out"), tr("Zoom out"), this, &FrameBufferWindow::zoomOut);
+	toolBar->addAction(QIcon::fromTheme("framebuffer_zoom_in"), tr("Zoom in"), this, &FrameBufferWindow::zoomIn);
 
 	// Disable context menu in toolbar.
 	setContextMenuPolicy(Qt::NoContextMenu);
@@ -70,6 +59,7 @@ const std::shared_ptr<FrameBuffer>& FrameBufferWindow::createFrameBuffer(int w, 
 	// Allocate and resize frame buffer and frame buffer window if necessary.
 	if(!frameBuffer()) {
 		setFrameBuffer(std::make_shared<FrameBuffer>(w, h));
+		resize(sizeHint());
 	}
 	if(frameBuffer()->size() != QSize(w, h)) {
 		frameBuffer()->setSize(QSize(w, h));
@@ -133,12 +123,28 @@ void FrameBufferWindow::copyImageToClipboard()
 }
 
 /******************************************************************************
-* Removes unnecessary pixels along the outer edges of the rendered image.
+* Removes background color pixels along the outer edges of the rendered image.
 ******************************************************************************/
 void FrameBufferWindow::autoCrop()
 {
 	if(frameBuffer())
 		frameBuffer()->autoCrop();
+}
+
+/******************************************************************************
+* Scales the image up.
+******************************************************************************/
+void FrameBufferWindow::zoomIn()
+{
+	_frameBufferWidget->zoomIn();
+}
+
+/******************************************************************************
+* Scales the image down.
+******************************************************************************/
+void FrameBufferWindow::zoomOut()
+{
+	_frameBufferWidget->zoomOut();
 }
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -62,8 +62,14 @@ public Q_SLOTS:
 	/// This copies the current image to the clipboard.
 	void copyImageToClipboard();
 
-	/// Removes unnecessary pixels along the outer edges of the rendered image.
+	/// Removes background color pixels along the outer edges of the rendered image.
 	void autoCrop();
+
+	/// Scales the image up.
+	void zoomIn();
+
+	/// Scales the image down.
+	void zoomOut();
 
 private:
 
