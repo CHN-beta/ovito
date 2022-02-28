@@ -362,6 +362,8 @@ void InputColumnReader::assignTypeNamesFromSeparateColumns()
 				if(type->name() != name) {
 					ElementType* elementType = record.property->makeMutable(type);
 					elementType->setName(name);
+					// Load the color and radius presets for named particle types:
+					elementType->initializeType(PropertyReference(&_container->getOOMetaClass(), record.property));
 
 					// Log in type name assigned by the file reader as default value for the element type.
 					// This is needed for the Python code generator to detect manual changes subsequently made by the user.
