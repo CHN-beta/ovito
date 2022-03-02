@@ -458,8 +458,13 @@ bool DataSet::renderScene(RenderSettings* renderSettings, const std::vector<std:
 	OVITO_ASSERT(frameBuffer);
 
 	// Get the selected scene renderer.
-	SceneRenderer* renderer = renderSettings->renderer();
+	// Note: Using ref-counted pointer here, because the renderer may potentially be deleted before the current function returns. 
+	OORef<SceneRenderer> renderer = renderSettings->renderer();
 	if(!renderer) throwException(tr("No rendering engine has been selected."));
+
+	// Create a ref-counted pointer to ourself to keep the DataSet alive even if the application 
+	// is shutting down while we are still in this function.
+	OORef<DataSet> self(this);
 
 	bool notCanceled = true;
 	try {
@@ -544,6 +549,7 @@ bool DataSet::renderScene(RenderSettings* renderSettings, const std::vector<std:
 
 					MainThreadOperation frameOperation = operation.createSubTask(true);
 					notCanceled = renderFrame(renderTime, frameNumber, renderSettings, renderer, frameBuffer, viewportLayout, videoEncoder, frameOperation);
+					if(!notCanceled) break;
 
 					// Go to next animation frame.
 					renderTime += animationSettings()->ticksPerFrame() * renderSettings->everyNthFrame();
@@ -602,14 +608,6 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 		}
 	}
 
-	// Fill frame buffer with background color.
-	if(!settings->generateAlphaChannel()) {
-		frameBuffer->clear(ColorA(settings->backgroundColor()));
-	}
-	else {
-		frameBuffer->clear();
-	}
-
 	// Compute relative weights of the viewport rectangles for the progress display. 
 	std::vector<int> progressWeights(viewportLayout.size());
 	std::transform(viewportLayout.cbegin(), viewportLayout.cend(), progressWeights.begin(), [frameBuffer](const auto& r) {
@@ -642,6 +640,10 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 			// Render one frame.
 			try {
 				renderer->beginFrame(renderTime, projParams, viewport, destinationRect, frameBuffer);
+
+				// Clear frame buffer with background color.
+				ColorA clearColor = settings->generateAlphaChannel() ? ColorA(0,0,0,0) : ColorA(settings->backgroundColor());
+				frameBuffer->clear(clearColor, destinationRect);
 
 				// Render viewport "underlays".
 				if(!renderer->renderOverlays(true, destinationRect, destinationRect, operation)) {

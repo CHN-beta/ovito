@@ -231,10 +231,6 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer), _datasetContainer(U
 	createDockPanel(tr("Bottom panel"), "BottomPanel", Qt::BottomDockWidgetArea, Qt::BottomDockWidgetArea, bottomDockWidget);
 	createDockPanel(tr("Command Panel"), "CommandPanel", Qt::RightDockWidgetArea, Qt::DockWidgetAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea), _commandPanel);
 
-	// Create the frame buffer window.
-	_frameBufferWindow = new FrameBufferWindow(this);
-	_frameBufferWindow->setWindowTitle(tr("Render output"));
-
 	// Update window title when document path changes.
 	connect(&_datasetContainer, &DataSetContainer::filePathChanged, this, [this](const QString& filePath) { setWindowFilePath(filePath); });
 	connect(&_datasetContainer, &DataSetContainer::modificationStatusChanged, this, [this](bool isClean) { setWindowModified(!isClean); });
@@ -583,10 +579,16 @@ void MainWindow::clearStatusBarMessage()
 /******************************************************************************
 * Creates a frame buffer of the requested size and displays it as a window in the user interface.
 ******************************************************************************/
-std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int height) 
-{ 
-	std::shared_ptr<FrameBuffer> fb = frameBufferWindow()->createFrameBuffer(width, height);
-	frameBufferWindow()->showAndActivateWindow();
+std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int height, MainThreadOperation& renderingOperation) 
+{
+	// Create the frame buffer window.
+	if(!_frameBufferWindow) {
+		_frameBufferWindow = new FrameBufferWindow(this);
+		_frameBufferWindow->setWindowTitle(tr("Render output"));
+	}
+	std::shared_ptr<FrameBuffer> fb = _frameBufferWindow->createFrameBuffer(width, height);
+	_frameBufferWindow->showAndActivateWindow();
+	_frameBufferWindow->showRenderingOperation(renderingOperation);
 	return fb;
 }
 

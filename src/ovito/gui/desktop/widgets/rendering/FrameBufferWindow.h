@@ -53,6 +53,9 @@ public:
 	/// Shows and activates the frame buffer window.
 	void showAndActivateWindow();
 
+	/// Makes the framebuffer modal while a rendering operation is in progress and displays the progress in the window.
+	void showRenderingOperation(MainThreadOperation& renderingOperation);
+
 public Q_SLOTS:
 
 	/// This opens the file dialog and lets the user save the current contents of the frame buffer
@@ -71,10 +74,36 @@ public Q_SLOTS:
 	/// Scales the image down.
 	void zoomOut();
 
+	/// Stops the rendering operation that is currently in progress.
+	void cancelRendering();
+
+	/// Creates the UI widgets for displaying the progress of one asynchronous task.
+	void createTaskProgressWidgets(TaskWatcher* taskWatcher);
+
+protected:
+
+	/// Is called when the user tries to close the window.
+	virtual void closeEvent(QCloseEvent* event) override;
+
 private:
 
 	/// The widget that displays the FrameBuffer.
-	FrameBufferWidget* _frameBufferWidget;	
+	FrameBufferWidget* _frameBufferWidget;
+
+	// Toolbar actions:
+	QAction* _saveToFileAction;
+	QAction* _copyToClipboardAction;
+	QAction* _autoCropAction;
+	QAction* _cancelRenderingAction;
+
+	/// The rendering operation that is currently in progress.
+	QPointer<TaskWatcher> _renderingWatcher;
+
+	/// Layout manager of the central container widget.
+	QStackedLayout* _centralLayout;
+
+	/// Layout component for displaying the progress of rendering operations.
+	QVBoxLayout* _progressLayout;
 };
 
 }	// End of namespace

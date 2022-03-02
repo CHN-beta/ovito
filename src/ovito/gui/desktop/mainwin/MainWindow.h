@@ -71,11 +71,11 @@ public:
 	/// Closes the user interface and shuts down the entire application after displaying an error message.
 	virtual void exitWithFatalError(const Exception& ex) override;
 
-	/// Returns the frame buffer window showing the rendered image.
-	FrameBufferWindow* frameBufferWindow() const { return _frameBufferWindow; }
-
 	/// Creates a frame buffer of the requested size for rendering and displays it in a window in the user interface.
-	virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height) override;
+	virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height, MainThreadOperation& renderingOperation) override;
+
+	/// Returns the frame buffer window for displaying the rendered image (may be null).
+	FrameBufferWindow* frameBufferWindow() const { return _frameBufferWindow; }
 
 	/// Returns the recommended size for this window.
 	virtual QSize sizeHint() const override { return QSize(1024,768); }
@@ -155,8 +155,8 @@ private:
 	/// The internal status bar widget.
 	StatusBar* _statusBar;
 
-	/// The frame buffer window showing the rendered image.
-	FrameBufferWindow* _frameBufferWindow;
+	/// The frame buffer window displaying the rendered image.
+	FrameBufferWindow* _frameBufferWindow = nullptr;
 
 	/// The command panel.
 	CommandPanel* _commandPanel;

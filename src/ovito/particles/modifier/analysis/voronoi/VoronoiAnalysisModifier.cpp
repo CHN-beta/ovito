@@ -33,8 +33,6 @@
 
 namespace Ovito::Particles {
 
-constexpr int VoronoiAnalysisModifier::VoronoiAnalysisEngine::FaceOrderStorageLimit;
-
 IMPLEMENT_OVITO_CLASS(VoronoiAnalysisModifier);
 DEFINE_PROPERTY_FIELD(VoronoiAnalysisModifier, onlySelected);
 DEFINE_PROPERTY_FIELD(VoronoiAnalysisModifier, useRadii);

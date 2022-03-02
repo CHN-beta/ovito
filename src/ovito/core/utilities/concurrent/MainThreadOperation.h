@@ -29,6 +29,40 @@
 
 namespace Ovito {
 
+#if 0
+/**
+ * Replacement for QEventLoopLocker, which is not a movable type as of Qt 6.2.
+ */
+class MovableEventLoopLocker
+{
+public:
+
+	/// Constructor, which steals the private pointer from a QEventLoopLocker.
+    MovableEventLoopLocker() {
+		static_assert(sizeof(MovableEventLoopLocker) == sizeof(QEventLoopLocker));
+		new (this)QEventLoopLocker();
+	}
+
+	/// Destructor, which delegates to the QEventLoopLocker destructor.
+    ~MovableEventLoopLocker() {
+		reinterpret_cast<QEventLoopLocker*>(this)->~QEventLoopLocker();
+	}
+
+	/// Move constructor.
+	MovableEventLoopLocker(MovableEventLoopLocker&& other) noexcept : d_ptr(std::exchange(other.d_ptr, nullptr)) {}
+
+	/// Move assignment.
+	MovableEventLoopLocker& operator=(MovableEventLoopLocker&& other) noexcept {
+		std::swap(d_ptr, other.d_ptr);
+		return *this;
+	}
+
+private:
+    Q_DISABLE_COPY(MovableEventLoopLocker)
+    QEventLoopLockerPrivate* d_ptr;
+};
+#endif
+
 /**
  * A promise-like object that is used during long-running program operations that are performed synchronously by the program's main thread.
  * 
@@ -109,6 +143,12 @@ protected:
 
 	/// The task that was active when this operation was started.
 	Task* _parentTask = nullptr;
+
+#if 0
+	/// This object keeps the Qt event loop running while the operation is in progress.
+	/// All main-thread operations must be completed before the application can quit.
+	MovableEventLoopLocker _eventLoopLocker;
+#endif
 };
 
 /**

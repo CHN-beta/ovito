@@ -74,8 +74,8 @@ public:
 	/// Queries the system's information and graphics capabilities.
 	QString generateSystemReport();
 
-	/// Creates a frame buffer of the requested size for rendering and displays it in a window in the user interface.
-	virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height);
+	/// Creates a frame buffer of the requested size to renderin into displays a framebuffer window in the user interface.
+	virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height, MainThreadOperation& renderingOperation);
 
 protected:
 

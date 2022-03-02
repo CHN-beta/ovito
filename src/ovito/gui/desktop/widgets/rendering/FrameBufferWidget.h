@@ -101,8 +101,11 @@ private Q_SLOTS:
 	/// This handles contentChanged() signals from the frame buffer.
 	void onFrameBufferContentChanged(const QRect& changedRegion);
 
-	/// This handles contentReset() signals from the frame buffer.
-	void onFrameBufferContentReset();
+	/// This handles bufferResized() signals from the frame buffer.
+	void onFrameBufferResize();
+
+	/// Updates the transparency of the zoom value indicator.
+	void zoomLabelAnimationChanged(const QVariant& value);
 
 private:
 
@@ -122,6 +125,12 @@ private:
 
 	/// The background for transparent framebuffer images.
 	QBrush _backgroundBrush;
+
+	/// A label that is shown to indicate the current image zoom factor. 
+	QLabel* _zoomFactorDisplay;
+
+	/// For animating the visibility of the zoom factor indicator.
+	QVariantAnimation _zoomLabelAnimation;
 
 	static constexpr qreal ZoomIncrement = 1.15;
 	static constexpr qreal ZoomIncrementPow5 = ZoomIncrement*ZoomIncrement*ZoomIncrement*ZoomIncrement*ZoomIncrement;

@@ -49,21 +49,23 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
 		// Get the current viewport configuration.
 		ViewportConfiguration* viewportConfig = dataset()->viewportConfig();
 
+		// Create a task object that represents the rendering operation.
+		MainThreadOperation renderingOperation = MainThreadOperation::create(mainWindow(), true);
+
 		// Allocate and resize frame buffer and display the frame buffer window.
-		std::shared_ptr<FrameBuffer> frameBuffer = mainWindow().createAndShowFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight());
-
-		// Show progress dialog.
-		ProgressDialog progressDialog(mainWindow().frameBufferWindow(), mainWindow(), tr("Rendering"));
-
-		// Display modal progress dialog immediately (not after a time delay) to prevent the user from 
-		// pressing the render button a second time.
-		progressDialog.show();
+		std::shared_ptr<FrameBuffer> frameBuffer = mainWindow().createAndShowFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight(), renderingOperation);
 
 		// Call high-level rendering function, which will take care of the rest.
-		dataset()->renderScene(renderSettings, viewportConfig, frameBuffer.get(), progressDialog);
+		dataset()->renderScene(renderSettings, viewportConfig, frameBuffer.get(), renderingOperation);
 	}
-	catch(const Exception& ex) {
+	catch(Exception& ex) {
 		ex.logError();
+		
+		// Make sure the error message dialog gets shown in front of the framebuffer window by GuiApplication::showErrorMessages(), not behind it.
+		// This can be achieved by associating the error with the framebuffer window. 
+		if(mainWindow().frameBufferWindow() && mainWindow().frameBufferWindow()->isVisible())
+			ex.setContext(mainWindow().frameBufferWindow());
+
 		ex.reportError();
 	}
 }

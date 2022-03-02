@@ -58,6 +58,26 @@ FrameBufferWidget::FrameBufferWidget(QWidget* parent) : QAbstractScrollArea(pare
 	painter.fillRect(16, 0, 16, 16, c2);
 	painter.fillRect(0, 16, 16, 16, c2);
 	_backgroundBrush.setTextureImage(std::move(img));
+
+	// Create the label that indicates the current zoom factor. 
+	_zoomFactorDisplay = new QLabel("Hello", this);
+	_zoomFactorDisplay->hide();
+	_zoomFactorDisplay->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+	_zoomFactorDisplay->setIndent(6);
+	QFont labelFont;
+	labelFont.setBold(true);
+	labelFont.setPointSizeF(1.5 * labelFont.pointSizeF());
+	_zoomFactorDisplay->setFont(std::move(labelFont));
+
+	_zoomLabelAnimation.setStartValue(1.0);
+	_zoomLabelAnimation.setKeyValueAt(0.9, 1.0);
+	_zoomLabelAnimation.setEndValue(0.0);
+	_zoomLabelAnimation.setDuration(2000);
+	connect(&_zoomLabelAnimation, &QAbstractAnimation::stateChanged, this, [this](QAbstractAnimation::State newState, QAbstractAnimation::State oldState) {
+		_zoomFactorDisplay->setVisible(newState == QAbstractAnimation::Running);
+	});
+	connect(&_zoomLabelAnimation, &QVariantAnimation::valueChanged, this, &FrameBufferWidget::zoomLabelAnimationChanged);
+	zoomLabelAnimationChanged(_zoomLabelAnimation.startValue());
 }
 
 /******************************************************************************
@@ -66,21 +86,21 @@ FrameBufferWidget::FrameBufferWidget(QWidget* parent) : QAbstractScrollArea(pare
 void FrameBufferWidget::setFrameBuffer(const std::shared_ptr<FrameBuffer>& newFrameBuffer)
 {
 	if(newFrameBuffer == frameBuffer()) {
-		onFrameBufferContentReset();
+		onFrameBufferResize();
 		return;
 	}
 
 	if(frameBuffer()) {
 		disconnect(_frameBuffer.get(), &FrameBuffer::contentChanged, this, &FrameBufferWidget::onFrameBufferContentChanged);
-		disconnect(_frameBuffer.get(), &FrameBuffer::contentReset, this, &FrameBufferWidget::onFrameBufferContentReset);
+		disconnect(_frameBuffer.get(), &FrameBuffer::bufferResized, this, &FrameBufferWidget::onFrameBufferResize);
 	}
 
 	_frameBuffer = newFrameBuffer;
 
-	onFrameBufferContentReset();
-
 	connect(_frameBuffer.get(), &FrameBuffer::contentChanged, this, &FrameBufferWidget::onFrameBufferContentChanged);
-	connect(_frameBuffer.get(), &FrameBuffer::contentReset, this, &FrameBufferWidget::onFrameBufferContentReset);
+	connect(_frameBuffer.get(), &FrameBuffer::bufferResized, this, &FrameBufferWidget::onFrameBufferResize);
+
+	onFrameBufferResize();
 }
 
 /******************************************************************************
@@ -151,6 +171,8 @@ void FrameBufferWidget::paintEvent(QPaintEvent* event)
 			painter.eraseRect(event->rect());
 		painter.setBrushOrigin(imageRect.topLeft());
 		painter.fillRect(imageRect, _backgroundBrush);
+		if(imageRect.width() < frameBuffer()->image().width() || imageRect.height() < frameBuffer()->image().height())
+			painter.setRenderHint(QPainter::SmoothPixmapTransform);
 		painter.drawImage(imageRect, frameBuffer()->image());
 	}
 	else {
@@ -163,7 +185,13 @@ void FrameBufferWidget::paintEvent(QPaintEvent* event)
 ******************************************************************************/
 void FrameBufferWidget::setZoomFactor(qreal zoom)
 {
-	_zoomFactor = zoom;
+	if(_zoomFactor != zoom) {
+		_zoomFactor = zoom;
+		_zoomFactorDisplay->setText(QStringLiteral("%1%").arg(int(std::round(zoomFactor() * 100))));
+		_zoomFactorDisplay->resize(_zoomFactorDisplay->sizeHint());
+		_zoomLabelAnimation.stop();
+		_zoomLabelAnimation.start();
+	}
 	updateScrollBarRange();
 	viewport()->update();
 }
@@ -249,12 +277,13 @@ bool FrameBufferWidget::viewportEvent(QEvent* event)
 	if(event->type() == QEvent::NativeGesture) {
 		QNativeGestureEvent* gesture = static_cast<QNativeGestureEvent*>(event);
 		if(gesture->gestureType() == Qt::ZoomNativeGesture) {
-			qreal centerx = (gesture->position().x() + horizontalScrollBar()->value() / ScrollBarScale) / zoomFactor();
-			qreal centery = (gesture->position().y() + verticalScrollBar()->value() / ScrollBarScale) / zoomFactor();
+			QPointF mousePos = ViewportInputMode::getMousePosition(gesture);
+			qreal centerx = (mousePos.x() + horizontalScrollBar()->value() / ScrollBarScale) / zoomFactor();
+			qreal centery = (mousePos.y() + verticalScrollBar()->value() / ScrollBarScale) / zoomFactor();
 			qreal newZoomFactor = qBound(ZoomFactorMin, zoomFactor() * (1.0 + gesture->value()), ZoomFactorMax);
 			setZoomFactor(newZoomFactor);
-			horizontalScrollBar()->setValue((centerx * zoomFactor() - gesture->position().x()) * ScrollBarScale);
-			verticalScrollBar()->setValue((centery * zoomFactor() - gesture->position().y()) * ScrollBarScale);
+			horizontalScrollBar()->setValue((centerx * zoomFactor() - mousePos.x()) * ScrollBarScale);
+			verticalScrollBar()->setValue((centery * zoomFactor() - mousePos.y()) * ScrollBarScale);
 			return true;
 		}
 		else if(gesture->gestureType() == Qt::EndNativeGesture) {
@@ -267,12 +296,33 @@ bool FrameBufferWidget::viewportEvent(QEvent* event)
 }
 
 /******************************************************************************
-* This handles contentReset() signals from the frame buffer.
+* Handles bufferResized() signals from the frame buffer.
 ******************************************************************************/
-void FrameBufferWidget::onFrameBufferContentReset()
+void FrameBufferWidget::onFrameBufferResize()
 {
-	// Reset zoom factor and repaint the widget.
-	setZoomFactor(1.0);
+	// Reset zoom factor.
+	_zoomFactor = 1.0; // Reset value here to prevent the zoom indicator label from showing.
+	qreal newZoomFactor = _zoomFactor;
+
+	// Automatically reduce zoom factor to <100% to fit frame buffer window onto the user's screen.
+	if(frameBuffer()) {
+		if(QScreen* screen = this->screen()) {
+			QSize availableSize = screen->availableSize();
+			availableSize.setWidth(availableSize.width() * 2 / 3);
+			availableSize.setHeight(availableSize.height() * 2 / 3);
+			availableSize.rheight() -= 50; // Take into account toolbar and window title bar height.
+			QSize zoomedSize = frameBuffer()->size();
+			while(zoomedSize.width() > availableSize.width() || zoomedSize.height() > availableSize.height()) {
+				if(newZoomFactor - 1e-9 <= ZoomFactorMin)
+					break;
+				newZoomFactor /= ZoomIncrement * ZoomIncrement;
+				zoomedSize = frameBuffer()->size() * newZoomFactor;
+			}
+		}
+	}
+
+	// Note: Setting the zoom factor automatically repaints the widget.
+	setZoomFactor(newZoomFactor);
 	updateGeometry();
 }
 
@@ -290,6 +340,18 @@ void FrameBufferWidget::onFrameBufferContentChanged(const QRect& changedRegion)
 		(qreal)changedRegion.width() / imageSize.width()  * vprect.width(),
 		(qreal)changedRegion.height() / imageSize.height()  * vprect.height());
 	viewport()->update(updateRect.toAlignedRect());
+}
+
+/******************************************************************************
+* Updates the transparency of the zoom value indicator.
+******************************************************************************/
+void FrameBufferWidget::zoomLabelAnimationChanged(const QVariant& value) 
+{
+	QPalette palette = _zoomFactorDisplay->palette();
+	QColor color(70, 70, 255);
+	color.setAlphaF(value.value<qreal>());
+	palette.setColor(_zoomFactorDisplay->foregroundRole(), color);
+	_zoomFactorDisplay->setPalette(std::move(palette));
 }
 
 }	// End of namespace

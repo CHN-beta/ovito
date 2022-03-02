@@ -44,7 +44,7 @@ void UserInterface::exitWithFatalError(const Exception& ex)
 /******************************************************************************
 * Creates a frame buffer of the requested size and displays it as a window in the user interface.
 ******************************************************************************/
-std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, int height) 
+std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, int height, MainThreadOperation& renderingOperation) 
 { 
 	return std::make_shared<FrameBuffer>(width, height);
 }

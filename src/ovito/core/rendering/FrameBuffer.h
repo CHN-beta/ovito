@@ -142,20 +142,14 @@ public:
 		_info.setImageWidth(newSize.width());
 		_info.setImageHeight(newSize.height());
 		_image = _image.copy(0, 0, newSize.width(), newSize.height());
-		update();
+		Q_EMIT bufferResized(newSize);
 	}
 
 	/// Returns the descriptor of the image.
 	const ImageInfo& info() const { return _info; }
 
 	/// Clears the framebuffer with a uniform color.
-	void clear(const ColorA& color = ColorA(0,0,0,0));
-
-	/// This method must be called each time the contents of the frame buffer have been modified.
-	/// Fires the contentReset() signal.
-	void update() {
-		Q_EMIT contentReset();
-	}
+	void clear(const ColorA& color = ColorA(0,0,0,0), const QRect& rect = QRect());
 
 	/// This method must be called each time the contents of the frame buffer have been modified.
 	/// Fires the contentChanged() signal.
@@ -164,21 +158,21 @@ public:
 	}
 
 	/// Removes unnecessary pixels along the outer edges of the image.
-	void autoCrop();
+	bool autoCrop();
 
 	/// Renders an image primitive directly into the framebuffer.
-	void renderImagePrimitive(const ImagePrimitive& primitive, bool update = true);
+	void renderImagePrimitive(const ImagePrimitive& primitive, const QRect& viewportRect, bool update = true);
 
 	/// Renders a text primitive directly into the framebuffer.
-	void renderTextPrimitive(const TextPrimitive& primitive, bool update = true);
+	void renderTextPrimitive(const TextPrimitive& primitive, const QRect& viewportRect, bool update = true);
 
 Q_SIGNALS:
 
 	/// This signal is emitted by the framebuffer when a part of its content has changed.
 	void contentChanged(const QRect& changedRegion);
 
-	/// This signal is emitted by the framebuffer when its content has been replaced.
-	void contentReset();
+	/// This signal is emitted by the framebuffer when the backing store has changed its size.
+	void bufferResized(QSize size);
 
 private:
 

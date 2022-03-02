@@ -120,20 +120,32 @@ LoadStream& operator>>(LoadStream& stream, ImageInfo& i)
 /******************************************************************************
 * Clears the framebuffer with a uniform color.
 ******************************************************************************/
-void FrameBuffer::clear(const ColorA& color)
+void FrameBuffer::clear(const ColorA& color, const QRect& rect)
 {
-	_image.fill(color);
+	QRect bufferRect = _image.rect();
+	if(rect.isNull() || rect == bufferRect) {
+		_image.fill(color);
+		update(bufferRect);
+	}
+	else {
+		QPainter painter(&_image);
+		painter.setCompositionMode(QPainter::CompositionMode_Source);
+		painter.fillRect(rect, color);
+		update(rect);
+	}
 }
 
 /******************************************************************************
 * Renders an image primitive directly into the framebuffer.
 ******************************************************************************/
-void FrameBuffer::renderImagePrimitive(const ImagePrimitive& primitive, bool update)
+void FrameBuffer::renderImagePrimitive(const ImagePrimitive& primitive, const QRect& viewportRect, bool update)
 {
 	if(primitive.image().isNull())
 		return;
 
 	QPainter painter(&image());
+	if(!viewportRect.isNull() && viewportRect != image().rect())
+		painter.setClipRect(viewportRect);
 	QRect rect(primitive.windowRect().minc.x(), primitive.windowRect().minc.y(), primitive.windowRect().width(), primitive.windowRect().height());
 	painter.drawImage(rect, primitive.image());
 
@@ -144,7 +156,7 @@ void FrameBuffer::renderImagePrimitive(const ImagePrimitive& primitive, bool upd
 /******************************************************************************
 * Renders a text primitive directly into the framebuffer.
 ******************************************************************************/
-void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, bool update)
+void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, const QRect& viewportRect, bool update)
 {
 	if(primitive.text().isEmpty())
 		return;
@@ -158,6 +170,8 @@ void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, bool updat
 	painter.setRenderHint(QPainter::Antialiasing);
 	painter.setRenderHint(QPainter::TextAntialiasing);
 	painter.setFont(primitive.font());
+	if(!viewportRect.isNull() && viewportRect != image().rect())
+		painter.setClipRect(viewportRect);
 
 	QRectF textBounds;
 	if(resolvedTextFormat != Qt::RichText) {
@@ -253,10 +267,11 @@ void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, bool updat
 /******************************************************************************
 * Removes unnecessary pixels along the outer edges of the image.
 ******************************************************************************/
-void FrameBuffer::autoCrop()
+bool FrameBuffer::autoCrop()
 {
 	QImage image = this->image().convertToFormat(QImage::Format_ARGB32);
-	if(image.width() <= 0 || image.height() <= 0) return;
+	if(image.width() <= 0 || image.height() <= 0) 
+		return false;
 
 	auto determineCropRect = [&image](QRgb backgroundColor) -> QRect {
 		int x1 = 0, y1 = 0;
@@ -325,8 +340,11 @@ void FrameBuffer::autoCrop()
 
 	if(cropRect != image.rect() && cropRect.width() > 0 && cropRect.height() > 0) {
 		_image = _image.copy(cropRect);
-		update();
+		Q_EMIT bufferResized(_image.size());
+		return true;
 	}
+
+	return false;
 }
 
 }	// End of namespace
