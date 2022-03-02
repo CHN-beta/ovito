@@ -54,8 +54,9 @@ FrameBufferWindow::FrameBufferWindow(QWidget* parent) :
 	toolBar->addAction(QIcon::fromTheme("framebuffer_zoom_out"), tr("Zoom out"), this, &FrameBufferWindow::zoomOut);
 	toolBar->addAction(QIcon::fromTheme("framebuffer_zoom_in"), tr("Zoom in"), this, &FrameBufferWindow::zoomIn);
 	toolBar->addSeparator();
-	_cancelRenderingAction = toolBar->addAction(QIcon::fromTheme("framebuffer_cancel_rendering"), tr("Cancel rendering"), this, &FrameBufferWindow::cancelRendering);
+	_cancelRenderingAction = toolBar->addAction(QIcon::fromTheme("framebuffer_cancel_rendering"), tr("Cancel"), this, &FrameBufferWindow::cancelRendering);
 	_cancelRenderingAction->setEnabled(false);
+	static_cast<QToolButton*>(toolBar->widgetForAction(_cancelRenderingAction))->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
 	// Disable context menu in toolbar.
 	setContextMenuPolicy(Qt::NoContextMenu);
@@ -205,7 +206,9 @@ void FrameBufferWindow::copyImageToClipboard()
 		return;
 
 	QApplication::clipboard()->setImage(frameBuffer()->image());
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 	QToolTip::showText(QCursor::pos(screen()), tr("Image has been copied to the clipboard"), nullptr, {}, 3000);
+#endif
 }
 
 /******************************************************************************
@@ -215,7 +218,9 @@ void FrameBufferWindow::autoCrop()
 {
 	if(frameBuffer()) {
 		if(!frameBuffer()->autoCrop()) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 			QToolTip::showText(QCursor::pos(screen()), tr("No background pixels found which can been removed"), nullptr, {}, 3000);
+#endif
 		}
 	}
 }

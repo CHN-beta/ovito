@@ -43,7 +43,7 @@ FrameBufferWidget::FrameBufferWidget(QWidget* parent) : QAbstractScrollArea(pare
 
 	// Pick dark gray as background color.
 	QPalette pal = viewport()->palette();
-	pal.setColor(QPalette::Window, QColor(30,30,30));
+	pal.setColor(QPalette::Window, QColor(38,38,38));
 	viewport()->setPalette(std::move(pal)); 
 	viewport()->setAutoFillBackground(false); // We fill the background in paintEvent().
 	viewport()->setBackgroundRole(QPalette::Window);
