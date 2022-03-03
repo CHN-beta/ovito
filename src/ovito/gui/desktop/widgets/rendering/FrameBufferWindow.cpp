@@ -110,8 +110,12 @@ const std::shared_ptr<FrameBuffer>& FrameBufferWindow::createFrameBuffer(int w, 
 	_frameBufferWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	centralWidget()->updateGeometry();
 	adjustSize();
-	_frameBufferWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-	_frameBufferWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+	// Reenable the scrollbars, but only after a short delay, because otherwise
+	// they interfer with the resizing of the viewport widget.
+	QTimer::singleShot(0, _frameBufferWidget, [w = _frameBufferWidget]() {
+		w->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+		w->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+	});
 
 	return frameBuffer();
 }
@@ -270,6 +274,7 @@ void FrameBufferWindow::createTaskProgressWidgets(TaskWatcher* taskWatcher)
 	QLabel* statusLabel = new QLabel(taskWatcher->progressText());
 	statusLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
 	QProgressBar* progressBar = new QProgressBar();
+//	progressBar->setAttribute(Qt::WA_OpaquePaintEvent);
 	progressBar->setMaximum(taskWatcher->progressMaximum());
 	progressBar->setValue(taskWatcher->progressValue());
 	if(statusLabel->text().isEmpty()) {

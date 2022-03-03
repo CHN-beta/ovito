@@ -26,7 +26,7 @@
 
 namespace Ovito {
 
-constexpr static int MaxProgressEmitsPerSecond = 20;
+constexpr static int MaxProgressEmitsPerSecond = 10;
 
 /******************************************************************************
 * Sets the current maximum value for progress reporting.
