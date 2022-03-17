@@ -83,6 +83,11 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 		return true;
 	}
 
+	// Help command line option implicitly activates console mode.
+	if(_cmdLineParser.isSet("help")) {
+		_consoleMode = true;
+	}
+
 	try {
 		// Interpret the command line arguments.
 		if(!processCommandLineParameters()) {
@@ -120,13 +125,10 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 			return false;
 		}
 
-		// Help command line option implicitly activates console mode.
-		if(_cmdLineParser.isSet("help"))
-			_consoleMode = true;
-
 		// Handle --help command line option. Print list of command line options and quit.
 		if(_cmdLineParser.isSet("help")) {
 			std::cout << qPrintable(_cmdLineParser.helpText()) << std::endl;
+			shutdown();
 			return true;
 		}
 

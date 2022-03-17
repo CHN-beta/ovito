@@ -25,11 +25,12 @@
 }
 
 /* Let several default-aligned figures appear side by side. */ 
-.rst-content .figure.align-default {
+.rst-content figure.align-default {
     display: inline-block;
 }
-.rst-content p.caption .headerlink {
+.rst-content figcaption p {
     display: table;
+    margin: 0px;
 }
 
 /* Formatting of menu items */
