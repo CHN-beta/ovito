@@ -170,7 +170,7 @@ bool DelaunayTessellation::generateTessellation(const SimulationCellObject* simC
 
 	// Construct Delaunay tessellation.
 	bool result = _dt->set_vertices(_pointData.size(), reinterpret_cast<const double*>(_pointData.data()), [&operation](size_t value, size_t maxProgress) {
-		if(maxProgress != operation.progressMaximum()) operation.setProgressMaximum(maxProgress);
+		operation.setProgressMaximum(maxProgress, false);
 		return operation.setProgressValueIntermittent(value);
 	});
 	if(!result) return false;
@@ -233,7 +233,7 @@ static inline double determinant(double a00, double a01, double a02,
 /******************************************************************************
 * Alpha test routine.
 ******************************************************************************/
-bool DelaunayTessellation::alphaTest(CellHandle cell, FloatType alpha) const
+std::optional<bool> DelaunayTessellation::alphaTest(CellHandle cell, FloatType alpha) const
 {
 	auto v0 = _dt->vertex_ptr(cellVertex(cell, 0));
 	auto v1 = _dt->vertex_ptr(cellVertex(cell, 1));
@@ -258,7 +258,15 @@ bool DelaunayTessellation::alphaTest(CellHandle cell, FloatType alpha) const
 	auto num_z = determinant(qpx,qpy,qp2,rpx,rpy,rp2,spx,spy,sp2);
 	auto den   = determinant(qpx,qpy,qpz,rpx,rpy,rpz,spx,spy,spz);
 
-	return (num_x*num_x + num_y*num_y + num_z*num_z) / (4 * den * den) < alpha;
+	FloatType nomin = (num_x*num_x + num_y*num_y + num_z*num_z);
+	FloatType denom = (4 * den * den);
+
+	// Detect degnerate sliver elements, for which we cannot compute a reliable alpha value. 
+	if(std::abs(denom) < 1e-9 && std::abs(nomin) < 1e-9) {
+		return {}; // Indeterminate result
+	}
+
+	return (nomin / denom) < alpha;
 }
 
 }	// End of namespace

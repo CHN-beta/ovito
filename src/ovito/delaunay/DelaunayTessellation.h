@@ -173,7 +173,7 @@ public:
 	}
 #endif
 
-	bool alphaTest(CellHandle cell, FloatType alpha) const;
+	std::optional<bool> alphaTest(CellHandle cell, FloatType alpha) const;
 
 	size_t vertexIndex(VertexHandle vertex) const {
 		OVITO_ASSERT(vertex < _particleIndices.size());
