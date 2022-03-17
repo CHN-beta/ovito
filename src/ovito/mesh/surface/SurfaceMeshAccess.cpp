@@ -154,21 +154,64 @@ std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMesh
 	region_index closestRegion = spaceFillingRegion();
     size_type vcount = vertexCount();
 	for(vertex_index vindex = 0; vindex < vcount; vindex++) {
-		// Determine the first adjacent edge which has an adjacent face.
-		edge_index firstEdge = firstVertexEdge(vindex);
-		if(!faceSubset.empty()) {
-			while(firstEdge != InvalidIndex && !faceSubset[adjacentFace(firstEdge)])
-				firstEdge = nextVertexEdge(firstEdge);
-		}
-		if(firstEdge == InvalidIndex) continue;
-
 		// Compute distance from query point to vertex.
-		Vector3 r = wrapVector(vertexPosition(vindex) - location);
+		const Point3& vertexPos = vertexPosition(vindex);
+		Vector3 r = wrapVector(vertexPos - location);
 		FloatType distSq = r.squaredLength();
 		if(distSq < closestDistanceSq) {
-			closestDistanceSq = distSq;
-			closestVertex = vindex;
-			closestVector = r;
+			// Compute pseudo-normal at the vertex.
+			// Note that a vertex may have multiple pseudo-normals if it is part of multiple manifolds.
+			// We need to compute the normal belonging to each manifold and use the one that is facing 
+			// away from the query point (if any).
+			Vector3 pseudoNormal = Vector3::Zero();
+			edge_index firstEdge = firstVertexEdge(vindex);
+			QVarLengthArray<edge_index, 16> visitedEdges;
+			for(;;) {
+				// Skip edges that are not adjacent to a visible face.
+				if(!faceSubset.empty()) {
+					while(firstEdge != InvalidIndex && !faceSubset[adjacentFace(firstEdge)])
+						firstEdge = nextVertexEdge(firstEdge);
+				}
+				if(firstEdge == InvalidIndex) break;
+
+				if(std::find(visitedEdges.cbegin(), visitedEdges.cend(), firstEdge) == visitedEdges.cend()) {
+					// Compute vertex pseudo-normal by averaging the normal vectors of adjacent faces.
+					edge_index edge = firstEdge;
+					Vector3 edge1v = wrapVector(vertexPosition(vertex2(edge)) - vertexPos);
+					edge1v.normalizeSafely();
+					do {
+						visitedEdges.push_back(edge);
+						OVITO_ASSERT(hasOppositeEdge(edge)); // Make sure the mesh is closed.
+						edge_index nextEdge = nextFaceEdge(oppositeEdge(edge));
+						OVITO_ASSERT(vertex1(nextEdge) == vindex);
+						Vector3 edge2v = wrapVector(vertexPosition(vertex2(nextEdge)) - vertexPos);
+						edge2v.normalizeSafely();
+						FloatType angle = std::acos(edge1v.dot(edge2v));
+						Vector3 faceNormal = edge2v.cross(edge1v);
+						if(faceNormal != Vector3::Zero())
+							pseudoNormal += faceNormal.normalized() * angle;
+						edge = nextEdge;
+						edge1v = edge2v;
+					}
+					while(edge != firstEdge);
+					closestRegion = hasFaceRegions() ? faceRegion(adjacentFace(firstEdge)) : 0;
+
+					// We can stop if pseudo-normal is facing away from query point.
+					if(pseudoNormal.dot(r) > -epsilon) 
+						break;
+					pseudoNormal.setZero();
+				}
+
+				// Continue with next edge that is adjacent to the vertex.
+				firstEdge = nextVertexEdge(firstEdge);
+			}
+
+			if(!pseudoNormal.isZero()) {
+				closestDistanceSq = distSq;
+				closestVertex = vindex;
+				closestVector = r;
+				closestNormal = pseudoNormal;
+			}
 		}
 	}
 
@@ -256,57 +299,6 @@ std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMesh
 					closestRegion = hasFaceRegions() ? faceRegion(face) : 0;
 				}
 			}
-		}
-	}
-
-	// If a vertex is closest, we still have to compute the local pseudo-normal at the vertex.
-	if(closestVertex != InvalidIndex) {
-		const Point3& closestVertexPos = vertexPosition(closestVertex);
-
-		// A vertex may have multiple pseudo-normals if it is part of multiple manifolds.
-		// We need to compute normal belonging to each manifold and take the one that is facing 
-		// away from the query point (if any).
-
-		edge_index firstEdge = firstVertexEdge(closestVertex);
-		QVarLengthArray<edge_index, 16> visitedEdges;
-		for(;;) {
-			// Skip edges that are no adjacent to a visible face.
-			if(!faceSubset.empty()) {
-				while(firstEdge != InvalidIndex && !faceSubset[adjacentFace(firstEdge)])
-					firstEdge = nextVertexEdge(firstEdge);
-			}
-			if(firstEdge == InvalidIndex) break;
-
-			if(std::find(visitedEdges.cbegin(), visitedEdges.cend(), firstEdge) == visitedEdges.cend()) {
-				// Compute vertex pseudo-normal by averaging the normal vectors of adjacent faces.
-				closestNormal.setZero();
-				edge_index edge = firstEdge;
-				Vector3 edge1v = wrapVector(vertexPosition(vertex2(edge)) - closestVertexPos);
-				edge1v.normalizeSafely();
-				do {
-					visitedEdges.push_back(edge);
-					OVITO_ASSERT(hasOppositeEdge(edge)); // Make sure the mesh is closed.
-					edge_index nextEdge = nextFaceEdge(oppositeEdge(edge));
-					OVITO_ASSERT(vertex1(nextEdge) == closestVertex);
-					Vector3 edge2v = wrapVector(vertexPosition(vertex2(nextEdge)) - closestVertexPos);
-					edge2v.normalizeSafely();
-					FloatType angle = std::acos(edge1v.dot(edge2v));
-					Vector3 normal = edge2v.cross(edge1v);
-					if(normal != Vector3::Zero())
-						closestNormal += normal.normalized() * angle;
-					edge = nextEdge;
-					edge1v = edge2v;
-				}
-				while(edge != firstEdge);
-				closestRegion = hasFaceRegions() ? faceRegion(adjacentFace(firstEdge)) : 0;
-
-				// We can stop if pseudo-normal is facing away from query point.
-				if(closestNormal.dot(closestVector) > -epsilon) 
-					break;
-			}
-
-			// Continue with next edge that is adjacent to the vertex.
-			firstEdge = nextVertexEdge(firstEdge);
 		}
 	}
 
