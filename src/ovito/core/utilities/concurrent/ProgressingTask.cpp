@@ -30,10 +30,13 @@ constexpr static int MaxProgressEmitsPerSecond = 10;
 
 /******************************************************************************
 * Sets the current maximum value for progress reporting.
-* The current progress value is reset to zero.
+* The current progress value is reset to zero unless autoReset is false.
 ******************************************************************************/
-void ProgressingTask::setProgressMaximum(qlonglong maximum)
+void ProgressingTask::setProgressMaximum(qlonglong maximum, bool autoReset)
 {
+	if(!autoReset && _progressMaximum == maximum)
+		return;
+
     const QMutexLocker locker(&taskMutex());
 
     _progressMaximum = maximum;

@@ -58,8 +58,8 @@ public:
         return _progressText;
     }
 
-    /// \brief Sets the current maximum value for progress reporting. The current progress value is reset to zero.
-    void setProgressMaximum(qlonglong maximum);
+    /// \brief Sets the current maximum value for progress reporting. The current progress value is reset to zero unless autoReset is false.
+    void setProgressMaximum(qlonglong maximum, bool autoReset = true);
 
     /// \brief Sets the current progress value of the task.
     /// \param progressValue The new value, which must be in the range 0 to progressMaximum().

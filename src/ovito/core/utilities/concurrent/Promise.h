@@ -78,9 +78,9 @@ public:
     }
 
     /// Sets the current maximum value for progress reporting.
-    void setProgressMaximum(qlonglong maximum) const { 
+    void setProgressMaximum(qlonglong maximum, bool autoReset = true) const { 
         OVITO_ASSERT(task()->isProgressingTask());
-        static_cast<ProgressingTask*>(task().get())->setProgressMaximum(maximum); 
+        static_cast<ProgressingTask*>(task().get())->setProgressMaximum(maximum, autoReset); 
     }
 
     /// Returns the current progress value (in the range 0 to progressMaximum()).
