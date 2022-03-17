@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,7 +55,7 @@ class OVITO_MESH_EXPORT VTKTriangleMeshExporter : public FileExporter
 public:
 
 	/// \brief Constructs a new instance of this class.
-	Q_INVOKABLE VTKTriangleMeshExporter(ObjectCreationParams params) : FileExporter(params) {}
+	Q_INVOKABLE VTKTriangleMeshExporter(ObjectCreationParams params) : FileExporter(params), _exportCapPolygons(true) {}
 
 	/// \brief Returns the type(s) of data objects that this exporter service can export.
 	virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
@@ -86,6 +86,9 @@ private:
 
 	/// The stream object used to write into the output file.
 	std::unique_ptr<CompressedTextWriter> _outputStream;
+
+	/// Controls whether the cap polygons of a closed surface mesh should be exported.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, exportCapPolygons, setExportCapPolygons);
 };
 
 }	// End of namespace

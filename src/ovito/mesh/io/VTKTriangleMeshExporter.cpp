@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,6 +28,7 @@
 namespace Ovito::Mesh {
 
 IMPLEMENT_OVITO_CLASS(VTKTriangleMeshExporter);
+DEFINE_PROPERTY_FIELD(VTKTriangleMeshExporter, exportCapPolygons);
 
 /******************************************************************************
  * This is called once for every output file to be written and before
@@ -81,7 +82,7 @@ bool VTKTriangleMeshExporter::exportFrame(int frameNumber, TimePoint time, const
 	operation.setProgressText(tr("Writing file %1").arg(filePath));
 
 	const TriMeshObject* surfaceMesh = meshObj->surfaceMesh();
-	const TriMeshObject* capPolygonsMesh = meshObj->capPolygonsMesh();
+	const TriMeshObject* capPolygonsMesh = exportCapPolygons() ? meshObj->capPolygonsMesh() : nullptr;
 	auto totalVertexCount = (surfaceMesh ? surfaceMesh->vertexCount() : 0) + (capPolygonsMesh ? capPolygonsMesh->vertexCount() : 0);
 	auto totalFaceCount = (surfaceMesh ? surfaceMesh->faceCount() : 0) + (capPolygonsMesh ? capPolygonsMesh->faceCount() : 0);
 	textStream() << "# vtk DataFile Version 3.0\n";
