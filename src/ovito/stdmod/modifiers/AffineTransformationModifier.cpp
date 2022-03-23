@@ -78,22 +78,6 @@ void AffineTransformationModifier::initializeModifier(const ModifierInitializati
 }
 
 /******************************************************************************
-* Modifies the input data synchronously.
-******************************************************************************/
-void AffineTransformationModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
-	// Validate parameters and input data.
-	if(!relativeMode()) {
-		const SimulationCellObject* simCell = state.getObject<SimulationCellObject>();
-		if(!simCell || simCell->cellMatrix().determinant() == 0)
-			throwException(tr("Input simulation cell does not exist or is degenerate. Transformation to target cell would be singular."));
-	}
-
-	// Apply all enabled modifier delegates to the input data.
-	MultiDelegatingModifier::evaluateSynchronous(request, state);
-}
-
-/******************************************************************************
 * Returns the effective affine transformation matrix to be applied to points.
 * It depends on the linear matrix, the translation vector, relative/target cell mode, and 
 * whether the translation is specified in terms of reduced cell coordinates.
@@ -109,6 +93,10 @@ AffineTransformation AffineTransformationModifier::effectiveAffineTransformation
 		}	
 	}
 	else {
+		const SimulationCellObject* simCell = state.getObject<SimulationCellObject>();
+		if(!simCell || simCell->cellMatrix().determinant() == 0 || simCell->isDegenerate())
+			throwException(tr("Input simulation cell does not exist or is degenerate. Transformation to target cell would be singular."));
+
 		tm = targetCell() * state.expectObject<SimulationCellObject>()->inverseMatrix();
 	}
 
@@ -134,12 +122,11 @@ QVector<DataObjectReference> SimulationCellAffineTransformationModifierDelegate:
 PipelineStatus SimulationCellAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	const AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
-	const AffineTransformation tm = mod->effectiveAffineTransformation(state);
 
 	// Transform the SimulationCellObject.
 	if(const SimulationCellObject* inputCell = state.getObject<SimulationCellObject>()) {
 		SimulationCellObject* outputCell = state.makeMutable(inputCell);
-		outputCell->setCellMatrix(mod->relativeMode() ? (tm * inputCell->cellMatrix()) : mod->targetCell());
+		outputCell->setCellMatrix(mod->relativeMode() ? (mod->effectiveAffineTransformation(state) * inputCell->cellMatrix()) : mod->targetCell());
 	}
 
 	if(mod->selectionOnly())
@@ -150,7 +137,7 @@ PipelineStatus SimulationCellAffineTransformationModifierDelegate::apply(const M
 		if(const PeriodicDomainDataObject* existingObject = dynamic_object_cast<PeriodicDomainDataObject>(obj)) {
 			if(existingObject->domain()) {
 				PeriodicDomainDataObject* newObject = state.makeMutable(existingObject);
-				newObject->mutableDomain()->setCellMatrix(tm * existingObject->domain()->cellMatrix());
+				newObject->mutableDomain()->setCellMatrix(mod->effectiveAffineTransformation(state) * existingObject->domain()->cellMatrix());
 			}
 		}
 	}

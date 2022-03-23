@@ -108,9 +108,6 @@ public:
 	/// This method is called by the system after the modifier has been inserted into a data pipeline.
 	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
-	/// Modifies the input data synchronously.
-	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
 	/// Returns the effective affine transformation matrix to be applied to points.
 	/// It depends on the linear matrix, the translation vector, relative/target cell mode, and 
 	/// whether the translation is specified in terms of reduced cell coordinates.

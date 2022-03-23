@@ -52,7 +52,7 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const Modi
 			PropertyAccess<Point3> positionProperty = newVertices->expectMutableProperty(SurfaceMeshVertices::PositionProperty);
 
 			if(!mod->selectionOnly()) {
-				// Apply transformation to the vertices coordinates.
+				// Apply transformation to the vertex coordinates.
 				for(Point3& p : positionProperty)
 					p = tm * p;
 			}
