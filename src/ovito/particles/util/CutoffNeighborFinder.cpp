@@ -22,6 +22,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/core/utilities/concurrent/Task.h>
+#include <ovito/core/dataset/DataSet.h>
 #include "CutoffNeighborFinder.h"
 
 namespace Ovito::Particles {
@@ -32,7 +33,6 @@ namespace Ovito::Particles {
 bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selectionProperty, ProgressingTask* operation)
 {
 	OVITO_ASSERT(positions);
-	OVITO_ASSERT(cell);
 	if(operation) operation->setProgressMaximum(0);
 
 	_cutoffRadius = cutoffRadius;
@@ -40,11 +40,35 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 	if(_cutoffRadius <= 0)
 		throw Exception("Invalid parameter: Neighbor cutoff radius must be positive.");
 
+	// Check input simulation cell.
+	// If it is periodic, make sure it is not degenerate.
+	// If it is non-periodic and degenerate, replace the box with a non-degenerate one.
+	bool is2D = false;
+	if(cell && cell->isDegenerate()) {
+		is2D = cell->is2D();
+		if(cell->hasPbcCorrected())
+			cell->throwException("Invalid input: Periodic simulation cell is degenerate.");
+		else
+			cell = nullptr;
+	}
 	simCell = cell;
 
+	// If needed, create an ad-hoc simulation cell that is non-periodic and non-degenerate.
+	if(!simCell) {
+		Box3 boundingBox;
+		boundingBox.addPoints(positions);
+		if(boundingBox.isEmpty()) boundingBox.addPoint(Point3::Origin());
+		if(boundingBox.sizeX() <= FLOATTYPE_EPSILON) boundingBox.maxc.x() = boundingBox.minc.x() + 1.0;
+		if(boundingBox.sizeY() <= FLOATTYPE_EPSILON) boundingBox.maxc.y() = boundingBox.minc.y() + 1.0;
+		if(boundingBox.sizeZ() <= FLOATTYPE_EPSILON) boundingBox.maxc.z() = boundingBox.minc.z() + 1.0;
+		simCell = DataOORef<SimulationCellObject>::create(positions.buffer()->dataset(), 
+				ObjectCreationParams::WithoutVisElement, AffineTransformation(
+					Vector3(boundingBox.sizeX(), 0, 0),
+					Vector3(0, boundingBox.sizeY(), 0),
+					Vector3(0, 0, boundingBox.sizeZ()),
+					boundingBox.minc - Point3::Origin()), false, false, false, is2D);
+	}
 	OVITO_ASSERT(!simCell->is2D() || !simCell->matrix().column(2).isZero());
-	if(simCell->isDegenerate())
-		throw Exception("Invalid input: Simulation cell is degenerate.");
 
 	AffineTransformation binCell;
 	binCell.translation() = simCell->matrix().translation();
