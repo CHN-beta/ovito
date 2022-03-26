@@ -467,13 +467,6 @@ void ModifierListModel::insertModifier()
 			_pipelineListModel->applyModifiers(modifierSet, modifierGroup);
 		}
 		else if(!action->scriptPath().isEmpty()) {
-
-			// Load source code from template file.
-			QFile file(action->scriptPath());
-			if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
-				throw Exception(tr("Failed to open Python file '%1' for reading: %2").arg(action->scriptPath()).arg(file.errorString()));
-			QString scriptCode = tr("# This is a copy of the template file '%1'.\n# Feel free to modify the code below as needed.\n\n").arg(QDir::toNativeSeparators(action->scriptPath())) + QString::fromUtf8(file.readAll());
-
 			// Get the PythonScriptModifier modifier class.
 			if(OvitoClassPtr clazz = PluginManager::instance().findClass({}, QStringLiteral("PythonScriptModifier"))) {
 				if(!clazz->isAbstract() && clazz->isDerivedFrom(Modifier::OOClass())) {
@@ -485,8 +478,8 @@ void ModifierListModel::insertModifier()
 					OVITO_CHECK_OBJECT_POINTER(modifier);
 					modifier->setTitle(action->text());
 
-					// Assign the script code.
-					bool callSuccessful = QMetaObject::invokeMethod(modifier, "setScriptCode", Qt::DirectConnection, Q_ARG(const QString&, scriptCode));
+					// Load the script code from the template file.
+					bool callSuccessful = QMetaObject::invokeMethod(modifier, "loadCodeTemplate", Qt::DirectConnection, Q_ARG(const QString&, action->scriptPath()));
 					OVITO_ASSERT(callSuccessful);
 
 					// Resume undo recording.
