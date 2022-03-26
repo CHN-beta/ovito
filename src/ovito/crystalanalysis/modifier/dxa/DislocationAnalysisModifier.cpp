@@ -187,12 +187,10 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
 		preferredCrystalOrientations.push_back(Matrix3::Identity());
 	}
 
-	// Get cluster property.
-#if 0
-	const PropertyObject* clusterProperty = particles->getProperty(ParticlesObject::ClusterProperty);
-#else
-	const PropertyObject* clusterProperty = nullptr;
-#endif
+	// Get grain id property created by the GrainSegmentationModifier.
+	const PropertyObject* grainProperty = particles->getProperty(QStringLiteral("Grain"));
+	if(grainProperty && (grainProperty->dataType() != DataBuffer::Int64 || grainProperty->componentCount() != 1))
+		grainProperty = nullptr;
 
 	// Create an empty surface mesh object.
 	DataOORef<SurfaceMesh> defectMesh = DataOORef<SurfaceMesh>::create(dataset(), ObjectCreationParams::WithoutVisElement, tr("Defect mesh"));
@@ -222,7 +220,7 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
 			maxTrialCircuitSize(),
 			circuitStretchability(),
 			selectionProperty,
-			clusterProperty,
+			grainProperty,
 			std::move(preferredCrystalOrientations),
 			onlyPerfectDislocations(),
 			defectMeshSmoothingLevel(),

@@ -64,14 +64,11 @@ ForwardIterator most_common(ForwardIterator first, ForwardIterator last)
 ******************************************************************************/
 bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstPropertyAccess<qlonglong> crystalClusters, ProgressingTask& operation)
 {
-	OVITO_ASSERT(!crystalClusters); // This option is currently not supported.
-
 	operation.beginProgressSubSteps(2);
 
 	// Determines if a tetrahedron belongs to the good or bad crystal region.
 	auto tetrahedronRegion = [this,&crystalClusters](DelaunayTessellation::CellHandle cell) {
 		if(elasticMapping().isElasticMappingCompatible(cell)) {
-#if 0
 			if(crystalClusters) {
 				std::array<int,4> clusters;
 				for(int v = 0; v < 4; v++)
@@ -79,7 +76,6 @@ bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, ConstPropertyA
 				std::sort(std::begin(clusters), std::end(clusters));
 				return *most_common(std::begin(clusters), std::end(clusters));
 			}
-#endif
 			return 0;
 		}
 		else return SurfaceMeshAccess::InvalidIndex;
