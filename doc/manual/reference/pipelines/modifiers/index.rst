@@ -114,6 +114,16 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.interactive_molecular_dynamics`  Visualize live atomic trajectories from a running MD simulation as they are being calculated.
   ========================================================== ==========================================================
 
+.. table::
+  :width: 100%
+  :widths: 25 75
+
+  ========================================================== ==========================================================
+  Python-based modifiers
+  =====================================================================================================================
+  :ref:`modifiers.shrink_wrap_box` |ovito-pro|               Resets the simulation cell to tightly fit all particles
+  ========================================================== ==========================================================  
+
 .. toctree::
   :maxdepth: 1
   :hidden:
@@ -158,6 +168,7 @@ combine several modifiers to accomplish more complex tasks.
   show_periodic_images
   scatter_plot
   select_particle_type
+  shrink_wrap_box
   slice
   smooth_trajectory
   bin_and_reduce
@@ -169,4 +180,3 @@ combine several modifiers to accomplish more complex tasks.
   vorotop_analysis
   wigner_seitz_analysis
   wrap_at_periodic_boundaries
-

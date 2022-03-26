@@ -97,6 +97,7 @@ demonstrating how to write a ``modify()`` function:
   * :ref:`example_order_parameter_calculation`
   * :ref:`example_visualize_local_lattice_orientation`
   * :ref:`example_select_overlapping_particles`
+  * :ref:`example_shrink_wrap_box`
 
 .. seealso::
 
