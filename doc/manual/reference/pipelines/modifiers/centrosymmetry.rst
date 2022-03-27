@@ -3,7 +3,7 @@
 Centrosymmetry parameter
 ------------------------
 
-.. image::/images/modifiers/centrosymmetry_panel.png
+.. image:: /images/modifiers/centrosymmetry_panel.png
   :width: 30%
   :align: right
   

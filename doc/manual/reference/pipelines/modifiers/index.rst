@@ -121,6 +121,7 @@ combine several modifiers to accomplish more complex tasks.
   ========================================================== ==========================================================
   Python-based modifiers
   =====================================================================================================================
+  :ref:`modifiers.calculate_local_entropy` |ovito-pro|       Computes local pair entropy fingerprints of particles
   :ref:`modifiers.shrink_wrap_box` |ovito-pro|               Resets the simulation cell to tightly fit all particles
   ========================================================== ==========================================================  
 
@@ -134,6 +135,7 @@ combine several modifiers to accomplish more complex tasks.
   assign_color
   atomic_strain
   bond_analysis
+  calculate_local_entropy
   centrosymmetry
   chill_plus
   clear_selection
