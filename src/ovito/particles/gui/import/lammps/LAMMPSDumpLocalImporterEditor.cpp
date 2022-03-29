@@ -70,6 +70,14 @@ bool LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const
 			}
 		}
 	}
+	else if(mapping.size() == lammpsImporter->columnMapping().size()) {
+		// If there was a mapping set up for a previously imported file,
+		// and if the newly imported file has no column name information but the same number
+		// of columns, adopt the existing column mapping from previously imported file.
+		if(boost::algorithm::none_of(mapping, [](const auto& column) { return column.isMapped(); })) {
+			boost::range::copy(lammpsImporter->columnMapping(), mapping.begin()); 
+		}
+	}
 
 	InputColumnMappingDialog dialog(mapping, &mainWindow);
 	if(dialog.exec() == QDialog::Accepted) {
