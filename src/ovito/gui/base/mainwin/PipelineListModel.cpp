@@ -476,7 +476,7 @@ void PipelineListModel::deleteItems(const QVector<PipelineListItem*>& items)
 ******************************************************************************/
 void PipelineListModel::deleteModifierApplication(ModifierApplication* modApp)
 {
-	UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Delete modifier"), [modApp, this]() {
+	UndoableTransaction::handleExceptions(_datasetContainer.currentSet()->undoStack(), tr("Delete modifier"), [modApp = OORef<ModifierApplication>(modApp), this]() {
 		modApp->visitDependents([&](RefMaker* dependent) {
 			if(ModifierApplication* precedingModApp = dynamic_object_cast<ModifierApplication>(dependent)) {
 				if(precedingModApp->input() == modApp) {
