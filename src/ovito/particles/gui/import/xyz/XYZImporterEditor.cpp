@@ -74,6 +74,14 @@ bool XYZImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourc
 				column.columnName.clear();
 		}
 	}
+	else if(mapping.size() == xyzImporter->columnMapping().size()) {
+		// If there was a mapping set up for a previously imported XYZ file,
+		// and if the newly imported XYZ file has no column name information but the same number
+		// of columns, adopt the existing column mapping from previously imported file.
+		if(boost::algorithm::none_of(mapping, [](const auto& column) { return column.isMapped(); })) {
+			boost::range::copy(xyzImporter->columnMapping(), mapping.begin()); 
+		}
+	}
 
 	InputColumnMappingDialog dialog(mapping, &mainWindow);
 	if(dialog.exec() == QDialog::Accepted) {
