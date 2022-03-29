@@ -217,12 +217,20 @@ void FileSourceEditor::onPickLocalInputFile()
 			// Offer only file importer types that are compatible with a FileSource.
 			auto importerClasses = PluginManager::instance().metaclassMembers<FileImporter>(FileSourceImporter::OOClass());
 
-			// Let the user select a file.
+			// Let the user select a file by displaying a dialog window.
 			ImportFileDialog dialog(importerClasses, dataset(), container()->window(), tr("Pick input file"), false);
+
+			// Select the previously imported file in the file dialog.
 			if(fileSource->dataCollectionFrame() >= 0 && fileSource->dataCollectionFrame() < fileSource->frames().size()) {
 				const QUrl& url = fileSource->frames()[fileSource->dataCollectionFrame()].sourceFile;
-				if(url.isLocalFile())
+				if(url.isLocalFile()) {
+#ifndef Q_OS_LINUX
 					dialog.selectFile(url.toLocalFile());
+#else
+					// Workaround for bug in QFileDialog on Linux (Qt 6.2.4) crashing in exec() when selectFile() is called before (OVITO issue #216).
+					dialog.setDirectory(QFileInfo(url.toLocalFile()).dir());
+#endif
+				}
 			}
 			if(dialog.exec() != QDialog::Accepted)
 				return;

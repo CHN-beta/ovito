@@ -94,8 +94,14 @@ void OXDNAImporterEditor::onChooseTopologyFile()
 	fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
 	fileDialog.setFileMode(QFileDialog::ExistingFile);
 
-	if(importer->topologyFileUrl().isValid() && importer->topologyFileUrl().isLocalFile())
+	if(importer->topologyFileUrl().isValid() && importer->topologyFileUrl().isLocalFile()) {
+#ifndef Q_OS_LINUX
 		fileDialog.selectFile(importer->topologyFileUrl().toLocalFile());
+#else
+		// Workaround for bug in QFileDialog on Linux (Qt 6.2.4) crashing in exec() when selectFile() is called before (OVITO issue #216).
+		fileDialog.setDirectory(QFileInfo(importer->topologyFileUrl().toLocalFile()).dir());
+#endif
+	}
 
 	if(fileDialog.exec() == QDialog::Accepted) {
 		undoableTransaction(tr("Set topology file"), [importer, &fileDialog]() {

@@ -96,8 +96,14 @@ bool GuiDataSetContainer::fileSaveAs(const QString& filename)
 			if(!defaultPath.isEmpty())
 				dialog.setDirectory(defaultPath);
 		}
-		else
+		else {
+#ifndef Q_OS_LINUX
 			dialog.selectFile(currentSet()->filePath());
+#else
+			// Workaround for bug in QFileDialog on Linux (Qt 6.2.4) crashing in exec() when selectFile() is called before (OVITO issue #216).
+			dialog.setDirectory(QFileInfo(currentSet()->filePath()).dir());
+#endif
+		}
 
 		if(!dialog.exec())
 			return false;
