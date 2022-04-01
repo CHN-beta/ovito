@@ -409,15 +409,15 @@ private:
 				}
 				else {
 					// If the alpha test is inconclusive (which may happen if the element is a sliver tetrahedron),
-					// then we check the surrounding tetrahedra. Only if all four neighbors are classified as filled,
-					// then we accept the sliver tatredron as filled too.
+					// then we check the surrounding tetrahedra. Only if all four neighbors are classified as filled or inconclusive,
+					// then we accept the sliver tetradron as filled too.
 					int f = 0;
 					for(; f < 4; f++) {
 						DelaunayTessellation::CellHandle adjacentCell = _tessellation.mirrorFacet(cell, f).first;
 						if(!_tessellation.isFiniteCell(adjacentCell)) 
 							break;
 						auto adjacentAlphaTestResult = _tessellation.alphaTest(adjacentCell, _alpha);
-						if(!adjacentAlphaTestResult || !*adjacentAlphaTestResult)
+						if(adjacentAlphaTestResult && !*adjacentAlphaTestResult)
 							break;
 					}
 					if(f == 4)

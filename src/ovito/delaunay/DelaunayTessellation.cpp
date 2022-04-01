@@ -261,6 +261,17 @@ std::optional<bool> DelaunayTessellation::alphaTest(CellHandle cell, FloatType a
 	FloatType nomin = (num_x*num_x + num_y*num_y + num_z*num_z);
 	FloatType denom = (4 * den * den);
 
+#if 0
+	// Code is only used for debugging purposes: 
+	std::array<int,4> searchVertexIds1 = {180620, 458358, 474869, 1603607};
+	std::array<int,4> vertexIds;
+	for(int v = 0; v < 4; v++)
+		vertexIds[v] = cellVertex(cell, v);
+	std::sort(vertexIds.begin(), vertexIds.end());
+	if(vertexIds == searchVertexIds1)
+		qInfo() << "Found element 1 " << "nomin=" << nomin << "denom=" << denom << "(nomin / denom)=" << (nomin / denom) << "alpha=" << alpha;
+#endif
+
 	// Detect degnerate sliver elements, for which we cannot compute a reliable alpha value. 
 	if(std::abs(denom) < 1e-9 && std::abs(nomin) < 1e-9) {
 		return {}; // Indeterminate result
