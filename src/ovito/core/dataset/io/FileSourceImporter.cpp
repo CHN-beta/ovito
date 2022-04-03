@@ -185,8 +185,10 @@ OORef<PipelineSceneNode> FileSourceImporter::importFileSet(std::vector<std::pair
 	if(!fileSource)
 		fileSource = OORef<FileSource>::create(dataset());
 
-	// Inherit multi-timestep flag from existing importer.
-	if(existingFileSource && existingFileSource->importer() && existingFileSource->importer()->isMultiTimestepFile())
+	// Inherit multi-timestep flag from existing importer, but only if the old importer
+	// was for the same file format. That's because the new importer may not support multi-timestep
+	// files at all.
+	if(existingFileSource && existingFileSource->importer() && existingFileSource->importer()->getOOClass() == this->getOOClass() && existingFileSource->importer()->isMultiTimestepFile())
 		setMultiTimestepFile(true);
 
 	// Create a new pipeline node in the scene for the linked data.
@@ -366,7 +368,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 	if(FrameFinderPtr frameFinder = createFrameFinder(fileHandle))
 		return frameFinder->runAsync(taskManager());
 	else
-		return Future<QVector<Frame>>::createImmediateEmplace();
+		return QVector<Frame>{{ Frame(fileHandle) }};
 }
 
 /******************************************************************************
