@@ -825,6 +825,20 @@ namespace GEO {
         return y;
     }
 
+    template <index_t DIM, class FT> inline
+    vecng<DIM,FT> mult(
+        const Matrix<DIM, FT>& M, const vecng<DIM,FT>& x
+    ) {
+        vecng<DIM,FT> y;
+        for(index_t i = 0; i < DIM; i++) {
+            y[i] = 0;
+            for(index_t j = 0; j < DIM; j++) {
+                y[i] += M(i, j) * x[j];
+            }
+        }
+        return y;
+    }
+
     
     
 }
@@ -1677,82 +1691,255 @@ namespace GEO {
 #ifndef GEOGRAM_BASIC_FILE_SYSTEM
 #define GEOGRAM_BASIC_FILE_SYSTEM
 
+
 #include <string>
 #include <vector>
+#include <map>
 
 
 namespace GEO {
 
     namespace FileSystem {
 
+	class GEOGRAM_API Node : public Counted {
+	public:
+	    Node();
+	    
+	    ~Node() override;
+
+	    
+	    
+	    virtual bool is_file(const std::string& path);
+
+	    virtual bool is_directory(const std::string& path);
+
+	    virtual bool create_directory(const std::string& path);
+
+	    virtual bool delete_directory(const std::string& path);
+
+	    virtual bool delete_file(const std::string& path);
+
+	    virtual bool get_directory_entries(
+		const std::string& path, std::vector<std::string>& result
+	    );
+
+	    virtual std::string get_current_working_directory();
+
+	    virtual bool set_current_working_directory(
+		const std::string& path
+	    );
+
+	    virtual bool rename_file(
+		const std::string& old_name, const std::string& new_name
+	    );
+
+	    virtual Numeric::uint64 get_time_stamp(const std::string& path);
+
+	    virtual bool set_executable_flag(const std::string& filename);
+
+
+	    virtual bool touch(const std::string& filename);
+
+	    virtual std::string normalized_path(const std::string& path);
+
+
+	    virtual std::string home_directory();
+
+	    virtual std::string documents_directory();
+
+
+	    virtual std::string load_file_as_string(const std::string& path);
+	    
+	    
+	    
+	    virtual std::string extension(const std::string& path);
+
+	    virtual std::string base_name(
+		const std::string& path, bool remove_extension = true
+	    );
+
+	    virtual std::string dir_name(const std::string& path);
+
+	    virtual void get_directory_entries(
+		const std::string& path,
+		std::vector<std::string>& result, bool recursive
+	    );
+
+	    virtual void get_files(
+		const std::string& path,
+		std::vector<std::string>& result, bool recursive = false
+	    );
+
+	    virtual void get_subdirectories(
+		const std::string& path,
+		std::vector<std::string>& result, bool recursive = false
+	    );
+
+	    virtual void flip_slashes(std::string& path);
+
+	    virtual bool copy_file(
+		const std::string& from, const std::string& to
+	    );
+	};
+
+	class GEOGRAM_API MemoryNode : public Node {
+	public:
+
+	    MemoryNode(const std::string& path="/") : path_(path) {
+	    }
+	    
+	    
+	    bool copy_file(
+		const std::string& from, const std::string& to
+	    ) override ;
+
+	    	    
+	    std::string load_file_as_string(const std::string& path) override;
+
+	    
+	    virtual bool is_file(const std::string& path) override;
+
+	    	    
+	    virtual bool is_directory(const std::string& path) override;
+
+	    	    	    
+	    virtual bool create_directory(const std::string& path) override;
+
+	    	    	    	    
+	    virtual bool delete_directory(const std::string& path) override;
+
+	    
+	    virtual bool delete_file(const std::string& path) override;
+
+	    
+	    bool get_directory_entries(
+		const std::string& path, std::vector<std::string>& result
+	    ) override;
+
+
+	    
+	    bool rename_file(
+		const std::string& old_name, const std::string& new_name
+	    ) override;
+
+	    const char* get_file_contents(const std::string& path);
+
+	    bool create_file(const std::string& path, const char* content);
+	    
+	protected:
+	    static void split_path(
+		const std::string& path, std::string& leadingsubdir, 
+		std::string& rest
+	    );
+	    
+	private:
+	    std::string path_;
+	    std::map<std::string, SmartPointer<MemoryNode> > subnodes_;
+	    std::map<std::string, const char*> files_;
+	};
+	
+	typedef SmartPointer<Node> Node_var;
+
+	
+
+	void GEOGRAM_API initialize();
+
+	void GEOGRAM_API terminate();
+	
+        
         bool GEOGRAM_API is_file(const std::string& path);
 
+        
         bool GEOGRAM_API is_directory(const std::string& path);
 
+	
         bool GEOGRAM_API create_directory(const std::string& path);
 
+		
         bool GEOGRAM_API delete_directory(const std::string& path);
 
+		
         bool GEOGRAM_API delete_file(const std::string& path);
 
+		
         bool GEOGRAM_API get_directory_entries(
             const std::string& path, std::vector<std::string>& result
         );
 
+		
         std::string GEOGRAM_API get_current_working_directory();
-
         bool GEOGRAM_API set_current_working_directory(
             const std::string& path
         );
 
+		
         bool GEOGRAM_API rename_file(
             const std::string& old_name, const std::string& new_name
         );
 
+		
         Numeric::uint64 GEOGRAM_API get_time_stamp(
             const std::string& path
         );
 
+		
         std::string GEOGRAM_API extension(const std::string& path);
 
+		
         std::string GEOGRAM_API base_name(
             const std::string& path, bool remove_extension = true
         );
-
+	
+		
         std::string GEOGRAM_API dir_name(const std::string& path);
 
+		
         void GEOGRAM_API get_directory_entries(
             const std::string& path,
             std::vector<std::string>& result, bool recursive
         );
 
+		
         void GEOGRAM_API get_files(
             const std::string& path,
             std::vector<std::string>& result, bool recursive = false
         );
 
+		
         void GEOGRAM_API get_subdirectories(
             const std::string& path,
             std::vector<std::string>& result, bool recursive = false
         );
 
+		
         void GEOGRAM_API flip_slashes(std::string& path);
 
+		
         bool GEOGRAM_API copy_file(
             const std::string& from, const std::string& to
         );
 
-        void GEOGRAM_API set_executable_flag(const std::string& filename);
+		
+        bool GEOGRAM_API set_executable_flag(const std::string& filename);
 
+		
+        bool GEOGRAM_API touch(const std::string& filename);
 
-        void GEOGRAM_API touch(const std::string& filename);
-
+		
         std::string GEOGRAM_API normalized_path(const std::string& path);
 
-
+		
         std::string GEOGRAM_API home_directory();
 
+		
         std::string GEOGRAM_API documents_directory();
+
+	void GEOGRAM_API get_root(Node*& root);
+	
+#ifdef GEO_OS_EMSCRIPTEN
+	void set_file_system_changed_callback(void(*callback)());
+#endif	
+	
     }
 }
 
@@ -2051,6 +2238,8 @@ namespace {
     using namespace CmdLine;
 
     std::string config_file_name = "geogram.ini";
+    bool auto_create_args = false;
+    bool loaded_config_file = false;
     
     int geo_argc = 0;
     char** geo_argv = nullptr;
@@ -2178,24 +2367,12 @@ namespace {
         return false;
     }
 
-    void parse_config_file(int argc, char** argv) {
-	geo_assert(argc >= 1);
-	std::string program_name = String::to_uppercase(FileSystem::base_name(argv[0]));
-	static bool init = false;
-	if(init) {
-	    return;
-	}
-	init = true;
-	Logger::out("config") << "Configuration file name:" << config_file_name
-			      << std::endl;
-	Logger::out("config") << "Home directory:" << FileSystem::home_directory()
-			      << std::endl;
-	std::string config_filename = FileSystem::home_directory() + "/" + config_file_name;
+
+    void parse_config_file(
+	const std::string& config_filename, const std::string& program_name
+    ) {
 	std::string section = "*";
 	if(FileSystem::is_file(config_filename)) {
-	    Logger::out("config") << "Using configuration file:"
-				       << config_filename
-				       << std::endl;
 	    std::ifstream in(config_filename.c_str());
 	    std::string line;
 	    while(std::getline(in,line)) {
@@ -2209,12 +2386,41 @@ namespace {
 			if(CmdLine::arg_is_declared(argname)) {
 			    CmdLine::set_arg(argname, argval);
 			} else {
-			    Logger::warn("config") << argname << "=" << argval << " ignored" << std::endl;
+			    if(auto_create_args) {
+				CmdLine::declare_arg(argname, argval, "...");
+			    } else {
+				Logger::warn("config") << argname
+						       << "=" << argval
+						       << " ignored"
+						       << std::endl;
+			    }
 			}
 		    }
 		}
 	    }
+	    loaded_config_file= true;
 	}
+    }
+    
+    void parse_config_file(int argc, char** argv) {
+	geo_assert(argc >= 1);
+	std::string program_name = String::to_uppercase(
+	    FileSystem::base_name(argv[0])
+	);
+	static bool init = false;
+	if(init) {
+	    return;
+	}
+	init = true;
+	Logger::out("config")
+	    << "Configuration file name:" << config_file_name
+	    << std::endl;
+	Logger::out("config")
+	    << "Home directory:" << FileSystem::home_directory()
+	    << std::endl;
+	std::string config_filename =
+	    FileSystem::home_directory() + "/" + config_file_name;
+	parse_config_file(config_filename, program_name);
     }
     
     bool parse_internal(
@@ -2296,6 +2502,11 @@ namespace {
 	    result = String::to_display_string(x) + "%";
 	} else {
 	    result = CmdLine::get_arg(arg_name);
+	    if(result.length() > ui_terminal_width()/2) {
+                // TODO: fix display long lines in terminal
+		// (that trigger infinite loop for now)
+		result = "...";
+	    }
 	}
 	return result;
     }
@@ -2355,7 +2566,7 @@ namespace {
             lines.push_back(line);
 
             max_left_width = std::max(
-                index_t(line.name.length() + line.value.length()),
+		index_t(line.name.length() + line.value.length()),
                 max_left_width
             );
         }
@@ -2406,12 +2617,26 @@ namespace GEO {
 	    return geo_argv;
 	}
 
-	void set_config_file_name(const std::string& filename) {
+	void set_config_file_name(
+	    const std::string& filename, bool auto_create
+	) {
 	    config_file_name = filename;
+	    auto_create_args = auto_create;
 	}
 
 	std::string get_config_file_name() {
 	    return config_file_name;
+	}
+
+	void load_config(
+	    const std::string& filename, const std::string& program_name
+	) {
+	    parse_config_file(filename, program_name);
+	}
+	
+
+	bool config_file_loaded() {
+	    return loaded_config_file;
 	}
 	
         bool parse(
@@ -2713,7 +2938,7 @@ namespace GEO {
             args.clear();
             for(auto& it : desc_->args) {
                 std::string cur_arg = it.first + "=" + get_arg(it.first);
-                args.push_back(cur_arg);
+		args.push_back(cur_arg);
             }
         }
     }
@@ -2942,11 +3167,10 @@ namespace GEO {
                     ui_out() << "| ";
                     ui_pad(' ', wrap);
                     ui_out() << cur.substr(0, newline);
-                    ui_pad(' ', maxL - newline);
+                    ui_pad(' ', sub(maxL,newline));
                     ui_out() << " |" << std::endl;
                     cur = cur.substr(newline + 1);
-                }
-                else if(cur.length() > maxL) {
+                } else if(cur.length() > maxL) {
                     // The line length runs past the right border
                     // We cut the string just before the border
                     ui_pad(' ', ui_left_margin);
@@ -2955,26 +3179,24 @@ namespace GEO {
                     ui_out() << cur.substr(0, maxL);
                     ui_out() << " |" << std::endl;
                     cur = cur.substr(maxL);
-                }
-                else if(cur.length() != 0) {
+                } else if(cur.length() != 0) {
                     // Print the remaining portion of the string
                     // and pad with spaces
                     ui_pad(' ', ui_left_margin);
                     ui_out() << "| ";
                     ui_pad(' ', wrap);
                     ui_out() << cur;
-                    ui_pad(' ', maxL - cur.length());
+                    ui_pad(' ', sub(maxL,cur.length()));
                     ui_out() << " |";
                     break;
-                }
-                else {
+                } else {
                     // No more chars to print
                     break;
                 }
 
                 if(wrap == 0) {
                     wrap = wrap_margin;
-                    maxL -= wrap_margin;
+                    maxL = sub(maxL,wrap_margin);
                 }
             }
         }
@@ -3120,6 +3342,24 @@ namespace GEO {
         }
     }
 }
+
+#ifdef GEO_OS_ANDROID
+namespace {
+    android_app* android_app_ = nullptr;
+}
+
+namespace GEO {
+    namespace CmdLine {
+	void set_android_app(android_app* app) {
+	    android_app_ = app;
+	}
+	
+	android_app* get_android_app() {
+	    return android_app_;
+	}
+    }
+}
+#endif
 
 
 /******* extracted from ../basic/command_line_args.cpp *******/
@@ -3396,6 +3636,10 @@ namespace {
             "sys:use_doubles", false,
             "Uses double precision in output .mesh files"
         );
+	declare_arg(
+	    "sys:ascii", false,
+	    "Use ASCII files whenever supported"
+	);	    
         declare_arg(
             "sys:compression_level", 3,
             "Compression level for created .geogram files, in [0..9]"
@@ -3688,21 +3932,14 @@ namespace {
 
     void import_arg_group_gfx() {
         declare_arg_group("gfx", "OpenGL graphics options", ARG_ADVANCED);
-
-
-// Default profile will be "core" in a short future for all architectures,
-// but some users reported problems with it, so I keep for now
-// "compatibility" as the default (except on Mac/OS that prefers "core")	
         declare_arg(
             "gfx:GL_profile",
-#if defined(GEO_OS_APPLE)
+#if defined(GEO_OS_ANDROID)
+	    "ES",	    		    
+#else		    
 	    "core",
-#elif defined(GEO_OS_ANDROID)
-	    "ES",	    
-#else
-	    "compatibility",	    
 #endif	    
-            "one of core,compatibility,ES"
+            "one of core,ES"
         );
         declare_arg(
             "gfx:GL_version", 0.0,
@@ -3713,16 +3950,12 @@ namespace {
             "OpenGL debugging context"
         );
         declare_arg(
-            "gfx:GLSL", true,
-            "Use GLSL shaders (requires a decently recent gfx board)"
-        );
-        declare_arg(
             "gfx:GLSL_version", 0.0,
             "If non-zero, overrides GLSL version detection"
         );
         declare_arg(
             "gfx:GLUP_profile", "auto",
-            "one of auto, GLUP150, GLUP440, VanillaGL"
+            "one of auto, GLUP150, GLUP440, GLUPES"
         );
         declare_arg("gfx:full_screen", false, "full screen mode");
         declare_arg(
@@ -3736,7 +3969,8 @@ namespace {
         declare_arg(
             "gfx:GLSL_tesselation", true, "use tesselation shaders if available"
         );
-	declare_arg("gfx:geometry", "800x800", "resolution");
+	declare_arg("gfx:geometry", "1024x1024", "resolution");
+	declare_arg("gfx:keypress", "", "initial key sequence sent to viewer");
     }
     
     void import_arg_group_biblio() {
@@ -3746,6 +3980,19 @@ namespace {
 	    "biblio:command_line", false,
 	    "dump all command line arguments in biblio. report"
 	);
+    }
+
+    void import_arg_group_gui() {
+        declare_arg_group("gui", "gui options", ARG_ADVANCED);
+	declare_arg("gui:state", "", "gui layout state");
+	declare_arg("gui:style", "Dark", "gui style, one of Dark,Light");
+	declare_arg("gui:font_size", 18, "font size");
+	declare_arg("gui:expert", false, "expert mode for developpers");
+#ifdef GEO_OS_ANDROID
+	declare_arg("gui:phone_screen", true, "running on a phone (or testing)");	
+#else	
+	declare_arg("gui:phone_screen", false, "running on a phone (or testing)");
+#endif	
     }
     
     
@@ -3863,7 +4110,9 @@ namespace GEO {
                 import_arg_group_poly();
             } else if(name == "gfx") {
                 import_arg_group_gfx();
-            } else {
+            } else if(name == "gui") {
+		import_arg_group_gui();
+	    } else {
                 Logger::instance()->set_quiet(false);
                 Logger::err("CmdLine")
                     << "No such option group: " << name
@@ -4650,14 +4899,19 @@ extern "C" {
 #include <stdio.h>
 #endif
 
-namespace GEO {
+#ifdef GEO_OS_EMSCRIPTEN
+#include <emscripten.h>
+#endif
 
-    namespace FileSystem {
+namespace {
+    using namespace GEO;
 
-        // OS-dependent functions
+
 #ifdef GEO_OS_WINDOWS
 
-        bool is_file(const std::string& path) {
+    class FileSystemRootNode : public FileSystem::Node {
+    public:
+        bool is_file(const std::string& path) override {
             WIN32_FIND_DATA file;
             HANDLE file_handle = FindFirstFile(path.c_str(), &file);
             if(file_handle == INVALID_HANDLE_VALUE) {
@@ -4667,7 +4921,7 @@ namespace GEO {
             return (file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
         }
 
-        bool is_directory(const std::string& path) {
+        bool is_directory(const std::string& path) override {
             WIN32_FIND_DATA file;
             HANDLE file_handle = FindFirstFile(path.c_str(), &file);
             if(file_handle == INVALID_HANDLE_VALUE) {
@@ -4677,7 +4931,7 @@ namespace GEO {
             return (file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
         }
 
-        bool create_directory(const std::string& path_in) {
+        bool create_directory(const std::string& path_in) override {
             std::vector<std::string> path;
             String::split_string(path_in, '/', path);
             std::string current;
@@ -4711,17 +4965,17 @@ namespace GEO {
             return true;
         }
 
-        bool delete_directory(const std::string& path) {
+        bool delete_directory(const std::string& path) override {
             return ::RemoveDirectory(path.c_str()) != FALSE;
         }
 
-        bool delete_file(const std::string& path) {
+        bool delete_file(const std::string& path) override {
             return ::DeleteFile(path.c_str()) != FALSE;
         }
 
         bool get_directory_entries(
             const std::string& path, std::vector<std::string>& result
-        ) {
+        ) override {
             std::string dirname = path;
             if(dirname.at(dirname.size() - 1) != '/' &&
                 dirname.at(dirname.size() - 1) != '\\'
@@ -4753,7 +5007,7 @@ namespace GEO {
             return true;
         }
 
-        std::string get_current_working_directory() {
+        std::string get_current_working_directory() override {
             char buf[2048];
             std::string result = "";
             if(GetCurrentDirectory(sizeof(buf), buf)) {
@@ -4763,7 +5017,9 @@ namespace GEO {
             return result;
         }
 
-        bool set_current_working_directory(const std::string& path_in) {
+        bool set_current_working_directory(
+	    const std::string& path_in
+	) override {
             std::string path = path_in;
             if(
 		path.at(path.size() - 1) != '/' &&
@@ -4775,13 +5031,11 @@ namespace GEO {
 
         bool rename_file(
             const std::string& old_name, const std::string& new_name
-        ) {
+        ) override {
             return ::rename(old_name.c_str(), new_name.c_str()) != -1;
         }
 
-        Numeric::uint64 get_time_stamp(
-            const std::string& path
-        ) {
+        Numeric::uint64 get_time_stamp(const std::string& path) override {
             WIN32_FILE_ATTRIBUTE_DATA infos;
             if(!GetFileAttributesEx(
 		   path.c_str(), GetFileExInfoStandard, &infos)
@@ -4791,9 +5045,85 @@ namespace GEO {
             return infos.ftLastWriteTime.dwLowDateTime;
         }
 
+        bool set_executable_flag(const std::string& filename) override {
+            geo_argused(filename);
+	    return false;
+        }
+
+        bool touch(const std::string& filename) override {
+	    HANDLE hfile = CreateFile(
+		filename.c_str(),
+		GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
+		nullptr,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		nullptr
+            );
+	    if(hfile == INVALID_HANDLE_VALUE) {
+		Logger::err("FileSystem")
+		    << "Could not touch file:"
+		    << filename
+		    << std::endl;
+		return false;
+	    }
+	    SYSTEMTIME now_system;
+	    FILETIME now_file;
+	    GetSystemTime(&now_system);
+	    SystemTimeToFileTime(&now_system, &now_file);
+	    SetFileTime(hfile,nullptr,&now_file,&now_file);
+	    CloseHandle(hfile);
+	    return true;
+        }
+        
+        std::string normalized_path(const std::string& path_in) override {
+            if(path_in == "") {
+                return "";
+            }
+            std::string path = path_in;
+            std::string result;
+            TCHAR buffer[MAX_PATH];
+            GetFullPathName(path.c_str(), MAX_PATH, buffer, nullptr);
+            result = std::string(buffer);
+            flip_slashes(result);
+            return result;
+        }
+
+
+        std::string home_directory() override {
+            std::string home;
+            wchar_t folder[MAX_PATH+1];
+            HRESULT hr = SHGetFolderPathW(0, CSIDL_PROFILE, 0, 0, folder);
+            if (SUCCEEDED(hr)) {
+                char result[MAX_PATH+1];
+                wcstombs(result, folder, MAX_PATH);
+                home=std::string(result);
+                flip_slashes(home);
+            }
+            return home;
+        }
+
+        std::string documents_directory() override {
+            std::string home;
+            wchar_t folder[MAX_PATH+1];
+            HRESULT hr = SHGetFolderPathW(0, CSIDL_MYDOCUMENTS, 0, 0, folder);
+            if (SUCCEEDED(hr)) {
+                char result[MAX_PATH+1];
+                wcstombs(result, folder, MAX_PATH);
+                home=std::string(result);
+                flip_slashes(home);
+            }
+            return home;
+        }
+    };
+
 #else
 
-        bool is_file(const std::string& path) {
+
+    
+    class FileSystemRootNode : public FileSystem::Node {
+    public:
+        bool is_file(const std::string& path) override {
             //   We use 'stat' and not 'lstat' since
             // we want to be able to follow symbolic
             // links (required for instance when testing
@@ -4806,7 +5136,7 @@ namespace GEO {
             return S_ISREG(buff.st_mode);
         }
 
-        bool is_directory(const std::string& path) {
+        bool is_directory(const std::string& path) override {
             //   We use 'stat' and not 'lstat' since
             // we want to be able to follow symbolic
             // links (required for instance when testing
@@ -4819,7 +5149,7 @@ namespace GEO {
             return S_ISDIR(buff.st_mode);
         }
 
-        bool create_directory(const std::string& path_in) {
+        bool create_directory(const std::string& path_in) override {
             std::vector<std::string> path;
             String::split_string(path_in, '/', path);
             std::string current;
@@ -4838,17 +5168,17 @@ namespace GEO {
             return true;
         }
 
-        bool delete_directory(const std::string& path) {
+        bool delete_directory(const std::string& path) override {
             return rmdir(path.c_str()) == 0;
         }
 
-        bool delete_file(const std::string& path) {
+        bool delete_file(const std::string& path) override {
             return unlink(path.c_str()) == 0;
         }
 
         bool get_directory_entries(
             const std::string& path, std::vector<std::string>& result
-        ) {
+        ) override {
             std::string dirname = path;
             if(dirname[dirname.length() - 1] != '/') {
                 dirname += "/";
@@ -4858,6 +5188,22 @@ namespace GEO {
                 Logger::err("OS")
                     << "Could not open directory " << dirname
                     << std::endl;
+#ifdef GEO_OS_ANDROID
+		static bool first_time = true;
+		if(first_time) {
+		    Logger::err("OS")
+			<< "You may need to grant the \"Storage\" permission"
+			<< std::endl
+			<< "to this application"
+			<< std::endl;
+		    Logger::err("OS")
+			<< "(see Parameters/Applications"
+			<< std::endl
+			<< "in Android perferences)"
+			<< std::endl;
+		    first_time = false;
+		}
+#endif		
                 return false;
             }
             struct dirent* entry = readdir(dir);
@@ -4879,27 +5225,25 @@ namespace GEO {
             return true;
         }
 
-        std::string get_current_working_directory() {
+        std::string get_current_working_directory() override {
             char buff[4096];
             return std::string(getcwd(buff, 4096));
         }
 
-        bool set_current_working_directory(const std::string& path) {
+        bool set_current_working_directory(const std::string& path) override {
             return chdir(path.c_str()) == 0;
         }
 
         bool rename_file(
             const std::string& old_name, const std::string& new_name
-        ) {
+        ) override {
             if(is_file(new_name)) {
                 return false;
             }
             return ::rename(old_name.c_str(), new_name.c_str()) == 0;
         }
 
-        Numeric::uint64 get_time_stamp(
-            const std::string& path
-        ) {
+        Numeric::uint64 get_time_stamp(const std::string& path) override {
             struct stat buffer;
             if(!stat(path.c_str(), &buffer)) {
                 return Numeric::uint64(buffer.st_mtime);
@@ -4907,11 +5251,148 @@ namespace GEO {
             return 0;
         }
 
+        bool set_executable_flag(const std::string& filename) override {
+            geo_argused(filename);
+            if(::chmod(filename.c_str(), 0755) != 0) {
+                Logger::err("FileSyst")
+                    << "Could not change file permissions for:"
+                    << filename << std::endl;
+		return false;
+            }
+	    return true;
+        }
+
+        bool touch(const std::string& filename) override {
+#ifdef GEO_OS_APPLE
+           {
+                struct stat buff;
+                int rc = stat(filename.c_str(), &buff); 
+                if(rc != 0) {  // FABIEN NOT SURE WE GET THE TOUCH
+                    Logger::err("FileSystem")
+                        << "Could not touch file:"
+                        << filename
+                        << std::endl;
+		    return false;
+                }
+		return true;
+            }
+#else
+            {
+                int rc = utimensat(
+                    AT_FDCWD,
+                    filename.c_str(),
+                    nullptr,
+                    0
+                );
+                if(rc != 0) {
+                    Logger::err("FileSystem")
+                        << "Could not touch file:"
+                        << filename
+                        << std::endl;
+		    return false;
+                }
+		return true;
+            }
+#endif	    
+        }
+        
+        std::string normalized_path(const std::string& path_in) override {
+
+            if(path_in == "") {
+                return "";
+            }
+            
+            std::string path = path_in;
+            std::string result;
+
+            // If this is a relative path, prepend "./"
+            if(path[0] != '/') {
+                path = "./" + path;
+            }
+
+            char buffer[PATH_MAX];
+            char* p = realpath(path.c_str(), buffer);
+            if(p != nullptr) {
+                result = std::string(p);
+            } else {
+                // realpath() only works for existing paths and existing file,
+                // therefore we attempt calling it on the input path by adding
+                // one component at a time.
+                size_t pos = 1;
+                while(pos != std::string::npos) {
+                    pos = path.find('/',pos);
+                    if(pos != std::string::npos) {
+                        std::string path_part = path.substr(0,pos);
+                        p = realpath(path_part.c_str(), buffer);
+                        if(p == nullptr) {
+                            break;
+                        } else {
+                            result = std::string(p) +
+                                path.substr(pos, path.length()-pos);
+                        }
+                        ++pos;
+                        if(pos == path.length()) {
+                            break;
+                        }
+                    } 
+                }
+            }
+            flip_slashes(result);
+            return result;
+        }
+
+
+        std::string home_directory() override {
+            std::string home;
+#if defined GEO_OS_EMSCRIPTEN
+            home="/";
+#else            
+            char* result = getenv("HOME");
+            if(result != nullptr) {
+                home=result;
+            }
 #endif
+            return home;
+        }
 
-        // OS-independent functions
+        std::string documents_directory() override {
+            std::string home;
+#if defined GEO_OS_EMSCRIPTEN
+            home="/";
+#elif defined GEO_OS_ANDROID
+            char* result = getenv("EXTERNAL_STORAGE");
+            if(result != nullptr) {
+                home=result;
+            }
+#else            
+            char* result = getenv("HOME");
+            if(result != nullptr) {
+                home=result;
+            }
+#endif
+            return home;
+        }
+	
+    };
+#endif    
 
-        std::string extension(const std::string& path) {
+    FileSystem::Node_var root_;
+}
+
+
+namespace GEO {
+
+    namespace FileSystem {
+
+	Node::Node() {
+	}
+
+	Node::~Node() {
+	}
+
+        
+
+        std::string Node::extension(const std::string& path) {
             size_t len = path.length();
             if(len != 0) {
                 for(size_t i = len - 1; i != 0; i--) {
@@ -4926,7 +5407,9 @@ namespace GEO {
             return std::string();
         }
 
-        std::string base_name(const std::string& path, bool remove_extension) {
+        std::string Node::base_name(
+	    const std::string& path, bool remove_extension
+	) {
             long int len = (long int)(path.length());
             if(len == 0) {
                 return std::string();
@@ -4944,7 +5427,7 @@ namespace GEO {
             return path.substr(size_t(i + 1), size_t(dot_pos - i - 1));
         }
 
-        std::string dir_name(const std::string& path) {
+        std::string Node::dir_name(const std::string& path) {
             size_t len = path.length();
             if(len != 0) {
                 for(size_t i = len - 1; i != 0; i--) {
@@ -4956,7 +5439,7 @@ namespace GEO {
             return ".";
         }
 
-        void get_directory_entries(
+        void Node::get_directory_entries(
             const std::string& path,
             std::vector<std::string>& result, bool recursive
         ) {
@@ -4971,7 +5454,7 @@ namespace GEO {
             }
         }
 
-        void get_files(
+        void Node::get_files(
             const std::string& path,
             std::vector<std::string>& result, bool recursive
         ) {
@@ -4984,7 +5467,7 @@ namespace GEO {
             }
         }
 
-        void get_subdirectories(
+        void Node::get_subdirectories(
             const std::string& path,
             std::vector<std::string>& result, bool recursive
         ) {
@@ -4997,7 +5480,7 @@ namespace GEO {
             }
         }
 
-        void flip_slashes(std::string& s) {
+        void Node::flip_slashes(std::string& s) {
             for(size_t i = 0; i < s.length(); i++) {
                 if(s[i] == '\\') {
                     s[i] = '/';
@@ -5005,7 +5488,7 @@ namespace GEO {
             }
         }
 
-        bool copy_file(const std::string& from, const std::string& to) {
+        bool Node::copy_file(const std::string& from, const std::string& to) {
             FILE* fromf = fopen(from.c_str(), "rb");
             if(fromf == nullptr) {
                 Logger::err("FileSyst")
@@ -5039,180 +5522,508 @@ namespace GEO {
             return result;
         }
 
-        void set_executable_flag(const std::string& filename) {
-            geo_argused(filename);
-#ifdef GEO_OS_UNIX
-            if(::chmod(filename.c_str(), 0755) != 0) {
-                Logger::err("FileSyst")
-                    << "Could not change file permissions for:"
-                    << filename << std::endl;
-            }
-#endif            
-        }
-
-        void GEOGRAM_API touch(const std::string& filename) {
-#ifdef GEO_OS_APPLE
-           {
-                struct stat buff;
-                int rc = stat(filename.c_str(), &buff); 
-                if(rc != 0) {  // FABIEN NOT SURE WE GET THE TOUCH
-                    Logger::err("FileSystem")
-                        << "Could not touch file:"
-                        << filename
-                        << std::endl;
-                }
-            }
-#elif defined(GEO_OS_UNIX)
-            {
-                int rc = utimensat(
-                    AT_FDCWD,
-                    filename.c_str(),
-                    nullptr,
-                    0
-                );
-                if(rc != 0) {
-                    Logger::err("FileSystem")
-                        << "Could not touch file:"
-                        << filename
-                        << std::endl;
-                }
-            }
-#elif defined GEO_OS_WINDOWS
-            {
-                HANDLE hfile = CreateFile(
-                    filename.c_str(),
-                    GENERIC_READ | GENERIC_WRITE,
-                    FILE_SHARE_READ | FILE_SHARE_WRITE,
-                    nullptr,
-                    OPEN_EXISTING,
-                    FILE_ATTRIBUTE_NORMAL,
-                    nullptr
-                );
-                if(hfile == INVALID_HANDLE_VALUE) {
-                    Logger::err("FileSystem")
-                        << "Could not touch file:"
-                        << filename
-                        << std::endl;
-                }
-                SYSTEMTIME now_system;
-                FILETIME now_file;
-                GetSystemTime(&now_system);
-                SystemTimeToFileTime(&now_system, &now_file);
-                SetFileTime(hfile,nullptr,&now_file,&now_file);
-                CloseHandle(hfile);
-            }
-#endif            
-        }
         
-        std::string normalized_path(const std::string& path_in) {
 
-            if(path_in == "") {
-                return "";
-            }
-            
-            std::string path = path_in;
-            std::string result;
+	bool Node::is_file(const std::string& path) {
+	    geo_argused(path);
+	    return false;
+	}
 
-#ifdef GEO_OS_UNIX
-            // If this is a relative path, prepend "./"
-            if(path[0] != '/') {
-                path = "./" + path;
-            }
+	bool Node::is_directory(const std::string& path) {
+	    geo_argused(path);
+	    return false;
+	}
+	
+	bool Node::create_directory(const std::string& path) {
+	    geo_argused(path);
+	    return false;
+	}
 
-            char buffer[PATH_MAX];
-            char* p = realpath(path.c_str(), buffer);
-            if(p != nullptr) {
-                result = std::string(p);
-            } else {
-                // realpath() only works for existing paths and existing file,
-                // therefore we attempt calling it on the input path by adding
-                // one component at a time.
-                size_t pos = 1;
-                while(pos != std::string::npos) {
-                    pos = path.find('/',pos);
-                    if(pos != std::string::npos) {
-                        std::string path_part = path.substr(0,pos);
-                        p = realpath(path_part.c_str(), buffer);
-                        if(p == nullptr) {
-                            break;
-                        } else {
-                            result = std::string(p) +
-                                path.substr(pos, path.length()-pos);
-                        }
-                        ++pos;
-                        if(pos == path.length()) {
-                            break;
-                        }
-                    } 
-                }
-            }
-#endif
-            
-#ifdef GEO_OS_WINDOWS
-            TCHAR buffer[MAX_PATH];
-            GetFullPathName(path.c_str(), MAX_PATH, buffer, nullptr);
-            result = std::string(buffer);
-#endif
-            
-            flip_slashes(result);
-            return result;
-        }
+	bool Node::delete_directory(const std::string& path) {
+	    geo_argused(path);
+	    return false;
+	}
 
+	bool Node::delete_file(const std::string& path) {
+	    geo_argused(path);
+	    return false;
+	}
+	
+	bool Node::get_directory_entries(
+	    const std::string& path, std::vector<std::string>& result
+	) {
+	    geo_argused(path);
+	    geo_argused(result);
+	    return false;
+	}
 
-        std::string home_directory() {
-            std::string home;
-#if defined GEO_OS_WINDOWS
-            wchar_t folder[MAX_PATH+1];
-            HRESULT hr = SHGetFolderPathW(0, CSIDL_PROFILE, 0, 0, folder);
-            if (SUCCEEDED(hr)) {
-                char result[MAX_PATH+1];
-                wcstombs(result, folder, MAX_PATH);
-                home=std::string(result);
-                flip_slashes(home);
-            }
-#elif defined GEO_OS_EMSCRIPTEN
-            home="/";
-#else            
-            char* result = getenv("HOME");
-            if(result != nullptr) {
-                home=result;
-            }
-#endif
-            return home;
-        }
+	std::string Node::get_current_working_directory() {
+	    return "/";
+	}
 
-        std::string documents_directory() {
-            std::string home;
-#if defined GEO_OS_WINDOWS
-            wchar_t folder[MAX_PATH+1];
-            HRESULT hr = SHGetFolderPathW(0, CSIDL_MYDOCUMENTS, 0, 0, folder);
-            if (SUCCEEDED(hr)) {
-                char result[MAX_PATH+1];
-                wcstombs(result, folder, MAX_PATH);
-                home=std::string(result);
-                flip_slashes(home);
-            }
-#elif defined GEO_OS_EMSCRIPTEN
-            home="/";
-#elif defined GEO_OS_ANDROID
-            char* result = getenv("EXTERNAL_STORAGE");
-            if(result != nullptr) {
-                home=result;
-            }
-#else            
-            char* result = getenv("HOME");
-            if(result != nullptr) {
-                home=result;
-            }
-#endif
-            return home;
-        }
+	bool Node::set_current_working_directory(const std::string& path) {
+	    geo_argused(path);
+	    return false;
+	}
+
+	bool Node::rename_file(
+	    const std::string& old_name, const std::string& new_name
+	) {
+	    geo_argused(old_name);
+	    geo_argused(new_name);
+	    return false;
+	}
+
+	Numeric::uint64 Node::get_time_stamp(const std::string& path) {
+	    geo_argused(path);
+	    return 0;
+	}
+
+	bool Node::set_executable_flag(const std::string& filename) {
+	    geo_argused(filename);
+	    return false;
+	}
+
+	bool Node::touch(const std::string& filename) {
+	    geo_argused(filename);
+	    return false;
+	}
+
+	std::string Node::normalized_path(const std::string& path) {
+	    std::vector<std::string> components;
+	    String::split_string(path, '/', components);
+	    std::vector<std::string> new_components;
+	    for(auto c: components) {
+		if(c == ".") {
+		} else if(c == "..") {
+		    if(new_components.size() != 0) {
+			new_components.pop_back();
+		    }
+		} else {
+		    new_components.push_back(c);
+		}
+	    }
+	    std::string result;
+	    for(auto c: new_components) {
+		result += "/";
+		result += c;
+	    }
+	    return result;
+	}
+
+	std::string Node::home_directory() {
+	    return "/";
+	}
+
+	std::string Node::documents_directory() {
+	    return "/";
+	}
+
+	std::string Node::load_file_as_string(const std::string& path) {
+	    std::string result;
+	    FILE* f = fopen(path.c_str(),"r");
+	    if(f != nullptr) {
+		// Get file length
+		fseek(f, 0L, SEEK_END);
+		size_t length = size_t(ftell(f));
+		fseek(f, 0L, SEEK_SET);
+		if(length != 0) {
+		    result.resize(length);
+		    size_t read_length = fread(&result[0], 1, length, f);
+		    if(read_length != length) {
+			Logger::warn("FileSystem")
+			    << "Problem occured when reading "
+			    << path
+			    << std::endl;
+			    
+		    }
+		}
+		fclose(f);
+	    }
+	    return result;
+	}
+	
         
+
+	bool MemoryNode::copy_file(
+	    const std::string& from, const std::string& to
+	) {
+	    const char* contents = get_file_contents(from);
+	    if(contents == nullptr) {
+		return false;
+	    }
+	    return create_file(to, contents);
+	}
+
+	std::string MemoryNode::load_file_as_string(const std::string& path) {
+	    std::string result;
+	    std::string subdir;
+	    std::string rest;
+	    split_path(path, subdir, rest);
+	    if(subdir == "") {
+		auto it = files_.find(rest);
+		if(it != files_.end()) {
+		    result = std::string(it->second);
+		}
+	    } else {
+		auto it = subnodes_.find(subdir);
+		if(it != subnodes_.end()) {
+		    result = it->second->load_file_as_string(rest);
+		}
+	    }
+	    return result;
+	}
+
+	bool MemoryNode::is_file(const std::string& path) {
+	    std::string result;
+	    std::string subdir;
+	    std::string rest;
+	    split_path(path, subdir, rest);
+	    if(subdir == "") {
+		return(files_.find(rest) != files_.end());
+	    } else {
+		auto it = subnodes_.find(subdir);
+		if(it == subnodes_.end()) {
+		    return false;
+		}
+		return it->second->is_file(rest);
+	    }
+	}
+
+	bool MemoryNode::is_directory(const std::string& path) {
+	    std::string result;
+	    std::string subdir;
+	    std::string rest;
+	    split_path(path, subdir, rest);
+	    if(subdir == "") {
+		return(subnodes_.find(rest) != subnodes_.end());
+	    } else {
+		auto it = subnodes_.find(subdir);
+		if(it == subnodes_.end()) {
+		    return false;
+		}
+		return it->second->is_directory(rest);
+	    }
+	}
+
+	bool MemoryNode::create_directory(const std::string& path) {
+	    std::string result;
+	    std::string subdir;
+	    std::string rest;
+	    split_path(path, subdir, rest);
+	    if(subdir == "") {
+		if(subnodes_.find(path) != subnodes_.end()) {
+		    return false;
+		}
+		subnodes_[path] = new MemoryNode(path_ + path + "/");
+		return true;
+	    } else {
+		auto it = subnodes_.find(subdir);
+		if(it == subnodes_.end()) {
+		    subnodes_[subdir] = new MemoryNode(path_ + subdir + "/");
+		}
+		return it->second->create_directory(rest);
+	    }
+	}
+
+	bool MemoryNode::delete_directory(const std::string& path) {
+	    std::string result;
+	    std::string subdir;
+	    std::string rest;
+	    split_path(path, subdir, rest);
+	    if(subdir == "") {
+		auto it = subnodes_.find(rest);
+		if(it == subnodes_.end()) {
+		    return false;
+		}
+		subnodes_.erase(it);
+		return true;
+	    } else {
+		auto it = subnodes_.find(subdir);
+		if(it == subnodes_.end()) {
+		    return false;
+		}
+		return it->second->delete_directory(rest);
+	    }
+	}
+
+	bool MemoryNode::delete_file(const std::string& path) {
+	    std::string result;
+	    std::string subdir;
+	    std::string rest;
+	    split_path(path, subdir, rest);
+	    if(subdir == "") {
+		auto it = files_.find(rest);
+		if(it == files_.end()) {
+		    return false;
+		}
+		files_.erase(it);
+		return true;
+	    } else {
+		auto it = subnodes_.find(subdir);
+		if(it == subnodes_.end()) {
+		    return false;
+		}
+		return it->second->delete_file(rest);
+	    }
+	}
+
+	bool MemoryNode::get_directory_entries(
+	    const std::string& path, std::vector<std::string>& result
+	) {
+	    std::string subdir;
+	    std::string rest;
+	    split_path(path, subdir, rest);
+	    if(subdir == "" && rest == "") {
+		result.clear();
+		for(auto it : subnodes_) {
+		    result.push_back(path_ + it.first);
+		}
+		for(auto it : files_) {
+		    result.push_back(path_ + it.first);
+		}
+		return true;
+	    } else {
+		if(subdir == "") {
+		    subdir = rest;
+		    rest = "";
+		}
+		auto it = subnodes_.find(subdir);
+		if(it == subnodes_.end()) {
+		    return false;
+		}
+		return it->second->get_directory_entries(rest, result);
+	    }
+	}
+	
+	bool MemoryNode::rename_file(
+	    const std::string& from, const std::string& to
+	) {
+	    const char* contents = get_file_contents(from);
+	    if(contents == nullptr) {
+		return false;
+	    }
+	    if(!delete_file(from)) {
+		return false;
+	    }
+	    return create_file(to, contents);
+	}
+	
+	const char* MemoryNode::get_file_contents(const std::string& path) {
+	    std::string subdir;
+	    std::string rest;
+	    split_path(path, subdir, rest);
+	    const char* result = nullptr;
+	    if(subdir == "") {
+		auto it = files_.find(rest);
+		if(it != files_.end()) {
+		    result = it->second;
+		}
+	    } else {
+		auto it = subnodes_.find(subdir);
+		if(it != subnodes_.end()) {
+		    result = it->second->get_file_contents(rest);
+		}
+	    }
+	    return result;
+	}
+	
+	bool MemoryNode::create_file(
+	    const std::string& path, const char* content
+	) {
+	    std::string subdir;
+	    std::string rest;
+	    split_path(path, subdir, rest);
+	    if(subdir == "") {
+		if(files_.find(rest) != files_.end()) {
+		    return false;
+		}
+		files_[rest] = content;
+		return true;
+	    } else {
+		SmartPointer<MemoryNode>& n = subnodes_[subdir];
+		if(n.is_null()) {
+		    n = new MemoryNode(path_ + subdir + "/");
+		}
+		return n->create_file(rest, content);
+	    }
+	}
+	
+	void MemoryNode::split_path(
+	    const std::string& path, std::string& leadingsubdir, 
+	    std::string& rest
+	) {
+	    leadingsubdir = "";
+	    rest = "";
+	    std::vector<std::string> components;
+	    String::split_string(path, '/', components);
+	    if(components.size() == 0) {
+		return;
+	    } else if(components.size() == 1) {
+		leadingsubdir = "";
+		rest = components[0];
+	    } else {
+		leadingsubdir = components[0];
+		for(size_t i=1; i<components.size(); ++i) {
+		    if(i != 1) {
+			rest += "/";
+		    }
+		    rest += components[i];
+		}
+	    }
+	}
+	
+        
+	
+	void initialize() {
+	    root_ = new FileSystemRootNode;
+	}
+
+	void terminate() {
+	    root_.reset();
+	}
+	
+        bool is_file(const std::string& path) {
+	    return root_->is_file(path);
+	}
+	
+        bool is_directory(const std::string& path) {
+	    return root_->is_directory(path);
+	}
+
+	bool create_directory(const std::string& path) {
+	    return root_->create_directory(path);
+	}
+
+	bool delete_directory(const std::string& path) {
+	    return root_->delete_directory(path);
+	}
+
+	bool delete_file(const std::string& path) {
+	    return root_->delete_file(path);
+	}
+
+	bool get_directory_entries(
+            const std::string& path, std::vector<std::string>& result
+        ) {
+	    return root_->get_directory_entries(path, result);
+	}
+
+	std::string get_current_working_directory() {
+	    return root_->get_current_working_directory();
+	}
+
+	bool set_current_working_directory(
+            const std::string& path
+        ) {
+	    return root_->set_current_working_directory(path);
+	}
+	
+        bool rename_file(
+            const std::string& old_name, const std::string& new_name
+        ) {
+	    return root_->rename_file(old_name, new_name);
+	}
+	
+        Numeric::uint64 get_time_stamp(const std::string& path) {
+	    return root_->get_time_stamp(path);
+	}
+	
+        std::string extension(const std::string& path) {
+	    return root_->extension(path);
+	}
+
+	std::string base_name(
+            const std::string& path, bool remove_extension
+        ) {
+	    return root_->base_name(path, remove_extension);
+	}
+	
+        std::string dir_name(const std::string& path) {
+	    return root_->dir_name(path);
+	}
+
+	void get_directory_entries(
+            const std::string& path,
+            std::vector<std::string>& result, bool recursive
+        ) {
+	    return root_->get_directory_entries(path, result, recursive);
+	}
+	
+        void get_files(
+            const std::string& path,
+            std::vector<std::string>& result, bool recursive
+        ) {
+	    return root_->get_files(path, result, recursive);
+	}
+	
+        void get_subdirectories(
+            const std::string& path,
+            std::vector<std::string>& result, bool recursive
+        ) {
+	    return root_->get_subdirectories(path, result, recursive);
+	}
+	
+        void flip_slashes(std::string& path) {
+	    return root_->flip_slashes(path);
+	}
+
+	bool copy_file(
+            const std::string& from, const std::string& to
+        ) {
+	    return root_->copy_file(from, to);
+	}
+
+	bool set_executable_flag(const std::string& filename) {
+	    return root_->set_executable_flag(filename);
+	}
+
+	bool touch(const std::string& filename) {
+	    return root_->touch(filename);
+	}
+
+	std::string normalized_path(const std::string& path) {
+	    return root_->normalized_path(path);
+	}
+
+	std::string home_directory() {
+	    return root_->home_directory();
+	}
+
+	std::string documents_directory() {
+	    return root_->documents_directory();
+	}
+
+	void get_root(Node*& root) {
+	    root = root_;
+	}
+    } // end namespace FileSystem
+} // end namespace GEO
+
+
+
+#ifdef GEO_OS_EMSCRIPTEN
+
+namespace GEO {
+    namespace FileSystem {
+	static void (*file_system_changed_callback_)() = nullptr;
+	void set_file_system_changed_callback(void(*callback)()) {
+	    file_system_changed_callback_ = callback;
+	}
     }
-
-    
 }
 
+extern "C" {
+    void file_system_changed_callback();
+}
+
+EMSCRIPTEN_KEEPALIVE void file_system_changed_callback() {
+    if(GEO::FileSystem::file_system_changed_callback_ != nullptr) {
+	(*GEO::FileSystem::file_system_changed_callback_)();
+    }
+}
+
+#endif
 
 /******* extracted from ../basic/packed_arrays.cpp *******/
 
@@ -5598,13 +6409,14 @@ namespace GEO {
     void ProgressTask::next() {
         step_++;
 	step_ = std::min(step_, max_steps_);
-        update();
+	update();
     }
 
     void ProgressTask::progress(index_t step) {
         if(step_ != step) {
             step_ = step;
-            update();
+	    step_ = std::min(step_, max_steps_);	    
+	    update();
         }
     }
 
@@ -5613,16 +6425,22 @@ namespace GEO {
     }
 
     void ProgressTask::update() {
-        percent_ = std::min(index_t(100), index_t(step_ * 100 / max_steps_));
-        if(!quiet_) {
-            task_progress(step_, percent_);
-        }
+	index_t new_percent =
+	    std::min(index_t(100), index_t(step_ * 100 / max_steps_));
+	if(new_percent != percent_) {
+	    percent_ = new_percent;
+	    if(!quiet_) {
+		task_progress(step_, percent_);
+	    }
+	}
     }
 }
 
 
 /******* extracted from ../basic/process.cpp *******/
 
+#include <thread>
+#include <chrono>
 
 #ifdef GEO_OPENMP
 #include <omp.h>
@@ -5769,10 +6587,11 @@ namespace {
             geo_argused(max_threads);
 
 #pragma omp parallel for schedule(dynamic)
-            for(index_t i = 0; i < threads.size(); i++) {
-                set_thread_id(threads[i],i);
-                set_current_thread(threads[i]);
-                threads[i]->run();
+            for(int i = 0; i < int(threads.size()); i++) {
+	        index_t ii = index_t(i);
+                set_thread_id(threads[ii],ii);
+                set_current_thread(threads[ii]);
+                threads[ii]->run();
             }
         }
 
@@ -6343,6 +7162,12 @@ namespace GEO {
             Process::run_threads(threads);
         }
     }
+
+    namespace Process {
+	void sleep(index_t microseconds) {
+	    std::this_thread::sleep_for(std::chrono::microseconds(microseconds));	    
+	}
+    }
 }
 
 
@@ -6371,6 +7196,11 @@ namespace GEO {
 #ifdef GEO_OS_APPLE
 #include <mach-o/dyld.h>
 #include <xmmintrin.h>
+#endif
+
+#ifdef GEO_OS_EMSCRIPTEN
+#include <emscripten.h>
+#include <emscripten/threading.h>
 #endif
 
 #define GEO_USE_PTHREAD_MANAGER
@@ -6590,12 +7420,6 @@ namespace {
         }
     }
 
-    GEO_NORETURN_DECL void unexpected_handler() GEO_NORETURN;
-    
-    void unexpected_handler() {
-        abnormal_program_termination("function unexpected() was called");
-    }
-
     GEO_NORETURN_DECL void terminate_handler() GEO_NORETURN;
     
     void terminate_handler() {
@@ -6632,12 +7456,16 @@ namespace GEO {
         }
 
         index_t os_number_of_cores() {
-#ifdef GEO_OS_ANDROID
+#if defined(GEO_OS_ANDROID)
             int nb_cores = android_get_number_of_cores();
             geo_assert(nb_cores > 0);
             return index_t(nb_cores);
-#elif defined GEO_OS_EMSCRIPTEN
-	    return 1;
+#elif defined(GEO_OS_EMSCRIPTEN)
+#  ifdef __EMSCRIPTEN_PTHREADS__
+	   return index_t(emscripten_num_logical_cores());
+#  else
+	   return 1;
+#  endif	   
 #else	    
             return index_t(sysconf(_SC_NPROCESSORS_ONLN));
 #endif
@@ -6750,8 +7578,7 @@ namespace GEO {
             sigemptyset(&sa.sa_mask);
             sigaction(SIGFPE, &sa, &old_sa);
 
-            // Install unexpected and uncaught c++ exception handlers
-            std::set_unexpected(unexpected_handler);
+            // Install uncaught c++ exception handlers
             std::set_terminate(terminate_handler);
 
             // Install memory allocation handler
@@ -7058,10 +7885,6 @@ namespace {
         }
     }
 
-    void unexpected_exception_handler() {
-        abnormal_program_termination("function unexpected() was called");
-    }
-
     void uncaught_exception_handler() {
         abnormal_program_termination("function terminate() was called");
     }
@@ -7325,8 +8148,7 @@ namespace GEO {
             typedef void (__cdecl * sighandler_t)(int);
             signal(SIGFPE, (sighandler_t) fpe_signal_handler);
 
-            // Install unexpected and uncaught c++ exception handlers
-            std::set_unexpected(unexpected_exception_handler);
+            // Install uncaught c++ exception handlers	    
             std::set_terminate(uncaught_exception_handler);
 
             // Install memory allocation handler
@@ -7376,6 +8198,9 @@ namespace GEO {
             _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
             _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
             _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+ 
+            // Do not open dialog box on error 
+	    SetErrorMode(SEM_NOGPFAULTERRORBOX);
         }
 #else
         void os_install_signal_handlers() {
@@ -7742,13 +8567,6 @@ namespace GEO {
 #endif
     
     void GEOGRAM_API compute_Hilbert_order(
-        index_t nb_vertices, const double* vertices,
-        vector<index_t>& sorted_indices,
-        index_t stride = 3
-    );
-
-
-    void GEOGRAM_API compute_Hilbert_order(
         index_t total_nb_vertices, const double* vertices,
         vector<index_t>& sorted_indices,
         index_t first,
@@ -7785,6 +8603,8 @@ namespace GEO {
 
 /******* extracted from ../mesh/mesh_reorder.cpp *******/
 
+
+#include <random>
 
 namespace {
 
@@ -7907,17 +8727,13 @@ namespace {
 
         double center(index_t f) const {
             double result = 0.0;
-            for(
-                index_t c = mesh_.facets.corners_begin(f);
-                c < mesh_.facets.corners_end(f); ++c
-            ) {
-                result += mesh_.vertices.point_ptr(
+	    double s = 1.0 / double(mesh_.facets.nb_vertices(f));
+            for(index_t c: mesh_.facets.corners(f)) {
+                result += s*mesh_.vertices.point_ptr(
                     mesh_.facet_corners.vertex(c)
-                )[COORD];
+		)[COORD]; 
             }
             return result;
-            // TODO: should be  / double(mesh_.facets.nb_vertices(f));
-            // but this breaks one of the tests, to be investigated...
         }
 
     private:
@@ -7975,9 +8791,7 @@ namespace {
 
         double center(index_t t) const {
             double result = 0.0;
-            for(
-                index_t lv = 0; lv < 4; ++lv
-            ) {
+            for(index_t lv = 0; lv < 4; ++lv) {
                 result += mesh_.vertices.point_ptr(
                     mesh_.cells.vertex(t, lv)
                 )[COORD];
@@ -8040,9 +8854,7 @@ namespace {
 
         double center(index_t c) const {
             double result = 0.0;
-            for(
-                index_t lv = 0; lv < mesh_.cells.nb_vertices(c); ++lv
-            ) {
+            for(index_t lv = 0; lv < mesh_.cells.nb_vertices(c); ++lv) {
                 result += mesh_.vertices.point_ptr(
                     mesh_.cells.vertex(c, lv)
                 )[COORD];
@@ -8135,7 +8947,7 @@ namespace {
         ) :
             M_(M)
         {
-            geo_debug_assert(e > b);
+            geo_debug_assert(e >= b);
 	    geo_cite_with_info(
 		"WEB:SpatialSorting",
 		"The implementation of spatial sort in GEOGRAM is inspired by "
@@ -8267,7 +9079,7 @@ namespace {
         const Mesh& M, vector<index_t>& sorted_indices
     ) {
         sorted_indices.resize(M.vertices.nb());
-        for(index_t i = 0; i < M.vertices.nb(); i++) {
+        for(index_t i: M.vertices) {
             sorted_indices[i] = i;
         }
         HilbertSort3d<Hilbert_vcmp, Mesh>(
@@ -8279,7 +9091,7 @@ namespace {
         const Mesh& M, vector<index_t>& sorted_indices
     ) {
         sorted_indices.resize(M.facets.nb());
-        for(index_t i = 0; i < M.facets.nb(); i++) {
+        for(index_t i: M.facets) {
             sorted_indices[i] = i;
         }
         HilbertSort3d<Hilbert_fcmp, Mesh>(
@@ -8291,7 +9103,7 @@ namespace {
         const Mesh& M, vector<index_t>& sorted_indices
     ) {
         sorted_indices.resize(M.cells.nb());
-        for(index_t i = 0; i < M.cells.nb(); i++) {
+        for(index_t i: M.cells) {
             sorted_indices[i] = i;
         }
         if(M.cells.are_simplices()) {
@@ -8309,7 +9121,7 @@ namespace {
         const Mesh& M, vector<index_t>& sorted_indices
     ) {
         sorted_indices.resize(M.vertices.nb());
-        for(index_t i = 0; i < M.vertices.nb(); i++) {
+        for(index_t i: M.vertices) {
             sorted_indices[i] = i;
         }
         HilbertSort3d<Morton_vcmp, Mesh>(
@@ -8321,7 +9133,7 @@ namespace {
         const Mesh& M, vector<index_t>& sorted_indices
     ) {
         sorted_indices.resize(M.facets.nb());
-        for(index_t i = 0; i < M.facets.nb(); i++) {
+        for(index_t i: M.facets) {
             sorted_indices[i] = i;
         }
         HilbertSort3d<Morton_fcmp, Mesh>(
@@ -8333,7 +9145,7 @@ namespace {
         const Mesh& M, vector<index_t>& sorted_indices
     ) {
         sorted_indices.resize(M.cells.nb());
-        for(index_t i = 0; i < M.cells.nb(); i++) {
+        for(index_t i: M.cells) {
             sorted_indices[i] = i;
         }
         if(M.cells.are_simplices()) {
@@ -8495,7 +9307,15 @@ namespace GEO {
         for(index_t i = 0; i < nb_vertices; ++i) {
             sorted_indices[i] = i;
         }
-        std::random_shuffle(sorted_indices.begin(), sorted_indices.end());
+
+        //The next three lines replace the following commented-out line
+        //(random_shuffle is deprecated in C++17, and they call this 
+        // progess...)
+        //std::random_shuffle(sorted_indices.begin(), sorted_indices.end()); 
+        std::random_device rng;
+        std::mt19937 urng(rng());
+        std::shuffle(sorted_indices.begin(), sorted_indices.end(), urng);
+
         compute_BRIO_order_recursive(
             nb_vertices, vertices,
 	    dimension, stride,
@@ -8616,7 +9436,7 @@ namespace {
         }
         bool operator() (index_t i1, index_t i2) {
             return
-                mesh_.vertices.point_coord(i1,COORD) <
+                mesh_.vertices.point_coord(i1,COORD) >
                 mesh_.vertices.point_coord(i2,COORD);
         }
         const PeriodicVertexMesh3d& mesh_;
@@ -8637,7 +9457,16 @@ namespace GEO {
     ) {
 	geo_assert(dimension == 3); // Only implemented for 3D.	
 	geo_argused(sorted_indices); // Accessed through b and e.
-        std::random_shuffle(b,e);
+
+       
+        //The next three lines replace the following commented-out line
+        //(random_shuffle is deprecated in C++17, and they call this 
+        // progress...)
+        // std::random_shuffle(b,e);
+        std::random_device rng;
+        std::mt19937 urng(rng());
+        std::shuffle(b,e, urng);
+
 	PeriodicVertexMesh3d M(nb_vertices, vertices, stride, period);
 	HilbertSort3d<Hilbert_vcmp_periodic, PeriodicVertexMesh3d>(
 	    M, b, e
@@ -17856,6 +18685,153 @@ inline int det_3d_filter( const double* p0, const double* p1, const double* p2) 
     return int_tmp_result;
 } 
 
+/******* extracted from ../numerics/predicates/det4d.h *******/
+
+inline int det_4d_filter( const double* p0, const double* p1, const double* p2, const double* p3) {
+    double m12;
+    m12 = ((p1[0] * p0[1]) - (p0[0] * p1[1]));
+    double m13;
+    m13 = ((p2[0] * p0[1]) - (p0[0] * p2[1]));
+    double m14;
+    m14 = ((p3[0] * p0[1]) - (p0[0] * p3[1]));
+    double m23;
+    m23 = ((p2[0] * p1[1]) - (p1[0] * p2[1]));
+    double m24;
+    m24 = ((p3[0] * p1[1]) - (p1[0] * p3[1]));
+    double m34;
+    m34 = ((p3[0] * p2[1]) - (p2[0] * p3[1]));
+    double m123;
+    m123 = (((m23 * p0[2]) - (m13 * p1[2])) + (m12 * p2[2]));
+    double m124;
+    m124 = (((m24 * p0[2]) - (m14 * p1[2])) + (m12 * p3[2]));
+    double m134;
+    m134 = (((m34 * p0[2]) - (m14 * p2[2])) + (m13 * p3[2]));
+    double m234;
+    m234 = (((m34 * p1[2]) - (m24 * p2[2])) + (m23 * p3[2]));
+    double Delta;
+    Delta = ((((m234 * p0[3]) - (m134 * p1[3])) + (m124 * p2[3])) - (m123 * p3[3]));
+    int int_tmp_result;
+    double eps;
+    double max1 = fabs(p0[0]);
+    if( (max1 < fabs(p1[0])) )
+    {
+        max1 = fabs(p1[0]);
+    } 
+    if( (max1 < fabs(p2[0])) )
+    {
+        max1 = fabs(p2[0]);
+    } 
+    if( (max1 < fabs(p3[0])) )
+    {
+        max1 = fabs(p3[0]);
+    } 
+    double max2 = fabs(p0[1]);
+    if( (max2 < fabs(p1[1])) )
+    {
+        max2 = fabs(p1[1]);
+    } 
+    if( (max2 < fabs(p2[1])) )
+    {
+        max2 = fabs(p2[1]);
+    } 
+    if( (max2 < fabs(p3[1])) )
+    {
+        max2 = fabs(p3[1]);
+    } 
+    double max3 = fabs(p0[2]);
+    if( (max3 < fabs(p1[2])) )
+    {
+        max3 = fabs(p1[2]);
+    } 
+    if( (max3 < fabs(p2[2])) )
+    {
+        max3 = fabs(p2[2]);
+    } 
+    if( (max3 < fabs(p3[2])) )
+    {
+        max3 = fabs(p3[2]);
+    } 
+    double max4 = fabs(p0[3]);
+    if( (max4 < fabs(p1[3])) )
+    {
+        max4 = fabs(p1[3]);
+    } 
+    if( (max4 < fabs(p2[3])) )
+    {
+        max4 = fabs(p2[3]);
+    } 
+    if( (max4 < fabs(p3[3])) )
+    {
+        max4 = fabs(p3[3]);
+    } 
+    double lower_bound_1;
+    double upper_bound_1;
+    lower_bound_1 = max1;
+    upper_bound_1 = max1;
+    if( (max2 < lower_bound_1) )
+    {
+        lower_bound_1 = max2;
+    } 
+    else 
+    {
+        if( (max2 > upper_bound_1) )
+        {
+            upper_bound_1 = max2;
+        } 
+    } 
+    if( (max3 < lower_bound_1) )
+    {
+        lower_bound_1 = max3;
+    } 
+    else 
+    {
+        if( (max3 > upper_bound_1) )
+        {
+            upper_bound_1 = max3;
+        } 
+    } 
+    if( (max4 < lower_bound_1) )
+    {
+        lower_bound_1 = max4;
+    } 
+    else 
+    {
+        if( (max4 > upper_bound_1) )
+        {
+            upper_bound_1 = max4;
+        } 
+    } 
+    if( (lower_bound_1 < 3.20402459074399025456e-74) )
+    {
+        return FPG_UNCERTAIN_VALUE;
+    } 
+    else 
+    {
+        if( (upper_bound_1 > 1.44740111546645196071e+76) )
+        {
+            return FPG_UNCERTAIN_VALUE;
+        } 
+        eps = (2.11135406605316806158e-14 * (((max1 * max2) * max3) * max4));
+        if( (Delta > eps) )
+        {
+            int_tmp_result = 1;
+        } 
+        else 
+        {
+            if( (Delta < -eps) )
+            {
+                int_tmp_result = -1;
+            } 
+            else 
+            {
+                return FPG_UNCERTAIN_VALUE;
+            } 
+        } 
+    } 
+    return int_tmp_result;
+} 
+
+
 /******* extracted from ../numerics/predicates/aligned3d.h *******/
 
 inline int aligned_3d_filter( const double* p0, const double* p1, const double* p2) {
@@ -18021,6 +18997,248 @@ inline int aligned_3d_filter( const double* p0, const double* p1, const double* 
     return ((((int_tmp_result == 0) && (int_tmp_result_FFWKCAA == 0)) && (int_tmp_result_k60Ocge == 0)) ? 0 : 1);
 } 
 
+/******* extracted from ../numerics/predicates/dot_compare_3d.h *******/
+
+inline int dot_compare_3d_filter( const double* p0, const double* p1, const double* p2) {
+    double d1;
+    d1 = (((p0[0] * p1[0]) + (p0[1] * p1[1])) + (p0[2] * p1[2]));
+    double d2;
+    d2 = (((p0[0] * p2[0]) + (p0[1] * p2[1])) + (p0[2] * p2[2]));
+    int int_tmp_result;
+    double double_tmp_result;
+    double eps;
+    double_tmp_result = (d1 - d2);
+    double max1 = fabs(p0[0]);
+    if( (max1 < fabs(p0[1])) )
+    {
+        max1 = fabs(p0[1]);
+    } 
+    if( (max1 < fabs(p0[2])) )
+    {
+        max1 = fabs(p0[2]);
+    } 
+    double max2 = fabs(p1[0]);
+    if( (max2 < fabs(p1[1])) )
+    {
+        max2 = fabs(p1[1]);
+    } 
+    if( (max2 < fabs(p1[2])) )
+    {
+        max2 = fabs(p1[2]);
+    } 
+    if( (max2 < fabs(p2[0])) )
+    {
+        max2 = fabs(p2[0]);
+    } 
+    if( (max2 < fabs(p2[1])) )
+    {
+        max2 = fabs(p2[1]);
+    } 
+    if( (max2 < fabs(p2[2])) )
+    {
+        max2 = fabs(p2[2]);
+    } 
+    double lower_bound_1;
+    double upper_bound_1;
+    lower_bound_1 = max1;
+    upper_bound_1 = max1;
+    if( (max2 < lower_bound_1) )
+    {
+        lower_bound_1 = max2;
+    } 
+    else 
+    {
+        if( (max2 > upper_bound_1) )
+        {
+            upper_bound_1 = max2;
+        } 
+    } 
+    if( (lower_bound_1 < 3.01698158319050667656e-147) )
+    {
+        return FPG_UNCERTAIN_VALUE;
+    } 
+    else 
+    {
+        if( (upper_bound_1 > 1.67597599124282407923e+153) )
+        {
+            return FPG_UNCERTAIN_VALUE;
+        } 
+        eps = (2.44455106181954323552e-15 * (max1 * max2));
+        if( (double_tmp_result > eps) )
+        {
+            int_tmp_result = 1;
+        } 
+        else 
+        {
+            if( (double_tmp_result < -eps) )
+            {
+                int_tmp_result = -1;
+            } 
+            else 
+            {
+                return FPG_UNCERTAIN_VALUE;
+            } 
+        } 
+    } 
+    return int_tmp_result;
+} 
+
+
+/******* extracted from ../numerics/predicates/det_compare_4d.h *******/
+
+inline int det_compare_4d_filter( const double* p0, const double* p1, const double* p2, const double* p3, const double* p4) {
+    double a3_0;
+    a3_0 = (p4[0] - p3[0]);
+    double a3_1;
+    a3_1 = (p4[1] - p3[1]);
+    double a3_2;
+    a3_2 = (p4[2] - p3[2]);
+    double a3_3;
+    a3_3 = (p4[3] - p3[3]);
+    double m12;
+    m12 = ((p1[0] * p0[1]) - (p0[0] * p1[1]));
+    double m13;
+    m13 = ((p2[0] * p0[1]) - (p0[0] * p2[1]));
+    double m14;
+    m14 = ((a3_0 * p0[1]) - (p0[0] * a3_1));
+    double m23;
+    m23 = ((p2[0] * p1[1]) - (p1[0] * p2[1]));
+    double m24;
+    m24 = ((a3_0 * p1[1]) - (p1[0] * a3_1));
+    double m34;
+    m34 = ((a3_0 * p2[1]) - (p2[0] * a3_1));
+    double m123;
+    m123 = (((m23 * p0[2]) - (m13 * p1[2])) + (m12 * p2[2]));
+    double m124;
+    m124 = (((m24 * p0[2]) - (m14 * p1[2])) + (m12 * a3_2));
+    double m134;
+    m134 = (((m34 * p0[2]) - (m14 * p2[2])) + (m13 * a3_2));
+    double m234;
+    m234 = (((m34 * p1[2]) - (m24 * p2[2])) + (m23 * a3_2));
+    double Delta;
+    Delta = ((((m234 * p0[3]) - (m134 * p1[3])) + (m124 * p2[3])) - (m123 * a3_3));
+    int int_tmp_result;
+    double eps;
+    double max1 = fabs(p0[0]);
+    if( (max1 < fabs(p1[0])) )
+    {
+        max1 = fabs(p1[0]);
+    } 
+    if( (max1 < fabs(p2[0])) )
+    {
+        max1 = fabs(p2[0]);
+    } 
+    if( (max1 < fabs(a3_0)) )
+    {
+        max1 = fabs(a3_0);
+    } 
+    double max2 = fabs(p0[1]);
+    if( (max2 < fabs(p1[1])) )
+    {
+        max2 = fabs(p1[1]);
+    } 
+    if( (max2 < fabs(p2[1])) )
+    {
+        max2 = fabs(p2[1]);
+    } 
+    if( (max2 < fabs(a3_1)) )
+    {
+        max2 = fabs(a3_1);
+    } 
+    double max3 = fabs(p0[2]);
+    if( (max3 < fabs(p1[2])) )
+    {
+        max3 = fabs(p1[2]);
+    } 
+    if( (max3 < fabs(p2[2])) )
+    {
+        max3 = fabs(p2[2]);
+    } 
+    if( (max3 < fabs(a3_2)) )
+    {
+        max3 = fabs(a3_2);
+    } 
+    double max4 = fabs(p0[3]);
+    if( (max4 < fabs(p1[3])) )
+    {
+        max4 = fabs(p1[3]);
+    } 
+    if( (max4 < fabs(p2[3])) )
+    {
+        max4 = fabs(p2[3]);
+    } 
+    if( (max4 < fabs(a3_3)) )
+    {
+        max4 = fabs(a3_3);
+    } 
+    double lower_bound_1;
+    double upper_bound_1;
+    lower_bound_1 = max1;
+    upper_bound_1 = max1;
+    if( (max2 < lower_bound_1) )
+    {
+        lower_bound_1 = max2;
+    } 
+    else 
+    {
+        if( (max2 > upper_bound_1) )
+        {
+            upper_bound_1 = max2;
+        } 
+    } 
+    if( (max3 < lower_bound_1) )
+    {
+        lower_bound_1 = max3;
+    } 
+    else 
+    {
+        if( (max3 > upper_bound_1) )
+        {
+            upper_bound_1 = max3;
+        } 
+    } 
+    if( (max4 < lower_bound_1) )
+    {
+        lower_bound_1 = max4;
+    } 
+    else 
+    {
+        if( (max4 > upper_bound_1) )
+        {
+            upper_bound_1 = max4;
+        } 
+    } 
+    if( (lower_bound_1 < 3.11018333467425326847e-74) )
+    {
+        return FPG_UNCERTAIN_VALUE;
+    } 
+    else 
+    {
+        if( (upper_bound_1 > 1.44740111546645196071e+76) )
+        {
+            return FPG_UNCERTAIN_VALUE;
+        } 
+        eps = (2.37793769622390420735e-14 * (((max1 * max2) * max3) * max4));
+        if( (Delta > eps) )
+        {
+            int_tmp_result = 1;
+        } 
+        else 
+        {
+            if( (Delta < -eps) )
+            {
+                int_tmp_result = -1;
+            } 
+            else 
+            {
+                return FPG_UNCERTAIN_VALUE;
+            } 
+        } 
+    } 
+    return int_tmp_result;
+} 
+
+
 /******* extracted from ../numerics/predicates.cpp *******/
 
 
@@ -18038,10 +19256,6 @@ inline int aligned_3d_filter( const double* p0, const double* p1, const double* 
 
 #ifdef __SSE2__ 
 #include <emmintrin.h>
-#endif
-
-#ifdef __AVX2__
-#include <immintrin.h>
 #endif
 
 namespace {
@@ -18136,127 +19350,6 @@ namespace {
 #endif	
     }
 
-#ifdef __AVX2__
-
-    inline __m256d avx2_vecdet(__m256d A, __m256d B, __m256d C, __m256d D) {
-	__m256d AD = _mm256_mul_pd(A,D);
-	__m256d BC = _mm256_mul_pd(B,C);
-	return _mm256_sub_pd(AD,BC);
-    }
-
-    inline double avx2_det4x4(
-	__m256d C11,
-	__m256d C12,
-	__m256d C13,
-	__m256d C14
-    ) {
-	// We develop w.r.t. the first column and
-	// compute the 4 minors simultaneously.
-	
-	__m256d C41 = _mm256_permute4x64_pd(C11, _MM_SHUFFLE(2,1,0,3)); 
-	
-	__m256d C22 = _mm256_permute4x64_pd(C12, _MM_SHUFFLE(0,3,2,1)); 
-	__m256d C32 = _mm256_permute4x64_pd(C12, _MM_SHUFFLE(1,0,3,2)); 
-
-	__m256d C23 = _mm256_permute4x64_pd(C13, _MM_SHUFFLE(0,3,2,1)); 
-	__m256d C33 = _mm256_permute4x64_pd(C13, _MM_SHUFFLE(1,0,3,2)); 
-
-        __m256d C24 = _mm256_permute4x64_pd(C14, _MM_SHUFFLE(0,3,2,1)); 
-        __m256d C34 = _mm256_permute4x64_pd(C14, _MM_SHUFFLE(1,0,3,2)); 
-	
-	__m256d M1 = _mm256_mul_pd(C12,avx2_vecdet(C23,C24,C33,C34));	
-	__m256d M2 = _mm256_mul_pd(C22,avx2_vecdet(C13,C14,C33,C34));
-	__m256d M3 = _mm256_mul_pd(C32,avx2_vecdet(C13,C14,C23,C24));
-
-	// compute the 4 3x3 minors simulateously by
-	// assembling the 3*4 2x2 minors
-	__m256d M = _mm256_add_pd(_mm256_sub_pd(M1,M2),M3);
-
-	// multiply the 4 3x3 minors by the 4 coefficients of the
-	// first column (permutted so that a41 comes first).
-	M = _mm256_mul_pd(M, C41);
-
-	// Compute -m0 +m1 -m2 +m3
-	M = _mm256_permute4x64_pd(M, _MM_SHUFFLE(2,0,3,1)); 
-	__m128d M_a = _mm256_extractf128_pd(M, 0);
-	__m128d M_b = _mm256_extractf128_pd(M, 1);
-	__m128d Mab = _mm_sub_pd(M_a,M_b);
-	double m[2];
-	_mm_store_pd(m, Mab);
-	return m[0]+m[1];
-    }
-
-    inline int in_sphere_3d_filter_avx2(
-        const double* p, const double* q, 
-        const double* r, const double* s, const double* t
-    ) {
-
-	// Mask to load just three doubles from the points.
-	__m256i XYZonly = _mm256_set_epi64x(
-	    0,~__int64_t(0),~__int64_t(0),~__int64_t(0)
-	);
-	__m256d P = _mm256_maskload_pd(p, XYZonly);
-	__m256d Q = _mm256_maskload_pd(q, XYZonly);
-	__m256d R = _mm256_maskload_pd(r, XYZonly);
-	__m256d S = _mm256_maskload_pd(s, XYZonly);
-	__m256d T = _mm256_maskload_pd(t, XYZonly);	
-	
-	__m256d PT = _mm256_sub_pd(P,T);
-	__m256d QT = _mm256_sub_pd(Q,T);
-	__m256d RT = _mm256_sub_pd(R,T);
-	__m256d ST = _mm256_sub_pd(S,T);			
-
-	// Absolute values by masking sign bit.
-	__m256d sign_mask = _mm256_set1_pd(-0.);
-	__m256d absPT     = _mm256_andnot_pd(PT, sign_mask);
-	__m256d absQT     = _mm256_andnot_pd(QT, sign_mask);
-	__m256d absRT     = _mm256_andnot_pd(RT, sign_mask);
-	__m256d absST     = _mm256_andnot_pd(ST, sign_mask);	
-	__m256d maxXYZ    = _mm256_max_pd(
-	    _mm256_max_pd(absPT, absQT), _mm256_max_pd(absRT, absST)
-	);
-
-	// Separating maxX, maxY, maxZ in three different registers
-	__m128d maxX = _mm256_extractf128_pd(maxXYZ,0);
-	__m128d maxZ = _mm256_extractf128_pd(maxXYZ,1);
-	__m128d maxY = _mm_shuffle_pd(maxX, maxX, 1);
-	__m128d max_max = _mm_max_pd(maxX, _mm_max_pd(maxY, maxZ));
-
-	// Computing dynamic filter
-	__m128d eps     = _mm_set1_pd(1.2466136531027298e-13);
-	        eps     = _mm_mul_pd(eps, _mm_mul_pd(maxX, _mm_mul_pd(maxY, maxZ)));
-		eps     = _mm_mul_pd(eps, _mm_mul_pd(max_max, max_max));
-	
-	// Transpose [PT, QT, RT, ST] -> X,Y,Z (last column is 0, ignored)
-	__m256d tmp0 = _mm256_shuffle_pd(PT, QT, 0x0);		
-	__m256d tmp2 = _mm256_shuffle_pd(PT, QT, 0xF);		
-	__m256d tmp1 = _mm256_shuffle_pd(RT, ST, 0x0);		
-	__m256d tmp3 = _mm256_shuffle_pd(RT, ST, 0xF);		
-	__m256d X  = _mm256_permute2f128_pd(tmp0, tmp1, 0x20);
-	__m256d Y  = _mm256_permute2f128_pd(tmp2, tmp3, 0x20);
-	__m256d Z  = _mm256_permute2f128_pd(tmp0, tmp1, 0x31);
-
-	// Compute first column with squared lengths of vectors
-	__m256d X2 = _mm256_mul_pd(X,X);
-	__m256d Y2 = _mm256_mul_pd(Y,Y);
-	__m256d Z2 = _mm256_mul_pd(Z,Z);
-	__m256d L2 = _mm256_add_pd(_mm256_add_pd(X2,Y2),Z2);
-
-	double det = avx2_det4x4(L2,X,Y,Z);
-
-	double epsval;
-	_mm_store_pd1(&epsval, eps);
-	
-	// Note: inverted as compared to CGAL
-	//   CGAL: in_sphere_3d (called side_of_oriented_sphere())
-	//      positive side is outside the sphere.
-	//   PCK: in_sphere_3d : positive side is inside the sphere
-
-	return (det > epsval) * -1 + (det < -epsval);
-    }
-    
-#endif
-    
     inline int in_sphere_3d_filter_optim(
         const double* p, const double* q, 
         const double* r, const double* s, const double* t
@@ -18383,6 +19476,15 @@ namespace {
     index_t len_orient3dh_denom = 0;
     index_t len_orient3dh_SOS = 0;
 
+
+    index_t cnt_det4d_total = 0;
+    index_t cnt_det4d_exact = 0;
+    index_t len_det4d = 0;
+
+    index_t cnt_det3d_total = 0;
+    index_t cnt_det3d_exact = 0;
+    index_t len_det3d = 0;
+  
     // ================= side1 =========================================
 
     Sign side1_exact_SOS(
@@ -18466,10 +19568,10 @@ namespace {
         const expansion& l1 = expansion_sq_dist(p1, p0, dim);
         const expansion& l2 = expansion_sq_dist(p2, p0, dim);
 
-        const expansion& a10 = expansion_dot_at(p1, q0, p0, dim).scale_fast(2.0);
-        const expansion& a11 = expansion_dot_at(p1, q1, p0, dim).scale_fast(2.0);
-        const expansion& a20 = expansion_dot_at(p2, q0, p0, dim).scale_fast(2.0);
-        const expansion& a21 = expansion_dot_at(p2, q1, p0, dim).scale_fast(2.0);
+        const expansion& a10 = expansion_dot_at(p1,q0,p0, dim).scale_fast(2.0);
+        const expansion& a11 = expansion_dot_at(p1,q1,p0, dim).scale_fast(2.0);
+        const expansion& a20 = expansion_dot_at(p2,q0,p0, dim).scale_fast(2.0);
+        const expansion& a21 = expansion_dot_at(p2,q1,p0, dim).scale_fast(2.0);
 
         const expansion& Delta = expansion_diff(a11, a10);
 
@@ -18604,16 +19706,16 @@ namespace {
         const expansion& l2 = expansion_sq_dist(p2, p0, dim);
         const expansion& l3 = expansion_sq_dist(p3, p0, dim);
 
-        const expansion& a10 = expansion_dot_at(p1, q0, p0, dim).scale_fast(2.0);
-        const expansion& a11 = expansion_dot_at(p1, q1, p0, dim).scale_fast(2.0);
-        const expansion& a12 = expansion_dot_at(p1, q2, p0, dim).scale_fast(2.0);
-        const expansion& a20 = expansion_dot_at(p2, q0, p0, dim).scale_fast(2.0);
-        const expansion& a21 = expansion_dot_at(p2, q1, p0, dim).scale_fast(2.0);
-        const expansion& a22 = expansion_dot_at(p2, q2, p0, dim).scale_fast(2.0);
+        const expansion& a10 = expansion_dot_at(p1,q0,p0, dim).scale_fast(2.0);
+        const expansion& a11 = expansion_dot_at(p1,q1,p0, dim).scale_fast(2.0);
+        const expansion& a12 = expansion_dot_at(p1,q2,p0, dim).scale_fast(2.0);
+        const expansion& a20 = expansion_dot_at(p2,q0,p0, dim).scale_fast(2.0);
+        const expansion& a21 = expansion_dot_at(p2,q1,p0, dim).scale_fast(2.0);
+        const expansion& a22 = expansion_dot_at(p2,q2,p0, dim).scale_fast(2.0);
 
-        const expansion& a30 = expansion_dot_at(p3, q0, p0, dim).scale_fast(2.0);
-        const expansion& a31 = expansion_dot_at(p3, q1, p0, dim).scale_fast(2.0);
-        const expansion& a32 = expansion_dot_at(p3, q2, p0, dim).scale_fast(2.0);
+        const expansion& a30 = expansion_dot_at(p3,q0,p0, dim).scale_fast(2.0);
+        const expansion& a31 = expansion_dot_at(p3,q1,p0, dim).scale_fast(2.0);
+        const expansion& a32 = expansion_dot_at(p3,q2,p0, dim).scale_fast(2.0);
 
         // [ b00 b01 b02 ]           [  1   1   1  ]-1
         // [ b10 b11 b12 ] = Delta * [ a10 a11 a12 ]
@@ -19055,25 +20157,25 @@ namespace {
         const expansion& l3 = expansion_sq_dist(p3, p0, dim);
         const expansion& l4 = expansion_sq_dist(p4, p0, dim);
 
-        const expansion& a10 = expansion_dot_at(p1, q0, p0, dim).scale_fast(2.0);
-        const expansion& a11 = expansion_dot_at(p1, q1, p0, dim).scale_fast(2.0);
-        const expansion& a12 = expansion_dot_at(p1, q2, p0, dim).scale_fast(2.0);
-        const expansion& a13 = expansion_dot_at(p1, q3, p0, dim).scale_fast(2.0);
+        const expansion& a10 = expansion_dot_at(p1,q0,p0, dim).scale_fast(2.0);
+        const expansion& a11 = expansion_dot_at(p1,q1,p0, dim).scale_fast(2.0);
+        const expansion& a12 = expansion_dot_at(p1,q2,p0, dim).scale_fast(2.0);
+        const expansion& a13 = expansion_dot_at(p1,q3,p0, dim).scale_fast(2.0);
 
-        const expansion& a20 = expansion_dot_at(p2, q0, p0, dim).scale_fast(2.0);
-        const expansion& a21 = expansion_dot_at(p2, q1, p0, dim).scale_fast(2.0);
-        const expansion& a22 = expansion_dot_at(p2, q2, p0, dim).scale_fast(2.0);
-        const expansion& a23 = expansion_dot_at(p2, q3, p0, dim).scale_fast(2.0);
+        const expansion& a20 = expansion_dot_at(p2,q0,p0, dim).scale_fast(2.0);
+        const expansion& a21 = expansion_dot_at(p2,q1,p0, dim).scale_fast(2.0);
+        const expansion& a22 = expansion_dot_at(p2,q2,p0, dim).scale_fast(2.0);
+        const expansion& a23 = expansion_dot_at(p2,q3,p0, dim).scale_fast(2.0);
 
-        const expansion& a30 = expansion_dot_at(p3, q0, p0, dim).scale_fast(2.0);
-        const expansion& a31 = expansion_dot_at(p3, q1, p0, dim).scale_fast(2.0);
-        const expansion& a32 = expansion_dot_at(p3, q2, p0, dim).scale_fast(2.0);
-        const expansion& a33 = expansion_dot_at(p3, q3, p0, dim).scale_fast(2.0);
+        const expansion& a30 = expansion_dot_at(p3,q0,p0, dim).scale_fast(2.0);
+        const expansion& a31 = expansion_dot_at(p3,q1,p0, dim).scale_fast(2.0);
+        const expansion& a32 = expansion_dot_at(p3,q2,p0, dim).scale_fast(2.0);
+        const expansion& a33 = expansion_dot_at(p3,q3,p0, dim).scale_fast(2.0);
 
-        const expansion& a40 = expansion_dot_at(p4, q0, p0, dim).scale_fast(2.0);
-        const expansion& a41 = expansion_dot_at(p4, q1, p0, dim).scale_fast(2.0);
-        const expansion& a42 = expansion_dot_at(p4, q2, p0, dim).scale_fast(2.0);
-        const expansion& a43 = expansion_dot_at(p4, q3, p0, dim).scale_fast(2.0);
+        const expansion& a40 = expansion_dot_at(p4,q0,p0, dim).scale_fast(2.0);
+        const expansion& a41 = expansion_dot_at(p4,q1,p0, dim).scale_fast(2.0);
+        const expansion& a42 = expansion_dot_at(p4,q2,p0, dim).scale_fast(2.0);
+        const expansion& a43 = expansion_dot_at(p4,q3,p0, dim).scale_fast(2.0);
 
         // [ b00 b01 b02 b03 ]           [  1   1   1   1  ]-1
         // [ b10 b11 b12 b13 ]           [ a10 a11 a12 a13 ]
@@ -19409,19 +20511,25 @@ namespace {
                 } else if(p_sort[i] == p1) {
                     Sign Delta1_sign = Delta1.sign();
                     if(Delta1_sign != ZERO) {
-                        len_orient3dh_SOS = std::max(len_orient3dh_SOS, Delta1.length());
+                        len_orient3dh_SOS = std::max(
+			    len_orient3dh_SOS, Delta1.length()
+			 );
                         return Sign(Delta4_sign * Delta1_sign);
                     }
                 } else if(p_sort[i] == p2) {
                     Sign Delta2_sign = Delta2.sign();
                     if(Delta2_sign != ZERO) {
-                        len_orient3dh_SOS = std::max(len_orient3dh_SOS, Delta2.length());
+                        len_orient3dh_SOS = std::max(
+			    len_orient3dh_SOS, Delta2.length()
+			);
                         return Sign(-Delta4_sign * Delta2_sign);
                     }
                 } else if(p_sort[i] == p3) {
                     Sign Delta3_sign = Delta3.sign();
                     if(Delta3_sign != ZERO) {
-                        len_orient3dh_SOS = std::max(len_orient3dh_SOS, Delta3.length());
+                        len_orient3dh_SOS = std::max(
+			    len_orient3dh_SOS, Delta3.length()
+			);
                         return Sign(Delta4_sign * Delta3_sign);
                     }
                 } else if(p_sort[i] == p4) {
@@ -19515,6 +20623,8 @@ namespace {
     Sign det_3d_exact(
 	const double* p0, const double* p1, const double* p2
     ) {
+        cnt_det3d_exact++;
+	
 	const expansion& p0_0 = expansion_create(p0[0]);
 	const expansion& p0_1 = expansion_create(p0[1]);
 	const expansion& p0_2 = expansion_create(p0[2]);
@@ -19532,6 +20642,9 @@ namespace {
 	    p1_0, p1_1, p1_2,
 	    p2_0, p2_1, p2_2
 	);
+	
+        len_det3d = std::max(len_det3d, Delta.length());
+	
 	return Delta.sign();
     }
     
@@ -19576,6 +20689,26 @@ namespace {
 	const expansion& Delta = expansion_sum3(UV_0, UV_1, UV_2);
 
 	return Delta.sign();
+    }
+
+    Sign dot_compare_3d_exact(
+	const double* v0, const double* v1, const double* v2
+    ) {
+	const expansion& d01_0 = expansion_product(v0[0], v1[0]);
+	const expansion& d01_1 = expansion_product(v0[1], v1[1]);
+	const expansion& d01_2 = expansion_product(v0[2], v1[2]);
+	const expansion& d01_12 = expansion_sum(d01_1, d01_2);
+	const expansion& d01 = expansion_sum(d01_0, d01_12);
+	
+	const expansion& d02_0 = expansion_product(v0[0], v2[0]);
+	const expansion& d02_1 = expansion_product(v0[1], v2[1]);
+	const expansion& d02_2 = expansion_product(v0[2], v2[2]);
+	const expansion& d02_12 = expansion_sum(d02_1, d02_2);
+	const expansion& d02 = expansion_sum(d02_0, d02_12);
+
+	const expansion& result = expansion_diff(d01, d02);
+	
+	return result.sign();
     }
     
     // ================================ statistics ========================
@@ -19699,7 +20832,8 @@ namespace GEO {
         }
 
         Sign side3_SOS(
-            const double* p0, const double* p1, const double* p2, const double* p3,
+            const double* p0, const double* p1,
+	    const double* p2, const double* p3,
             const double* q0, const double* q1, const double* q2,
             coord_index_t DIM
         ) {
@@ -19727,17 +20861,23 @@ namespace GEO {
             const double* q0, const double* q1, const double* q2,
 	    bool SOS
         ) {
-            Sign result = Sign(side3h_3d_filter(p0, p1, p2, p3, h0, h1, h2, h3, q0, q1, q2));
+            Sign result = Sign(
+		side3h_3d_filter(p0, p1, p2, p3, h0, h1, h2, h3, q0, q1, q2)
+	    );
             if(SOS && result == ZERO) {
-                result = side3h_exact_SOS(p0, p1, p2, p3, h0, h1, h2, h3, q0, q1, q2);
+                result = side3h_exact_SOS(
+		    p0, p1, p2, p3, h0, h1, h2, h3, q0, q1, q2
+		);
             }
             return result;
         }
         
         Sign side4_SOS(
             const double* p0,
-            const double* p1, const double* p2, const double* p3, const double* p4,
-            const double* q0, const double* q1, const double* q2, const double* q3,
+            const double* p1, const double* p2,
+	    const double* p3, const double* p4,
+            const double* q0, const double* q1,
+	    const double* q2, const double* q3,
             coord_index_t DIM
         ) {
             switch(DIM) {
@@ -19767,8 +20907,8 @@ namespace GEO {
 
 
         Sign side4_3d(
-            const double* p0, const double* p1, const double* p2, const double* p3,
-            const double* p4
+            const double* p0, const double* p1, const double* p2,
+	    const double* p3, const double* p4
         ) {
             cnt_side4_total++;
             Sign result = Sign(side4_3d_filter(p0, p1, p2, p3, p4));
@@ -19815,11 +20955,8 @@ namespace GEO {
             
             // This specialized filter supposes that orient_3d(p0,p1,p2,p3) > 0
 
-#ifdef __AVX2__
-	    Sign result = Sign(in_sphere_3d_filter_avx2(p0, p1, p2, p3, p4));
-#else	    
             Sign result = Sign(in_sphere_3d_filter_optim(p0, p1, p2, p3, p4));
-#endif	    
+
             if(result == 0) {
                 result = side4_3d_exact_SOS(p0, p1, p2, p3, p4);
             }
@@ -19881,7 +21018,9 @@ namespace GEO {
             // Both predicates are equivalent through duality
             // (see comment in in_circle_3d_SOS(), the same
             //  remark applies).
-            return Sign(-side3_3dlifted_SOS(p0,p1,p2,p3,h0,h1,h2,h3,p0,p1,p2,SOS));
+            return Sign(
+		-side3_3dlifted_SOS(p0,p1,p2,p3,h0,h1,h2,h3,p0,p1,p2,SOS)
+	    );
         }
 
         
@@ -19977,6 +21116,7 @@ namespace GEO {
 	Sign det_3d(
 	    const double* p0, const double* p1, const double* p2
 	) {
+            cnt_det3d_total++;	  
 	    Sign result = Sign(
 		det_3d_filter(p0, p1, p2)
 	    );
@@ -19986,6 +21126,90 @@ namespace GEO {
 	    return result;
 	}
 
+
+	Sign det_4d(
+	    const double* p0, const double* p1,
+	    const double* p2, const double* p3
+	) {
+            cnt_det4d_total++;	  	  
+	    Sign result = Sign(
+		det_4d_filter(p0, p1, p2, p3)
+	    );
+	    
+	    if(result == 0) {
+	        cnt_det4d_exact++;
+		
+		const expansion& p0_0 = expansion_create(p0[0]);
+		const expansion& p0_1 = expansion_create(p0[1]);
+		const expansion& p0_2 = expansion_create(p0[2]);
+		const expansion& p0_3 = expansion_create(p0[3]);		
+		
+		const expansion& p1_0 = expansion_create(p1[0]);
+		const expansion& p1_1 = expansion_create(p1[1]);
+		const expansion& p1_2 = expansion_create(p1[2]);
+		const expansion& p1_3 = expansion_create(p1[3]);		
+		
+		const expansion& p2_0 = expansion_create(p2[0]);
+		const expansion& p2_1 = expansion_create(p2[1]);
+		const expansion& p2_2 = expansion_create(p2[2]);
+		const expansion& p2_3 = expansion_create(p2[3]);
+
+		const expansion& p3_0 = expansion_create(p3[0]);
+		const expansion& p3_1 = expansion_create(p3[1]);
+		const expansion& p3_2 = expansion_create(p3[2]);
+		const expansion& p3_3 = expansion_create(p3[3]);	
+
+		result = sign_of_expansion_determinant(
+		    p0_0, p0_1, p0_2, p0_3,
+		    p1_0, p1_1, p1_2, p1_3,
+		    p2_0, p2_1, p2_2, p2_3,
+		    p3_0, p3_1, p3_2, p3_3		    
+		);
+	    }
+	    return result;
+	}
+
+
+	Sign det_compare_4d(
+	    const double* p0, const double* p1,
+	    const double* p2, const double* p3,
+	    const double* p4
+	) {
+	    Sign result = Sign(
+		det_compare_4d_filter(p0, p1, p2, p3, p4)
+	    );
+	    if(result == 0) {
+		const expansion& p0_0 = expansion_create(p0[0]);
+		const expansion& p0_1 = expansion_create(p0[1]);
+		const expansion& p0_2 = expansion_create(p0[2]);
+		const expansion& p0_3 = expansion_create(p0[3]);		
+		
+		const expansion& p1_0 = expansion_create(p1[0]);
+		const expansion& p1_1 = expansion_create(p1[1]);
+		const expansion& p1_2 = expansion_create(p1[2]);
+		const expansion& p1_3 = expansion_create(p1[3]);		
+		
+		const expansion& p2_0 = expansion_create(p2[0]);
+		const expansion& p2_1 = expansion_create(p2[1]);
+		const expansion& p2_2 = expansion_create(p2[2]);
+		const expansion& p2_3 = expansion_create(p2[3]);
+
+		const expansion& a3_0 = expansion_diff(p4[0],p3[0]);
+		const expansion& a3_1 = expansion_diff(p4[1],p3[1]);
+		const expansion& a3_2 = expansion_diff(p4[2],p3[2]);
+		const expansion& a3_3 = expansion_diff(p4[3],p3[3]);
+		
+		result = sign_of_expansion_determinant(
+		    p0_0, p0_1, p0_2, p0_3,
+		    p1_0, p1_1, p1_2, p1_3,
+		    p2_0, p2_1, p2_2, p2_3,
+		    a3_0, a3_1, a3_2, a3_3		    
+		);
+	    }
+	    return result;
+	}
+	
+	
 	bool aligned_3d(
 	    const double* p0, const double* p1, const double* p2
 	) {
@@ -20003,15 +21227,24 @@ namespace GEO {
 	Sign dot_3d(
 	    const double* p0, const double* p1, const double* p2
 	) {
-	    Sign result = Sign(
-		det_3d_filter(p0, p1, p2)
-	    );
+	    Sign result = Sign(det_3d_filter(p0, p1, p2));
 	    if(result == 0) {
 		result = dot_3d_exact(p0, p1, p2);
 	    }
 	    return result;
 	}
 
+	Sign dot_compare_3d(
+	    const double* v0, const double* v1, const double* v2
+	) {
+	    Sign result = Sign(dot_compare_3d_filter(v0, v1, v2));
+	    if(result == 0) {
+		result = dot_compare_3d_exact(v0, v1, v2);
+	    }
+	    return result;
+	}
+
+	
 	bool points_are_identical_2d(
 	    const double* p1,
 	    const double* p2
@@ -20102,412 +21335,19 @@ namespace GEO {
                 cnt_side4_total, cnt_side4_exact, cnt_side4_SOS,
                 len_side4_num, len_side4_denom, len_side4_SOS
             );
+            show_stats_plain(
+                "det3d",
+                cnt_det3d_total, cnt_det3d_exact,
+                len_det3d
+            );
+            show_stats_plain(
+                "det4d",
+                cnt_det4d_total, cnt_det4d_exact,
+                len_det4d
+            );
         }
     }
 }
-
-
-/******* extracted from delaunay_2d.h *******/
-
-#ifndef GEOGRAM_DELAUNAY_DELAUNAY_2D
-#define GEOGRAM_DELAUNAY_DELAUNAY_2D
-
-
-#include <stack>
-
-
-namespace GEO {
-
-    class GEOGRAM_API Delaunay2d : public Delaunay {
-    public:
-        Delaunay2d(coord_index_t dimension = 2);
-
-        virtual void set_vertices(
-            index_t nb_vertices, const double* vertices
-        );
-
-        virtual index_t nearest_vertex(const double* p) const;
-
-
-    protected:
-
-        static const index_t NO_TRIANGLE = index_t(-1);
-
-        bool create_first_triangle(
-            index_t& iv0, index_t& iv1, index_t& iv2
-        );
-
-         index_t locate(
-            const double* p, index_t hint = NO_TRIANGLE,
-            bool thread_safe = false,
-            Sign* orient = nullptr
-         ) const;
-         
-         index_t locate_inexact(
-             const double* p, index_t hint, index_t max_iter
-         ) const;
-
-         index_t insert(index_t v, index_t hint = NO_TRIANGLE);
-
-         void find_conflict_zone(
-             index_t v, 
-             index_t t, const Sign* orient,
-             index_t& t_bndry, index_t& e_bndry,
-             index_t& first, index_t& last
-         );
-         
-         void find_conflict_zone_iterative(
-             const double* p, index_t t,
-             index_t& t_bndry, index_t& e_bndry,
-             index_t& first, index_t& last
-         );
-
-         
-         index_t stellate_conflict_zone(
-             index_t v, 
-             index_t t_bndry, index_t e_bndry
-         );
-         
-         // _________ Combinatorics - new and delete _________________________
-
-        index_t max_t() const {
-            return cell_to_v_store_.size() / 3;
-        }
-
-
-        static const index_t NOT_IN_LIST  = index_t(~0);
-
-        static const index_t NOT_IN_LIST_BIT = index_t(1u << 31);
-
-        static const index_t END_OF_LIST = ~(NOT_IN_LIST_BIT);
-
-
-        bool triangle_is_in_list(index_t t) const {
-            geo_debug_assert(t < max_t());
-            return (cell_next_[t] & NOT_IN_LIST_BIT) == 0;
-        }
-
-        index_t triangle_next(index_t t) const {
-            geo_debug_assert(t < max_t());
-            geo_debug_assert(triangle_is_in_list(t));
-            return cell_next_[t];
-        }
-
-        void add_triangle_to_list(index_t t, index_t& first, index_t& last) {
-            geo_debug_assert(t < max_t());
-            geo_debug_assert(!triangle_is_in_list(t));
-            if(last == END_OF_LIST) {
-                geo_debug_assert(first == END_OF_LIST);
-                first = last = t;
-                cell_next_[t] = END_OF_LIST;
-            } else {
-                cell_next_[t] = first;
-                first = t;
-            }
-        }
-
-        void remove_triangle_from_list(index_t t) {
-            geo_debug_assert(t < max_t());
-            geo_debug_assert(triangle_is_in_list(t));
-            cell_next_[t] = NOT_IN_LIST;
-        }
-
-        static const signed_index_t VERTEX_AT_INFINITY = -1;
-
-        bool triangle_is_finite(index_t t) const {
-            return 
-                cell_to_v_store_[3 * t]     >= 0 &&
-                cell_to_v_store_[3 * t + 1] >= 0 &&
-                cell_to_v_store_[3 * t + 2] >= 0 ;
-        }
-        
-        bool triangle_is_real(index_t t) const {
-            return !triangle_is_free(t) && triangle_is_finite(t);
-        }
-
-        bool triangle_is_virtual(index_t t) const {
-            return
-            !triangle_is_free(t) && (
-		cell_to_v_store_[3 * t] == VERTEX_AT_INFINITY ||
-		cell_to_v_store_[3 * t + 1] == VERTEX_AT_INFINITY ||
-		cell_to_v_store_[3 * t + 2] == VERTEX_AT_INFINITY
-	    );
-        }
-
-        bool triangle_is_free(index_t t) const {
-            return triangle_is_in_list(t);
-        }
-
-        index_t new_triangle() {
-            index_t result;
-            if(first_free_ == END_OF_LIST) {
-                cell_to_v_store_.resize(cell_to_v_store_.size() + 3, -1);
-                cell_to_cell_store_.resize(cell_to_cell_store_.size() + 3, -1);
-                // index_t(NOT_IN_LIST) is necessary, else with
-                // NOT_IN_LIST alone the compiler tries to generate a
-                // reference to NOT_IN_LIST resulting in a link error.
-                cell_next_.push_back(index_t(NOT_IN_LIST));
-                result = max_t() - 1;
-            } else {
-                result = first_free_;
-                first_free_ = triangle_next(first_free_);
-                remove_triangle_from_list(result);
-            }
-
-            cell_to_cell_store_[3 * result] = -1;
-            cell_to_cell_store_[3 * result + 1] = -1;
-            cell_to_cell_store_[3 * result + 2] = -1;
-
-            return result;
-        }
-
-        index_t new_triangle(
-            signed_index_t v1, signed_index_t v2, 
-            signed_index_t v3
-        ) {
-            index_t result = new_triangle();
-            cell_to_v_store_[3 * result] = v1;
-            cell_to_v_store_[3 * result + 1] = v2;
-            cell_to_v_store_[3 * result + 2] = v3;
-            return result;
-        }
-
-        void set_triangle_mark_stamp(index_t stamp) {
-            cur_stamp_ = (stamp | NOT_IN_LIST_BIT);
-        }
-
-        bool triangle_is_marked(index_t t) const {
-            return cell_next_[t] == cur_stamp_;
-        }
-
-        void mark_triangle(index_t t) {
-            cell_next_[t] = cur_stamp_;
-        }
-
-        // _________ Combinatorics ___________________________________
-
-        static index_t triangle_edge_vertex(index_t e, index_t v) {
-            geo_debug_assert(e < 3);
-            geo_debug_assert(v < 2);
-            return index_t(triangle_edge_vertex_[e][v]);
-        }
-
-        signed_index_t triangle_vertex(index_t t, index_t lv) const {
-            geo_debug_assert(t < max_t());
-            geo_debug_assert(lv < 3);
-            return cell_to_v_store_[3 * t + lv];
-        }
-
-        index_t find_triangle_vertex(index_t t, signed_index_t v) const {
-            geo_debug_assert(t < max_t());
-            //   Find local index of v in triangle t vertices.
-            const signed_index_t* T = &(cell_to_v_store_[3 * t]);
-            return find_3(T,v);
-        }
-
-
-         index_t finite_triangle_vertex(index_t t, index_t lv) const {
-            geo_debug_assert(t < max_t());
-            geo_debug_assert(lv < 3);
-            geo_debug_assert(cell_to_v_store_[3 * t + lv] != -1);
-            return index_t(cell_to_v_store_[3 * t + lv]);
-        }
-
-        void set_triangle_vertex(index_t t, index_t lv, signed_index_t v) {
-            geo_debug_assert(t < max_t());
-            geo_debug_assert(lv < 3);
-            cell_to_v_store_[3 * t + lv] = v;
-        }
-
-        signed_index_t triangle_adjacent(index_t t, index_t le) const {
-            geo_debug_assert(t < max_t());
-            geo_debug_assert(le < 3);
-            signed_index_t result = cell_to_cell_store_[3 * t + le];
-            return result;
-        }
-
-        void set_triangle_adjacent(index_t t1, index_t le1, index_t t2) {
-            geo_debug_assert(t1 < max_t());
-            geo_debug_assert(t2 < max_t());
-            geo_debug_assert(le1 < 3);
-	    geo_debug_assert(t1 != t2);
-            cell_to_cell_store_[3 * t1 + le1] = signed_index_t(t2);
-        }
-        
-        index_t find_triangle_adjacent(
-            index_t t1, index_t t2_in
-        ) const {
-            geo_debug_assert(t1 < max_t());
-            geo_debug_assert(t2_in < max_t());
-            geo_debug_assert(t1 != t2_in);
-
-            signed_index_t t2 = signed_index_t(t2_in);
-
-            // Find local index of t2 in triangle t1 adajcent tets.
-            const signed_index_t* T = &(cell_to_cell_store_[3 * t1]);
-            index_t result = find_3(T,t2);
-
-            // Sanity check: make sure that t1 is adjacent to t2
-            // only once!
-            geo_debug_assert(triangle_adjacent(t1,(result+1)%3) != t2);
-            geo_debug_assert(triangle_adjacent(t1,(result+2)%3) != t2);
-            return result;
-        }
-
-
-
-        void set_tet(
-            index_t t,
-            signed_index_t v0, signed_index_t v1,
-            signed_index_t v2, 
-            index_t a0, index_t a1, index_t a2
-        ) {
-            geo_debug_assert(t < max_t());
-            cell_to_v_store_[3 * t] = v0;
-            cell_to_v_store_[3 * t + 1] = v1;
-            cell_to_v_store_[3 * t + 2] = v2;
-            cell_to_cell_store_[3 * t] = signed_index_t(a0);
-            cell_to_cell_store_[3 * t + 1] = signed_index_t(a1);
-            cell_to_cell_store_[3 * t + 2] = signed_index_t(a2);
-        }
-
-        // _________ Predicates _____________________________________________
-
-        bool triangle_is_conflict(index_t t, const double* p) const {
-
-            // Lookup triangle vertices
-            const double* pv[3];
-            for(index_t i=0; i<3; ++i) {
-                signed_index_t v = triangle_vertex(t,i);
-                pv[i] = (v == -1) ? nullptr : vertex_ptr(index_t(v));
-            }
-
-            // Check for virtual triangles (then in_circle()
-            // is replaced with orient2d())
-            for(index_t le = 0; le < 3; ++le) {
-
-                if(pv[le] == nullptr) {
-
-                    // Facet of a virtual triangle opposite to
-                    // infinite vertex corresponds to
-                    // the triangle on the convex hull of the points.
-                    // Orientation is obtained by replacing vertex lf
-                    // with p.
-                    pv[le] = p;
-                    Sign sign = PCK::orient_2d(pv[0],pv[1],pv[2]);
-
-                    if(sign > 0) {
-                        return true;
-                    }
-
-                    if(sign < 0) {
-                        return false;
-                    }
-
-                    // If sign is zero, we check the real triangle
-                    // adjacent to the facet on the convex hull.
-                    geo_debug_assert(triangle_adjacent(t, le) >= 0);
-                    index_t t2 = index_t(triangle_adjacent(t, le));
-                    geo_debug_assert(!triangle_is_virtual(t2));
-
-                    //  If t2 is already chained in the conflict list,
-                    // then it is conflict
-                    if(triangle_is_in_list(t2)) {
-                        return true;
-                    }
-
-                    //  If t2 is marked, then it is not in conflict.
-                    if(triangle_is_marked(t2)) {
-                        return false;
-                    }
-
-                    return triangle_is_conflict(t2, p);
-                }
-            }
-
-            //   If the triangle is a finite one, it is in conflict
-            // if its circumscribed sphere contains the point (this is
-            // the standard case).
-
-            if(weighted_) {
-                double h0 = heights_[finite_triangle_vertex(t, 0)];
-                double h1 = heights_[finite_triangle_vertex(t, 1)];
-                double h2 = heights_[finite_triangle_vertex(t, 2)];
-                index_t pindex = index_t(
-                    (p - vertex_ptr(0)) / int(vertex_stride_)
-                );
-                double h = heights_[pindex];
-                return (PCK::orient_2dlifted_SOS(
-                            pv[0],pv[1],pv[2],p,h0,h1,h2,h
-                       ) > 0) ;
-            }
-
-            return (PCK::in_circle_2d_SOS(pv[0], pv[1], pv[2], p) > 0);
-        }
-
-    protected:
-
-        static index_t find_3(const signed_index_t* T, signed_index_t v) {
-            // The following expression is 10% faster than using
-            // if() statements. This uses the C++ norm, that 
-            // ensures that the 'true' boolean value converted to 
-            // an int is always 1. With most compilers, this avoids 
-            // generating branching instructions.
-            // Thank to Laurent Alonso for this idea.
-            index_t result = index_t( (T[1] == v) | ((T[2] == v) * 2) );
-            // Sanity check, important if it was T[0], not explicitly
-            // tested (detects input that does not meet the precondition).
-            geo_debug_assert(T[result] == v);
-            return result; 
-        }
-
-        virtual ~Delaunay2d();
-
-        void show_triangle(index_t t) const;
-
-        void show_triangle_adjacent(index_t t, index_t le) const;
-
-        void show_list(
-            index_t first, const std::string& list_name
-        ) const;
-
-        void check_combinatorics(bool verbose = false) const;
-
-        void check_geometry(bool verbose = false) const;
-
-    private:
-        vector<signed_index_t> cell_to_v_store_;
-        vector<signed_index_t> cell_to_cell_store_;
-        vector<index_t> cell_next_;
-        vector<index_t> reorder_;
-        index_t cur_stamp_; // used for marking
-        index_t first_free_;
-        bool weighted_;
-        vector<double> heights_; // only used in weighted mode
-
-         bool debug_mode_;
-
-         bool verbose_debug_mode_;
-
-         bool benchmark_mode_;
-
-	 static char triangle_edge_vertex_[3][2];
-
-	 std::stack<index_t> S_;
-    };
-
-    
-
-    class GEOGRAM_API RegularWeightedDelaunay2d : public Delaunay2d {
-    public:
-        RegularWeightedDelaunay2d(coord_index_t dimension = 3);
-
-    protected:
-        virtual ~RegularWeightedDelaunay2d();
-    };
-}
-
-#endif
 
 
 /******* extracted from cavity.h *******/
@@ -21473,7 +22313,7 @@ namespace GEO {
 
 	geo_register_Delaunay_creator(Delaunay2d, "BDEL2d");
 	geo_register_Delaunay_creator(RegularWeightedDelaunay2d, "BPOW2d");
-	
+
 #ifndef GEOGRAM_PSM       
         geo_register_Delaunay_creator(Delaunay_NearestNeighbors, "NN");
 #endif       
@@ -24399,7 +25239,9 @@ namespace GEO {
 		signed_index_t v3 = cavity_.facet_vertex(f,2);
 		new_tet = new_tetrahedron(signed_index_t(v), v1, v2, v3);
 		set_tet_adjacent(new_tet, 0, t_neigh);
-		set_tet_adjacent(t_neigh, find_tet_adjacent(t_neigh,old_tet), new_tet);
+		set_tet_adjacent(
+		    t_neigh, find_tet_adjacent(t_neigh,old_tet), new_tet
+		);
 		cavity_.set_facet_tet(f, new_tet);
 	    }
 	
@@ -25156,7 +25998,9 @@ namespace GEO {
                      // convention as in CGAL).
                      const double* pv_bkp = pv[f];
                      pv[f] = p;
-                     Sign ori = PCK::orient_3d_inexact(pv[0], pv[1], pv[2], pv[3]);
+                     Sign ori = PCK::orient_3d_inexact(
+			 pv[0], pv[1], pv[2], pv[3]
+		     );
                      
                      //   If the orientation is not negative, then we cannot
                      // walk towards t_next, and examine the next candidate
@@ -26360,13 +27204,61 @@ namespace GEO {
 /******* extracted from ../voronoi/convex_cell.cpp *******/
 
 
+#ifndef STANDALONE_CONVEX_CELL
+#endif
+
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <cmath>
+#include <limits>
+#include <stack>
+
+
+namespace {
+    using namespace VBW;
+
+    class SmallStack_ushort {
+    public:
+
+	SmallStack_ushort(
+	    ushort* buffer, int capacity
+	) : buffer_(buffer),
+	    index_(-1),
+	    capacity_(capacity) {
+	}
+
+	bool empty() const {
+	    return (index_ == -1);
+	}
+
+	void push(ushort val) {
+	    ++index_;
+	    vbw_assert(index_ < capacity_);
+	    (void)capacity_; // To silence a warning.
+	    buffer_[index_] = val;
+	}
+
+	void pop() {
+	    vbw_assert(!empty());
+	    --index_;
+	}
+
+	ushort top() const {
+	    vbw_assert(!empty());
+	    return buffer_[index_];
+	}
+    private:
+	ushort* buffer_;
+	int index_;
+	int capacity_;
+    };
+}
+
+
 
 namespace VBW {
-
+    
     ConvexCell::ConvexCell(ConvexCellFlags flags) :
 	max_t_(64),
 	max_v_(32),
@@ -26374,6 +27266,9 @@ namespace VBW {
 	vv2t_(max_v_*max_v_),
 	plane_eqn_(max_v_)
     {
+#ifndef STANDALONE_CONVEX_CELL
+	use_exact_predicates_ = true;
+#endif	
 	nb_t_ = 0;
 	nb_v_ = 0;
 	first_free_ = END_OF_LIST;
@@ -26459,6 +27354,57 @@ namespace VBW {
 	geometry_dirty_ = true;
     }
     
+
+    void ConvexCell::init_with_tet(
+	vec4 P0, vec4 P1, vec4 P2, vec4 P3
+    ) {
+	clear();
+
+	// The vertex at infinity.
+ 	plane_eqn_[0] = make_vec4(0,0,0,0);
+
+	// Offset for the 4 plane equations.
+	// Plane 0 is vertex at infinity.
+	index_t boff = 1;
+
+	plane_eqn_[boff  ] = P0;
+	plane_eqn_[boff+1] = P1;
+	plane_eqn_[boff+2] = P2;
+	plane_eqn_[boff+3] = P3;
+
+	new_triangle(boff+3, boff+2, boff+1);
+	new_triangle(boff+3, boff+0, boff+2);
+	new_triangle(boff+3, boff+1, boff+0);
+	new_triangle(boff+2, boff+0, boff+1);
+	
+	// We already created 6 vertices (for the 6 bounding box
+	// plane equations) plus the vertex at infinity.
+	nb_v_ = 5;
+
+	geometry_dirty_ = true;
+    }
+
+
+    void ConvexCell::init_with_tet(
+	vec4 P0, vec4 P1, vec4 P2, vec4 P3,
+	global_index_t P0_global_index,
+	global_index_t P1_global_index,
+	global_index_t P2_global_index,
+	global_index_t P3_global_index	    
+    ) {
+	geo_debug_assert(has_vglobal_);
+	init_with_tet(P0, P1, P2, P3);
+
+	// Offset for the 4 plane equations.
+	// Plane 0 is vertex at infinity.
+	index_t boff = 1;
+
+	vglobal_[boff  ] = P0_global_index;
+	vglobal_[boff+1] = P1_global_index;
+	vglobal_[boff+2] = P2_global_index;
+	vglobal_[boff+3] = P3_global_index;	
+    }
+    
     
     
 
@@ -26470,9 +27416,101 @@ namespace VBW {
     
     
     index_t ConvexCell::save(
-	std::ostream& out, index_t v_offset, double shrink
+	std::ostream& out, global_index_t v_offset,
+	double shrink, bool borders_only
     ) const {
 
+	vec3 g = make_vec3(0.0, 0.0, 0.0);
+	if(shrink != 0.0) {
+	    const_cast<ConvexCell*>(this)->compute_geometry();
+	    g = barycenter();
+	}
+	
+	vector<index_t> v2t(nb_v(),index_t(-1));
+	vector<index_t> t_index(nb_t(),index_t(-1));
+	index_t nt=0;
+
+	{
+	    index_t t = first_valid_;
+	    while(t != END_OF_LIST) { 
+		TriangleWithFlags T = get_triangle_and_flags(t);
+		vec4 p;
+		if(geometry_dirty_) {
+		    p = compute_triangle_point(T);
+		    p.x /= p.w;
+		    p.y /= p.w;
+		    p.z /= p.w;
+		    p.w = 1.0;
+		} else {
+		    p.x = triangle_point_[t].x;
+		    p.y = triangle_point_[t].y;
+		    p.z = triangle_point_[t].z;
+		    p.w = 1.0;
+		}
+
+		if(shrink != 0.0) {
+		    p.x = shrink * g.x + (1.0 - shrink) * p.x;
+		    p.y = shrink * g.y + (1.0 - shrink) * p.y;
+		    p.z = shrink * g.z + (1.0 - shrink) * p.z;
+		}
+		out << "v " << p.x << " " << p.y << " " << p.z << std::endl;
+		t_index[t] = nt;
+		++nt;
+		v2t[T.i] = t;
+		v2t[T.j] = t;
+		v2t[T.k] = t;
+		t = index_t(T.flags);
+	    }
+	}
+	
+	for(index_t v=1; v<nb_v(); ++v) {
+	    if(borders_only &&
+	       has_vglobal() &&
+	       v_global_index(v) != global_index_t(-1) &&
+	       v_global_index(v) != global_index_t(-2)
+                // inde_t(-2) is for fluid free bndry
+	    ) {
+		continue;
+	    }
+	    if(v2t[v] != index_t(-1)) {
+		index_t t = v2t[v];
+		out << "f ";
+		do {
+		    out << (t_index[t]+v_offset) << " ";
+		    index_t lv = triangle_find_vertex(t,v);		   
+		    t = triangle_adjacent(t, (lv + 1)%3);
+		} while(t != v2t[v]);
+		out << std::endl;
+	    }
+	}
+
+	return nt;
+    }
+
+    void ConvexCell::for_each_Voronoi_vertex(
+	index_t v,
+	std::function<void(index_t)> vertex
+    ) {
+	geo_debug_assert(!geometry_dirty_);
+	if(v2t_[v] != END_OF_LIST) {
+	    index_t t = index_t(v2t_[v]);
+	    do {
+		vertex(t);
+		index_t lv = triangle_find_vertex(t,v);		   
+		t = triangle_adjacent(t, (lv + 1)%3);
+	    } while(t != v2t_[v]);
+	}
+    }
+    
+#if !defined(STANDALONE_CONVEX_CELL) && !defined(GEOGRAM_PSM)
+    
+    void ConvexCell::append_to_mesh(
+	GEO::Mesh* mesh, double shrink, bool borders_only,
+	GEO::Attribute<GEO::index_t>* facet_attr
+    ) const {
+
+	global_index_t v_offset = mesh->vertices.nb();
+	
 	vec3 g = make_vec3(0.0, 0.0, 0.0);
 	if(shrink != 0.0) {
 	    const_cast<ConvexCell*>(this)->compute_geometry();
@@ -26497,7 +27535,7 @@ namespace VBW {
 		    p.y = shrink * g.y + (1.0 - shrink) * p.y;
 		    p.z = shrink * g.z + (1.0 - shrink) * p.z;
 		}
-		out << "v " << p.x << " " << p.y << " " << p.z << std::endl;
+		mesh->vertices.create_vertex(p.data());
 		t_index[t] = nt;
 		++nt;
 		v2t[T.i] = t;
@@ -26508,21 +27546,41 @@ namespace VBW {
 	}
 	
 	for(index_t v=1; v<nb_v(); ++v) {
+	    if(borders_only &&
+	       has_vglobal() &&
+	       v_global_index(v) != global_index_t(-1) &&
+	       v_global_index(v) != global_index_t(-2) // This one for
+	                                               // fluid free bndry
+	    ) {
+		continue;
+	    }
+	    std::vector<global_index_t> facet_vertices;
 	    if(v2t[v] != index_t(-1)) {
 		index_t t = v2t[v];
-		out << "f ";
 		do {
-		    out << (t_index[t]+v_offset) << " ";
+		    facet_vertices.push_back(t_index[t]+v_offset);
 		    index_t lv = triangle_find_vertex(t,v);		   
 		    t = triangle_adjacent(t, (lv + 1)%3);
 		} while(t != v2t[v]);
-		out << std::endl;
+	    }
+	    if(facet_vertices.size() < 3) {
+		continue;
+	    }
+	    global_index_t f = mesh->facets.create_polygon(
+		GEO::index_t(facet_vertices.size())
+	    );
+	    for(index_t i=0; i<facet_vertices.size(); ++i) {
+		mesh->facets.set_vertex(f, i, facet_vertices[i]);
+	    }
+	    if(facet_attr != nullptr && facet_attr->is_bound()) {
+		(*facet_attr)[f] = v_global_index(v);
 	    }
 	}
-
-	return nt;
+	
     }
 
+#endif
+    
     
 
     bool ConvexCell::has_v_global_index(global_index_t v) const {
@@ -26534,7 +27592,8 @@ namespace VBW {
 	}
 	return false;
     }
-    
+
+
     void ConvexCell::clip_by_plane(vec4 eqn, global_index_t j) {
 	vbw_assert(has_vglobal_);
 	clip_by_plane(eqn);
@@ -26566,6 +27625,9 @@ namespace VBW {
 	//   - the code is simpler.
 	//   - and more importantly, we got no more than a few tenths of
 	//     vertices.
+	// The 'climbing from a random triangle' strategy is implemented
+	// in clip_by_plane_fast(). We keep both implementations for now,
+	// until we make sure than one is more efficient than the other one.
 
         index_t t = first_valid_;
         first_valid_ = END_OF_LIST;
@@ -26584,54 +27646,343 @@ namespace VBW {
 		first_valid_ = t;
 	    }
 	    t = index_t(T.flags);
+	}
+	
+	triangulate_conflict_zone(lv, conflict_head, conflict_tail);
+    }
+
+    // This version of clip_by_plane(), with a user-defined predicate,
+    // is duplicated from the standard version above. May be fixed by
+    // moving it to the header file (to have faster invokation of the
+    // predicate) and make the default version call it with PCK, but
+    // I do not want to do that because:
+    //    - will make the header more heavy, longer compilation time
+    //    - not sure about the impact on performance
+    //    - the function is short, not a big drama to duplicate it...
+    void ConvexCell::clip_by_plane(
+	vec4 eqn, global_index_t global_index,
+	std::function<bool(ushort,ushort)> triangle_conflict_predicate
+    ) {
+	geometry_dirty_ = true;
+
+	index_t lv = nb_v_;	
+	if(lv == max_v()) {
+	    grow_v();
+	}
+	plane_eqn_[lv] = eqn;
+	vbw_assert(lv < max_v());
+	++nb_v_;
+
+	// Note: it is unlikely that this function is used without
+	// global indices (because without global indices, it would
+	// mean we are only using geometry, then we should use the
+	// default predicate), so we could probably make it mandatory
+	// to have global indices here.
+	if(has_vglobal_) {
+	    vglobal_[nb_v()-1] = global_index;
+	}
+
+	
+	// Step 1: Find conflict zone and link conflicted triangles
+	// (to recycle them in free list).
+
+	index_t conflict_head = END_OF_LIST;
+	index_t conflict_tail = END_OF_LIST;
+
+        // Classify triangles, compute conflict list and valid list.
+	// Note: This could be done by climbing from a random triangle,
+	// but here we prefer complete linear scan for several reasons:
+	//   - it is more robust to numerical errors (here we are not
+	//     using exact predicates).
+	//   - the code is simpler.
+	//   - and more importantly, we got no more than a few tenths of
+	//     vertices.
+	// The 'climbing from a random triangle' strategy is implemented
+	// in clip_by_plane_fast(). We keep both implementations for now,
+	// until we make sure than one is more efficient than the other one
+	// (and clip_by_plane_fast() does not have a version with the user-
+	// defined predicate for now).
+
+        index_t t = first_valid_;
+        first_valid_ = END_OF_LIST;
+        while(t != END_OF_LIST) { 
+	    TriangleWithFlags T = get_triangle_and_flags(t);
+	    if(triangle_conflict_predicate(ushort(t), ushort(nb_v()-1))) {
+		set_triangle_flags(
+		    t, ushort(conflict_head) | ushort(CONFLICT_MASK)
+		);
+		conflict_head = t;
+		if(conflict_tail == END_OF_LIST) {
+		    conflict_tail = t;
+		}
+	    } else {
+		set_triangle_flags(t, ushort(first_valid_));
+		first_valid_ = t;
+	    }
+	    t = index_t(T.flags);
+	}
+	
+	triangulate_conflict_zone(lv, conflict_head, conflict_tail);
+    }
+
+    
+    void ConvexCell::clip_by_plane_fast(vec4 P, global_index_t j) {
+	vbw_assert(has_vglobal_);
+	clip_by_plane_fast(P);
+	vglobal_[nb_v()-1] = j;
+    }
+    
+    void ConvexCell::clip_by_plane_fast(vec4 P) {
+	geometry_dirty_ = true;
+	index_t lv = nb_v_;	
+	if(lv == max_v()) {
+	    grow_v();
+	}
+	plane_eqn_[lv] = P;
+	vbw_assert(lv < max_v());
+	++nb_v_;
+
+	// Step 1: Find a good seed triangle (likely to
+	// be in conflict). If it is not in conflict,
+	// it is not a big problem (it will be just a
+	// bit slower), so we use inexact predicates
+	// here.
+	
+	index_t t_init = END_OF_LIST;
+
+	{
+	    index_t t_pred = END_OF_LIST;	
+	    index_t t = first_valid_;
+	    if(t == END_OF_LIST) {
+		return;
+	    }
+
+	    auto triangle_distance = [this](index_t t_in, vec4 P_in) {
+		  Triangle T = get_triangle(t_in);
+		  vbw_assert(T.i != VERTEX_AT_INFINITY);
+		  vbw_assert(T.j != VERTEX_AT_INFINITY);
+		  vbw_assert(T.k != VERTEX_AT_INFINITY);		  
+		  vec4 p1 = vertex_plane(T.i);
+		  vec4 p2 = vertex_plane(T.j);
+		  vec4 p3 = vertex_plane(T.k);
+		  return det4x4(
+		      p1.x, p2.x, p3.x, P_in.x,
+		      p1.y, p2.y, p3.y, P_in.y,
+		      p1.z, p2.z, p3.z, P_in.z,
+		      p1.w, p2.w, p3.w, P_in.w
+		  );
+	    };
+	
+	    index_t count = 100;
+	    double  t_dist = triangle_distance(t,P);
+	    
+	  still_walking:
+	    for(index_t le=0; le<3; ++le) {
+		index_t t_next = triangle_adjacent(t, le);
+		if(t_next == t_pred) {
+		    continue;
+		}
+		double t_next_dist = triangle_distance(t_next,P);
+		if(t_next_dist < t_dist) {
+		    continue;
+		}
+		--count;
+		t_pred = t;
+		t = t_next;
+		t_dist = t_next_dist;
+		if(count > 0 && t_dist < 0.0) {
+		    goto still_walking;
+		}
+	    }
+	    t_init = t;
 	} 
 
+	// note: t_init is now one triangle, probably in conflict
+	// (but not always: there can be degenerate cases where count
+	//  reach zero). When t_init is in conflict, it is in general
+	//  not the "highest" triangle (as one expect in a Delaunay
+	//  triangulation code, but here it is different).
+
+	
+	// Step 2: mark all the triangles that have the same
+	// conflict status as t_init with CONFLICT_MASK
+	// (even if t_init was not in conflict, then we will
+	//  swap confict mask)
+	
+	bool t_init_is_in_conflict = triangle_is_in_conflict(
+	    get_triangle_and_flags(t_init), P
+	);
+
+	{
+	    ushort* buff = (ushort*)alloca(max_t_*sizeof(ushort));
+	    SmallStack_ushort S(buff, int(max_t_));
+	    S.push(ushort(t_init));
+	    set_triangle_flags(
+		t_init,
+		get_triangle_flags(t_init) |
+		     ushort(CONFLICT_MASK) |
+		     ushort(MARKED_MASK)
+	    );
+	    while(!S.empty()) {
+		index_t t = index_t(S.top());
+		S.pop();
+		for(index_t le=0; le<3; ++le) {
+		    index_t t_neigh = triangle_adjacent(t,le);
+		    if(
+			(get_triangle_flags(t_neigh) & ushort(MARKED_MASK))
+			== 0
+		    ) {
+			if( triangle_is_in_conflict(
+				get_triangle_and_flags(t_neigh), P
+			    ) == t_init_is_in_conflict
+			) {
+			    set_triangle_flags(
+				t_neigh,
+				get_triangle_flags(t_neigh) |
+				      ushort(CONFLICT_MASK) |
+				      ushort(MARKED_MASK)
+			    );
+			    S.push(ushort(t_neigh));
+			} else {
+			    set_triangle_flags(
+				t_neigh,
+				get_triangle_flags(t_neigh) |
+				        ushort(MARKED_MASK)
+			    );
+			}
+		    }
+		}
+	    }
+	}
+
+	// Step 3: update conflict list and active triangles list
+	index_t conflict_head = END_OF_LIST;
+	index_t conflict_tail = END_OF_LIST;
+	{
+	    index_t new_first_valid = END_OF_LIST;
+	    index_t t = first_valid_;
+	    while(t != END_OF_LIST) {
+		bool t_is_in_conflict = triangle_is_marked_as_conflict(t);
+		index_t t_next =
+		    index_t(
+			get_triangle_flags(t) &
+			~(CONFLICT_MASK | MARKED_MASK)
+		    );
+		// Flip conflict flag if t_init was not in conflict.
+		if(!t_init_is_in_conflict) {
+		    t_is_in_conflict = !t_is_in_conflict;
+		}
+		if(t_is_in_conflict) {
+		    set_triangle_flags(
+			t, ushort(conflict_head) | ushort(CONFLICT_MASK)
+		    );
+		    conflict_head = t;
+		    if(conflict_tail == END_OF_LIST) {
+			conflict_tail = t;
+		    }
+		} else {
+		    set_triangle_flags(t, ushort(new_first_valid));
+		    new_first_valid = t;
+		}
+		t = t_next;
+	    }
+	    first_valid_ = new_first_valid;
+	} 
+
+	triangulate_conflict_zone(lv, conflict_head, conflict_tail);
+    }
+    
+    
+
+    void ConvexCell::triangulate_conflict_zone(
+	index_t lv, index_t conflict_head, index_t conflict_tail
+    ) {
 	// Special case: no triangle in conflict.
 	if(conflict_head == END_OF_LIST) {
 	    return;
 	}
 
-	// Step 2: Triangulate cavity
-
-        t = conflict_head;
+	// Triangulate conflict zone
+        index_t t = conflict_head;
         while(t != END_OF_LIST) { 
 	    TriangleWithFlags T = get_triangle_and_flags(t);
 	    
 	    index_t adj1 = vv2t(T.j,T.i);
 	    index_t adj2 = vv2t(T.k,T.j);
-	    index_t adj3 = vv2t(T.i,T.k);	       
+	    index_t adj3 = vv2t(T.i,T.k);
 	    
 	    ushort flg1 = get_triangle_flags(adj1);
 	    ushort flg2 = get_triangle_flags(adj2);
-	    ushort flg3 = get_triangle_flags(adj3);		
+	    ushort flg3 = get_triangle_flags(adj3);
 	    
 	    if(	!(flg1 & ushort(CONFLICT_MASK)) ) {
 		new_triangle(lv, T.i, T.j);
 	    }
-
+	    
 	    if(	!(flg2 & ushort(CONFLICT_MASK)) ) {
 		new_triangle(lv, T.j, T.k);		
 	    }
-
+	    
 	    if(	!(flg3 & ushort(CONFLICT_MASK)) ) {
 		new_triangle(lv, T.k, T.i);
 	    }
-	       
+	    
 	    t = index_t(T.flags & ~ushort(CONFLICT_MASK));
 	} 
 	
-	// Step 3: Recycle conflict list.
-	
+	// Recycle triangles in conflict zone
 	set_triangle_flags(conflict_tail, ushort(first_free_));
 	first_free_ = conflict_head;
-
     }
-
+    
+    
     
 
     bool ConvexCell::triangle_is_in_conflict(
 	TriangleWithFlags T, const vec4& eqn
     ) const {
+#ifndef STANDALONE_CONVEX_CELL
+	if(use_exact_predicates_) {
+	    if(T.i == VERTEX_AT_INFINITY) {
+		vec3 E  = make_vec3(eqn.x, eqn.y, eqn.z);
+		vec3 n2 = vertex_plane_normal(T.j);
+		vec3 n3 = vertex_plane_normal(T.k);
+		return(GEO::PCK::det_3d(E.data(), n2.data(), n3.data()) <= 0);
+	    }
+
+	    if(T.j == VERTEX_AT_INFINITY) {
+		vec3 E  = make_vec3(eqn.x, eqn.y, eqn.z);	    
+		vec3 n3 = vertex_plane_normal(T.k);
+		vec3 n1 = vertex_plane_normal(T.i);
+		return(GEO::PCK::det_3d(n1.data(), E.data(), n3.data()) <= 0);
+	    }
+
+	    if(T.k == VERTEX_AT_INFINITY) {
+		vec3 E  = make_vec3(eqn.x, eqn.y, eqn.z);	    	    
+		vec3 n1 = vertex_plane_normal(T.i);
+		vec3 n2 = vertex_plane_normal(T.j);
+		return(GEO::PCK::det_3d(n1.data(), n2.data(), E.data()) <= 0);
+	    } 
+	    
+	    //   The triangle is in conflict with eqn if the 
+	    // result of compute_triangle_point(t) injected in eqn 
+	    // has a negative sign.
+	    //   Examining the formula in compute_triangle_point(),
+	    // this corresponds to (minus) the 4x4 determinant of the
+	    // 4 plane equations developed w.r.t. the 4th column.
+	    // (see Edelsbrunner - Simulation of Simplicity for similar examples
+	    //  of computations).
+	
+	    vec4 p1 = vertex_plane(T.i);
+	    vec4 p2 = vertex_plane(T.j);
+	    vec4 p3 = vertex_plane(T.k);
+	    
+	    return(GEO::PCK::det_4d(
+		       p1.data(), p2.data(), p3.data(), eqn.data()) >= 0
+	    );
+	}
+#endif
+	
 	double det = 0.0;
 
 	// If one of the vertices of the triangle is the
@@ -26669,9 +28020,9 @@ namespace VBW {
 	    //   The triangle is in conflict with eqn if the 
 	    // result of compute_triangle_point(t) injected in eqn 
 	    // has a negative sign.
-	    //   Examining the formula in compute_triangle_point(), this corresponds
-	    // to (minus) the 4x4 determinant of the 4 plane equations
-	    // developed w.r.t. the 4th column.
+	    //   Examining the formula in compute_triangle_point(),
+	    // this corresponds to (minus) the 4x4 determinant of the 4 plane
+	    // equations developed w.r.t. the 4th column.
 	    // (see Edelsbrunner - Simulation of Simplicity for similar examples
 	    //  of computations).
 	
@@ -26741,14 +28092,15 @@ namespace VBW {
 	}
 	
         // Get the plane equations associated with each vertex of t
+
 	vec4 pi1 = vertex_plane(T.i);
 	vec4 pi2 = vertex_plane(T.j);
 	vec4 pi3 = vertex_plane(T.k);
 
-        // Find the intersection of the three planes using Kramer's formula.
+        // Find the intersection of the three planes using Cramer's formula.
 	// (see Edelsbrunner - Simulation of Simplicity for other examples).
 	// 
-	// Kramer's formula: each component of the solution is obtained as
+	// Cramer's formula: each component of the solution is obtained as
 	//  the ratio of two determinants:
 	//   - the determinant of the system where the ith column is replaced 
 	//     with the rhs
@@ -26902,6 +28254,7 @@ namespace VBW {
 	
 	if(v2t_[v] != END_OF_LIST) {
 	    index_t t = v2t_[v];
+	    index_t count = 0;
 	    do {
 		if(cur < 2) {
 		    t1t2[cur] = ushort(t);
@@ -26916,6 +28269,8 @@ namespace VBW {
 		++cur;
 		index_t lv = triangle_find_vertex(t,v);		   
 		t = triangle_adjacent(t, (lv + 1)%3);
+		++count;
+		geo_assert(count < 100000);
 	    } while(t != v2t_[v]);
 	}
 	
@@ -26960,6 +28315,8 @@ namespace VBW {
 	    ushort t1t2[2];
 	    index_t cur=0;
 	    index_t t = v2t_[v];
+
+	    index_t count = 0;
 	    do {
 		if(cur < 2) {
 		    t1t2[cur] = ushort(t);
@@ -26975,15 +28332,29 @@ namespace VBW {
 		++cur;
 		index_t lv = triangle_find_vertex(t,v);		   
 		t = triangle_adjacent(t, (lv + 1)%3);
+		++count;
+		geo_assert(count < 100000);
 	    } while(t != v2t_[v]);
 	}
 	return result;
     }
 
     vec3 ConvexCell::barycenter() const {
+	vec3 result;
+	double m;
+	compute_mg(m, result);
+	if(m != 0.0) {
+	    result.x /= m;
+	    result.y /= m;
+	    result.z /= m;
+	}
+	return result;
+    }
+    
+    void ConvexCell::compute_mg(double& m, vec3& result) const {
 	vbw_assert(!geometry_dirty_);
-	vec3 result = make_vec3(0.0, 0.0, 0.0);
-	double m = 0.0;
+	result = make_vec3(0.0, 0.0, 0.0);
+	m = 0.0;
 
 	ushort t_origin = END_OF_LIST;
 	for(index_t v=0; v<nb_v_; ++v) {
@@ -26997,6 +28368,7 @@ namespace VBW {
 	    ushort t1t2[2];
 	    index_t cur=0;
 	    index_t t = v2t_[v];
+	    index_t count = 0;
 	    do {
 		if(cur < 2) {
 		    t1t2[cur] = ushort(t);
@@ -27015,19 +28387,15 @@ namespace VBW {
 		++cur;
 		index_t lv = triangle_find_vertex(t,v);		   
 		t = triangle_adjacent(t, (lv + 1)%3);
+		++count;
+		geo_assert(count < 100000);
 	    } while(t != v2t_[v]);
 	}
-	
-	if(m != 0.0) {
-	    result.x /= m;
-	    result.y /= m;
-	    result.z /= m;
-	}
-	return result;
     }
     
     
 
+    
     double ConvexCell::squared_radius(vec3 center) const {
 	double result = 0.0;
         index_t t = first_valid_;
@@ -27047,6 +28415,24 @@ namespace VBW {
 	}
 	return result;
     }
+
+    double ConvexCell::squared_inner_radius(vec3 center) const {
+	double result = std::numeric_limits<double>::max();
+	for(index_t v=0; v<nb_v(); ++v) {
+	    vec4 P = vertex_plane(v);
+	    // Ignore vertex at infinity.
+	    if(P.x == 0.0 && P.y == 0.0 && P.z == 0.0) {
+		continue;
+	    }
+	    result = std::min(
+		result, squared_point_plane_distance(center, P)
+	    );
+	}
+	return result;
+    }
+
+    
+
     
 }
 
@@ -27126,44 +28512,43 @@ namespace {
 
     using namespace GEO;
 
-    index_t thread_safe_random_(index_t choices_in) {
-        signed_index_t choices = signed_index_t(choices_in);
+    GEO::index_t thread_safe_random_(GEO::index_t choices_in) {
+	GEO::signed_index_t choices = signed_index_t(choices_in);
         static thread_local long int randomseed = 1l ;
         if (choices >= 714025l) {
             long int newrandom = (randomseed * 1366l + 150889l) % 714025l;
             randomseed = (newrandom * 1366l + 150889l) % 714025l;
             newrandom = newrandom * (choices / 714025l) + randomseed;
             if (newrandom >= choices) {
-                return index_t(newrandom - choices);
+                return GEO::index_t(newrandom - choices);
             } else {
-                return index_t(newrandom);
+                return GEO::index_t(newrandom);
             }
         } else {
             randomseed = (randomseed * 1366l + 150889l) % 714025l;
-            return index_t(randomseed % choices);
+            return GEO::index_t(randomseed % choices);
         }
     }
 
-    index_t thread_safe_random_4_() {
+    GEO::index_t thread_safe_random_4_() {
         static thread_local long int randomseed = 1l ;
         randomseed = (randomseed * 1366l + 150889l) % 714025l;
-        return index_t(randomseed % 4);
+        return GEO::index_t(randomseed % 4);
     }
 
-    inline index_t pop_count(index_t x) {
-	static_assert(sizeof(index_t) == 4, "Only supported with 32 bit indices");
+    inline VBW::index_t pop_count(Numeric::uint32 x) {
 #if defined(GEO_COMPILER_GCC_FAMILY)
-	return index_t(__builtin_popcount(x));
+	return GEO::index_t(Numeric::uint32(__builtin_popcount(x)));
 #elif defined(GEO_COMPILER_MSVC)
-	return index_t(__popcnt(x));
+	return GEO::index_t(__popcnt(x));
 #else
 	int result = 0;
 	for(int b=0; b<32; ++b) {
 	    result += ((x & 1) != 0);
 	    x >>= 1;
 	}
-	return index_t(result);
-#endif	
+	return GEO::index_t(result);
+#endif
     }
 }
 
@@ -27218,7 +28603,9 @@ namespace GEO {
 	   
         }
 
-	void set_pool(index_t pool_begin, index_t pool_end, index_t max_used_t = 1) {
+	void set_pool(
+	    index_t pool_begin, index_t pool_end, index_t max_used_t = 1
+	) {
             // Initialize free list in memory pool
             first_free_ = pool_begin;
             for(index_t t=pool_begin; t<pool_end-1; ++t) {
@@ -27408,7 +28795,7 @@ namespace GEO {
 		finite_tet_vertex(t,0) < nb_vertices_non_periodic_ ||
 		finite_tet_vertex(t,1) < nb_vertices_non_periodic_ ||
 		finite_tet_vertex(t,2) < nb_vertices_non_periodic_ ||
-		finite_tet_vertex(t,3) < nb_vertices_non_periodic_ ) ;					 
+		finite_tet_vertex(t,3) < nb_vertices_non_periodic_ ) ;
         }
 	
         bool tet_is_free(index_t t) const {
@@ -27548,7 +28935,9 @@ namespace GEO {
 		signed_index_t v3 = cavity_.facet_vertex(f,2);
 		new_tet = new_tetrahedron(signed_index_t(v), v1, v2, v3);
 		set_tet_adjacent(new_tet, 0, t_neigh);
-		set_tet_adjacent(t_neigh, find_tet_adjacent(t_neigh,old_tet), new_tet);
+		set_tet_adjacent(
+		    t_neigh, find_tet_adjacent(t_neigh,old_tet), new_tet
+		);
 		cavity_.set_facet_tet(f, new_tet);
 	    }
 	
@@ -27905,7 +29294,8 @@ namespace GEO {
 	vec4 lifted_vertex(index_t v, const vec3& p) {
 	    return vec4(
 		p.x, p.y, p.z,
-		geo_sqr(p.x) + geo_sqr(p.y) + geo_sqr(p.z) - non_periodic_weight(periodic_vertex_real(v))
+		geo_sqr(p.x) + geo_sqr(p.y) + geo_sqr(p.z)
+		- non_periodic_weight(periodic_vertex_real(v))
 	    );
 	}
 	
@@ -27919,24 +29309,36 @@ namespace GEO {
 	    return PCK::orient_3d(V[0], V[1], V[2], V[3]);
 	}
 
-	Sign in_circle_3dlifted_SOS(index_t i, index_t j, index_t k, index_t l) const {
+	Sign in_circle_3dlifted_SOS(
+	    index_t i, index_t j, index_t k, index_t l
+	) const {
 
 	    // In non-periodic mode, directly access vertices.
 	    if(!periodic_) {
 		const double* pi = non_periodic_vertex_ptr(i);
 		const double* pj = non_periodic_vertex_ptr(j);
 		const double* pk = non_periodic_vertex_ptr(k);
-		const double* pl = non_periodic_vertex_ptr(l);		
-		double hi = geo_sqr(pi[0]) + geo_sqr(pi[1]) + geo_sqr(pi[2]) - non_periodic_weight(i);
-		double hj = geo_sqr(pj[0]) + geo_sqr(pj[1]) + geo_sqr(pj[2]) - non_periodic_weight(j);
-		double hk = geo_sqr(pk[0]) + geo_sqr(pk[1]) + geo_sqr(pk[2]) - non_periodic_weight(k);
-		double hl = geo_sqr(pl[0]) + geo_sqr(pl[1]) + geo_sqr(pl[2]) - non_periodic_weight(l);
+		const double* pl = non_periodic_vertex_ptr(l);
+		
+		double hi = geo_sqr(pi[0]) + geo_sqr(pi[1]) + geo_sqr(pi[2])
+		    - non_periodic_weight(i);
+		
+		double hj = geo_sqr(pj[0]) + geo_sqr(pj[1]) + geo_sqr(pj[2])
+		    - non_periodic_weight(j);
+		
+		double hk = geo_sqr(pk[0]) + geo_sqr(pk[1]) + geo_sqr(pk[2])
+		    - non_periodic_weight(k);
+		
+		double hl = geo_sqr(pl[0]) + geo_sqr(pl[1]) + geo_sqr(pl[2])
+		    - non_periodic_weight(l);
+		
 		return PCK::in_circle_3dlifted_SOS(
 		    pi, pj, pk, pl,
 		    hi, hj, hk, hl
 		);
 	    }
-	    
+
+	    // Note: in periodic mode, SOS mode is lexicographic.
 	    double V[4][4];
 	    get_lifted_vertex(i,V[0]);
 	    get_lifted_vertex(j,V[1]);
@@ -27948,7 +29350,9 @@ namespace GEO {
 	    );
 	}
 
-	Sign orient_3dlifted_SOS(index_t i, index_t j, index_t k, index_t l, index_t m) const {
+	Sign orient_3dlifted_SOS(
+	    index_t i, index_t j, index_t k, index_t l, index_t m
+	) const {
 
 	    // In non-periodic mode, directly access vertices.
 	    if(!periodic_) {
@@ -27957,11 +29361,22 @@ namespace GEO {
 		const double* pk = non_periodic_vertex_ptr(k);
 		const double* pl = non_periodic_vertex_ptr(l);		
 		const double* pm = non_periodic_vertex_ptr(m);
-		double hi = geo_sqr(pi[0]) + geo_sqr(pi[1]) + geo_sqr(pi[2]) - non_periodic_weight(i);
-		double hj = geo_sqr(pj[0]) + geo_sqr(pj[1]) + geo_sqr(pj[2]) - non_periodic_weight(j);
-		double hk = geo_sqr(pk[0]) + geo_sqr(pk[1]) + geo_sqr(pk[2]) - non_periodic_weight(k);
-		double hl = geo_sqr(pl[0]) + geo_sqr(pl[1]) + geo_sqr(pl[2]) - non_periodic_weight(l);
-		double hm = geo_sqr(pm[0]) + geo_sqr(pm[1]) + geo_sqr(pm[2]) - non_periodic_weight(m);		
+		
+		double hi = geo_sqr(pi[0]) + geo_sqr(pi[1]) + geo_sqr(pi[2])
+		    - non_periodic_weight(i);
+		
+		double hj = geo_sqr(pj[0]) + geo_sqr(pj[1]) + geo_sqr(pj[2])
+		    - non_periodic_weight(j);
+		
+		double hk = geo_sqr(pk[0]) + geo_sqr(pk[1]) + geo_sqr(pk[2])
+		    - non_periodic_weight(k);
+		
+		double hl = geo_sqr(pl[0]) + geo_sqr(pl[1]) + geo_sqr(pl[2])
+		    - non_periodic_weight(l);
+		
+		double hm = geo_sqr(pm[0]) + geo_sqr(pm[1]) + geo_sqr(pm[2])
+		    - non_periodic_weight(m);
+
 		return PCK::orient_3dlifted_SOS(
 		    pi, pj, pk, pl, pm,
 		    hi, hj, hk, hl, hm
@@ -27969,12 +29384,58 @@ namespace GEO {
 	    }
 
 	    // Periodic mode.
-	    double V[5][4];	    
-	    get_lifted_vertex(i,V[0]);
-	    get_lifted_vertex(j,V[1]);
-	    get_lifted_vertex(k,V[2]);
-	    get_lifted_vertex(l,V[3]);
-	    get_lifted_vertex(m,V[4]);
+	    // Note: in periodic mode, SOS mode is lexicographic.	    
+	    double V[5][4];
+
+	    /*
+	      The code below is an inlined version of:
+	      (gains a little bit)
+	      get_lifted_vertex(i,V[0]);
+	      get_lifted_vertex(j,V[1]);
+	      get_lifted_vertex(k,V[2]);
+	      get_lifted_vertex(l,V[3]);
+	      get_lifted_vertex(m,V[4]);
+	    */
+	    
+	    index_t ii = periodic_vertex_instance(i);
+	    index_t ij = periodic_vertex_instance(j);
+	    index_t ik = periodic_vertex_instance(k);
+	    index_t il = periodic_vertex_instance(l);	    
+	    index_t im = periodic_vertex_instance(m);
+	    
+	    i = periodic_vertex_real(i);
+	    j = periodic_vertex_real(j);
+	    k = periodic_vertex_real(k);
+	    l = periodic_vertex_real(l);
+	    m = periodic_vertex_real(m);
+	    
+	    V[0][0] = vertices_[3*i  ] + double(translation[ii][0]) * period_;
+	    V[0][1] = vertices_[3*i+1] + double(translation[ii][1]) * period_;
+	    V[0][2] = vertices_[3*i+2] + double(translation[ii][2]) * period_;
+	    V[1][0] = vertices_[3*j  ] + double(translation[ij][0]) * period_;
+	    V[1][1] = vertices_[3*j+1] + double(translation[ij][1]) * period_;
+	    V[1][2] = vertices_[3*j+2] + double(translation[ij][2]) * period_;
+	    V[2][0] = vertices_[3*k  ] + double(translation[ik][0]) * period_;
+	    V[2][1] = vertices_[3*k+1] + double(translation[ik][1]) * period_;
+	    V[2][2] = vertices_[3*k+2] + double(translation[ik][2]) * period_;
+	    V[3][0] = vertices_[3*l  ] + double(translation[il][0]) * period_;
+	    V[3][1] = vertices_[3*l+1] + double(translation[il][1]) * period_;
+	    V[3][2] = vertices_[3*l+2] + double(translation[il][2]) * period_;
+	    V[4][0] = vertices_[3*m  ] + double(translation[im][0]) * period_;
+	    V[4][1] = vertices_[3*m+1] + double(translation[im][1]) * period_;
+	    V[4][2] = vertices_[3*m+2] + double(translation[im][2]) * period_;
+
+	    // Beware the parentheses, they are necessary to ensure that computations
+	    //               |                               give always the same result.
+	    //               |________________________________________________________________________
+	    //                                  |                                                     |
+	    //                                  v                                                     v 
+	    V[0][3] = -non_periodic_weight(i) + (geo_sqr(V[0][0]) + geo_sqr(V[0][1]) + geo_sqr(V[0][2]));
+	    V[1][3] = -non_periodic_weight(j) + (geo_sqr(V[1][0]) + geo_sqr(V[1][1]) + geo_sqr(V[1][2]));
+	    V[2][3] = -non_periodic_weight(k) + (geo_sqr(V[2][0]) + geo_sqr(V[2][1]) + geo_sqr(V[2][2]));
+	    V[3][3] = -non_periodic_weight(l) + (geo_sqr(V[3][0]) + geo_sqr(V[3][1]) + geo_sqr(V[3][2]));	    
+	    V[4][3] = -non_periodic_weight(m) + (geo_sqr(V[4][0]) + geo_sqr(V[4][1]) + geo_sqr(V[4][2]));	    
+
 	    return PCK::orient_3dlifted_SOS(
 		V[0],    V[1],    V[2],    V[3],    V[4],
 		V[0][3], V[1][3], V[2][3], V[3][3], V[4][3]
@@ -28587,7 +30048,9 @@ namespace GEO {
 	     // v needs to be a real vertex.
 	     geo_debug_assert(periodic_vertex_instance(v) == 0);
 
-	     geo_debug_assert(T[0] != -1 && T[1] != -1 && T[2] != -1 && T[3] != -1);
+	     geo_debug_assert(
+		 T[0] != -1 && T[1] != -1 && T[2] != -1 && T[3] != -1
+	     );
 	     
             // The following expression is 10% faster than using
             // if() statements. This uses the C++ norm, that 
@@ -28755,9 +30218,10 @@ namespace GEO {
 
 	    index_t tbord = index_t(tet_adjacent(t1,t1fbord));
 
-	    // We generate the tetrahedron with the three vertices of the tet outside
-	    // the conflict zone and the newly created vertex in the local frame of the
-	    // tet outside the conflict zone.
+	    // We generate the tetrahedron with the three vertices
+	    // of the tet outside the conflict zone and the newly
+	    // created vertex in the local frame of the tet outside
+	    // the conflict zone.
 	    
 	    // Replace in new_t the vertex opposite to t1fbord with v		
 	    set_tet_vertex(new_t, t1fbord, v);		
@@ -29165,7 +30629,8 @@ namespace GEO {
 	weights_(nullptr),
 	update_periodic_v_to_cell_(false),
 	has_empty_cells_(false),
-	nb_reallocations_(0)
+	nb_reallocations_(0),
+	convex_cell_exact_predicates_(true)
     {
 	geo_cite_with_info(
 	    "DBLP:journals/cj/Bowyer81",
@@ -29214,6 +30679,8 @@ namespace GEO {
     void PeriodicDelaunay3d::set_vertices(
         index_t nb_vertices, const double* vertices
     ) {
+	has_empty_cells_ = false;
+	
 	#ifndef GARGANTUA
 	{
 	    Numeric::uint64 expected_max_index =
@@ -29262,6 +30729,7 @@ namespace GEO {
     }
 
     void PeriodicDelaunay3d::set_weights(const double* weights) {
+	has_empty_cells_ = false;
 	weights_ = weights;	
     }
     
@@ -29459,10 +30927,6 @@ namespace GEO {
 
 	index_t nb_tets = compress();
 
-	if(benchmark_mode_) {
-	    Logger::out("Delaunay") << "calling set_arrays()" << std::endl;
-	}
-
         set_arrays(
             nb_tets,
             cell_to_v_store_.data(),
@@ -29482,10 +30946,6 @@ namespace GEO {
 		geo_assert(t == index_t(-1) || t < nb_tets);
 	    }
 #endif	    
-	}
-	
-	if(benchmark_mode_) {
-	    Logger::out("Delaunay") << "called set_arrays()" << std::endl;
 	}
     }
 
@@ -29646,28 +31106,6 @@ namespace GEO {
         levels_ = levels;
     }
 
-    vec3 PeriodicDelaunay3d::vertex(index_t v) const {
-	if(!periodic_) {
-	    geo_debug_assert(v < nb_vertices());	    
-	    return vec3(vertices_ + 3*v);
-	}
-	index_t instance = v/nb_vertices_non_periodic_;
-	v = v%nb_vertices_non_periodic_;
-	vec3 result(vertices_ + 3*v);
-	result.x += double(translation[instance][0]) * period_;
-	result.y += double(translation[instance][1]) * period_;
-	result.z += double(translation[instance][2]) * period_;
-	return result;
-    }
-
-    double PeriodicDelaunay3d::weight(index_t v) const {
-	if(weights_ == nullptr) {
-	    return 0.0;
-	}
-	return periodic_ ? weights_[periodic_vertex_real(v)] : weights_[v] ;
-    }
-
-
     void PeriodicDelaunay3d::update_v_to_cell() {
         geo_assert(!is_locked_);  // Not thread-safe
         is_locked_ = true;
@@ -29714,10 +31152,13 @@ namespace GEO {
 			index_t v_real = periodic_vertex_real(v);
 			index_t v_instance = periodic_vertex_instance(v);
 
-			geo_debug_assert((vertex_instances_[v_real] & (1u << v_instance))!=0);
+			geo_debug_assert(
+			    (vertex_instances_[v_real] &
+			     (1u << v_instance))!=0
+			);
 			
 			index_t slot = pop_count(
-			       vertex_instances_[v_real] & ((1u << v_instance)-1)
+			    vertex_instances_[v_real] & ((1u << v_instance)-1)
 			) - 1;
 
 			periodic_v_to_cell_data_[
@@ -29798,24 +31239,16 @@ namespace GEO {
         is_locked_ = false;
     }
 
-    static inline bool contains(const vector<index_t>& neighbors, index_t t) {
-	for(index_t i=0; i<neighbors.size(); ++i) {
-	    if(neighbors[i] == t) {
-		return true;
-	    }
-	}
-	return false;
-    }
-
     void PeriodicDelaunay3d::get_incident_tets(
-	index_t v, vector<index_t>& neighbors
+	index_t v, IncidentTetrahedra& W
     ) const {
 
 	geo_debug_assert(
 	    periodic_ || v < nb_vertices_non_periodic_
 	);
-	
-	neighbors.resize(0);
+
+	W.clear_incident_tets();
+
 	index_t t = index_t(-1);
 	if(v < nb_vertices_non_periodic_) {
 	    t = index_t(v_to_cell_[v]);
@@ -29823,7 +31256,9 @@ namespace GEO {
 	    index_t v_real = periodic_vertex_real(v);
 	    index_t v_instance = periodic_vertex_instance(v);
 	    
-	    geo_debug_assert((vertex_instances_[v_real] & (1u << v_instance))!=0);
+	    geo_debug_assert(
+		(vertex_instances_[v_real] & (1u << v_instance))!=0
+	    );
 
 	    index_t slot = pop_count(
 		vertex_instances_[v_real] & ((1u << v_instance)-1)
@@ -29841,28 +31276,29 @@ namespace GEO {
 
 	// TODO: different version if CICL is stored ?
 	{
-	    std::stack<index_t> S;
-	    neighbors.push_back(t);
-	    S.push(t);
-	    while(!S.empty()) {
-		t = S.top();
-		S.pop();
+	    W.add_incident_tet(t);
+	    W.S.push(t);
+	    while(!W.S.empty()) {
+		t = W.S.top();
+		W.S.pop();
 		const signed_index_t* T = &(cell_to_v_store_[4 * t]);
-		index_t lv = PeriodicDelaunay3dThread::find_4(T,signed_index_t(v));
+		index_t lv = PeriodicDelaunay3dThread::find_4(
+		    T,signed_index_t(v)
+		);
 		index_t neigh = index_t(cell_to_cell_store_[4*t + (lv + 1)%4]);
-		if(neigh != index_t(-1) && !contains(neighbors, neigh)) {
-		    neighbors.push_back(neigh);
-		    S.push(neigh);
+		if(neigh != index_t(-1) && !W.has_incident_tet(neigh)) {
+		    W.add_incident_tet(neigh);
+		    W.S.push(neigh);
 		}
 		neigh = index_t(cell_to_cell_store_[4*t + (lv + 2)%4]);
-		if(neigh != index_t(-1) && !contains(neighbors, neigh)) {
-		    neighbors.push_back(neigh);
-		    S.push(neigh);
+		if(neigh != index_t(-1) && !W.has_incident_tet(neigh)) {
+		    W.add_incident_tet(neigh);
+		    W.S.push(neigh);
 		}
 		neigh = index_t(cell_to_cell_store_[4*t + (lv + 3)%4]);
-		if(neigh != index_t(-1) && !contains(neighbors, neigh)) {
-		    neighbors.push_back(neigh);
-		    S.push(neigh);
+		if(neigh != index_t(-1) && !W.has_incident_tet(neigh)) {
+		    W.add_incident_tet(neigh);
+		    W.S.push(neigh);
 		}
 	    }
 	}
@@ -29878,14 +31314,15 @@ namespace GEO {
     void PeriodicDelaunay3d::copy_Laguerre_cell_from_Delaunay(
 	GEO::index_t i,
 	ConvexCell& C,
-	GEO::vector<GEO::index_t>& neighbors
+	IncidentTetrahedra& W
     ) const {
-	
+	// Create global vertex indices if not present.
+	C.create_vglobal();
 	C.clear();
-	neighbors.resize(0);
 	
 	// Create the vertex at infinity.
-	C.create_vertex(vec4(0.0, 0.0, 0.0, 0.0));
+	C.create_vertex(vec4(0.0, 0.0, 0.0, 0.0), index_t(-1));
+	
 	GEO::vec3 Pi = vertex(i);
 	double wi = weight(i);
 	double Pi_len2 = Pi[0]*Pi[0] + Pi[1]*Pi[1] + Pi[2]*Pi[2];
@@ -29901,16 +31338,15 @@ namespace GEO {
 	    }
 	    do {
 		GEO::index_t f = copy_Laguerre_cell_facet_from_Delaunay(
-		    i, Pi, wi, Pi_len2, t, C, neighbors
+		    i, Pi, wi, Pi_len2, t, C, W
 		);
 		t = GEO::index_t(next_around_vertex(t,f));
 	    } while(t != GEO::index_t(vertex_cell(i)));
 	} else {
-	    GEO::vector<GEO::index_t> incident_tets;
-	    get_incident_tets(i,incident_tets);
-	    for(GEO::index_t tt=0; tt<incident_tets.size(); ++tt) {
+	    get_incident_tets(i,W);
+	    for(index_t t: W) {
 		copy_Laguerre_cell_facet_from_Delaunay(
-		    i, Pi, wi, Pi_len2, incident_tets[tt], C, neighbors
+		    i, Pi, wi, Pi_len2, t, C, W
 	        );
 	    }
 	}
@@ -29924,8 +31360,10 @@ namespace GEO {
 	double Pi_len2,
 	GEO::index_t t,
 	ConvexCell& C,
-	GEO::vector<GEO::index_t>& neighbors
+	IncidentTetrahedra& W
     ) const {
+	geo_argused(W);
+	
 	// Local tet vertex indices from facet
 	// and vertex in facet indices.
 	static GEO::index_t fv[4][3] = {
@@ -29936,37 +31374,28 @@ namespace GEO {
 	};
 	
 	GEO::index_t f = index(t,GEO::signed_index_t(i));
-	GEO::index_t jkl[3];   // Global index (in Delaunay) of triangle vertices
-	VBW::index_t l_jkl[3]; // Local index (in C) of triangle vertices
+	GEO::index_t jkl[3];  // Global index (in Delaunay) of triangle vertices
+	VBW::index_t l_jkl[3];// Local index (in C) of triangle vertices
 
-	const int VERTEX_AT_INFINITY = -1;
-	const int VERTEX_NOT_FOUND = -2;
 	
 	// Find or create the three vertices of the facet.
 	for(int lfv=0; lfv<3; ++lfv) {
+
 	    jkl[lfv] = GEO::index_t(cell_vertex(t, fv[f][lfv]));
-
-	    // Case 1: infinite vertex
-	    l_jkl[lfv] =
-		(jkl[lfv] == GEO::index_t(VERTEX_AT_INFINITY)) ?
-		VBW::index_t(VERTEX_AT_INFINITY) :
-		VBW::index_t(VERTEX_NOT_FOUND);
-
-	    // Case 2: vertex already created in C
-	    //  (retreive it)
-	    if(l_jkl[lfv] == VBW::index_t(VERTEX_NOT_FOUND)) {
-		for(GEO::index_t u=0; u<neighbors.size(); ++u) {
-		    if(neighbors[u] == jkl[lfv]) {
-			l_jkl[lfv] = VBW::index_t(u);
-			break;
-		    }
+	    l_jkl[lfv] = VBW::index_t(-1);
+	    
+	    // Vertex already created in C (note:
+	    // also works for vertex at infinity)
+	    for(VBW::index_t u=0; u<C.nb_v(); ++u) {
+		if(C.v_global_index(u) == jkl[lfv]) {
+		    l_jkl[lfv] = VBW::index_t(u);
+		    break;
 		}
 	    }
 
-	    // Case 3: vertex not found, create vertex in C
-	    if(l_jkl[lfv] == VBW::index_t(VERTEX_NOT_FOUND)) {
-		l_jkl[lfv] = VBW::index_t(neighbors.size());
-		neighbors.push_back(jkl[lfv]);
+	    // vertex not found, create vertex in C
+	    if(l_jkl[lfv] == VBW::index_t(-1)) {
+		l_jkl[lfv] = C.nb_v();
 		GEO::vec3 Pj = vertex(jkl[lfv]);
 		double wj = weight(jkl[lfv]);
 		double a = 2.0 * (Pi[0] - Pj[0]);
@@ -29975,14 +31404,13 @@ namespace GEO {
 		double d = ( Pj[0]*Pj[0] +
 			     Pj[1]*Pj[1] +
 			     Pj[2]*Pj[2] ) - Pi_len2 + wi - wj;
-		C.create_vertex(vec4(a,b,c,d));
+		C.create_vertex(vec4(a,b,c,d), jkl[lfv]);
 	    }
 	}
 
-	// Note1: l_jkl[.]+1 because vertex 0 in C is the vertex at infinity
-	// Note2: need to invert orientation (TODO: check why, I probably
+	// Note: need to invert orientation (TODO: check why, I probably
 	//  used opposite conventions in Delaunay and VBW, stupid me !!)
-	C.create_triangle(l_jkl[2]+1, l_jkl[1]+1, l_jkl[0]+1);
+	C.create_triangle(l_jkl[2], l_jkl[1], l_jkl[0]);
 
 	return f;
     }
@@ -30056,10 +31484,10 @@ namespace GEO {
     index_t PeriodicDelaunay3d::get_periodic_vertex_instances_to_create(
 	index_t v,
 	ConvexCell& C,
-	vector<index_t>& neighbors,
 	bool use_instance[27],
 	bool& cell_is_on_boundary,
-	bool& cell_is_outside_cube
+	bool& cell_is_outside_cube,
+	IncidentTetrahedra& W
     ) {	
 	// Integer translations associated with the six plane equations
 	// Note: indexing matches code below (order of the clipping
@@ -30073,12 +31501,12 @@ namespace GEO {
 	    { 0, 0,-1}
 	};
 
-	copy_Laguerre_cell_from_Delaunay(v, C, neighbors);
+	copy_Laguerre_cell_from_Delaunay(v, C, W);
 	geo_assert(!C.empty());
 	    
 	// Determine the periodic instances of the vertex to be created
 	// ************************************************************
-	//   - Find all the inresected boundary faces
+	//   - Find all the intersected boundary faces
 	//   - The instances to create correspond to all the possible
 	//     sums of translation vectors associated with the
 	//     intersected boundary faces
@@ -30102,7 +31530,7 @@ namespace GEO {
 	if(C.empty()) {
 	    // Special case: cell is completely outside the cube.	    
 	    cell_is_outside_cube = true;
-	    copy_Laguerre_cell_from_Delaunay(v, C, neighbors);
+	    copy_Laguerre_cell_from_Delaunay(v, C, W);
 	    // Clip the cell with the 3x3x3 (rubic's) cube that
 	    // surrounds the cube. Not only this avoids generating
 	    // some unnecessary virtual vertices, but also, without
@@ -30167,7 +31595,7 @@ namespace GEO {
 		int VXLAT[3][3];
 		bool vertex_on_boundary = false;
 		for(index_t lv=0; lv<3; ++lv) {
-		    index_t pp = C.triangle_v_local_index(t,lv);
+		    index_t pp = C.triangle_v_local_index(t,VBW::index_t(lv));
 		    if(pp < cube_offset) {
 			// Not a boundary face -> translation is zero.
 			VXLAT[lv][0] = 0;
@@ -30187,12 +31615,19 @@ namespace GEO {
 		// boundary facets on which the vertex resides.
 		if(vertex_on_boundary) {
 		    cell_is_on_boundary = true;
-		    for(int U=0; U<2; ++U) {
-			for(int V=0; V<2; ++V) {
-			    for(int W=0; W<2; ++W) {
-				int Tx = U*VXLAT[0][0] + V*VXLAT[1][0] + W*VXLAT[2][0];
-				int Ty = U*VXLAT[0][1] + V*VXLAT[1][1] + W*VXLAT[2][1];
-				int Tz = U*VXLAT[0][2] + V*VXLAT[1][2] + W*VXLAT[2][2];
+		    for(int dU=0; dU<2; ++dU) {
+			for(int dV=0; dV<2; ++dV) {
+			    for(int dW=0; dW<2; ++dW) {
+				
+				int Tx = dU*VXLAT[0][0] + dV*VXLAT[1][0] +
+				    dW*VXLAT[2][0];
+				
+				int Ty = dU*VXLAT[0][1] + dV*VXLAT[1][1] +
+				    dW*VXLAT[2][1];
+				
+				int Tz = dU*VXLAT[0][2] + dV*VXLAT[1][2] +
+				    dW*VXLAT[2][2];
+				
 				use_instance[T_to_instance(Tx,Ty,Tz)] = true;
 			    }
 			}
@@ -30252,7 +31687,8 @@ namespace GEO {
 		index_t from, index_t to
 	    ) {
 		ConvexCell C;
-		vector<index_t> neighbors;
+		C.use_exact_predicates(convex_cell_exact_predicates_);
+		IncidentTetrahedra W;
 
 	      for(index_t v=from; v<to; ++v) {
 		  bool use_instance[27];
@@ -30260,12 +31696,15 @@ namespace GEO {
 		  bool cell_is_outside_cube = false;
 		  
 		  // Determines the periodic vertices to create, that is,
-		  // whenever the cell of the current vertex has an intersection
-		  // with one of the 27 cubes, an instance needs to be created there.
-		  index_t nb_instances = get_periodic_vertex_instances_to_create(
-		      v, C, neighbors, use_instance,
-		      cell_is_on_boundary, cell_is_outside_cube
-		  );
+		  // whenever the cell of the current vertex has an
+		  // intersection with one of the 27 cubes, an instance
+		  // needs to be created there.
+		  index_t nb_instances =
+		      get_periodic_vertex_instances_to_create(
+			  v, C, use_instance,
+			  cell_is_on_boundary, cell_is_outside_cube,
+			  W
+		      );
 
 
 		  Process::acquire_spinlock(lock);
@@ -30285,7 +31724,9 @@ namespace GEO {
 		      for(index_t instance=1; instance<27; ++instance) {
 			  if(use_instance[instance]) {
 			      vertex_instances_[v] |= (1u << instance);
-			      reorder_.push_back(make_periodic_vertex(v,instance));
+			      reorder_.push_back(
+				  make_periodic_vertex(v,instance)
+			      );
 			  }
 		      }
 		  }
@@ -30308,10 +31749,6 @@ namespace GEO {
 
 	insert_vertices(nb_vertices_non_periodic_, reorder_.size());
 
-	if(benchmark_mode_) {
-	    Logger::out("Periodic") << "Updating v_to_cell" << std::endl;
-	}
-	
 	// This flag to tell update_v_to_cell() to
 	// also update the table for periodic (virtual)
 	// vertices (the periodic_v_to_cell_ table).
@@ -30330,11 +31767,12 @@ namespace GEO {
 	// -----------------------------------------------------------		
 
 	{
-	    vector<index_t> incident_tets;
+	    IncidentTetrahedra W;
+
 	    // vertex_instances_ is used to implement v2t_ for virtual
 	    // vertices, we cannot modify it here, so we create a copy
 	    // that we will modify.
-	    vector<index_t> vertex_instances = vertex_instances_;
+	    vector<Numeric::uint32> vertex_instances = vertex_instances_;
 	    for(index_t v=0; v<nb_vertices_non_periodic_; ++v) {
 		
 		for(index_t instance=1; instance<27; ++instance) {
@@ -30344,14 +31782,14 @@ namespace GEO {
 		    
 		    if((vertex_instances_[v] & (1u << instance)) != 0) {
 			index_t vp = make_periodic_vertex(v, instance);
-			get_incident_tets(vp, incident_tets);
-			FOR(i, incident_tets.size()) {
-			    index_t t = incident_tets[i];
+			get_incident_tets(vp, W);
+			for(index_t t: W) {
 			    FOR(lv, 4) {
 				index_t wp = index_t(cell_vertex(t,lv));
 				if(wp != vp && wp != index_t(-1)) {
 				    index_t w = periodic_vertex_real(wp);
-				    index_t w_instance = periodic_vertex_instance(wp);
+				    index_t w_instance =
+					periodic_vertex_instance(wp);
 				    int wTx = translation[w_instance][0];
 				    int wTy = translation[w_instance][1];
 				    int wTz = translation[w_instance][2];
@@ -30363,15 +31801,23 @@ namespace GEO {
 					Ty < -1 || Ty > 1 ||
 					Tz < -1 || Tz > 1
 				    ) {
-					std::cerr << "FATAL ERROR: large displacement !!"
-						  << std::endl;
+					std::cerr
+					    << "FATAL ERROR: "
+					    << "large displacement !!"
+					    << std::endl;
 					geo_assert_not_reached;
 				    } else {
-					index_t w_new_instance = T_to_instance(Tx, Ty, Tz);
-					if((vertex_instances[w] & (1u << w_new_instance)) == 0) {
-					    vertex_instances[w] |= (1u << w_new_instance);
+					index_t w_new_instance =
+					    T_to_instance(Tx, Ty, Tz);
+					if((vertex_instances[w] &
+					    (1u << w_new_instance)) == 0
+					) {
+					    vertex_instances[w] |=
+						(1u << w_new_instance);
 					    reorder_.push_back(
-						make_periodic_vertex(w, w_new_instance)
+						make_periodic_vertex(
+						    w, w_new_instance
+						)
 					    );
 					}
 				    }
@@ -30380,7 +31826,7 @@ namespace GEO {
 			}
 		    }
 		}
-	    }
+	    } // No, seriously ... 8 closing braces ...
 	    std::swap(vertex_instances_, vertex_instances);
 	    insert_vertices(nb_vertices_phase_I, reorder_.size());
 	}
@@ -30388,13 +31834,14 @@ namespace GEO {
 
     void PeriodicDelaunay3d::check_volume() {
 	ConvexCell C;
-	vector<index_t> neighbors;
+	C.use_exact_predicates(convex_cell_exact_predicates_);	
 	
 	Logger::out("Periodic") << "Checking total volume..." << std::endl;
 	double sumV = 0;
+	IncidentTetrahedra W;
 	
 	FOR(v, nb_vertices_non_periodic_) {
-	    copy_Laguerre_cell_from_Delaunay(v, C, neighbors);
+	    copy_Laguerre_cell_from_Delaunay(v, C, W);
 #ifdef GEO_DEBUG	    
 	    for(
 		VBW::ushort t = C.first_triangle();
@@ -30402,7 +31849,9 @@ namespace GEO {
 	    ) {
 		for(index_t lv=0; lv<3; ++lv) {
 		    // Make sure there is no vertex at infinity
-		    geo_debug_assert(C.triangle_v_local_index(t,lv) != 0);
+		    geo_debug_assert(
+			C.triangle_v_local_index(t,VBW::index_t(lv)) != 0
+		    );
 		}
 	    }
 #endif	    
@@ -30438,9 +31887,10 @@ namespace GEO {
 	index_t v_off = 1;
 	
 	ConvexCell C;
-	vector<index_t> neighbors;
+	C.use_exact_predicates(convex_cell_exact_predicates_);		
+	IncidentTetrahedra W;
 	for(index_t vv=0; vv<nb_vertices_non_periodic_; ++vv) {
-	    copy_Laguerre_cell_from_Delaunay(vv, C, neighbors);
+	    copy_Laguerre_cell_from_Delaunay(vv, C, W);
 	    if(clipped) {
 		C.clip_by_plane(vec4( 1.0, 0.0, 0.0,  0.0));
 		C.clip_by_plane(vec4(-1.0, 0.0, 0.0,  period_));
@@ -30453,6 +31903,821 @@ namespace GEO {
 	}
 	++index;
     }
+}
+
+
+/******* extracted from ../points/nn_search.cpp *******/
+
+
+
+
+namespace GEO {
+
+    NearestNeighborSearch::NearestNeighborSearch(
+        coord_index_t dimension
+    ) :
+        dimension_(dimension),
+        nb_points_(0),
+        stride_(0),
+        points_(nullptr),
+        exact_(true) {
+    }
+
+    void NearestNeighborSearch::get_nearest_neighbors(
+	index_t nb_neighbors,
+	const double* query_point,
+	index_t* neighbors,
+	double* neighbors_sq_dist,
+	KeepInitialValues
+    ) const {
+	get_nearest_neighbors(
+	    nb_neighbors,
+	    query_point,
+	    neighbors,
+	    neighbors_sq_dist
+	);
+    }
+    
+    void NearestNeighborSearch::get_nearest_neighbors(
+        index_t nb_neighbors,
+        index_t query_point,
+        index_t* neighbors,
+        double* neighbors_sq_dist
+    ) const {
+        get_nearest_neighbors(
+            nb_neighbors, 
+            point_ptr(query_point), 
+            neighbors, 
+            neighbors_sq_dist
+        );
+    }
+
+    void NearestNeighborSearch::set_points(
+        index_t nb_points, const double* points
+    ) {
+        nb_points_ = nb_points;
+        points_ = points;
+        stride_ = dimension_;
+    }
+
+    bool NearestNeighborSearch::stride_supported() const {
+        return false;
+    }
+
+    void NearestNeighborSearch::set_points(
+        index_t nb_points, const double* points, index_t stride
+    ) {
+        if(stride == index_t(dimension())) {
+            set_points(nb_points, points);
+            return;
+        }
+        geo_assert(stride_supported());
+        nb_points_ = nb_points;
+        points_ = points;
+        stride_ = stride;
+    }
+
+    void NearestNeighborSearch::set_exact(bool x) {
+        exact_ = x;
+    }
+
+    NearestNeighborSearch::~NearestNeighborSearch() {
+    }
+
+    NearestNeighborSearch* NearestNeighborSearch::create(
+        coord_index_t dimension, const std::string& name_in
+    ) {
+        geo_register_NearestNeighborSearch_creator(
+            BalancedKdTree, "BNN"
+        );
+
+        geo_register_NearestNeighborSearch_creator(
+            AdaptiveKdTree, "CNN"
+        );
+	
+        std::string name = name_in;
+        if(name == "default") {
+            name = CmdLine::get_arg("algo:nn_search");
+        }
+
+        NearestNeighborSearch* nns =
+            NearestNeighborSearchFactory::create_object(name, dimension);
+        if(nns != nullptr) {
+            return nns;
+        }
+
+        Logger::warn("NNSearch")
+            << "Could not create NNSearch algorithm: " << name
+            << std::endl
+            << "Falling back to BNN"
+            << std::endl;
+
+        return new BalancedKdTree(dimension);
+    }
+}
+
+
+/******* extracted from ../points/kd_tree.cpp *******/
+
+
+namespace {
+
+    using namespace GEO;
+    using GEO::index_t;
+
+    class ComparePointCoord {
+    public:
+        ComparePointCoord(
+            index_t nb_points,
+            const double* points,
+            index_t stride,
+            coord_index_t splitting_coord
+        ) :
+            nb_points_(nb_points),
+            points_(points),
+            stride_(stride),
+            splitting_coord_(splitting_coord) {
+	    geo_argused(nb_points_);
+        }
+
+        bool operator() (index_t i, index_t j) const {
+            geo_debug_assert(i < nb_points_);
+            geo_debug_assert(j < nb_points_);
+            return
+                (points_ + i * stride_)[splitting_coord_] <
+                (points_ + j * stride_)[splitting_coord_]
+            ;
+        }
+
+    private:
+        index_t nb_points_;
+        const double* points_;
+        index_t stride_;
+        coord_index_t splitting_coord_;
+    };
+}
+
+
+
+namespace GEO {
+
+    KdTree::KdTree(coord_index_t dim) :
+        NearestNeighborSearch(dim),
+        bbox_min_(dim),
+        bbox_max_(dim),
+        root_(index_t(-1)) {
+    }
+
+    KdTree::~KdTree() {
+    }
+
+    bool KdTree::stride_supported() const {
+        return true;
+    }
+
+    void KdTree::set_points(
+        index_t nb_points, const double* points, index_t stride
+    ) {
+        nb_points_ = nb_points;
+        points_ = points;
+        stride_ = stride;
+
+        point_index_.resize(nb_points);
+        for(index_t i = 0; i < nb_points; i++) {
+            point_index_[i] = i;
+        }
+	
+        // Compute the bounding box.
+        for(coord_index_t c = 0; c < dimension(); ++c) {
+            bbox_min_[c] =  Numeric::max_float64();
+            bbox_max_[c] = -Numeric::max_float64();
+        }
+        for(index_t i = 0; i < nb_points; ++i) {
+            const double* p = point_ptr(i);
+            for(coord_index_t c = 0; c < dimension(); ++c) {
+                bbox_min_[c] = std::min(bbox_min_[c], p[c]);
+                bbox_max_[c] = std::max(bbox_max_[c], p[c]);
+            }
+        }
+	
+	root_ = build_tree();
+    }
+
+    void KdTree::set_points(
+        index_t nb_points, const double* points
+    ) {
+        set_points(nb_points, points, dimension());
+    }
+
+
+    void KdTree::get_nearest_neighbors(
+        index_t nb_neighbors,
+        const double* query_point,
+        index_t* neighbors,
+        double* neighbors_sq_dist
+    ) const {
+
+        geo_debug_assert(nb_neighbors <= nb_points());
+
+        // Compute distance between query point and global bounding box
+        // and copy global bounding box to local variables (bbox_min, bbox_max),
+        // allocated on the stack. bbox_min and bbox_max are updated during the
+        // traversal of the BalancedKdTree (see
+	// get_nearest_neighbors_recursive()). They are necessary to
+	// compute the distance between the query point and the
+        // bbox of the current node.
+        double box_dist = 0.0;
+        double* bbox_min = (double*) (alloca(dimension() * sizeof(double)));
+        double* bbox_max = (double*) (alloca(dimension() * sizeof(double)));
+	init_bbox_and_bbox_dist_for_traversal(
+	    bbox_min, bbox_max, box_dist, query_point
+	);
+        NearestNeighbors NN(
+            nb_neighbors,
+	    neighbors,
+	    neighbors_sq_dist,
+	    (index_t*)alloca(sizeof(index_t) * (nb_neighbors+1)),
+	    (double*)alloca(sizeof(double) * (nb_neighbors+1))
+        );
+        get_nearest_neighbors_recursive(
+            root_, 0, nb_points(), bbox_min, bbox_max, box_dist, query_point, NN
+        );
+	NN.copy_to_user();
+    }
+
+    void KdTree::get_nearest_neighbors(
+        index_t nb_neighbors,
+        const double* query_point,
+        index_t* neighbors,
+        double* neighbors_sq_dist,
+	KeepInitialValues KV
+    ) const {
+        geo_debug_assert(nb_neighbors <= nb_points());
+	geo_argused(KV);
+        // Compute distance between query point and global bounding box
+        // and copy global bounding box to local variables (bbox_min, bbox_max),
+        // allocated on the stack. bbox_min and bbox_max are updated during the
+        // traversal of the BalancedKdTree
+	// (see get_nearest_neighbors_recursive()). They
+        // are necessary to compute the distance between the query point and the
+        // bbox of the current node.
+        double box_dist = 0.0;
+        double* bbox_min = (double*) (alloca(dimension() * sizeof(double)));
+        double* bbox_max = (double*) (alloca(dimension() * sizeof(double)));
+	init_bbox_and_bbox_dist_for_traversal(
+	    bbox_min, bbox_max, box_dist, query_point
+	);
+        NearestNeighbors NN(
+            nb_neighbors,
+	    neighbors,
+	    neighbors_sq_dist,
+	    (index_t*)alloca(sizeof(index_t) * (nb_neighbors+1)),
+	    (double*)alloca(sizeof(double) * (nb_neighbors+1))
+        );
+	NN.copy_from_user();
+        get_nearest_neighbors_recursive( 
+            root_, 0, nb_points(), bbox_min, bbox_max, box_dist, query_point, NN
+        );
+	NN.copy_to_user();
+    }
+
+    void KdTree::get_nearest_neighbors(
+        index_t nb_neighbors,
+        index_t q_index,
+        index_t* neighbors,
+        double* neighbors_sq_dist
+    ) const {
+        // TODO: optimized version that uses the fact that
+        // we know that query_point is in the search data
+        // structure already.
+        // (I tried something already, see in the Attic, 
+        //  but it did not give any significant speedup).
+        get_nearest_neighbors(
+            nb_neighbors, point_ptr(q_index), 
+            neighbors, neighbors_sq_dist
+        );
+    }
+
+    void KdTree::get_nearest_neighbors_recursive(
+        index_t node_index, index_t b, index_t e,
+        double* bbox_min, double* bbox_max, double box_dist,
+        const double* query_point, NearestNeighbors& NN
+    ) const {
+        geo_debug_assert(e > b);
+
+        // Simple case (node is a leaf)
+        if((e - b) <= MAX_LEAF_SIZE) {
+	    get_nearest_neighbors_leaf(node_index, b, e, query_point, NN);
+            return;
+        }
+
+	// Get node attributes (virtual function call).
+
+	index_t left_node_index;
+	index_t right_node_index;
+	coord_index_t coord;
+	index_t m;	
+	double val;
+	
+	get_node(
+	    node_index, b, e,
+	    left_node_index, right_node_index,
+	    coord, m, val
+	);
+	
+        double cut_diff = query_point[coord] - val;
+
+        // If the query point is on the left side
+        if(cut_diff < 0.0) {
+
+            // Traverse left subtree
+            {
+                double bbox_max_save = bbox_max[coord];
+                bbox_max[coord] = val;
+                get_nearest_neighbors_recursive(
+                    left_node_index, b, m, 
+                    bbox_min, bbox_max, box_dist, query_point, NN
+                );
+                bbox_max[coord] = bbox_max_save;
+            }
+
+            // Update bbox distance (now measures the
+            // distance to the bbox of the right subtree)
+            double box_diff = bbox_min[coord] - query_point[coord];
+            if(box_diff > 0.0) {
+                box_dist -= geo_sqr(box_diff);
+            }
+            box_dist += geo_sqr(cut_diff);
+
+            // Traverse the right subtree, only if bbox
+            // distance is nearer than furthest neighbor,
+            // else there is no chance that the right
+            // subtree contains points that will change
+            // anything in the nearest neighbors NN.
+            if(box_dist <= NN.furthest_neighbor_sq_dist()) {
+                double bbox_min_save = bbox_min[coord];
+                bbox_min[coord] = val;
+                get_nearest_neighbors_recursive(
+                    right_node_index, m, e, 
+                    bbox_min, bbox_max, box_dist, query_point, NN
+                );
+                bbox_min[coord] = bbox_min_save;
+            }
+        } else {
+            // else the query point is on the right side
+            // (then do the same with left and right subtree
+            //  permutted).
+            {
+                double bbox_min_save = bbox_min[coord];
+                bbox_min[coord] = val;
+                get_nearest_neighbors_recursive(
+                    right_node_index, m, e, 
+                    bbox_min, bbox_max, box_dist, query_point, NN
+                );
+                bbox_min[coord] = bbox_min_save;
+            }
+
+            // Update bbox distance (now measures the
+            // distance to the bbox of the left subtree)
+            double box_diff = query_point[coord] - bbox_max[coord];
+            if(box_diff > 0.0) {
+                box_dist -= geo_sqr(box_diff);
+            }
+            box_dist += geo_sqr(cut_diff);
+
+            if(box_dist <= NN.furthest_neighbor_sq_dist()) {
+                double bbox_max_save = bbox_max[coord];
+                bbox_max[coord] = val;
+                get_nearest_neighbors_recursive(
+                    left_node_index, b, m, 
+                    bbox_min, bbox_max, box_dist, query_point, NN
+                );
+                bbox_max[coord] = bbox_max_save;
+            }
+        }
+    }
+
+    void KdTree::get_nearest_neighbors_leaf(
+	index_t node_index, index_t b, index_t e,
+	const double* query_point,
+	NearestNeighbors& NN	    
+    ) const {
+	geo_argused(node_index);
+        NN.nb_visited += (e-b);
+	double R = NN.furthest_neighbor_sq_dist();
+	index_t nb = e-b;
+	const index_t* geo_restrict idx = &point_index_[b];
+
+	// TODO: check generated ASM (I'd like to have AVX here).
+	// We may need to dispatch according to dimension.
+	
+	index_t local_idx[MAX_LEAF_SIZE];
+	double  local_sq_dist[MAX_LEAF_SIZE];
+
+	// Cache indices and computed distances in local
+	// array. I guess AVX likes that (to be checked).
+	// Not sure, because access to p is indirect, maybe
+	// I should copy the points to local memory before
+	// computing the distances (or having another copy
+	// of the points array that I pre-reorder so that
+	// leaf's points are in a contiguous chunk of memory),
+	// to be tested...
+	for(index_t ii=0; ii<nb; ++ii) {
+	    index_t i = idx[ii];
+	    const double* geo_restrict p = point_ptr(i);
+	    double sq_dist = Geom::distance2(
+		query_point, p, dimension()
+	    );
+	    local_idx[ii] = i;
+	    local_sq_dist[ii] = sq_dist;
+	}
+
+	// Now insert the points that are nearer to query
+	// point than NN's bounding ball.
+	for(index_t ii=0; ii<nb; ++ii) {
+	    double sq_dist = local_sq_dist[ii];
+	    if(sq_dist <= R) {
+		NN.insert(local_idx[ii],sq_dist);
+		R = NN.furthest_neighbor_sq_dist();
+	    }
+	}
+    }
+
+    void KdTree::init_bbox_and_bbox_dist_for_traversal(
+	double* bbox_min, double* bbox_max,
+	double& box_dist, const double* query_point
+    ) const {
+        // Compute distance between query point and global bounding box
+        // and copy global bounding box to local variables (bbox_min, bbox_max),
+        // allocated on the stack. bbox_min and bbox_max are updated during the
+        // traversal of the KdTree (see get_nearest_neighbors_recursive()). They
+        // are necessary to compute the distance between the query point and the
+        // bbox of the current node.
+        box_dist = 0.0;
+        for(coord_index_t c = 0; c < dimension(); ++c) {
+            bbox_min[c] = bbox_min_[c];
+            bbox_max[c] = bbox_max_[c];
+            if(query_point[c] < bbox_min_[c]) {
+                box_dist += geo_sqr(bbox_min_[c] - query_point[c]);
+            } else if(query_point[c] > bbox_max_[c]) {
+                box_dist += geo_sqr(bbox_max_[c] - query_point[c]);
+            }
+        }
+    }
+    
+
+    
+    BalancedKdTree::BalancedKdTree(coord_index_t dim) :
+        KdTree(dim),
+        m0_(max_index_t()),
+        m1_(max_index_t()),
+        m2_(max_index_t()),
+        m3_(max_index_t()),
+        m4_(max_index_t()),
+        m5_(max_index_t()),
+        m6_(max_index_t()),
+        m7_(max_index_t()),
+        m8_(max_index_t()) {
+    }
+
+    BalancedKdTree::~BalancedKdTree() {
+    }
+
+    index_t BalancedKdTree::build_tree() {
+        index_t sz = max_node_index(1, 0, nb_points()) + 1;
+        splitting_coord_.resize(sz);
+        splitting_val_.resize(sz);
+	
+        // If there are more than 16*MAX_LEAF_SIZE (=256) points,
+        // create the tree in parallel
+        if(
+            nb_points() >= (16 * MAX_LEAF_SIZE) &&
+            Process::maximum_concurrent_threads() > 1
+        ) {
+            m0_ = 0;
+            m8_ = nb_points();
+            // Create the first level of the tree
+            m4_ = split_kd_node(1, m0_, m8_);
+	    
+            // Create the second level of the tree
+            //  (using two threads)
+	    parallel(
+		[this]() { m2_ = split_kd_node(2, m0_, m4_); },
+		[this]() { m6_ = split_kd_node(3, m4_, m8_); }
+	    );
+	    
+            // Create the third level of the tree
+            //  (using four threads)
+	    parallel(
+		[this]() { m1_ = split_kd_node(4, m0_, m2_); },
+		[this]() { m3_ = split_kd_node(5, m2_, m4_); },
+		[this]() { m5_ = split_kd_node(6, m4_, m6_); },
+		[this]() { m7_ = split_kd_node(7, m6_, m8_); }		
+	    );
+
+            // Create the fourth level of the tree
+            //  (using eight threads)
+	    parallel(
+		[this]() { create_kd_tree_recursive(8 , m0_, m1_); },
+		[this]() { create_kd_tree_recursive(9 , m1_, m2_); },
+		[this]() { create_kd_tree_recursive(10, m2_, m3_); },
+		[this]() { create_kd_tree_recursive(11, m3_, m4_); },
+		[this]() { create_kd_tree_recursive(12, m4_, m5_); },
+		[this]() { create_kd_tree_recursive(13, m5_, m6_); },
+		[this]() { create_kd_tree_recursive(14, m6_, m7_); },
+		[this]() { create_kd_tree_recursive(15, m7_, m8_); }		
+	    );
+	    
+        } else {
+            create_kd_tree_recursive(1, 0, nb_points());
+        }
+	
+	// Root node is number 1.
+	// This is because "children at 2*n and 2*n+1" does not
+	// work with 0 !!
+	return 1;
+    }
+
+    index_t BalancedKdTree::split_kd_node(
+        index_t node_index, index_t b, index_t e
+    ) {
+
+        geo_debug_assert(e > b);
+        // Do not split leafs
+        if(b + 1 == e) {
+            return b;
+        }
+
+        coord_index_t splitting_coord = best_splitting_coord(b, e);
+        index_t m = b + (e - b) / 2;
+        geo_debug_assert(m < e);
+
+        // sorts the indices in such a way that points's
+        // coordinates splitting_coord in [b,m) are smaller
+        // than m's and points in [m,e) are
+        // greater or equal to m's
+        std::nth_element(
+            point_index_.begin() + std::ptrdiff_t(b),
+            point_index_.begin() + std::ptrdiff_t(m),
+            point_index_.begin() + std::ptrdiff_t(e),
+            ComparePointCoord(
+                nb_points_, points_, stride_, splitting_coord
+            )
+        );
+
+        // Initialize node's variables (splitting coord and
+        // splitting value)
+        splitting_coord_[node_index] = splitting_coord;
+        splitting_val_[node_index] =
+            point_ptr(point_index_[m])[splitting_coord];
+        return m;
+    }
+
+    coord_index_t BalancedKdTree::best_splitting_coord(
+        index_t b, index_t e
+    ) {
+        // Returns the coordinates that maximizes
+        // point's spread. We should probably
+        // use a tradeoff between spread and
+        // bbox shape ratio, as done in ANN, but
+        // this simple method seems to give good
+        // results in our case.
+        coord_index_t result = 0;
+        double max_spread = spread(b, e, 0);
+        for(coord_index_t c = 1; c < dimension(); ++c) {
+            double coord_spread = spread(b, e, c);
+            if(coord_spread > max_spread) {
+                result = c;
+                max_spread = coord_spread;
+            }
+        }
+        return result;
+    }
+
+    void BalancedKdTree::get_node(
+	index_t n, index_t b, index_t e,
+	index_t& left_child, index_t& right_child,
+	coord_index_t&  splitting_coord,
+	index_t& m,
+	double& splitting_val
+    ) const {
+	left_child = 2*n;
+	right_child = 2*n+1;
+	splitting_coord = splitting_coord_[n];
+	m = b + (e - b) / 2;
+	splitting_val = splitting_val_[n];
+    }
+
+    
+
+    AdaptiveKdTree::AdaptiveKdTree(coord_index_t dim) : KdTree(dim) {
+    }
+
+    index_t AdaptiveKdTree::new_node() {
+	splitting_coord_.push_back(0);
+	splitting_val_.push_back(0.0);	
+	node_m_.push_back(0);
+	node_right_child_.push_back(0);
+	return nb_nodes()-1;
+    }
+    
+    index_t AdaptiveKdTree::build_tree() {
+	// Create kd-tree. Local copy of the bbox is used, because it
+	// is modified during traversal.
+        double* bbox_min = (double*) (alloca(dimension() * sizeof(double)));
+        double* bbox_max = (double*) (alloca(dimension() * sizeof(double)));
+        for(coord_index_t c = 0; c < dimension(); ++c) {
+            bbox_min[c] = bbox_min_[c];
+            bbox_max[c] = bbox_max_[c];
+	}
+	
+        splitting_coord_.resize(0);
+        splitting_val_.resize(0);
+	node_m_.resize(0);
+	node_right_child_.resize(0);
+	
+	return create_kd_tree_recursive(0, nb_points(), bbox_min, bbox_max);
+    }
+
+
+    index_t AdaptiveKdTree::create_kd_tree_recursive(
+	index_t b, index_t e,
+	double* bbox_min, double* bbox_max	    	    
+    ) {
+	if(e - b <= MAX_LEAF_SIZE) {
+	    return index_t(-1);
+	}
+
+	index_t m;
+	coord_index_t cut_dim;
+	double cut_val;
+
+	//   Compute m, cut_dim and cut_val,
+	// and reorganize indices along cut_val.
+	split_kd_node(
+	    b, e, bbox_min, bbox_max,
+	    m, cut_dim, cut_val
+	);
+
+	index_t n = new_node();
+	splitting_coord_[n] = cut_dim;
+	splitting_val_[n] = cut_val;
+	node_m_[n] = m;
+	
+	{
+	    double bbox_max_save = bbox_max[cut_dim];
+	    bbox_max[cut_dim] = cut_val;
+	    // This creates the left child. It does not need to be stored
+	    // because the tree is created in an order such that the
+	    // left child of node n is n+1.
+	    create_kd_tree_recursive(b, m, bbox_min, bbox_max);
+	    bbox_max[cut_dim] = bbox_max_save;
+	}
+
+	{
+	    double bbox_min_save = bbox_min[cut_dim];
+	    bbox_min[cut_dim] = cut_val;
+	    // Note: right_child needs to be copied to local variables
+	    // before being set in node_right_child_[n] because
+	    // create_kd_tree_recursive() modifies node_right_child_
+	    // (reallocates). If the following two lines are
+	    // done in a single assignment, then the computed reference to
+	    // node_right_child_[n]
+	    // in the lhs is no longer valid after the rhs is evaluated !
+	    index_t right_child = create_kd_tree_recursive(
+		m, e, bbox_min, bbox_max
+	    );
+	    node_right_child_[n] = right_child;
+	    bbox_min[cut_dim] = bbox_min_save;
+	}
+	
+	return n;
+    }
+
+    void AdaptiveKdTree::split_kd_node(
+        index_t b, index_t e,
+	double* bbox_min, double* bbox_max,
+	index_t& m, coord_index_t& cut_dim, double& cut_val	
+    ) {
+	// Like "sliding midpoint split" in ANN.
+	
+	const double ERR=0.001;
+	
+	// Find length of longest box size
+	double max_length = -1.0;
+	for(coord_index_t d=0; d<dimension(); ++d) {
+	    double length = bbox_max[d] - bbox_min[d];
+	    max_length = std::max(max_length, length);
+	}
+
+	// Cutting coordinate
+	cut_dim=0;
+	
+	// Find long side with most spread
+	double max_spread = -1.0;
+	for(coord_index_t d=0; d<dimension(); ++d) {
+	    double length = bbox_max[d] - bbox_min[d];
+	    // Is it among longest ?
+	    if(length >= (1.0 - ERR)*max_length) {
+		double spr = spread(b, e, d);
+		if(spr > max_spread) {
+		    max_spread = spr;
+		    cut_dim = d;
+		}
+	    }
+	}
+
+	double ideal_cut_val = 0.5*(bbox_min[cut_dim] + bbox_max[cut_dim]);
+
+	double coord_min, coord_max;
+	get_minmax(b, e, cut_dim, coord_min, coord_max);
+
+	cut_val = ideal_cut_val;
+	
+	// Make it slide if need be.
+	if(ideal_cut_val < coord_min) {
+	    cut_val = coord_min;
+	} else if (ideal_cut_val > coord_max) {
+	    cut_val = coord_max;
+	}
+	
+	index_t br1,br2;
+	plane_split(b,e,cut_dim,cut_val,br1,br2);
+
+	index_t m0 = b + (e-b)/2;
+	m = m0;
+	
+	if(ideal_cut_val < coord_min) {
+	    m = b+1;
+	} else if(ideal_cut_val > coord_max) {
+	    m = e-1;
+	} else if(br1 > m0) {
+	    m = br1;
+	} else if(br2 < m0) {
+	    m = br2;
+	} 
+    }
+    
+    void AdaptiveKdTree::plane_split(
+	index_t b_in, index_t e_in, coord_index_t coord, double val,
+	index_t& br1_out, index_t& br2_out
+    ) {
+	int b = int(b_in);
+	int e = int(e_in);
+	int l=b;
+	int r=e-1;
+	while(true) {
+	    while(l < e && point_coord(l,coord) < val) {
+		++l;
+	    }
+	    while(r >= 0 && point_coord(r,coord) >= val) {
+		--r;
+	    }
+	    if(l > r) {
+		break;
+	    }
+	    std::swap(point_index_[l], point_index_[r]);
+	    ++l; --r;
+	}
+	int br1 = l;
+	r = e-1;
+	while(true) {
+	    while(l < e && point_coord(l,coord) <= val) {
+		++l;
+	    }
+	    while(r >= br1 && point_coord(r,coord) > val) {
+		--r;
+	    }
+	    if(l > r) {
+		break;
+	    }
+	    std::swap(point_index_[l], point_index_[r]);
+	    ++l; --r;
+	}
+	int br2 = l;
+	br1_out = index_t(br1);
+	br2_out = index_t(br2);
+    }
+
+    void AdaptiveKdTree::get_node(
+	index_t n, index_t b, index_t e,
+	index_t& left_child, index_t& right_child,
+	coord_index_t&  splitting_coord,
+	index_t& m,
+	double& splitting_val
+    ) const {
+	geo_debug_assert(n < nb_nodes());
+	geo_argused(b);
+	geo_argused(e);
+	left_child = n+1;
+	right_child = node_right_child_[n];
+	splitting_coord = splitting_coord_[n];
+	m = node_m_[n];
+	splitting_val = splitting_val_[n];
+    }
+    
+    
+    
 }
 
 
@@ -30492,7 +32757,7 @@ namespace GEO {
         env->set_value("release_date", VORPALINE_BUILD_DATE);
         env->set_value("SVN revision", VORPALINE_SVN_REVISION);        
 #endif
-	
+	FileSystem::initialize();
         Logger::initialize();
         Process::initialize(flags);
         Progress::initialize();
@@ -30581,6 +32846,7 @@ namespace GEO {
         Process::terminate();
         CmdLine::terminate();
         Logger::terminate();
+	FileSystem::terminate();
         Environment::terminate();
     }
 }
