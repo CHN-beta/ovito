@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,7 +34,7 @@
 namespace Ovito::Particles {
 
 /*
- * Constructs a surface mesh from a particle system.
+ * Constructs a surface mesh enclosing the particle model.
  */
 class OVITO_PARTICLES_EXPORT ConstructSurfaceModifier : public AsynchronousModifier
 {
@@ -157,14 +157,16 @@ private:
 	public:
 
 		/// Constructor.
-		AlphaShapeEngine(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleGrains, DataOORef<SurfaceMesh> mesh, FloatType probeSphereRadius, int smoothingLevel, bool selectSurfaceParticles, bool identifyRegions, bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties) :
+		AlphaShapeEngine(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleGrains, DataOORef<SurfaceMesh> mesh, FloatType probeSphereRadius, int smoothingLevel, bool selectSurfaceParticles, bool identifyRegions, bool mapParticlesToRegions, bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties) :
 			ConstructSurfaceEngineBase(request, std::move(positions), std::move(selection), std::move(mesh), computeSurfaceDistance, std::move(particleProperties)),
 			_particleGrains(std::move(particleGrains)),
 			_probeSphereRadius(probeSphereRadius),
 			_smoothingLevel(smoothingLevel),
 			_identifyRegions(identifyRegions),
 			_totalCellVolume(this->mesh()->domain() ? this->mesh()->domain()->volume3D() : 0.0),
-			_surfaceParticleSelection(selectSurfaceParticles ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), this->positions()->size(), ParticlesObject::SelectionProperty, DataBuffer::InitializeMemory) : nullptr) {}
+			_surfaceParticleSelection(selectSurfaceParticles ? ParticlesObject::OOClass().createStandardProperty(request.dataset(), this->positions()->size(), ParticlesObject::SelectionProperty, DataBuffer::InitializeMemory) : nullptr),
+			_particleRegionIds(mapParticlesToRegions ? ParticlesObject::OOClass().createUserProperty(request.dataset(), this->positions()->size(), PropertyObject::Int, 1, tr("Region")) : nullptr) 
+			{}
 
 		/// Computes the modifier's results and stores them in this object for later retrieval.
 		virtual void perform() override;
@@ -177,6 +179,9 @@ private:
 
 		/// Returns the selection set containing the particles at the constructed surfaces.
 		const PropertyPtr& surfaceParticleSelection() const { return _surfaceParticleSelection; }
+
+		/// Returns the assignment of input particles to volumetric regions.
+		const PropertyPtr& particleRegionIds() const { return _particleRegionIds; }
 
 		/// Returns the evalue of the probe sphere radius parameter.
 		FloatType probeSphereRadius() const { return _probeSphereRadius; }
@@ -212,6 +217,9 @@ private:
 
 		/// The selection set of particles located right on the constructed surfaces.
 		PropertyPtr _surfaceParticleSelection;
+
+		/// The assignment of input particles to volumetric regions.
+		PropertyPtr _particleRegionIds;
 	};
 
 	/// Compute engine building the surface mesh using the Gaussian density method.
@@ -284,6 +292,9 @@ private:
 
 	/// Controls whether the algorithm should compute the shortest distance of each particle from the constructed surface.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, computeSurfaceDistance, setComputeSurfaceDistance);
+
+	/// Controls whether the alpha-shape algorithm assigns each particle to one of the identified spatial regions.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, mapParticlesToRegions, setMapParticlesToRegions);
 };
 
 }	// End of namespace

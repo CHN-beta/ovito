@@ -7,9 +7,9 @@ Construct surface mesh
   :width: 30%
   :align: right
 
-This modifier constructs a surface representation of the three-dimensional shape formed by a set of 
-particles. It can thus generate a geometric description of the outer and inner boundaries of an atomistic 
-solid in terms of a triangulated :ref:`surface mesh <scene_objects.surface_mesh>`. Besides visualization purposes 
+This modifier constructs a surface representation of the three-dimensional shape of a set of 
+particles. It thus generates a geometric description of the outer and inner boundaries of an atomistic 
+solid in terms of a triangulated :ref:`surface mesh <scene_objects.surface_mesh>`. Aside from visualization purposes 
 the geometric description of the surface is also useful for quantitative measurements of the surface area and the solid volume and porosity of an 
 atomistic structure.
 
@@ -181,8 +181,8 @@ Smoothing level
 
 Identify volumetric regions |ovito-pro|
   This option lets the modifier identify the individual spatial regions enclosed by the surface manifold (both empty and filled
-  regions). Each region's volume and surface area are computed and output as a property list attached to the :ref:`surface mesh <scene_objects.surface_mesh>`.
-  See the next section for details. 
+  regions). Each region's volume and surface area are computed and stored in the output :ref:`surface mesh <scene_objects.surface_mesh>`.
+  See next section for details. 
 
 .. _particles.modifiers.construct_surface_mesh.regions:
 
@@ -195,8 +195,8 @@ Identification of volumetric regions |ovito-pro|
 
   A periodic 2d structure consisting of two empty regions (pores) and two filled regions.
 
-The modifier provides the option (incurring some extra computational cost) to identify the spatial regions bounded by the 
-surface manifold and to compute the respective volume and surface area of each separate region. This includes regions densely filled with atoms or particles 
+The modifier provides the option (incurring some additional computational costs) to identify the spatial regions bounded by the 
+surface manifold and to compute the respective volume and surface area of each individual region. This includes regions densely filled with atoms or particles 
 and empty exterior/interior regions (e.g. pores and voids). 
 
 The computed data is output by the modifier as so-called *region properties*,

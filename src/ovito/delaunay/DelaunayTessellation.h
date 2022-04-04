@@ -234,6 +234,10 @@ public:
 		return FacetCirculator(*this, cell, i, j, start, f);
 	}
 
+	CellHandle locate(const Point3& p, CellHandle hint) const {
+		return _dt->locate_point(p.data(), hint);
+	}
+
 	/// Returns the simulation cell geometry.
 	const SimulationCellObject* simCell() const { return _simCell; }
 

@@ -57,39 +57,52 @@ void ConstructSurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
 	sublayout->setColumnStretch(2, 1);
 	sublayout->setColumnMinimumWidth(0, 20);
 
+	int row = 0;
+
 	IntegerRadioButtonParameterUI* methodUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::method));
 	QRadioButton* alphaShapeMethodBtn = methodUI->addRadioButton(ConstructSurfaceModifier::AlphaShape, tr("Alpha-shape method (default):"));
-	sublayout->addWidget(alphaShapeMethodBtn, 0, 0, 1, 3);
+	sublayout->addWidget(alphaShapeMethodBtn, row++, 0, 1, 3);
 
 	FloatParameterUI* probeSphereRadiusUI = new FloatParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::probeSphereRadius));
 	probeSphereRadiusUI->setEnabled(false);
-	sublayout->addWidget(probeSphereRadiusUI->label(), 1, 1);
-	sublayout->addLayout(probeSphereRadiusUI->createFieldLayout(), 1, 2);
+	sublayout->addWidget(probeSphereRadiusUI->label(), row, 1);
+	sublayout->addLayout(probeSphereRadiusUI->createFieldLayout(), row++, 2);
 	connect(alphaShapeMethodBtn, &QRadioButton::toggled, probeSphereRadiusUI, &FloatParameterUI::setEnabled);
 
 	IntegerParameterUI* smoothingLevelUI = new IntegerParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::smoothingLevel));
 	smoothingLevelUI->setEnabled(false);
-	sublayout->addWidget(smoothingLevelUI->label(), 2, 1);
-	sublayout->addLayout(smoothingLevelUI->createFieldLayout(), 2, 2);
+	sublayout->addWidget(smoothingLevelUI->label(), row, 1);
+	sublayout->addLayout(smoothingLevelUI->createFieldLayout(), row++, 2);
 	connect(alphaShapeMethodBtn, &QRadioButton::toggled, smoothingLevelUI, &IntegerParameterUI::setEnabled);
 
 	BooleanParameterUI* selectSurfaceParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::selectSurfaceParticles));
 	selectSurfaceParticlesUI->setEnabled(false);
-	sublayout->addWidget(selectSurfaceParticlesUI->checkBox(), 3, 1, 1, 2);
+	sublayout->addWidget(selectSurfaceParticlesUI->checkBox(), row++, 1, 1, 2);
 	connect(alphaShapeMethodBtn, &QRadioButton::toggled, selectSurfaceParticlesUI, &BooleanParameterUI::setEnabled);
 
 	BooleanParameterUI* identifyRegionsUI = new BooleanParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::identifyRegions));
 	identifyRegionsUI->setEnabled(false);
-	sublayout->addWidget(identifyRegionsUI->checkBox(), 4, 1, 1, 2);
+	sublayout->addWidget(identifyRegionsUI->checkBox(), row++, 1, 1, 2);
 #ifdef OVITO_BUILD_PROFESSIONAL
 	connect(alphaShapeMethodBtn, &QRadioButton::toggled, identifyRegionsUI, &BooleanParameterUI::setEnabled);
 #else
-	identifyRegionsUI->checkBox()->setText(identifyRegionsUI->checkBox()->text() + tr("\n(Available only in OVITO Pro)"));
+	identifyRegionsUI->checkBox()->setText(identifyRegionsUI->checkBox()->text() + tr("\n(Available in OVITO Pro)"));
+#endif
+
+	BooleanParameterUI* mapParticlesToRegionsUI = new BooleanParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::mapParticlesToRegions));
+	mapParticlesToRegionsUI->setEnabled(false);
+	sublayout->addWidget(mapParticlesToRegionsUI->checkBox(), row++, 1, 1, 2);
+#ifdef OVITO_BUILD_PROFESSIONAL
+	auto mapParticlesToRegionsUpdater = [=]() { mapParticlesToRegionsUI->setEnabled(alphaShapeMethodBtn->isChecked() && identifyRegionsUI->checkBox()->isChecked()); };
+	connect(alphaShapeMethodBtn, &QRadioButton::toggled, mapParticlesToRegionsUI, mapParticlesToRegionsUpdater);
+	connect(identifyRegionsUI->checkBox(), &QCheckBox::toggled, mapParticlesToRegionsUI, mapParticlesToRegionsUpdater);
+#else
+	mapParticlesToRegionsUI->checkBox()->setText(mapParticlesToRegionsUI->checkBox()->text() + tr("\n(Available in OVITO Pro)"));
 #endif
 
 	OpenDataInspectorButton* showRegionsListBtn = new OpenDataInspectorButton(this, tr("List of identified regions"), QStringLiteral("surface"), 2); // Note: Mode hint "2" is used to switch to the surface mesh regions view.
 	showRegionsListBtn->setEnabled(false);
-	sublayout->addWidget(showRegionsListBtn, 5, 1, 1, 2);
+	sublayout->addWidget(showRegionsListBtn, row++, 1, 1, 2);
 #ifdef OVITO_BUILD_PROFESSIONAL
 	connect(this, &PropertiesEditor::contentsChanged, this, [this,showRegionsListBtn]() {
 		ConstructSurfaceModifier* modifier = static_object_cast<ConstructSurfaceModifier>(editObject());
@@ -98,25 +111,25 @@ void ConstructSurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
 #endif
 
 	QRadioButton* gaussianDensityBtn = methodUI->addRadioButton(ConstructSurfaceModifier::GaussianDensity, tr("Gaussian density method:"));
-	sublayout->setRowMinimumHeight(5, 10);
-	sublayout->addWidget(gaussianDensityBtn, 6, 0, 1, 3);
+	sublayout->setRowMinimumHeight(row++, 10);
+	sublayout->addWidget(gaussianDensityBtn, row++, 0, 1, 3);
 
 	IntegerParameterUI* gridResolutionUI = new IntegerParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::gridResolution));
 	gridResolutionUI->setEnabled(false);
-	sublayout->addWidget(gridResolutionUI->label(), 7, 1);
-	sublayout->addLayout(gridResolutionUI->createFieldLayout(), 7, 2);
+	sublayout->addWidget(gridResolutionUI->label(), row, 1);
+	sublayout->addLayout(gridResolutionUI->createFieldLayout(), row++, 2);
 	connect(gaussianDensityBtn, &QRadioButton::toggled, gridResolutionUI, &IntegerParameterUI::setEnabled);
 
 	FloatParameterUI* radiusFactorUI = new FloatParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::radiusFactor));
 	radiusFactorUI->setEnabled(false);
-	sublayout->addWidget(radiusFactorUI->label(), 8, 1);
-	sublayout->addLayout(radiusFactorUI->createFieldLayout(), 8, 2);
+	sublayout->addWidget(radiusFactorUI->label(), row, 1);
+	sublayout->addLayout(radiusFactorUI->createFieldLayout(), row++, 2);
 	connect(gaussianDensityBtn, &QRadioButton::toggled, radiusFactorUI, &FloatParameterUI::setEnabled);
 
 	FloatParameterUI* isoValueUI = new FloatParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::isoValue));
 	isoValueUI->setEnabled(false);
-	sublayout->addWidget(isoValueUI->label(), 9, 1);
-	sublayout->addLayout(isoValueUI->createFieldLayout(), 9, 2);
+	sublayout->addWidget(isoValueUI->label(), row, 1);
+	sublayout->addLayout(isoValueUI->createFieldLayout(), row++, 2);
 	connect(gaussianDensityBtn, &QRadioButton::toggled, isoValueUI, &FloatParameterUI::setEnabled);
 
 	QGroupBox* generalGroupBox = new QGroupBox(tr("Options"));
