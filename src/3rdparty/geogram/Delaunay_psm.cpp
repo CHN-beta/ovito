@@ -9339,8 +9339,7 @@ namespace GEO {
         //(random_shuffle is deprecated in C++17, and they call this 
         // progess...)
         //std::random_shuffle(sorted_indices.begin(), sorted_indices.end()); 
-        std::random_device rng;
-        std::mt19937 urng(rng());
+        std::mt19937 urng(1);
         std::shuffle(sorted_indices.begin(), sorted_indices.end(), urng);
 
         return compute_BRIO_order_recursive(
@@ -9491,8 +9490,7 @@ namespace GEO {
         //(random_shuffle is deprecated in C++17, and they call this 
         // progress...)
         // std::random_shuffle(b,e);
-        std::random_device rng;
-        std::mt19937 urng(rng());
+        std::mt19937 urng(1);
         std::shuffle(b,e, urng);
 
 	PeriodicVertexMesh3d M(nb_vertices, vertices, stride, period);
