@@ -96,6 +96,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 	qlonglong nangles = 0;
 	qlonglong ndihedrals = 0;
 	qlonglong nimpropers = 0;
+	qlonglong nellipsoids = 0;
 	int natomtypes = 0;
 	int nbondtypes = 0;
 	int nangletypes = 0;
@@ -177,7 +178,10 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
     	}
     	else if(line.find("extra") != string::npos && line.find("per") != string::npos && line.find("atom") != string::npos) {}
     	else if(line.find("triangles") != string::npos) {}
-    	else if(line.find("ellipsoids") != string::npos) {}
+    	else if(line.find("ellipsoids") != string::npos) {
+    		if(sscanf(line.c_str(), "%llu", &nellipsoids) != 1)
+    			throw Exception(tr("Invalid number of ellipsoids (line %1): %2").arg(stream.lineNumber()).arg(line.c_str()));
+		}
     	else if(line.find("lines") != string::npos) {}
     	else if(line.find("bodies") != string::npos) {}
     	else if(line.find("crossterms") != string::npos) {}
@@ -738,6 +742,49 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
 				if(*improperType < 1 || *improperType > nimpropertypes)
 					throw Exception(tr("Improper type out of range in Impropers section of LAMMPS data file at line %1.").arg(stream.lineNumber()));
+			}
+		}
+		else if(keyword.startsWith("Ellipsoids")) {
+
+			// Get the atomic IDs, which have already been read.
+			ConstPropertyAccess<qlonglong> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+			if(!identifierProperty)
+				throw Exception(tr("Atoms section must precede Ellipsoids section in data file (error in line %1).").arg(stream.lineNumber()));
+
+			// Create properties for ellipsoidal particles.
+			PropertyAccess<Vector3> asphericalShapeProperty = particles()->createProperty(ParticlesObject::AsphericalShapeProperty, DataBuffer::InitializeMemory);
+			PropertyAccess<Quaternion> orientationProperty = particles()->createProperty(ParticlesObject::OrientationProperty, DataBuffer::InitializeMemory);
+
+			setProgressMaximum(nellipsoids);
+			for(size_t i = 0; i < (size_t)nellipsoids; i++) {
+				if(!setProgressValueIntermittent(i)) return;
+				const char* line = stream.readLine();
+
+				qlonglong atomId;
+				int charCount;
+    			if(sscanf(line, "%llu%n", &atomId, &charCount) != 1)
+					throw Exception(tr("Invalid atom id in line %1 of LAMMPS data file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+				line += charCount;
+
+				// Map atom ID to particle index.
+				if(atomId < 0 || atomId >= (qlonglong)identifierProperty.size() || atomId != identifierProperty[atomId]) {
+					auto iter = atomIdMap.find(atomId);
+					if(iter == atomIdMap.end())
+						throw Exception(tr("Nonexistent atom ID encountered in line %1 of data file.").arg(stream.lineNumber()));
+					atomId = iter->second;
+				}
+
+				// Parse shapex,shapey,shapez and quatw,quati,quatj,quatk fields.
+				Vector3& shape = asphericalShapeProperty[atomId];
+				Quaternion& q = orientationProperty[atomId];
+    			if(sscanf(line, FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING
+						" " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, 
+						&shape.x(), &shape.y(), &shape.z(),
+						&q.w(), &q.x(), &q.y(), &q.z()) != 7)
+					throw Exception(tr("Invalid ellipsoid shape/orientation (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
+
+				// Convert diameter to radius:
+				shape *= 0.5;
 			}
 		}
 		else if(keyword.isEmpty() == false) {

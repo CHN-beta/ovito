@@ -143,7 +143,7 @@ void GSDImporter::FrameLoader::loadFile()
 	if(filename.isEmpty())
 		throw Exception(tr("The GSD file reader supports reading only from physical files. Cannot read data from an in-memory buffer."));
 #ifndef Q_OS_WIN
-	GSDFile gsd(QFile::encodeName(filename).constData()));
+	GSDFile gsd(QFile::encodeName(filename).constData());
 #else
 	GSDFile gsd(filename.toStdWString().c_str());
 #endif
