@@ -57,7 +57,11 @@ bool GSDExporter::openOutputFile(const QString& filePath, int numberOfFrames, Ma
     outputFile().setFileName(filePath);
 
     // Open the input file for writing.
-    _gsdFile = GSDFile::create(qUtf8Printable(QDir::toNativeSeparators(filePath)), "ovito", "hoomd", 1, 4);
+#ifndef Q_OS_WIN
+    _gsdFile = GSDFile::create(QFile::encodeName(QDir::toNativeSeparators(filePath)).constData(), "ovito", "hoomd", 1, 4);
+#else
+    _gsdFile = GSDFile::create(QDir::toNativeSeparators(filePath).toStdWString().c_str(), "ovito", "hoomd", 1, 4);
+#endif
 
     return true;
 }

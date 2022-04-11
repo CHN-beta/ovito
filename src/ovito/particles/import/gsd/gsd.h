@@ -341,7 +341,11 @@ uint32_t gsd_make_version(unsigned int major, unsigned int minor);
       - GSD_SUCCESS (0) on success. Negative value on failure:
       - GSD_ERROR_IO: IO error (check errno).
 */
+#ifndef _WIN32
 int gsd_create(const char* fname,
+#else
+int gsd_create(const wchar_t* fname,
+#endif
                const char* application,
                const char* schema,
                uint32_t schema_version);
@@ -372,7 +376,11 @@ int gsd_create(const char* fname,
       - GSD_ERROR_MEMORY_ALLOCATION_FAILED: Unable to allocate memory.
 */
 int gsd_create_and_open(struct gsd_handle* handle,
+#ifndef _WIN32
                         const char* fname,
+#else
+                        const wchar_t* fname,
+#endif
                         const char* application,
                         const char* schema,
                         uint32_t schema_version,
@@ -399,7 +407,11 @@ int gsd_create_and_open(struct gsd_handle* handle,
       - GSD_ERROR_FILE_CORRUPT: Corrupt file.
       - GSD_ERROR_MEMORY_ALLOCATION_FAILED: Unable to allocate memory.
 */
+#ifndef _WIN32
 int gsd_open(struct gsd_handle* handle, const char* fname, enum gsd_open_flag flags);
+#else
+int gsd_open(struct gsd_handle* handle, const wchar_t* fname, enum gsd_open_flag flags);
+#endif
 
 /** Truncate a GSD file
 

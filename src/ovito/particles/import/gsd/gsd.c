@@ -84,7 +84,7 @@ enum
 // define windows wrapper functions
 #ifdef _WIN32
 #define lseek _lseeki64
-#define open _open
+#define open _wopen
 #define ftruncate _chsize
 #define fsync _commit
 typedef int64_t ssize_t;
@@ -1565,7 +1565,11 @@ uint32_t gsd_make_version(unsigned int major, unsigned int minor)
     return major << (sizeof(uint32_t) * 4) | minor;
 }
 
+#ifndef _WIN32
 int gsd_create(const char* fname,
+#else
+int gsd_create(const wchar_t* fname,
+#endif
                const char* application,
                const char* schema,
                uint32_t schema_version)
@@ -1585,7 +1589,11 @@ int gsd_create(const char* fname,
 }
 
 int gsd_create_and_open(struct gsd_handle* handle,
+#ifndef _WIN32
                         const char* fname,
+#else
+                        const wchar_t* fname,
+#endif
                         const char* application,
                         const char* schema,
                         uint32_t schema_version,
@@ -1639,7 +1647,11 @@ int gsd_create_and_open(struct gsd_handle* handle,
     return retval;
 }
 
+#ifndef _WIN32
 int gsd_open(struct gsd_handle* handle, const char* fname, const enum gsd_open_flag flags)
+#else
+int gsd_open(struct gsd_handle* handle, const wchar_t* fname, const enum gsd_open_flag flags)
+#endif
 {
     // zero the handle
     gsd_util_zero_memory(handle, sizeof(struct gsd_handle));

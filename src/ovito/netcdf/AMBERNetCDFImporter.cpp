@@ -89,7 +89,7 @@ bool AMBERNetCDFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) c
 
 	// Check if we can open the input file for reading.
 	int tmp_ncid;
-	int err = nc_open(qUtf8Printable(filename), NC_NOWRITE, &tmp_ncid);
+	int err = nc_open(QFile::encodeName(filename).constData(), NC_NOWRITE, &tmp_ncid);
 	if(err == NC_NOERR) {
 
 		// Particle data may be stored in a subgroup named "AMBER" instead of the root group.
@@ -133,7 +133,7 @@ void AMBERNetCDFImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceIm
 	// Open the input NetCDF file.
 	int ncid;
 	int root_ncid;
-	NCERR( nc_open(qUtf8Printable(filename), NC_NOWRITE, &ncid) );
+	NCERR( nc_open(QFile::encodeName(filename).constData(), NC_NOWRITE, &ncid) );
 	root_ncid = ncid;
 
 	// Particle data may be stored in a subgroup named "AMBER" instead of the root group.
@@ -165,7 +165,7 @@ QString AMBERNetCDFImporter::NetCDFFile::open(const QString& filename)
 	close();
 
 	// Open the input file for reading.
-	NCERR( nc_open(qUtf8Printable(filename), NC_NOWRITE, &_ncid) );
+	NCERR( nc_open(QFile::encodeName(filename).constData(), NC_NOWRITE, &_ncid) );
 	_root_ncid = _ncid;
 	_ncIsOpen = true;
 

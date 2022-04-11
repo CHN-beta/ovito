@@ -69,7 +69,7 @@ bool AMBERNetCDFExporter::openOutputFile(const QString& filePath, int numberOfFr
 	outputFile().setFileName(filePath);
 
 	// Open the input file for writing.
-	NCERR(nc_create(qUtf8Printable(filePath), NC_64BIT_DATA, &_ncid));
+	NCERR(nc_create(QFile::encodeName(QDir::toNativeSeparators(filePath)).constData(), NC_64BIT_DATA, &_ncid));
 
 	// Define dimensions.
 	NCERR(nc_def_dim(_ncid, NC_FRAME_STR, NC_UNLIMITED, &_frame_dim));

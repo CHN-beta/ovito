@@ -68,7 +68,11 @@ bool GSDImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 	QString filename = QDir::toNativeSeparators(file.localFilePath());
 	if(!filename.isEmpty() && !filename.startsWith(QChar(':'))) {
 		gsd_handle handle;
-		if(::gsd_open(&handle, qUtf8Printable(filename), GSD_OPEN_READONLY) == gsd_error::GSD_SUCCESS) {
+#ifndef Q_OS_WIN
+		if(::gsd_open(&handle, QFile::encodeName(filename).constData(), GSD_OPEN_READONLY) == gsd_error::GSD_SUCCESS) {
+#else
+		if(::gsd_open(&handle, filename.toStdWString().c_str(), GSD_OPEN_READONLY) == gsd_error::GSD_SUCCESS) {
+#endif
 			::gsd_close(&handle);
 			return true;
 		}
@@ -112,7 +116,11 @@ void GSDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
 		throw Exception(tr("The GSD file reader supports reading only from physical files. Cannot read data from an in-memory buffer."));
 
 	// Open GSD file for reading.
-	GSDFile gsd(qUtf8Printable(filename));
+#ifndef Q_OS_WIN
+	GSDFile gsd(QFile::encodeName(filename).constData());
+#else
+	GSDFile gsd(filename.toStdWString().c_str());
+#endif
 	uint64_t nFrames = gsd.numerOfFrames();
 
 	Frame frame(fileHandle());
@@ -134,7 +142,11 @@ void GSDImporter::FrameLoader::loadFile()
 	QString filename = QDir::toNativeSeparators(fileHandle().localFilePath());
 	if(filename.isEmpty())
 		throw Exception(tr("The GSD file reader supports reading only from physical files. Cannot read data from an in-memory buffer."));
-	GSDFile gsd(qUtf8Printable(filename));
+#ifndef Q_OS_WIN
+	GSDFile gsd(QFile::encodeName(filename).constData()));
+#else
+	GSDFile gsd(filename.toStdWString().c_str());
+#endif
 
 	// Check schema name.
 	if(qstrcmp(gsd.schemaName(), "hoomd") != 0)
