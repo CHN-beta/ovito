@@ -266,6 +266,18 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 		else textStream() << "1 improper types\n";
 	}
 
+	size_t numEllipsoids = 0;
+	ConstPropertyAccess<Vector3> asphericalShapeProperty = particles->getProperty(ParticlesObject::AsphericalShapeProperty);
+	if(asphericalShapeProperty) {
+		// Only write Ellipsoids section if atom style (or a hybrid sub-style) is "ellipsoid".
+		if(atomStyle() == LAMMPSDataImporter::AtomStyle_Ellipsoid || (atomStyle() == LAMMPSDataImporter::AtomStyle_Hybrid && boost::find(atomSubStyles(), LAMMPSDataImporter::AtomStyle_Ellipsoid) != atomSubStyles().end())) {
+			numEllipsoids = asphericalShapeProperty.size() - boost::count(asphericalShapeProperty, Vector3::Zero());
+			textStream() << numEllipsoids << " ellipsoids\n";
+		}
+		if(numEllipsoids == 0)
+			asphericalShapeProperty.reset();
+	}
+
 	textStream() << xlo << ' ' << xhi << " xlo xhi\n";
 	textStream() << ylo << ' ' << yhi << " ylo yhi\n";
 	textStream() << zlo << ' ' << zhi << " zlo zhi\n";
@@ -375,6 +387,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 	if(writeAngles) totalProgressCount += angles->elementCount();
 	if(writeDihedrals) totalProgressCount += dihedrals->elementCount();
 	if(writeImpropers) totalProgressCount += impropers->elementCount();
+	if(numEllipsoids) totalProgressCount += numEllipsoids;
 
 	// Write "Atoms" section.
 	textStream() << "Atoms  # " << LAMMPSDataImporter::atomStyleName(atomStyle());
@@ -523,6 +536,41 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 				return false;
 		}
 		OVITO_ASSERT(improperIndex == improperTopologyProperty.size() + 1);
+	}
+
+	// Write ellipsoids.
+	if(asphericalShapeProperty) {
+		textStream() << "\nEllipsoids\n\n";
+
+		ConstPropertyAccess<Quaternion> orientationProperty = particles->getProperty(ParticlesObject::OrientationProperty);
+		for(size_t i = 0; i < asphericalShapeProperty.size(); i++) {
+			if(asphericalShapeProperty[i] == Vector3::Zero())
+				continue;
+			textStream() << (identifierProperty ? identifierProperty[i] : (i+1));
+			textStream() << ' ';
+			textStream() << 2.0 * asphericalShapeProperty[i].x();
+			textStream() << ' ';
+			textStream() << 2.0 * asphericalShapeProperty[i].y();
+			textStream() << ' ';
+			textStream() << 2.0 * asphericalShapeProperty[i].z();
+			textStream() << ' ';
+			if(orientationProperty) {
+				textStream() << orientationProperty[i].w();
+				textStream() << ' ';
+				textStream() << orientationProperty[i].x();
+				textStream() << ' ';
+				textStream() << orientationProperty[i].y();
+				textStream() << ' ';
+				textStream() << orientationProperty[i].z();
+			}
+			else {
+				textStream() << "1 0 0 0";
+			}
+			textStream() << '\n';
+
+			if(!operation.setProgressValueIntermittent(currentProgress++))
+				return false;
+		}		
 	}
 
 	return !operation.isCanceled();
