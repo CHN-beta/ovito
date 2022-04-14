@@ -47,7 +47,7 @@ namespace Ovito {
 /******************************************************************************
 * The constructor of the main window class.
 ******************************************************************************/
-MainWindow::MainWindow() : UserInterface(_datasetContainer), _datasetContainer(UserInterface::taskManager(), *this)
+MainWindow::MainWindow() : UserInterface(_datasetContainer, _taskManager), _datasetContainer(_taskManager, *this)
 {
 	_baseWindowTitle = tr("%1 (Open Visualization Tool)").arg(Application::applicationName());
 #if defined(OVITO_EXPIRATION_DATE)

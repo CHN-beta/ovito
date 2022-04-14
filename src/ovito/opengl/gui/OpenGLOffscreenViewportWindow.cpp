@@ -37,7 +37,7 @@ namespace Ovito {
 ******************************************************************************/
 OpenGLOffscreenViewportWindow::OpenGLOffscreenViewportWindow(Viewport* vp, const QSize& initialSize, std::function<void(QImage)> imageCallback) : 
 	BaseViewportWindow(*this, vp),
-	UserInterface(*vp->dataset()->container()),
+	UserInterface(*vp->dataset()->container(), vp->taskManager()),
 	_inputManager(nullptr, *this),
 	_imageCallback(std::move(imageCallback))
 {

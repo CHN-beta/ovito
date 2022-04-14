@@ -161,6 +161,9 @@ private:
 	/// The command panel.
 	CommandPanel* _commandPanel;
 
+	/// Manages the asynchronous tasks running in the context of this window.
+	TaskManager _taskManager;
+
 	/// Container that keeps a reference to the current dataset.
 	GuiDataSetContainer _datasetContainer;
 

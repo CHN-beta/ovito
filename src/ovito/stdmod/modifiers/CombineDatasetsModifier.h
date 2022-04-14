@@ -88,16 +88,6 @@ public:
 		return secondaryDataSource() ? std::max(secondaryDataSource()->numberOfSourceFrames(), inputFrames) : inputFrames;
 	}
 
-	/// Given an animation time, computes the source frame to show.
-	virtual int animationTimeToSourceFrame(TimePoint time, int inputFrame) const override {
-		return inputFrame;
-	}
-
-	/// Given a source frame index, returns the animation time at which it is shown.
-	virtual TimePoint sourceFrameToAnimationTime(int frame, TimePoint inputTime) const override {
-		return inputTime;
-	}
-
 	/// Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
 	virtual QMap<int, QString> animationFrameLabels(QMap<int, QString> inputLabels) const override {
 		if(secondaryDataSource())

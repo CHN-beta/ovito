@@ -39,7 +39,7 @@ class OVITO_CORE_EXPORT UserInterface
 public:
 
 	/// Constructor.
-	explicit UserInterface(DataSetContainer& datasetContainer) : _datasetContainer(datasetContainer) {}
+	explicit UserInterface(DataSetContainer& datasetContainer, TaskManager& taskManager) : _datasetContainer(datasetContainer), _taskManager(taskManager) {}
 
 	/// Destructor.
 	virtual ~UserInterface() {}
@@ -94,7 +94,7 @@ private:
 	ActionManager* _actionManager = nullptr;
 
 	/// Manages the running asynchronous tasks that belong to this user interface.
-	TaskManager _taskManager;
+	TaskManager& _taskManager;
 };
 
 }	// End of namespace

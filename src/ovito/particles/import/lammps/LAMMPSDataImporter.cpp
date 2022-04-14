@@ -783,8 +783,9 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 						&q.w(), &q.x(), &q.y(), &q.z()) != 7)
 					throw Exception(tr("Invalid ellipsoid shape/orientation (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
-				// Convert diameter to radius:
+				// Convert diameter to radius and normalize quaternion.
 				shape *= 0.5;
+				q.normalizeSafely();
 			}
 		}
 		else if(keyword.isEmpty() == false) {

@@ -104,7 +104,7 @@ void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObje
 {
 	ElementType::updateEditableProxies(state, dataPath);
 
-	// Note: 'this' may no longer exist at this point, because the base method implementationmay
+	// Note: 'this' may no longer exist at this point, because the base method implementation may
 	// have already replaced it with a mutable copy.
 	const ParticleType* self = static_object_cast<ParticleType>(dataPath.back());
 

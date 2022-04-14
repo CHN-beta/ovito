@@ -218,6 +218,14 @@ public:
 		x() /= c; y() /= c; z() /= c; w() /= c;
 	}
 
+	/// \brief Normalizes this quaternion to unit length unless it's the null quaternion.
+	inline void normalizeSafely(T epsilon = T(FLOATTYPE_EPSILON)) {
+		T c = this->norm();
+		if(c > epsilon) {
+			x() /= c; y() /= c; z() /= c; w() /= c;
+		}
+	}
+
 	/// \brief Returns a Normalized version of this quaternion.
 	inline QuaternionT normalized() const {
 		T c = this->norm();

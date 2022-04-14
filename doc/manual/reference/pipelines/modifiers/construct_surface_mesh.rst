@@ -182,7 +182,15 @@ Smoothing level
 Identify volumetric regions |ovito-pro|
   This option lets the modifier identify the individual spatial regions enclosed by the surface manifold (both empty and filled
   regions). Each region's volume and surface area are computed and stored in the output :ref:`surface mesh <scene_objects.surface_mesh>`.
-  See next section for details. 
+  See the following section for details. 
+
+Map particles to regions |ovito-pro|
+  This option determines for each input particle which spatial region it is located in. The index of the spatial region a particle is attributed to
+  is stored in the ``Region`` output particle property by the modifier. A corresponding region is determined for *every* particle of the input model -
+  even unselected ones if the option :guilabel:`Use only selected input particles` is active. Particles that are part of the surface manifold, i.e. 
+  which are adjacent to a filled and to an empty region, are always attributed to the filled region. Note that the assignment of particles to regions
+  happens *before* the surface smoothing step, which slightly displaces the mesh vertices. Thus, particles may end up slightly outside the spatial region
+  they were assigned to.
 
 .. _particles.modifiers.construct_surface_mesh.regions:
 

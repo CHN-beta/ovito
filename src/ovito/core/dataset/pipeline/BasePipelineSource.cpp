@@ -67,7 +67,7 @@ Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int anim
 					_updatingEditableProxies = false;
 				}
 
-				// Adopt the generated data collection as our internal master data collection (only if it is for the current animation time).
+				// Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
 				if(state.stateValidity().contains(dataset()->animationSettings()->time())) {
 					setDataCollectionFrame(animationFrame);
 					setDataCollection(state.data());

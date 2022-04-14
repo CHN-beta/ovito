@@ -42,7 +42,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-GuiApplication::GuiApplication() : StandaloneApplication(_fileManager), UserInterface(_globalDatasetContainer), 
+GuiApplication::GuiApplication() : StandaloneApplication(_fileManager), UserInterface(_globalDatasetContainer, StandaloneApplication::taskManager()), 
 	_fileManager(StandaloneApplication::taskManager()),
 	_globalDatasetContainer(StandaloneApplication::taskManager(), *this)
 {

@@ -125,6 +125,8 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`modifiers.shrink_wrap_box` |ovito-pro|               Resets the simulation cell to tightly fit all particles
   ========================================================== ==========================================================  
 
+..  :ref:`modifiers.identify_fcc_planar_faults` |ovito-pro|    Discriminates between stacking fault and twin boundary defects 
+
 .. toctree::
   :maxdepth: 1
   :hidden:

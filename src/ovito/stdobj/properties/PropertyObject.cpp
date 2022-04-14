@@ -348,13 +348,6 @@ void PropertyObject::updateEditableProxies(PipelineFlowState& state, ConstDataOb
 			if(!proxy->elementTypes().contains(proxyType))
 				proxy->addElementType(proxyType);
 		}
-
-		// Add element types that are non-existing in the actual property object.
-		// Note: Currently this should never happen, because file parser never
-		// remove element types.
-		for(const ElementType* proxyType : proxy->elementTypes()) {
-			OVITO_ASSERT(std::any_of(self->elementTypes().begin(), self->elementTypes().end(), [proxyType](const ElementType* type) { return type->editableProxy() == proxyType; }));
-		}
 	}
 	else if(!self->elementTypes().empty()) {
 		// Create and initialize a new proxy property object. 
