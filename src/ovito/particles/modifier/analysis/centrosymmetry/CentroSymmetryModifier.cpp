@@ -38,8 +38,10 @@ namespace Ovito::Particles {
 IMPLEMENT_OVITO_CLASS(CentroSymmetryModifier);
 DEFINE_PROPERTY_FIELD(CentroSymmetryModifier, numNeighbors);
 DEFINE_PROPERTY_FIELD(CentroSymmetryModifier, mode);
+DEFINE_PROPERTY_FIELD(CentroSymmetryModifier, onlySelectedParticles);
 SET_PROPERTY_FIELD_LABEL(CentroSymmetryModifier, numNeighbors, "Number of neighbors");
 SET_PROPERTY_FIELD_LABEL(CentroSymmetryModifier, mode, "Mode");
+SET_PROPERTY_FIELD_LABEL(CentroSymmetryModifier, onlySelectedParticles, "Use only selected particles");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(CentroSymmetryModifier, numNeighbors, IntegerParameterUnit, 2, CentroSymmetryModifier::MAX_CSP_NEIGHBORS);
 
 /******************************************************************************
@@ -47,7 +49,8 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(CentroSymmetryModifier, numNeighbors, Integer
 ******************************************************************************/
 CentroSymmetryModifier::CentroSymmetryModifier(ObjectCreationParams params) : AsynchronousModifier(params),
 	_numNeighbors(12),
-	_mode(ConventionalMode)
+	_mode(ConventionalMode),
+	_onlySelectedParticles(false)
 {
 }
 
@@ -79,6 +82,9 @@ Future<AsynchronousModifier::EnginePtr> CentroSymmetryModifier::createEngine(con
 	if(numNeighbors() % 2)
 		throwException(tr("The number of neighbors to take into account in the centrosymmetry calculation must be a positive and even integer."));
 
+	// Get particle selection.
+	const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
+
 	// Create an empty data table for the CSP value histogram to be computed.
 	DataOORef<DataTable> histogram = DataOORef<DataTable>::create(dataset(), DataTable::Line, tr("CSP distribution"));
 	histogram->setIdentifier(input.generateUniqueIdentifier<DataTable>(QStringLiteral("csp-centrosymmetry")));
@@ -86,7 +92,7 @@ Future<AsynchronousModifier::EnginePtr> CentroSymmetryModifier::createEngine(con
 	histogram->setAxisLabelX(tr("CSP"));
 
 	// Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-	return std::make_shared<CentroSymmetryEngine>(request, particles, posProperty, simCell, numNeighbors(), mode(), std::move(histogram));
+	return std::make_shared<CentroSymmetryEngine>(request, particles, posProperty, selectionProperty, simCell, numNeighbors(), mode(), std::move(histogram));
 }
 
 /******************************************************************************
@@ -98,15 +104,19 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
 
 	// Prepare the neighbor list.
 	NearestNeighborFinder neighFinder(_nneighbors);
-	if(!neighFinder.prepare(positions(), cell(), {}, this))
+	if(!neighFinder.prepare(positions(), cell(), selection(), this))
 		return;
 
 	// Access output array.
 	PropertyAccess<FloatType> cspArray(csp());
 
 	// Perform analysis on each particle.
+	ConstPropertyAccess<int> selectionData(selection());
 	parallelFor(positions()->size(), *this, [&](size_t index) {
-		cspArray[index] = computeCSP(neighFinder, index, _mode);
+		if(!selectionData || selectionData[index])
+			cspArray[index] = computeCSP(neighFinder, index, _mode);
+		else
+			cspArray[index] = 0.0;
 	});
 	if(isCanceled())
 		return;
@@ -118,18 +128,23 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
 	
 	// Perform binning of CSP values.
 	PropertyAccessAndRef<qlonglong> histogramCounts = DataTable::OOClass().createUserProperty(dataset(), numHistogramBins, PropertyObject::Int64, 1, tr("Count"), DataBuffer::InitializeMemory);
+	const int* sel = selectionData ? selectionData.begin() : nullptr;
 	for(FloatType cspValue : cspArray) {
 		OVITO_ASSERT(cspValue >= 0);
-		int binIndex = cspValue / cspHistogramBinSize;
-		if(binIndex < numHistogramBins)
-			histogramCounts[binIndex]++;
+		if(!sel || *sel++) {
+			int binIndex = cspValue / cspHistogramBinSize;
+			if(binIndex < numHistogramBins)
+				histogramCounts[binIndex]++;
+		}
 	}
 	_histogram->setY(histogramCounts.take());
 	_histogram->setIntervalStart(0);
 	_histogram->setIntervalEnd(cspHistogramBinSize * numHistogramBins);
 
 	// Release data that is no longer needed.
+	selectionData.reset();
 	_positions.reset();
+	_selection.reset();
 	_simCell.reset();
 }
 

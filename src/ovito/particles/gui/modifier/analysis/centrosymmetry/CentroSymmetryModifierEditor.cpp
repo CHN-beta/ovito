@@ -49,15 +49,10 @@ void CentroSymmetryModifierEditor::createUI(const RolloutInsertionParameters& ro
 	layout1->setSpacing(4);
 
 	QGridLayout* layout2 = new QGridLayout();
-	layout2->setContentsMargins(4,4,4,4);
+	layout2->setContentsMargins(0,0,0,0);
 	layout2->setSpacing(6);
 	layout2->setColumnStretch(1, 1);
 	layout1->addLayout(layout2);
-
-	QGridLayout* layout3 = new QGridLayout();
-	layout2->setContentsMargins(4,4,4,4);
-	layout2->setSpacing(6);
-	layout1->addLayout(layout3);
 
 	// Num neighbors parameter.
 	IntegerParameterUI* numNeighborsPUI = new IntegerParameterUI(this, PROPERTY_FIELD(CentroSymmetryModifier::numNeighbors));
@@ -69,12 +64,23 @@ void CentroSymmetryModifierEditor::createUI(const RolloutInsertionParameters& ro
 	//infoLabel->setWordWrap(true);
 	//layout2->addWidget(infoLabel);
 
-	// Matching checkbox.
+	QGridLayout* layout3 = new QGridLayout();
+	layout3->setContentsMargins(0,0,0,0);
+	layout3->setColumnMinimumWidth(0, 20);
+	layout1->addLayout(layout3);
+
+	// Method selector.
 	IntegerRadioButtonParameterUI* modeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(CentroSymmetryModifier::mode));
 	QRadioButton* conventionalModeBtn = modeUI->addRadioButton(CentroSymmetryModifier::ConventionalMode, tr("Conventional CSP"));
 	QRadioButton* matchingModeBtn = modeUI->addRadioButton(CentroSymmetryModifier::MatchingMode, tr("Minimum-weight matching CSP"));
-	layout3->addWidget(conventionalModeBtn);
-	layout3->addWidget(matchingModeBtn);
+	layout3->addWidget(new QLabel(tr("Algorithm:")), 0, 0, 1, 2);
+	layout3->addWidget(conventionalModeBtn, 1, 1);
+	layout3->addWidget(matchingModeBtn, 2, 1);
+
+	// Use only selected particles.
+	BooleanParameterUI* onlySelectedParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(CentroSymmetryModifier::onlySelectedParticles));
+	layout1->addSpacing(6);
+	layout1->addWidget(onlySelectedParticlesUI->checkBox());
 
 	// Create plot widget for CSP distribution.
 	_cspPlotWidget = new DataTablePlotWidget();

@@ -3,7 +3,7 @@
 Centrosymmetry parameter
 ------------------------
 
-.. image:: /images/modifiers/centrosymmetry_panel.png
+.. image:: /images/modifiers/centrosymmetry_panel.*
   :width: 30%
   :align: right
   
@@ -52,8 +52,13 @@ Minimum-weight matching CSP
   The conventional CSP algorithm performs well on highly centrosymmetric structures. In acentrosymmetric structures, however, it often assigns similar CSP values to very different structures, which results
   from the "greedy" selection of neighbor pair weights. The *minimum-weight matching CSP* [`Larsen <https://arxiv.org/abs/2003.08879>`__]
   ensures that neighbor relationships are reciprocal, which results in a better separation of CSP values between e.g. HCP atoms and surface defect atoms.
+  This algorithm is more computationally expensive.
 
-  Note that this algorithm has a significantly higher computational requirements.
+The option :guilabel:`Use only selected particles` restricts the analysis to the
+subset of currently selected particles only. Unselected particles will be ignored in the computation
+of the centrosymmetry values of selected particles (as if they did not exist), and their own
+centrosymmetry values will be set to zero. 
+This option is useful if you want to analyse a sub-lattice made only of atoms of a certain type.
 
 .. note:
   

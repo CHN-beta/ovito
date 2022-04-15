@@ -87,11 +87,12 @@ private:
 	public:
 
 		/// Constructor.
-		CentroSymmetryEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, int nneighbors, CSPMode mode, DataOORef<DataTable> histogram) :
+		CentroSymmetryEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCellObject* simCell, int nneighbors, CSPMode mode, DataOORef<DataTable> histogram) :
 			Engine(request),
 			_nneighbors(nneighbors),
 			_mode(mode),
 			_positions(std::move(positions)),
+			_selection(std::move(selection)),
 			_simCell(simCell),
 			_csp(ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::CentroSymmetryProperty)),
 			_inputFingerprint(std::move(fingerprint)),
@@ -109,6 +110,9 @@ private:
 		/// Returns the property storage that contains the input particle positions.
 		const ConstPropertyPtr& positions() const { return _positions; }
 
+		/// Returns the property storage that contains the particle selection (optional).
+		const ConstPropertyPtr& selection() const { return _selection; }
+
 		/// Returns the simulation cell data.
 		const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
 
@@ -118,6 +122,7 @@ private:
         const CSPMode _mode;
 		DataOORef<const SimulationCellObject> _simCell;
 		ConstPropertyPtr _positions;
+		ConstPropertyPtr _selection;
 		const PropertyPtr _csp;
 		ParticleOrderingFingerprint _inputFingerprint;
 
@@ -130,6 +135,9 @@ private:
 
 	/// Controls how the CSP is performed.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(CSPMode, mode, setMode, PROPERTY_FIELD_MEMORIZE);
+
+	/// Controls whether analysis should take into account only selected particles.
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelectedParticles, setOnlySelectedParticles);
 };
 
 }	// End of namespace
