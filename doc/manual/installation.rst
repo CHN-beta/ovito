@@ -15,6 +15,12 @@ OVITO requires a 64-bit operating system and runs on processors with x86-64 or a
 The graphical user interface of OVITO requires 3D graphics hardware with support for the `OpenGL <https://en.wikipedia.org/wiki/OpenGL>`_ programming interface (OpenGL 2.1 or newer). 
 In general it is recommended that you install the latest graphics driver provided by your hardware vendor before running OVITO as some older drivers may not fully support modern OpenGL specifications, which can lead to compatibility problems.
 
+Operating system compatibility:
+
+  - Windows 10 (21H2 or later), Windows 11 (21H2 or later) - x86_64 processor architecture
+  - Linux: CentOS Linux 8.4 or later, openSUSE 15.3 or later, Ubuntu 20.04 or later, SUSE Linux Enterprise Server 15 SP3 or later - x86_64 processor architecture
+  - macOS 10.14, 10.15, 11, 12 - x86_64 and arm64 processor architectures
+
 .. _installation.instructions:
 
 Installation instructions
@@ -64,63 +70,83 @@ Troubleshooting
 If you run into any problems during the installation of OVITO, you can contact the developers through our `online support forum <https://www.ovito.org/forum/>`_. 
 The OVITO team will be happy to help you. The most commonly encountered installation issues are described here: 
 
+Windows
+-------
+
+Windows 7 no longer supported
+  .. error::
+
+    If you try to run OVITO 3.7 or later on a Windows 7 computer, it will fail with the error "*The procedure entry point CreateDXGIFactory2 could not be 
+    located in the dynamic link library dxgi.dll*".
+
+  .. admonition:: Solution
+    
+    Modern versions of OVITO are based on the Qt6 cross-platform framework, which `requires Windows 10 or later to run <https://doc.qt.io/qt-6/supported-platforms.html>`__. 
+    Windows 7 has reached its end of life and is no longer supported. Please upgrade your Windows operating system. With some luck you may be able to run the Anaconda versions of 
+    `OVITO Basic <https://anaconda.org/conda-forge/ovito>`__ or `OVITO Pro <https://www.ovito.org/python-downloads/>`__ on a Windows 7 computer, 
+    because these are still built against the old Qt5 framework (as of April 2022).
+
 Linux
 -----
 
-.. error::
+Missing files or broken links
+  .. error::
 
-  Starting the desktop application :command:`ovito` or the script interpreter :command:`ovitos` may fail with the following error::
+    Starting the desktop application :command:`ovito` or the script interpreter :command:`ovitos` may fail with the following error::
 
-    ./ovito: error while loading shared libraries: libQt5DBus.so.5: 
-             cannot open shared object file: No such file or directory
+      ./ovito: error while loading shared libraries: libQt5DBus.so.5: 
+              cannot open shared object file: No such file or directory
 
-  This error is typically caused by broken symbolic links inside the :file:`lib/ovito/` sub-directory after 
-  extracting the OVITO installation archive on a computer other than the target machine. 
+    This error is typically caused by broken symbolic links inside the :file:`lib/ovito/` sub-directory after 
+    extracting the OVITO installation archive for Linux on a Windows computer. 
 
-.. admonition:: Solution
-  
-  Reinstall OVITO by extracting the installation archive on the target machine. 
-  Do *not* transfer the program directory tree between different computers after it has been extracted.
+  .. admonition:: Solution
+    
+    Reinstall OVITO by extracting the `.tar.xz` archive on the target machine. 
+    Do *not* transfer the directory tree between different computers after it has been extracted,
+    because this can easily break symbolic links between files.
 
-.. error::
+Missing XCB system libraries
+  .. error::
 
-  You may see the the following error when running :command:`ovito` on a Linux machine::
+    You may see the the following error when running :command:`ovito` on a Linux machine::
 
-    qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
-    This application failed to start because no Qt platform plugin could be initialized. 
-    Reinstalling the application may fix this problem.
-    Available platform plugins are: minimal, offscreen, vnc, xcb.
+      qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
+      This application failed to start because no Qt platform plugin could be initialized. 
+      Reinstalling the application may fix this problem.
+      Available platform plugins are: minimal, offscreen, vnc, xcb.
 
-  In this case OVITO cannot find the required :file:`libxcb-*.so` set of system libraries, which might not be 
-  preinstalled on fresh Linux systems. 
+    In this case OVITO cannot find the required :file:`libxcb-*.so` set of system libraries, which might not be 
+    preinstalled on fresh Linux systems. 
 
-.. admonition:: Solution
+  .. admonition:: Solution
 
-  Install the required libraries using the system's package manager:
+    Install the required libraries using the system's package manager:
 
-  .. code-block:: shell
+    .. code-block:: shell
 
-    # On Ubuntu/Debian systems:
-    sudo apt-get install libxcb1 libx11-xcb1 libxcb-glx0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
-                         libxcb-randr0 libxcb-render-util0 libxcb-render0 libxcb-shape0 libxcb-shm0 \
-                         libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 libxcb-xinput0 libxcb-xkb1
-                   
-    # On CentOS/RHEL systems:
-    sudo yum install libxcb xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm
+      # On Ubuntu/Debian systems:
+      sudo apt-get install libxcb1 libx11-xcb1 libxcb-glx0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+                          libxcb-randr0 libxcb-render-util0 libxcb-render0 libxcb-shape0 libxcb-shm0 \
+                          libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 libxcb-xinput0 libxcb-xkb1
+                    
+      # On CentOS/RHEL systems:
+      sudo yum install libxcb xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm
 
-  Debian users should also pay attention to `this thread in the OVITO support forum <https://www.ovito.org/forum/topic/installation-problem/#postid-2272>`__.
+    Debian users should also pay attention to `this thread in the OVITO support forum <https://www.ovito.org/forum/topic/installation-problem/#postid-2272>`__.
 
-.. error::
+Missing or outdated OpenSSL system libraries
+  .. error::
 
-  OVITO depends on the OpenSSL libraries (version 1.1.*). If they are not present on your system, starting :command:`ovito` will typically fail with the error::
+    OVITO depends on the OpenSSL libraries (version 1.1.*). If they are not present on your system, starting :command:`ovito` will typically fail with the error::
 
-    error while loading shared libraries: libssl.so.1.1: cannot open shared object file: No such file or directory
+      error while loading shared libraries: libssl.so.1.1: cannot open shared object file: No such file or directory
 
-.. admonition:: Solution
+  .. admonition:: Solution
 
-  Please install the OpenSSL 1.1.x libraries using the package manager of your Linux distribution. OVITO depends on the 
-  presence of the shared libraries :file:`libssl.so.1.1` and :file:`libcrypto.so.1.1` in your system directory. On CentOS 7, for example, 
-  you should install the package `openssl11-libs <https://pkgs.org/search/?q=openssl11-libs>`__.
-  On old Ubuntu 16.04 systems, the OpenSSL 1.1 libraries are not available through the package manager. In this case, please download an older OVITO package (e.g. version 3.5.4), because
-  past OVITO releases used to contain copies of the OpenSSL libraries. You can then copy the missing library files into the new program directory
-  to make them available to the current OVITO version.
+    Please install the OpenSSL 1.1.x libraries using the package manager of your Linux distribution. OVITO depends on the 
+    presence of the shared libraries :file:`libssl.so.1.1` and :file:`libcrypto.so.1.1` in your system directory. On CentOS 7, for example, 
+    you should install the package `openssl11-libs <https://pkgs.org/search/?q=openssl11-libs>`__.
+    On old Ubuntu 16.04 systems, the OpenSSL 1.1 libraries are not available through the package manager. In this case, please download an older OVITO package (e.g. version 3.5.4), because
+    past OVITO releases used to contain copies of the OpenSSL libraries. You can then copy the missing library files into the new program directory
+    to make them available to the current OVITO version.

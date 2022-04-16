@@ -6,6 +6,7 @@ Input file formats
 .. toctree::
   :hidden:
 
+  input/cfg_atomeye
   input/lammps_data
   input/lammps_dump
   input/lammps_dump_local
@@ -73,7 +74,7 @@ OVITO can read the following file formats:
   * - CFG 
     - File format used by the `AtomEye <http://li.mit.edu/Archive/Graphics/A/>`__ visualization program.           
     - :ref:`particles <scene_objects.particles>`
-    -
+    - :ref:`Details <file_formats.input.cfg_atomeye>`
 
   * - NetCDF 
     - Binary format for molecular dynamics data following the `AMBER format convention <http://ambermd.org/netcdf/nctraj.pdf>`__. NetCDF files are produced by 

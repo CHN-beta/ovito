@@ -1,7 +1,7 @@
 .. _file_formats.input.lammps_data:
   
 LAMMPS data file reader
------------------------------
+-----------------------
 
 .. figure:: /images/io/lammps_data_reader.*
   :figwidth: 30%
@@ -9,7 +9,7 @@ LAMMPS data file reader
 
   User interface of the LAMMPS data reader, which appears as part of a pipeline's :ref:`file source <scene_objects.file_source>`.
 
-For loading structure models of the `LAMMPS <https://docs.lammps.org/>`__ simulation code.
+For loading model structures used with the `LAMMPS <https://docs.lammps.org/>`__ simulation code.
 
 .. _file_formats.input.lammps_data.variants:
 
@@ -24,8 +24,9 @@ OVITO's data file reader can directly parse gzipped files (".gz" suffix).
 The reader loads a complete :ref:`particles <scene_objects.particles>` model including topological information (:ref:`bonds <scene_objects.bonds>`, angles, dihedrals, impropers)
 if present.
 
-OVITO maintains the original order in which atoms, bonds, etc. are listed in the data file. 
-The unique atom IDs are used to identify individual atoms in different trajectory frames. 
+OVITO maintains atoms in the order in which they are stored in the data file. 
+The unique ID assoaciated with each atom is used to identify individual atoms in different trajectory frames even if the storage order changes 
+during the simulation. 
 If an ordered atoms list is desired, the data file reader provides a user option making it sort the atoms by ID during import 
 (``sort_particles=True`` keyword parameter in Python, see below). 
 
@@ -66,10 +67,13 @@ Python parameters
 
 The file reader accepts the following optional keyword parameters in a Python call to the :py:func:`~ovito.io.import_file` or :py:meth:`~ovito.pipeline.FileSource.load` functions.
 
-.. py:function:: import_file(location, atom_style = None, atom_substyles = None, **kwargs)
+.. py:function:: import_file(location, atom_style = None, atom_substyles = None, sort_particles = False, **kwargs)
   :noindex:
 
   :param atom_style: Specifies the LAMMPS `atom style <https://docs.lammps.org/atom_style.html>`__ used in the data file. Required if the data file contains no style hint.
   :type atom_style: str
   :param atom_substyles: List of sub-styles. Required if the data file contains no style hint and the simulation model uses the ``hybrid`` atom style.
   :type atom_substyles: list[str]
+  :param sort_particles: Makes the file reader reorder the loaded particles before passing them to the pipeline. 
+                         Sorting is based on the values of the ``Particle Identifier`` property loaded from the data file. 
+  :type sort_particles: bool

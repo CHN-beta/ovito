@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,7 +36,7 @@ SET_OVITO_OBJECT_EDITOR(CFGImporter, CFGImporterEditor);
 void CFGImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
 	// Create a rollout.
-	QWidget* rollout = createRollout(tr("CFG reader"), rolloutParams);
+	QWidget* rollout = createRollout(tr("CFG reader"), rolloutParams, "manual:file_formats.input.cfg_atomeye_reader");
 
     // Create the rollout contents.
 	QVBoxLayout* layout = new QVBoxLayout(rollout);
@@ -48,7 +48,7 @@ void CFGImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
 	sublayout->setContentsMargins(4,4,4,4);
 	layout->addWidget(optionsBox);
 
-	// Sort particles
+	// Sort particles.
 	BooleanParameterUI* sortParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::sortParticles));
 	sublayout->addWidget(sortParticlesUI->checkBox());
 }
