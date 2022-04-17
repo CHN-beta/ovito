@@ -22,7 +22,7 @@ The modifier function stores the computed pair entropy values, which are always 
 Lower entropy values correspond to more ordered structural environments. 
 The modifier function does not take into account the types of the input particles; it assumes the model is a single-component system.
 
-The calculation algorithm follows closesly the C++ implementation of the 
+The calculation algorithm follows closely the C++ implementation of the 
 `compute entropy/atom <https://docs.lammps.org/compute_entropy_atom.html>`__ command of the LAMMPS MD code.  
 The meaning of the input parameters of the modifier is the same as for the LAMMPS command.
 
@@ -37,7 +37,7 @@ Cutoff
   Cutoff distance for the :math:`g(r)` calculation.
 
 Sigma
-  Width of gaussians used in the :math:`g(r)` smoothing.
+  Width of Gaussians used in the :math:`g(r)` smoothing.
 
 Use local density
   Use the local density around each atom to normalize the :math:`g(r)`.

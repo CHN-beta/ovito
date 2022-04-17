@@ -48,8 +48,8 @@ detects if the loaded XYZ file contains more than one frame.
 
 .. _file_formats.input.xyz.auxiliary_columns:
 
-XYZ files with additional colums
-""""""""""""""""""""""""""""""""
+XYZ files with additional columns
+"""""""""""""""""""""""""""""""""
 
 While the basic XYZ format consists of exactly four data columns as described above, OVITO is prepared to read 
 XYZ files with an arbitrary number of columns containing auxiliary per-atom attributes. 
@@ -70,7 +70,7 @@ Extended XYZ format
 """""""""""""""""""
 
 The extended XYZ format is an enhanced version of the basic XYZ format, allowing extra columns to be present in the file for 
-additonal per-atom properties as well as standardising the format of the comment line to include the simulation cell geometry,
+additional per-atom properties as well as standardizing the format of the comment line to include the simulation cell geometry,
 boundary conditions, and other per-frame parameters. Here is an example::
 
     8

@@ -104,7 +104,7 @@ public:
 #endif
 
 	/// Returns the class descriptor for this object.
-	/// This default implementation is overriden by subclasses to return their type descriptor instead.
+	/// This default implementation is overridden by subclasses to return their type descriptor instead.
 	virtual const OvitoClass& getOOClass() const { return OOClass(); }
 
 	/// Returns the class descriptor for this object.

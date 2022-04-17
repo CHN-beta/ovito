@@ -117,13 +117,13 @@ protected:
 
 	protected:
 
-		/// This method can be overriden by subclasses to restrict the set of visible mesh faces,
+		/// This method can be overridden by subclasses to restrict the set of visible mesh faces,
 		virtual void determineVisibleFaces() {}
 
-		/// This method can be overriden by subclasses to assign colors to invidual mesh faces.
+		/// This method can be overridden by subclasses to assign colors to invidual mesh faces.
 		virtual void determineFaceColors();
 
-		/// This method can be overriden by subclasses to assign colors to invidual mesh vertices.
+		/// This method can be overridden by subclasses to assign colors to invidual mesh vertices.
 		virtual void determineVertexColors();
 
 	private:
@@ -175,7 +175,7 @@ protected:
 	};
 
 	/// Creates the asynchronous task that builds the non-peridic representation of the input surface mesh.
-	/// This method may be overriden by subclasses who want to implement custom behavior.
+	/// This method may be overridden by subclasses who want to implement custom behavior.
 	virtual std::shared_ptr<PrepareSurfaceEngine> createSurfaceEngine(const SurfaceMesh* mesh) const;
 
 	/// Create the viewport picking record for the surface mesh object.

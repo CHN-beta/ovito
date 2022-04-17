@@ -78,7 +78,7 @@ insert them into new data pipelines.
 The second option is to save the Python code as a :file:`.py` source file into one of the following directories on your computer. 
 OVITO Pro automatically scans these directories at program startup and displays all :file:`.py` scripts in the list of available modifiers.
 
-  * Linux: :file:`<INSTALLDIR>/share/ovito/scripts/modifiers/*.py` and :file:`<HOME>/.config/Ovito/scripts/modifiers/*.py` (Note: The base path :file:`<HOME>/.config` may be overriden by the ``XDG_CONFIG_HOME`` environment variable)
+  * Linux: :file:`<INSTALLDIR>/share/ovito/scripts/modifiers/*.py` and :file:`<HOME>/.config/Ovito/scripts/modifiers/*.py` (Note: The base path :file:`<HOME>/.config` may be overridden by the ``XDG_CONFIG_HOME`` environment variable)
   * Windows: :file:`<INSTALLDIR>/scripts/modifiers/*.py` and :file:`<HOME>/AppData/Local/Ovito/scripts/modifiers/*.py`
   * macOS: :file:`<INSTALLDIR>/Ovito.app/Contents/Resources/scripts/modifiers/*.py` and :file:`<HOME>/Library/Preferences/Ovito/scripts/modifiers/*.py`
   * Anaconda: :file:`<INSTALLDIR>/share/ovito/scripts/modifiers/*.py` and one of the platform-dependent directories 

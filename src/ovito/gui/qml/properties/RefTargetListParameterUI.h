@@ -130,7 +130,7 @@ protected:
 	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Returns the data stored under the given role for the given RefTarget.
-	/// This method is part of the data model used by the list widget and can be overriden
+	/// This method is part of the data model used by the list widget and can be overridden
 	/// by sub-classes. The default implementation returns the title of the RefTarget
 	/// for the Qt::DisplayRole.
 	virtual QVariant getItemData(RefTarget* target, const QModelIndex& index, int role);

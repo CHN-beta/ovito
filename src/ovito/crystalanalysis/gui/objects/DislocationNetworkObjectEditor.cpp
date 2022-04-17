@@ -72,7 +72,7 @@ void DislocationNetworkObjectEditor::createUI(const RolloutInsertionParameters& 
 		virtual int tableColumnCount() override { return 2; }
 
 		/// Returns the header data under the given role for the given RefTarget.
-		/// This method is part of the data model used by the list widget and can be overriden
+		/// This method is part of the data model used by the list widget and can be overridden
 		/// by sub-classes.
 		virtual QVariant getHorizontalHeaderData(int index, int role) override {
 			if(index == 0)

@@ -29,7 +29,7 @@ Column-to-property mapping
 """"""""""""""""""""""""""
 
 The different data columns in a dump local file must be mapped to corresponding :ref:`bond properties <scene_objects.bonds>` within OVITO during file import.
-Since OVITO cannot guess the right mapping automatically in allmost all cases (because file columns have user-defined names),
+Since OVITO cannot guess the right mapping automatically in almost all cases (because file columns have user-defined names),
 you usually have to specify the correct mapping by hand in the following dialog displayed by the file reader:
 
 .. image:: /images/io/lammps_dump_local_reader_mapping_dialog.*

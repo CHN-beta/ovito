@@ -163,12 +163,12 @@ public:
 	static OvitoClassPtr decodeFromString(const QString& str);
 
 	/// \brief This method is called by the ObjectSaveStream class when saving one or more object instances of
-	///        a class belonging to this metaclass. May be overriden by sub-metaclasses if they want to store
+	///        a class belonging to this metaclass. May be overridden by sub-metaclasses if they want to store
 	///        additional meta information for the class in the output stream.
 	virtual void saveClassInfo(SaveStream& stream) const {}
 
 	/// \brief This method is called by the ObjectLoadStream class when loading one or more object instances
-	///        of a class belonging to this metaclass. May be overriden by sub-metaclasses if they want to restore
+	///        of a class belonging to this metaclass. May be overridden by sub-metaclasses if they want to restore
 	///        additional meta information for the class from the input stream.
 	virtual void loadClassInfo(LoadStream& stream, SerializedClassInfo* classInfo) const {}
 

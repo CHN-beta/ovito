@@ -58,7 +58,7 @@ The option :guilabel:`Use only selected particles` restricts the analysis to the
 subset of currently selected particles only. Unselected particles will be ignored in the computation
 of the centrosymmetry values of selected particles (as if they did not exist), and their own
 centrosymmetry values will be set to zero. 
-This option is useful if you want to analyse a sub-lattice made only of atoms of a certain type.
+This option is useful if you want to analyze a sub-lattice made only of atoms of a certain type.
 
 .. note:
   

@@ -335,7 +335,7 @@ QStringList ComputePropertyModifierDelegate::PropertyComputeEngine::inputVariabl
 
 /******************************************************************************
 * This method is called by the system whenever a parameter of the modifier changes.
-* The method can be overriden by subclasses to indicate to the caller whether the engine object should be 
+* The method can be overridden by subclasses to indicate to the caller whether the engine object should be 
 * discarded or may be kept in the cache, because the computation results are not affected by the changing parameter. 
 ******************************************************************************/
 bool ComputePropertyModifierDelegate::PropertyComputeEngine::modifierChanged(const PropertyFieldEvent& event) 

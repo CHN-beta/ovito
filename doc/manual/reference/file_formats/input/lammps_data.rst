@@ -25,7 +25,7 @@ The reader loads a complete :ref:`particles <scene_objects.particles>` model inc
 if present.
 
 OVITO maintains atoms in the order in which they are stored in the data file. 
-The unique ID assoaciated with each atom is used to identify individual atoms in different trajectory frames even if the storage order changes 
+The unique ID associated with each atom is used to identify individual atoms in different trajectory frames even if the storage order changes 
 during the simulation. 
 If an ordered atoms list is desired, the data file reader provides a user option making it sort the atoms by ID during import 
 (``sort_particles=True`` keyword parameter in Python, see below). 
