@@ -275,7 +275,7 @@ void WidgetActionManager::on_FileExport_triggered()
 		return;
 	}
 	std::sort(exporterTypes.begin(), exporterTypes.end(), [](const FileExporterClass* a, const FileExporterClass* b) {
-		return a->fileFilterDescription() < b->fileFilterDescription();
+		return a->fileFilterDescription().compare(b->fileFilterDescription(), Qt::CaseInsensitive) < 0;
 	});
 	for(const FileExporterClass* exporterClass : exporterTypes) {
 		// Skip exporters that want to remain hidden from the user.

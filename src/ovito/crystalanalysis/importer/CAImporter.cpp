@@ -516,7 +516,7 @@ void CAImporter::FrameLoader::loadFile()
 		// Count how many atoms of each structure type exist by summing the cluster atom counts.
 		for(const Cluster* cluster : clusterGraph->clusters()) {
 			if(cluster->structure < 0) continue;
-			if(cluster->structure <= structureCounts.size())
+			if(cluster->structure >= structureCounts.size())
 				structureCounts.resize(cluster->structure + 1, 0);
 			structureCounts[cluster->structure] += cluster->atomCount;
 		}
