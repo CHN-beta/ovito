@@ -162,7 +162,7 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, int 
 	if(!_formatContext)
 		throw Exception(tr("Failed to allocate output media context."));
 
-	_formatContext->oformat = outputFormat;
+	_formatContext->oformat = const_cast<AVOutputFormat*>(outputFormat);
 	qstrncpy(_formatContext->filename, qPrintable(filename), sizeof(_formatContext->filename) - 1);
 #endif
 
