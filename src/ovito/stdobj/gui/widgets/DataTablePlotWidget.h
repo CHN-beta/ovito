@@ -115,7 +115,7 @@ private:
 		virtual QwtText label(double value) const override {
 			QwtText lbl;
 			int index = qRound(value);
-			if(index >= 0 && index < _labels.size())
+			if(index >= 0 && index < _labels.size() && std::abs(value - (double)index) < 1e-1)
 				lbl = _labels[index];
 			return lbl;
 		}
