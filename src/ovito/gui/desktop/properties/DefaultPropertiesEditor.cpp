@@ -52,7 +52,7 @@ void DefaultPropertiesEditor::referenceReplaced(const PropertyFieldDescriptor* f
 ******************************************************************************/
 bool DefaultPropertiesEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-	if(event.type() == ReferenceEvent::ReferenceChanged) {
+	if(event.type() == ReferenceEvent::ReferenceChanged || event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved) {
 		updateSubEditors();
 	}
 	return PropertiesEditor::referenceEvent(source, event);

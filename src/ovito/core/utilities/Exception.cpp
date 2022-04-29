@@ -55,7 +55,7 @@ Exception& Exception::prependGeneralMessage(const QString& message)
 void Exception::logError() const
 {
 	for(const QString& msg : _messages) {
-		qCritical() << msg;
+		qCritical().noquote() << msg;
 	}
 }
 

@@ -115,6 +115,9 @@ public:
 	void setData(const DataCollection* data) { _data = data; }
 	void setData(DataOORef<const DataCollection> data) { _data = std::move(data); }
 
+	/// Moves the payload data our of this PipelineFlowState.
+	DataOORef<const DataCollection> takeData() { return std::move(_data); }
+
 	/// \brief Finds an object of the given type in the list of data objects stored in this flow state.
 	const DataObject* getObject(const DataObject::OOMetaClass& objectClass) const {
 		return data() ? data()->getObject(objectClass) : nullptr;

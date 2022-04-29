@@ -113,8 +113,8 @@ public:
 	///        itself changes.
 	virtual bool performPreliminaryUpdateAfterChange() { return true; }
 
-	/// \brief Returns the number of animation frames this modifier can provide.
-	virtual int numberOfSourceFrames(int inputFrames) const { return inputFrames; }
+	/// \brief Returns the number of animation frames this modifier provides.
+	virtual int numberOfOutputFrames(ModifierApplication* modApp) const;
 
 	/// \brief Given an animation time, computes the source frame to show.
 	virtual int animationTimeToSourceFrame(TimePoint time, int inputFrame) const { return inputFrame; }

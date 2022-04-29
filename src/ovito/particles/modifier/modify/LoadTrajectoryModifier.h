@@ -71,8 +71,8 @@ public:
 	virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 	/// Returns the number of animation frames this modifier can provide.
-	virtual int numberOfSourceFrames(int inputFrames) const override {
-		return trajectorySource() ? trajectorySource()->numberOfSourceFrames() : inputFrames;
+	virtual int numberOfOutputFrames(ModifierApplication* modApp) const override {
+		return trajectorySource() ? trajectorySource()->numberOfSourceFrames() : Modifier::numberOfOutputFrames(modApp);
 	}
 
 	/// Given an animation time, computes the source frame to show.
