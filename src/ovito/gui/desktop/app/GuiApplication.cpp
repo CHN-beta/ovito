@@ -343,6 +343,7 @@ void GuiApplication::showErrorMessages()
 		msgbox->setStandardButtons(QMessageBox::Ok);
 		msgbox->setText(exception.message());
 		msgbox->setIcon(QMessageBox::Critical);
+		msgbox->setTextInteractionFlags(Qt::TextBrowserInteraction);
 
 		// If the exception has been thrown within the context of a DataSet or a DataSetContainer,
 		// show the message box under the corresponding window.

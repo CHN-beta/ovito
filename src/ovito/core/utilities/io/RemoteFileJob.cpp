@@ -192,9 +192,20 @@ void RemoteFileJob::shutdown(bool success)
 ******************************************************************************/
 void RemoteFileJob::connectionError()
 {
-	_promise.setException(std::make_exception_ptr(
-		Exception(tr("Cannot access URL\n\n%1\n\nSSH connection error: %2").arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)).
-			arg(_connection->errorMessage()))));
+	QString errorMsg;
+	if(Application::instance()->guiMode()) {
+		errorMsg = tr("<p>Cannot access URL:</p><p><i>%1</i></p><p>SSH connection error: %2</p><p>See <a href=\"https://docs.ovito.org/advanced_topics/remote_file_access.html#troubleshooting-information\">troubleshooting information</a>.</p>")
+			.arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded).toHtmlEscaped())
+			.arg(_connection->errorMessage().toHtmlEscaped());
+	}
+	else {
+		errorMsg = tr("Accessing URL %1 failed due to SSH connection error: %2. "
+					"See https://docs.ovito.org/advanced_topics/remote_file_access.html#troubleshooting-information for further information.")
+					.arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded))
+					.arg(_connection->errorMessage());
+	}
+
+	_promise.setException(std::make_exception_ptr(Exception(std::move(errorMsg))));
 
 	shutdown(false);
 }
