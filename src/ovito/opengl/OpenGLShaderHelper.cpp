@@ -84,6 +84,27 @@ void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile
 		};
 		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValueArray(unitCubeTriangleStripUniform, cubeVerts, 14));
     }
+    int unitBoxTriangleStripUniform = _shader->uniformLocation("unit_box_triangle_strip");
+    if(unitBoxTriangleStripUniform >= 0) {
+        // Const array of vertex positions for the box triangle strip.
+        static constexpr QVector3D boxVerts[14] = {
+			{ 1,  1,  1},
+			{ 1, -1,  1},
+			{ 1,  1,  0},
+			{ 1, -1,  0},
+			{-1, -1,  0},
+			{ 1, -1,  1},
+			{-1, -1,  1},
+			{ 1,  1,  1},
+			{-1,  1,  1},
+			{ 1,  1,  0},
+			{-1,  1,  0},
+			{-1, -1,  0},
+			{-1,  1,  1},
+			{-1, -1,  1},
+		};
+		OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValueArray(unitBoxTriangleStripUniform, boxVerts, 14));
+    }    
     int unitCubeStripNormalsUniform = _shader->uniformLocation("unit_cube_strip_normals");
     if(unitCubeStripNormalsUniform >= 0) {
         // Const array of normal vectors for the cube triangle strip.
