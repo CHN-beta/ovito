@@ -447,8 +447,8 @@ void SurfaceMeshVis::PrepareSurfaceEngine::perform()
 	// Create accessor for the input mesh data.
 	const SurfaceMeshAccess inputMeshData(inputMesh());
 
-	// Determine wheter we can simply use two-sided rendering to display faces.
-	// This will be the case case if there is no visible mesh face that has a 
+	// Determine whether we can simply use two-sided rendering to display faces.
+	// Thisis the case if there is no visible mesh face that has a 
 	// corresponding opposite face.
 	if(_faceSubset.empty()) {
 		_renderFacesTwoSided = std::none_of(inputMeshData.topology()->begin_faces(), inputMeshData.topology()->end_faces(),

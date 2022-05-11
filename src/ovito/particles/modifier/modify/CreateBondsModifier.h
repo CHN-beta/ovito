@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -164,8 +164,25 @@ public:
 	/// Sets the cutoff radius for a pair of particle types.
 	void setPairwiseCutoff(const QVariant& typeA, const QVariant& typeB, FloatType cutoff);
 
+	/// Sets the cutoff radius for a pair of particle types.
+	void setPairwiseCutoff(const std::variant<int,QString>& typeA, const std::variant<int,QString>& typeB, FloatType cutoff) {
+		// Convert parameters from std::variant to QVariant:
+		setPairwiseCutoff(
+			std::visit([](auto&& arg) { return QVariant::fromValue(arg); }, typeA),
+			std::visit([](auto&& arg) { return QVariant::fromValue(arg); }, typeB),
+			cutoff);
+	}
+
 	/// Returns the pair-wise cutoff radius for a pair of particle types.
 	FloatType getPairwiseCutoff(const QVariant& typeA, const QVariant& typeB) const;
+
+	/// Returns the pair-wise cutoff radius for a pair of particle types.
+	FloatType getPairwiseCutoff(const std::variant<int,QString>& typeA, const std::variant<int,QString>& typeB) const {
+		// Convert parameters from std::variant to QVariant:
+		return getPairwiseCutoff(
+			std::visit([](auto&& arg) { return QVariant::fromValue(arg); }, typeA),
+			std::visit([](auto&& arg) { return QVariant::fromValue(arg); }, typeB));
+	}
 
 protected:
 
