@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -65,6 +65,9 @@ private:
 
 	/// Controls whether the polygonal edges of the mesh should be highlighted.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, highlightEdges, setHighlightEdges);
+
+	/// Controls whether triangles facing away from the viewer are not rendered. 
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, backfaceCulling, setBackfaceCulling);
 };
 
 }	// End of namespace

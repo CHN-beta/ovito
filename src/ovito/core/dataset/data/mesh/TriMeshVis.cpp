@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,9 +34,11 @@ IMPLEMENT_OVITO_CLASS(TriMeshVis);
 DEFINE_PROPERTY_FIELD(TriMeshVis, color);
 DEFINE_REFERENCE_FIELD(TriMeshVis, transparencyController);
 DEFINE_PROPERTY_FIELD(TriMeshVis, highlightEdges);
+DEFINE_PROPERTY_FIELD(TriMeshVis, backfaceCulling);
 SET_PROPERTY_FIELD_LABEL(TriMeshVis, color, "Display color");
 SET_PROPERTY_FIELD_LABEL(TriMeshVis, transparencyController, "Transparency");
 SET_PROPERTY_FIELD_LABEL(TriMeshVis, highlightEdges, "Highlight edges");
+SET_PROPERTY_FIELD_LABEL(TriMeshVis, backfaceCulling, "Back-face culling");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(TriMeshVis, transparencyController, PercentParameterUnit, 0, 1);
 
 /******************************************************************************
@@ -44,7 +46,8 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(TriMeshVis, transparencyController, PercentPa
 ******************************************************************************/
 TriMeshVis::TriMeshVis(ObjectCreationParams params) : DataVis(params),
 	_color(0.85, 0.85, 1),
-	_highlightEdges(false)
+	_highlightEdges(false),
+	_backfaceCulling(false)
 {
 	if(params.createSubObjects()) {
 		setTransparencyController(ControllerManager::createFloatController(dataset()));
@@ -80,6 +83,7 @@ PipelineStatus TriMeshVis::render(TimePoint time, const ConstDataObjectPath& pat
 		primitive.setEmphasizeEdges(highlightEdges());
 		primitive.setUniformColor(ColorA(color(), FloatType(1) - transp));
 		primitive.setMesh(dynamic_object_cast<TriMeshObject>(path.back()));
+		primitive.setCullFaces(backfaceCulling());
 
 		// Submit primitive to the renderer.
 		renderer->beginPickObject(contextNode);
