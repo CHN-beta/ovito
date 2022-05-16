@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,27 +27,53 @@
 in vec3 position;
 in float radius;
 in vec4 color;
-uniform vec3 unit_cube_triangle_strip[14];
 
 // Outputs:
 flat out vec4 color_fs;
 flat out vec3 particle_view_pos_fs;
 flat out float particle_radius_squared_fs;
+
 void main()
 {
-    // The index of the cube corner.
+    // The index of the quad corner.
     int corner = <VertexID>;
 
-	// Apply model-view-projection matrix to particle position displaced by the cube vertex position.
-    gl_Position = modelview_projection_matrix * vec4(position + unit_cube_triangle_strip[corner] * radius, 1.0);
+    // Particle radius in view space.
+    float particle_radius = radius * length(modelview_matrix[0]);
+    particle_radius_squared_fs = particle_radius * particle_radius;
+
+    // Particle position in view space.
+    particle_view_pos_fs = (modelview_matrix * vec4(position, 1.0)).xyz;
+
+    vec3 uv;
+    if(is_perspective()) {
+        // Calculate maximum projection of particle:
+        vec3 sphere_dir = particle_view_pos_fs;
+        float sphere_dist_sq = dot(sphere_dir, sphere_dir);
+        float sphere_dist = sqrt(sphere_dist_sq);
+        float tangent_dist = sqrt(sphere_dist_sq - particle_radius_squared_fs);
+        float alpha = acos(tangent_dist / sphere_dist);
+        vec3 dir = cross(sphere_dir, vec3(0.0, 1.0, 0.0));
+
+        float scaling = sphere_dist * tan(alpha) * sqrt(2.0);
+        if(corner == 0) uv = scaling * normalize(dir);
+        else if(corner == 1) uv = scaling * normalize(cross(dir, sphere_dir));
+        else if(corner == 2) uv = -scaling * normalize(cross(dir, sphere_dir));
+        else uv = -scaling * normalize(dir);
+    }
+    else {
+        float scaling = particle_radius * sqrt(2.0);
+        if(corner == 0) uv = vec3(scaling, 0.0, 0.0);
+        else if(corner == 1) uv = vec3(0.0,  scaling, 0.0);
+        else if(corner == 2) uv = vec3(0.0, -scaling, 0.0);
+        else uv = vec3(-scaling, 0.0, 0.0);
+    }
+
+	// Apply projection matrix to quad vertex.
+    gl_Position = projection_matrix * vec4(particle_view_pos_fs + uv, 1.0);
 
     // Forward particle color to fragment shader.
     color_fs = color;
-
-    // Pass particle radius and center position to fragment shader.
-    float radius_scalingfactor = length(modelview_matrix[0]);
-	particle_radius_squared_fs = (radius * radius) * (radius_scalingfactor * radius_scalingfactor);
-	particle_view_pos_fs = (modelview_matrix * vec4(position, 1.0)).xyz;
 
     // Calculate ray passing through the vertex (in view space).
     <calculate_view_ray_through_vertex>;
