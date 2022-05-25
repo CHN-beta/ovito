@@ -19,6 +19,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "ptm_canonical_coloured.h"
 #include "ptm_convex_hull_incremental.h"
 #include "ptm_templates.h"
+#include "ptm_scaled_templates.h"
 #include "ptm_quat.h"
 
 

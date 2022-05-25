@@ -33,7 +33,66 @@
 #include "DisjointSet.h"
 #include "GrainSegmentationModifier.h"
 
+#include <boost/intrusive/rbtree_algorithms.hpp>
+#include <boost/range/algorithm.hpp>
+#include <unordered_set>
+
 namespace Ovito::CrystalAnalysis {
+
+union NodeUnion
+{
+    size_t opposite;
+    size_t size;
+};
+
+struct HalfEdge
+{
+    HalfEdge *parent_, *left_, *right_;
+    int      color_;
+
+    //other members
+    NodeUnion data;
+    FloatType weight;
+};
+
+//Define rbtree_node_traits
+struct my_rbtree_node_traits
+{
+    typedef HalfEdge                                   node;
+    typedef HalfEdge *                                 node_ptr;
+    typedef const HalfEdge *                           const_node_ptr;
+    typedef int                                        color;
+    static node_ptr get_parent(const_node_ptr n)       {  return n->parent_;   }
+    static void set_parent(node_ptr n, node_ptr parent){  n->parent_ = parent; }
+    static node_ptr get_left(const_node_ptr n)         {  return n->left_;     }
+    static void set_left(node_ptr n, node_ptr left)    {  n->left_ = left;     }
+    static node_ptr get_right(const_node_ptr n)        {  return n->right_;    }
+    static void set_right(node_ptr n, node_ptr right)  {  n->right_ = right;   }
+    static color get_color(const_node_ptr n)           {  return n->color_;    }
+    static void set_color(node_ptr n, color c)         {  n->color_ = c;       }
+    static color black()                               {  return color(0);     }
+    static color red()                                 {  return color(1);     }
+};
+
+struct node_ptr_compare
+{
+    bool operator()(const HalfEdge *a, const HalfEdge *b)
+    {return a->data.opposite < b->data.opposite;}
+};
+
+typedef boost::intrusive::rbtree_algorithms<my_rbtree_node_traits> algo;
+
+static HalfEdge* find(HalfEdge* header, size_t index) {
+    HalfEdge key;
+    key.data.opposite = index;
+    HalfEdge *result = algo::find(header, &key, node_ptr_compare());
+    return result == header ? nullptr : result;
+}
+
+static void insert_halfedge(HalfEdge* header, HalfEdge* edge) {
+    algo::insert_equal_upper_bound(header, edge, node_ptr_compare());
+    header->data.size++;
+}
 
 /*
  * Computation engine of the GrainSegmentationModifier, which decomposes a polycrystalline microstructure into individual grains.
@@ -41,38 +100,52 @@ namespace Ovito::CrystalAnalysis {
 class GrainSegmentationEngine1 : public AsynchronousModifier::Engine
 {
 public:
-
 	class Graph
 	{
 	public:
-		size_t next = 0;
-		std::map<size_t, FloatType> wnode;
-		std::map<size_t, std::map<size_t, FloatType>> adj;
-		std::map<size_t, std::map<size_t, FloatType>> deleted_adj;
+		std::vector<FloatType> wnode;
+        std::vector<HalfEdge> header;
+        std::vector<HalfEdge> edge_buffer;
+        size_t edge_count;
+        std::unordered_set<size_t> active_nodes;
+
+        Graph(size_t num_nodes, size_t num_edges) {
+            edge_count = 0;
+            wnode.resize(num_nodes);
+            boost::range::fill(wnode, 0);
+
+            header.resize(num_nodes);
+            for (size_t i=0;i<num_nodes;i++) {
+                algo::init_header(&header[i]);
+                header[i].data.size = 0;
+            }
+
+            edge_buffer.resize(2 * num_edges);
+        }
 
 		size_t num_nodes() const {
-			return adj.size();
+			return active_nodes.size();
 		}
 
 		size_t next_node() const {
-			return adj.begin()->first;
+            return *active_nodes.begin();
 		}
 
 		std::tuple<FloatType, size_t> nearest_neighbor(size_t a) const {
 			FloatType dmin = std::numeric_limits<FloatType>::max();
 			size_t vmin = std::numeric_limits<size_t>::max();
 
-			OVITO_ASSERT(adj.find(a) != adj.end());
-			for (const auto& x : adj.find(a)->second) {
-				size_t v = x.first;
-				FloatType weight = x.second;
+            HalfEdge *edge = header[a].left_;
+            for (size_t it=0;it<header[a].data.size;it++) {
+                size_t v = edge->data.opposite;
+				FloatType weight = edge->weight;
+                edge = algo::next_node(edge);
 
 				OVITO_ASSERT(v != a); // Graph has self loops.
 				if(v == a)
 					throw Exception("Graph has self loops");
 
-				OVITO_ASSERT(wnode.find(v) != wnode.end());
-				FloatType d = wnode.find(v)->second / weight;
+				FloatType d = wnode[v] / weight;
 				OVITO_ASSERT(!std::isnan(d));
 
 				if (d < dmin) {
@@ -84,106 +157,83 @@ public:
 				}
 			}
 
-			OVITO_ASSERT(wnode.find(a) != wnode.end());
-			FloatType check = dmin * wnode.find(a)->second;
+			FloatType check = dmin * wnode[a];
 			OVITO_ASSERT(!std::isnan(check));
 
-			return std::make_tuple(dmin * wnode.find(a)->second, vmin);
-		}
-
-		void add_node(size_t u) {
-			next = u + 1;
-			wnode[u] = 0;
+			return std::make_tuple(dmin * wnode[a], vmin);
 		}
 
 		void add_edge(size_t u, size_t v, FloatType w) {
+            size_t nodes[2] = {u, v};
 
-			auto it_u = adj.find(u);
-			if (it_u == adj.end()) {
-				add_node(u);
-				it_u = adj.emplace(u, std::map<size_t, FloatType>{{{v,w}}}).first;
-			}
-			else it_u->second[v] = w;
+            for (auto index: nodes) {
+                if (header[index].data.size == 0) {
+                    active_nodes.insert(index);
+                }
 
-			auto it_v = adj.find(v);
-			if (it_v == adj.end()) {
-				add_node(v);
-				it_v = adj.emplace(v, std::map<size_t, FloatType>{{{u,w}}}).first;
-			}
-			else it_v->second[u] = w;
+			    wnode[index] += w;
+            }
 
-			wnode[u] += w;
-			wnode[v] += w;
+            HalfEdge* edge = &edge_buffer[edge_count++];
+            edge->data.opposite = v;
+            edge->weight = w;
+            insert_halfedge(&header[u], edge);
+
+            edge = &edge_buffer[edge_count++];
+            edge->data.opposite = u;
+            edge->weight = w;
+            insert_halfedge(&header[v], edge);
 		}
 
 		void remove_node(size_t u) {
-
-			for (auto const& x: adj[u]) {
-				size_t v = x.first;
-				adj[v].erase(u);
-			}
-
-			//adj.erase(u);
-			//wnode.erase(u);
-			deleted_adj[u] = adj[u];
-			adj.erase(u);
-		}
-
-		void reinstate_node(size_t u) {
-
-			adj[u] = deleted_adj[u];
-			deleted_adj.erase(u);
-
-			for (auto const& x: adj[u]) {
-				size_t v = x.first;
-				FloatType w = x.second;
-				(adj[v])[u] += w;
-			}
+            active_nodes.erase(u);
 		}
 
 		size_t contract_edge(size_t a, size_t b) {
-
-			if (adj[b].size() > adj[a].size()) {
+			if (header[b].data.size > header[a].data.size) {
 				std::swap(a, b);
 			}
 
-			for (auto const& x: adj[b]) {
-				size_t v = x.first;
-				FloatType w = x.second;
-				if (v == a) continue;
+            algo::unlink(find(&header[b], a));
+            algo::unlink(find(&header[a], b));
+            header[a].data.size--;
+            header[b].data.size--;
 
-				(adj[a])[v] += w;
-				(adj[v])[a] += w;
-			}
+            HalfEdge *edge = header[b].left_;
+            while (header[b].data.size != 0) {
+                size_t v = edge->data.opposite;
+				FloatType w = edge->weight;
+                auto next = algo::next_node(edge);
+                algo::unlink(edge);
+                header[b].data.size--;
 
-			adj[a].erase(b);
-			wnode[a] += wnode[b];
+                HalfEdge* opposite_edge = find(&header[v], b);
+                algo::unlink(opposite_edge);
+                header[v].data.size--;
+
+                // Now add edge weights like this:
+				// (adj[a])[v] += w;
+				// (adj[v])[a] += w;
+                HalfEdge *temp = find(&header[a], v);
+                if (temp != nullptr) {
+                    temp->weight += w;
+                    find(&header[v], a)->weight += w;
+                }
+                else {
+                    edge->data.opposite = v;
+                    edge->weight = w;
+                    insert_halfedge(&header[a], edge);
+
+                    opposite_edge->data.opposite = a;
+                    opposite_edge->weight = w;
+                    insert_halfedge(&header[v], opposite_edge);
+                }
+
+                edge = next;
+            }
+
 			remove_node(b);
-			return a;
-		}
-
-		size_t reinstate_edge(size_t a, size_t b) {
-			// TODO: investigate whether component sizes must obey > relation
-
-			for (auto const& x: deleted_adj[b]) {
-				size_t v = x.first;
-				FloatType w = x.second;
-				if (v == a) continue;
-
-				(adj[a])[v] -= w;
-				(adj[v])[a] -= w;
-
-				// remove edge if weight is approximately zero;
-				FloatType minWeight = calculateGraphWeight(_misorientationThreshold);
-				if ((adj[a])[v] < minWeight / 2)
-					adj[a].erase(v);
-
-				if ((adj[v])[a] < minWeight / 2)
-					adj[v].erase(a);
-			}
-
-			wnode[a] -= wnode[b];
-			reinstate_node(b);
+			wnode[a] += wnode[b];
 			return a;
 		}
 	};
@@ -210,7 +260,7 @@ public:
 		FloatType distance = std::numeric_limits<FloatType>::lowest();
 		FloatType disorientation = std::numeric_limits<FloatType>::lowest();
 		size_t size = 0;
-        FloatType gm_size = 0;
+        FloatType merge_size = 0;
 		Quaternion orientation;
 	};
 
@@ -480,9 +530,6 @@ private:
 	/// The adaptively computed merge threshold.
 	FloatType _suggestedMergingThreshold = 0;
 
-	// The graph used for the Node Pair Sampling methods
-	Graph graph;
-
 	friend class GrainSegmentationEngine2;
 };
 
@@ -580,7 +627,7 @@ private:
 	/// The minimum number of atoms a grain must have.
 	size_t _minGrainAtomCount;
 
-	/// Contrals the adoption of orphan atoms after the grains have been formed.
+	/// Controls the adoption of orphan atoms after the grains have been formed.
 	bool _adoptOrphanAtoms;
 };
 

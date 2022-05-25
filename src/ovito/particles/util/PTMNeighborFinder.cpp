@@ -102,6 +102,9 @@ void PTMNeighborFinder::Query::findNeighbors(size_t particleIndex, std::optional
 	}
 
 	const double (*ptmTemplate)[3] = PTMAlgorithm::get_template(_structureType, _templateIndex);
+#if 0
+	const int8_t (*scaledTemplate)[3] = PTMAlgorithm::get_scaled_template(_structureType, _templateIndex);
+#endif
 	for(int i = 0; i < _list.size(); i++) {
 		Neighbor& n = _list[i];
 		int index = remap_permutation[i + 1];
@@ -117,6 +120,18 @@ void PTMNeighborFinder::Query::findNeighbors(size_t particleIndex, std::optional
 			const double* q = ptmTemplate[i + 1];
 			n.idealVector = Vector3(q[0], q[1], q[2]);
 		}
+
+#if 0
+		if(scaledTemplate == nullptr) {
+			n.scaledVector.setZero();
+		}
+		else {
+			const int8_t* q = scaledTemplate[i + 1];
+			n.scaledVector.x() = q[0];
+			n.scaledVector.y() = q[1];
+			n.scaledVector.z() = q[2];
+		}
+#endif
 
 		if(_finder._all_properties && _structureType != PTMAlgorithm::OTHER) {
 			n.disorientation = PTMAlgorithm::calculate_disorientation(_structureType,
@@ -240,6 +255,9 @@ void PTMNeighborFinder::Query::calculateRMSDScale()
 		denominator += centered[i].squaredLength();
 	}
 	FloatType scale = numerator / denominator;
+
+    // calculate interatomic distance
+    _interatomicDistance = _list[1].idealVector.length() / scale;
 
 	// calculate RMSD
 	_rmsd = 0;

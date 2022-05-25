@@ -136,6 +136,33 @@ public:
 		return ref->points[templateIndex];
 	}
 
+#if 0
+	static const int8_t (*get_scaled_template(StructureType structureType, int templateIndex))[3]
+	{
+		if (structureType == OTHER
+            || structureType == ICO) {  // ICO structure does not form a lattice
+			return nullptr;
+		}
+
+		int ptm_type = ovito_to_ptm_structure_type(structureType);
+		const ptm::refdata_t* ref = ptm::refdata[ptm_type];
+		if (templateIndex == 0) {
+			return ref->scaled;
+		}
+		else if (templateIndex == 1) {
+			return ref->scaled_alt1;
+		}
+		else if (templateIndex == 2) {
+			return ref->scaled_alt2;
+		}
+		else if (templateIndex == 3) {
+			return ref->scaled_alt3;
+		}
+		OVITO_ASSERT(0);
+		return nullptr;
+	}
+#endif
+
 	static FloatType calculate_disorientation(StructureType structureTypeA,
 											  StructureType structureTypeB,
 											  const Quaternion& qa,
