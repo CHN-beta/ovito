@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -377,7 +377,8 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 
 	// Create a modifiable copy of the particle coordinates array.
 	ParticlesObject* outputParticles = state1.makeMutable(particles1);
-	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty, DataBuffer::InitializeMemory);
+	PropertyAccess<Point3> outputPositions = outputParticles->createProperty(ParticlesObject::PositionProperty);
+	boost::fill(outputPositions, Point3::Origin());
 
 	// Create output orientations array if smoothing particle orientations.
 	PropertyAccess<Quaternion> outputOrientations = particles1->getProperty(ParticlesObject::OrientationProperty)
@@ -396,29 +397,37 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 	AffineTransformation averageCellMat;
 	if(cell1)
 		averageCellMat = cell1->cellMatrix();
+	int cellCount = cell1 ? 1 : 0;
+
+	// Keep track on a per-particle basis of how many different frames get averaged.
+	// This is needed to support systems with varying particle counts.
+	// Averaging only takes place over the interval of frames during which a particle exists.
+	std::vector<int> particleStateCounts(outputParticles->elementCount(), 1);
 
 	// Iterate over all frames within the averaging window (except the central frame).
-	FloatType weight = FloatType(1) / (1 + otherStates.size());
 	for(const PipelineFlowState& state2 : otherStates) {
 
 		// Make sure the obtained reference configuration is valid and ready to use.
 		if(state2.status().type() == PipelineStatus::Error)
-			throwException(tr("Input state for trajectory smoothing is not available: %1").arg(state2.status().text()));
+			throwException(tr("An input frame for trajectory smoothing is unavailable: %1").arg(state2.status().text()));
 
 		const ParticlesObject* particles2 = state2.getObject<ParticlesObject>();
-		if(!particles2 || particles1->elementCount() != particles2->elementCount())
-			throwException(tr("Cannot smooth trajectory, because number of particles varies between consecutive simulation frames."));
+		if(!particles2)
+			continue;
 		particles2->verifyIntegrity();
 		ConstPropertyAccess<Point3> posProperty2 = particles2->expectProperty(ParticlesObject::PositionProperty);
 		ConstPropertyAccess<qlonglong> idProperty2 = particles2->getProperty(ParticlesObject::IdentifierProperty);
 
 		// Sum up cell vectors.
 		const SimulationCellObject* cell2 = cell1 ? state2.expectObject<SimulationCellObject>() : nullptr;
-		if(cell2)
+		if(cell2) {
 			averageCellMat += cell2->cellMatrix();
+			cellCount++;
+		}
+		bool wrapVectors = (useMinimumImageConvention() && cell2);
+		auto psc = particleStateCounts.begin();
 
 		if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
-
 			// Build ID-to-index map.
 			std::unordered_map<qlonglong,size_t> idmap;
 			size_t index = 0;
@@ -428,27 +437,18 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 				index++;
 			}
 
-			// Average particle positions over time.
+			// Calculate mean displacements relative to current positions.
 			const Point3* p1 = posProperty1.cbegin();
-			if(useMinimumImageConvention() && cell2) {
-				auto id = idProperty1.cbegin();
-				for(Point3& pout : outputPositions) {
-					auto mapEntry = idmap.find(*id);
-					if(mapEntry == idmap.end())
-						throwException(tr("Cannot smooth trajectories, because the set of particles doesn't remain the same from frame to frame."));
-					pout += cell2->wrapVector(posProperty2[mapEntry->second] - (*p1++)) * weight;
-					++id;
+			auto id = idProperty1.cbegin();
+			for(Point3& pout : outputPositions) {
+				if(auto mapEntry = idmap.find(*id); mapEntry != idmap.end()) {
+					Vector3 delta = posProperty2[mapEntry->second] - (*p1);
+					pout += wrapVectors ? cell2->wrapVector(delta) : delta;
+					(*psc)++;
 				}
-			}
-			else {
-				auto id = idProperty1.cbegin();
-				for(Point3& pout : outputPositions) {
-					auto mapEntry = idmap.find(*id);
-					if(mapEntry == idmap.end())
-						throwException(tr("Cannot smooth trajectories, because the set of particles doesn't remain the same from frame to frame."));
-					pout += (posProperty2[mapEntry->second] - (*p1++)) * weight;
-					++id;
-				}
+				++p1;
+				++id;
+				++psc;
 			}
 
 			// Average particle orientations over time.
@@ -456,13 +456,13 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 				if(ConstPropertyAccess<Quaternion> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
 					auto id = idProperty1.cbegin();
 					for(Quaternion& qout : outputOrientations) {
-						auto mapEntry = idmap.find(*id);
-						OVITO_ASSERT(mapEntry != idmap.end());
-						const Quaternion& q2 = orientationProperty2[mapEntry->second];
-						qout.x() += q2.x();
-						qout.y() += q2.y();
-						qout.z() += q2.z();
-						qout.w() += q2.w();
+						if(auto mapEntry = idmap.find(*id); mapEntry != idmap.end()) {
+							const Quaternion& q2 = orientationProperty2[mapEntry->second];
+							qout.x() += q2.x();
+							qout.y() += q2.y();
+							qout.z() += q2.z();
+							qout.w() += q2.w();
+						}
 						++id;
 					}
 				}
@@ -475,39 +475,35 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 					ConstPropertyAccess<FloatType> accessor2(property2);
 					auto id = idProperty1.cbegin();
 					for(FloatType& v : accessor) {
-						auto mapEntry = idmap.find(*id);
-						OVITO_ASSERT(mapEntry != idmap.end());
-						v += accessor2[mapEntry->second];
+						if(auto mapEntry = idmap.find(*id); mapEntry != idmap.end()) {
+							v += accessor2[mapEntry->second];
+						}
 						++id;
 					}
 				}
 			}
 		}
 		else {
-			// Average particle positions over time.
+			// Calculate mean displacements relative to current positions.
 			const Point3* p1 = posProperty1.cbegin();
 			const Point3* p2 = posProperty2.cbegin();
-			if(useMinimumImageConvention() && cell2) {
-				for(Point3& pout : outputPositions) {
-					pout += cell2->wrapVector((*p2++) - (*p1++)) * weight;
-				}
+			auto pout = outputPositions.begin();
+			for(auto pend = pout + std::min(posProperty1.size(), posProperty2.size()); pout != pend; ++pout, ++p1, ++p2, ++psc) {
+				Vector3 delta = (*p2) - (*p1);
+				*pout += wrapVectors ? cell2->wrapVector(delta) : delta;
+				(*psc)++;
 			}
-			else {
-				for(Point3& pout : outputPositions) {
-					pout += ((*p2++) - (*p1++)) * weight;
-				}
-			}
+			OVITO_ASSERT(p1 == posProperty1.cend() || p2 == posProperty2.cend());
 
 			// Average particle orientations over time.
 			if(outputOrientations) {
 				if(ConstPropertyAccess<Quaternion> orientationProperty2 = particles2->getProperty(ParticlesObject::OrientationProperty)) {
 					const Quaternion* q2 = orientationProperty2.cbegin();
-					for(Quaternion& qout : outputOrientations) {
-						qout.x() += q2->x();
-						qout.y() += q2->y();
-						qout.z() += q2->z();
-						qout.w() += q2->w();
-						++q2;
+					for(Quaternion* qout = outputOrientations.begin(), *qend = qout + std::min(outputOrientations.size(), orientationProperty2.size()); qout != qend; ++qout, ++q2) {
+						qout->x() += q2->x();
+						qout->y() += q2->y();
+						qout->z() += q2->z();
+						qout->w() += q2->w();
 					}
 				}
 			}
@@ -518,32 +514,43 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
 				if(property2 && property2->dataType() == accessor.dataType() && property2->componentCount() == accessor.componentCount()) {
 					ConstPropertyAccess<FloatType> accessor2(property2);
 					const FloatType* v2 = accessor2.cbegin();
-					for(FloatType& v : accessor) {
-						v += *v2++;
+					for(FloatType* vout = accessor.begin(), *vend = vout + std::min(accessor.size(), accessor2.size()); vout != vend; ++vout, ++v2) {
+						*vout += *v2;
 					}
 				}
 			}
 		}
 	}
 
+	// Calculate mean position from current position plus mean of displacement vector.
+	auto psc = particleStateCounts.cbegin();
+	const Point3* p1 = posProperty1.cbegin();
+	for(Point3& p : outputPositions) {
+		p /= (*psc++);
+		p += (*p1++) - Point3::Origin();
+	}
+	OVITO_ASSERT(psc == particleStateCounts.cend());
+	OVITO_ASSERT(p1 == posProperty1.cend());
+
 	// Normalize orientation quaternions.
 	if(outputOrientations) {
 		for(Quaternion& q : outputOrientations) {
-			if(q.dot(q) >= FLOATTYPE_EPSILON*FLOATTYPE_EPSILON)
-				q.normalize();
+			q.normalizeSafely();
 		}
 	}
 
-	// Normalize the auxiliary properties.
+	// Calculate means of the auxiliary properties.
 	for(auto& accessor : outputScalarProperties) {
+		auto psc = particleStateCounts.cbegin();
 		for(FloatType& v : accessor)
-			v *= weight;
+			v /= *psc++;
+		OVITO_ASSERT(psc == particleStateCounts.cend());
 	}
 
 	// Compute average of simulation cell vectors.
-	if(cell1) {
+	if(cell1 && cellCount) {
 		SimulationCellObject* outputCell = state1.expectMutableObject<SimulationCellObject>();
-		outputCell->setCellMatrix(averageCellMat * weight);
+		outputCell->setCellMatrix(averageCellMat * (1.0 / cellCount));
 	}
 
 	// The validity of the interpolated state is restricted to the current animation time.

@@ -13,7 +13,7 @@ Depending on the value of the parameter :guilabel:`Smoothing window size`, the m
 a time-based averaging of the particle coordinates over several input simulation frames or a linear interpolation between consecutive frames, see below. 
 
 If the particles have :ref:`orientational information <howto.aspherical_particles>` associated with them, then
-the modifier will smoothen or interpolate the ``Orientation`` particle property in the same way as the
+the modifier will smooth or interpolate the ``Orientation`` particle property in the same way as the
 particle positions. Furthermore, smoothing will also be applied to any particle property that is scalar and continuous, 
 i.e., which has a single vector component of data type ``float``. 
 
