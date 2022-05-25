@@ -48,7 +48,7 @@ SceneNodeSelectionBox::SceneNodeSelectionBox(DataSetContainer& datasetContainer,
 	setModel(new SceneNodesListModel(datasetContainer, actionManager, this));
 
 	// Wire the combobox selection to the list model.
-	connect(this, QOverload<int>::of(&QComboBox::activated), static_cast<SceneNodesListModel*>(model()), &SceneNodesListModel::activateItem);
+	connect(this, qOverload<int>(&QComboBox::activated), static_cast<SceneNodesListModel*>(model()), &SceneNodesListModel::activateItem);
 	connect(static_cast<SceneNodesListModel*>(model()), &SceneNodesListModel::selectionChangeRequested, this, &QComboBox::setCurrentIndex);
 
 	// Install a custom item delegate.

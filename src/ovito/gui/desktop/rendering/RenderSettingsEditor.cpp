@@ -145,7 +145,7 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 		_sizePresetsBox->insertSeparator(1);
 		for(int i = 0; i < sizeof(imageSizePresets)/sizeof(imageSizePresets[0]); i++)
 			_sizePresetsBox->addItem(tr("%1 x %2").arg(imageSizePresets[i][0]).arg(imageSizePresets[i][1]));
-		connect(_sizePresetsBox, QOverload<int>::of(&QComboBox::activated), this, &RenderSettingsEditor::onSizePresetActivated);
+		connect(_sizePresetsBox, qOverload<int>(&QComboBox::activated), this, &RenderSettingsEditor::onSizePresetActivated);
 		layout2->addWidget(_sizePresetsBox, 0, 2);
 
 		QVBoxLayout* sublayout = new QVBoxLayout();

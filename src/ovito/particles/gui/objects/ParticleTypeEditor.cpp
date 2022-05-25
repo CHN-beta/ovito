@@ -158,7 +158,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 	gridLayout->addWidget(shapeUseMeshColorUI->checkBox(), 3, 0, 1, 2);
 
 	// Show/hide controls for user-defined shapes depending on the selected shape type.
-	connect(particleShapeUI->comboBox(), QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this, shapeGroupBox, box = particleShapeUI->comboBox()](int index) {
+	connect(particleShapeUI->comboBox(), qOverload<int>(&QComboBox::currentIndexChanged), this, [this, shapeGroupBox, box = particleShapeUI->comboBox()](int index) {
 		bool userDefinedShape = box->itemData(index).toInt() == ParticlesVis::Mesh;
 		if(userDefinedShape != shapeGroupBox->isVisible()) {
 			shapeGroupBox->setVisible(userDefinedShape);

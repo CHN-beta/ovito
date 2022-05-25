@@ -155,7 +155,7 @@ LAMMPSAtomStyleDialog::LAMMPSAtomStyleDialog(LAMMPSDataImporter::LAMMPSAtomStyle
 	if(styleIndex >= 0)
 		_atomStyleList->setCurrentIndex(styleIndex);
 	layout1->addWidget(_atomStyleList);
-	connect(_atomStyleList, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &LAMMPSAtomStyleDialog::updateColumnList);
+	connect(_atomStyleList, qOverload<int>(&QComboBox::currentIndexChanged), this, &LAMMPSAtomStyleDialog::updateColumnList);
 
 	_subStylesLabel = new QLabel(tr("Sub-styles:"), this);
 	_subStylesLabel->setWordWrap(true);
@@ -182,7 +182,7 @@ LAMMPSAtomStyleDialog::LAMMPSAtomStyleDialog(LAMMPSDataImporter::LAMMPSAtomStyle
 			++iter;
 		}
 		sublayout->addWidget(substyleList, 1);
-		connect(substyleList, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &LAMMPSAtomStyleDialog::updateColumnList);
+		connect(substyleList, qOverload<int>(&QComboBox::currentIndexChanged), this, &LAMMPSAtomStyleDialog::updateColumnList);
 	}
 	layout1->addLayout(sublayout);
 

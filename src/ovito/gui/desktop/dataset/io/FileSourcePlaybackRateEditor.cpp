@@ -118,7 +118,7 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
 	static_cast<QListView*>(_framesListBox->view())->setLayoutMode(QListView::Batched);
 	_framesListModel = new QStringListModel(this);
 	_framesListBox->setModel(_framesListModel);
-	connect(_framesListBox, (void (QComboBox::*)(int))&QComboBox::activated, this, [&](int index) {
+	connect(_framesListBox, qOverload<int>(&QComboBox::activated), this, [&](int index) {
 		undoableTransaction(tr("Change trajectory playback"), [&]() {
 			if(FileSource* fileSource = static_object_cast<FileSource>(editObject()))
 				fileSource->setRestrictToFrame(index);

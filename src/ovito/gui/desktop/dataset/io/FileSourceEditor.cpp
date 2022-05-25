@@ -144,7 +144,7 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 		static_cast<QListView*>(_framesListBox->view())->setLayoutMode(QListView::Batched);
 		_framesListModel = new QStringListModel(this);
 		_framesListBox->setModel(_framesListModel);
-		connect(_framesListBox, (void (QComboBox::*)(int))&QComboBox::activated, this, &FileSourceEditor::onFrameSelected);
+		connect(_framesListBox, qOverload<int>(&QComboBox::activated), this, &FileSourceEditor::onFrameSelected);
 		gridlayout3->addWidget(_framesListBox, 0, 1);
 		_timeSeriesLabel = new QLabel();
 		_timeSeriesLabel->setFont(smallFont);

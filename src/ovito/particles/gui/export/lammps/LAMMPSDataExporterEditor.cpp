@@ -71,7 +71,7 @@ void LAMMPSDataExporterEditor::createUI(const RolloutInsertionParameters& rollou
 		substyleList->insertItem(0, QString());
 		substyleList->setCurrentIndex(0);
 		sublayout->addWidget(substyleList);
-		connect(substyleList, QOverload<int>::of(&QComboBox::activated), this, &LAMMPSDataExporterEditor::hybridSubStyleSelected);
+		connect(substyleList, qOverload<int>(&QComboBox::activated), this, &LAMMPSDataExporterEditor::hybridSubStyleSelected);
 	}
 	layout->addLayout(sublayout, 1, 1);
 	
