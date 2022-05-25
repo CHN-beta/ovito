@@ -306,11 +306,10 @@ FloatType GrainSegmentationEngine1::calculate_disorientation(int structureType, 
 	else if(structureType == PTMAlgorithm::HEX_DIAMOND) type = PTM_MATCH_DHEX;
 	else if(structureType == PTMAlgorithm::GRAPHENE) type = PTM_MATCH_GRAPHENE;
 
-	double disorientation = 0;
-	int8_t dummy_mapping[PTM_MAX_POINTS];
-	if(ptm_remap_template(type, true, 0, qtarget, q, &disorientation, dummy_mapping, nullptr) < 0) {
-		qWarning() << "Grain segmentation: remap failure";
-		OVITO_ASSERT(false); // remap failure
+	FloatType disorientation = (FloatType)ptm_map_and_calculate_disorientation(type, qtarget, q);
+	if (disorientation == std::numeric_limits<FloatType>::infinity()) {
+		qWarning() << "Grain segmentation: disorientation calculation failure";
+		OVITO_ASSERT(false);
 	}
 
 	qa.w() += q[0] * qb_norm;

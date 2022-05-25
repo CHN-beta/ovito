@@ -1,4 +1,4 @@
-/*Copyright (c) 2016 PM Larsen
+/*Copyright (c) 2022 PM Larsen
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -18,376 +18,176 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "ptm_neighbour_ordering.h"
 #include "ptm_normalize_vertices.h"
 #include "ptm_polar.h"
-#include "ptm_quat.h"
 #include "ptm_structure_matcher.h"
-#include <algorithm>
 #include <cassert>
-#include <cfloat>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
 
 
 static double calculate_interatomic_distance(int type, double scale) {
-	assert(type >= 1 && type <= 8);
+    assert(type >= 1 && type <= 8);
 
-	// these values should be equal to norm(template[1])
-	double c[9] = {0,
-		       1,
-		       1,
-		       (7. - 3.5 * sqrt(3)),
-		       1,
-		       1,
-		       sqrt(3) * 4. / (6 * sqrt(2) + sqrt(3)),
-		       sqrt(3) * 4. / (6 * sqrt(2) + sqrt(3)),
-		       -3. / 11 + 6 * sqrt(3) / 11};
-	return c[type] / scale;
+    // these values should be equal to norm(template[1])
+    double c[9] = {0,
+                   1,
+                   1,
+                   (7. - 3.5 * sqrt(3)),
+                   1,
+                   1,
+                   sqrt(3) * 4. / (6 * sqrt(2) + sqrt(3)),
+                   sqrt(3) * 4. / (6 * sqrt(2) + sqrt(3)),
+                   -3. / 11 + 6 * sqrt(3) / 11};
+    return c[type] / scale;
 }
 
 static double calculate_lattice_constant(int type,
-					 double interatomic_distance) {
-	assert(type >= 1 && type <= 8);
-	double c[9] = {0, 2 / sqrt(2), 2 / sqrt(2), 2. / sqrt(3), 2 / sqrt(2),
-		       1, 4 / sqrt(3), 4 / sqrt(3), sqrt(3)};
-	return c[type] * interatomic_distance;
-}
-
-static int rotate_into_fundamental_zone(int type,
-					bool output_conventional_orientation,
-					double *q) {
-	if (type == PTM_MATCH_SC)
-		return ptm::rotate_quaternion_into_cubic_fundamental_zone(q);
-	if (type == PTM_MATCH_FCC)
-		return ptm::rotate_quaternion_into_cubic_fundamental_zone(q);
-	if (type == PTM_MATCH_BCC)
-		return ptm::rotate_quaternion_into_cubic_fundamental_zone(q);
-	if (type == PTM_MATCH_ICO)
-		return ptm::rotate_quaternion_into_icosahedral_fundamental_zone(q);
-
-	if (type == PTM_MATCH_HCP || type == PTM_MATCH_GRAPHENE) {
-		if (output_conventional_orientation) {
-			return ptm::rotate_quaternion_into_hcp_conventional_fundamental_zone(q);
-		} else {
-			return ptm::rotate_quaternion_into_hcp_fundamental_zone(q);
-		}
-	}
-
-	if (type == PTM_MATCH_DCUB) {
-		if (output_conventional_orientation) {
-			return ptm::rotate_quaternion_into_cubic_fundamental_zone(q);
-		} else {
-			return ptm::rotate_quaternion_into_diamond_cubic_fundamental_zone(q);
-		}
-	}
-
-	if (type == PTM_MATCH_DHEX) {
-		if (output_conventional_orientation) {
-			return ptm::rotate_quaternion_into_hcp_conventional_fundamental_zone(q);
-		} else {
-			return ptm::rotate_quaternion_into_diamond_hexagonal_fundamental_zone(q);
-		}
-	}
-
-	return -1;
-}
-
-static int map_quaternion(	int type,
-				bool output_conventional_orientation,
-				double *q, int i
-			)
-{
-	if (type == PTM_MATCH_SC)
-		return ptm::map_quaternion_cubic(q, i);
-	if (type == PTM_MATCH_FCC)
-		return ptm::map_quaternion_cubic(q, i);
-	if (type == PTM_MATCH_BCC)
-		return ptm::map_quaternion_cubic(q, i);
-	if (type == PTM_MATCH_ICO)
-		return ptm::map_quaternion_icosahedral(q, i);
-
-	if (type == PTM_MATCH_HCP || type == PTM_MATCH_GRAPHENE) {
-		if (output_conventional_orientation) {
-			return ptm::map_quaternion_hcp_conventional(q, i);
-		} else {
-			return ptm::map_quaternion_hcp(q, i);
-		}
-	}
-
-	if (type == PTM_MATCH_DCUB) {
-		if (output_conventional_orientation) {
-			return ptm::map_quaternion_cubic(q, i);
-		} else {
-			return ptm::map_quaternion_diamond_cubic(q, i);
-		}
-	}
-
-	if (type == PTM_MATCH_DHEX) {
-		if (output_conventional_orientation) {
-			return ptm::map_quaternion_hcp_conventional(q, i);
-		} else {
-			return ptm::map_quaternion_diamond_hexagonal(q, i);
-		}
-	}
-
-	return -1;
-}
-
-int ptm_undo_conventional_orientation(int type, int input_template_index, double* q, int8_t* mapping)
-{
-	if (input_template_index == 0)
-		return 0;
-
-	const ptm::refdata_t* ref = ptm::refdata[type];
-
-	//this is an input error
-	if (ref->template_indices == NULL)
-		return -1;
-
-	int mapping_index = -1;
-	for (int i=0;i<ref->num_conventional_mappings;i++)
-	{
-		if (ref->template_indices[i] == input_template_index)
-		{
-			mapping_index = i;
-			break;
-		}
-	}
-
-	assert(mapping_index != -1);
-
-	double qtemp[4];
-	ptm::quat_rot(q, (double*)ref->qconventional[mapping_index], qtemp);
-	memcpy(q, qtemp, 4 * sizeof(double));
-
-	int8_t temp[PTM_MAX_POINTS];
-	for (int i=0;i<ref->num_nbrs+1;i++)
-		temp[ref->mapping_conventional_inverse[mapping_index][i]] = mapping[i];
-
-	memcpy(mapping, temp, (ref->num_nbrs + 1) * sizeof(int8_t));
-	return 0;
-}
-
-int ptm_remap_template(	int type, bool output_conventional_orientation, int input_template_index, double* qtarget, double* q,
-			double* p_disorientation, int8_t* mapping, const double (**p_best_template)[3])
-{
-	if (type == PTM_MATCH_NONE)
-		return -1;
-
-	if (input_template_index != 0) {
-		int ret = ptm_undo_conventional_orientation(type, input_template_index, q, mapping);
-		if (ret != 0)
-			return -1;
-	}
-
-	int bi = 0;
-	const ptm::refdata_t* ref = ptm::refdata[type];
-	if (qtarget != NULL)
-	{
-		//argmin_g ||ag - b|| = argmin_g  ||binv.a.g - binv.b|| = argmin_g  ||binv.a.g - I||
-		double qtemp[4];
-		double invtarget[4] = {-qtarget[0], qtarget[1], qtarget[2], qtarget[3]};
-
-		ptm::quat_rot(invtarget, q, qtemp);
-		bi = rotate_into_fundamental_zone(type, true, qtemp);
-		if (bi < 0)
-			return bi;
-
-		map_quaternion(type, output_conventional_orientation, q, bi);
-		*p_disorientation = ptm::quat_misorientation(q, qtarget);
-	}
-	else
-	{
-		bi = rotate_into_fundamental_zone(ref->type, output_conventional_orientation, q);
-		if (bi < 0)
-			return bi;
-	}
-
-	int8_t temp[PTM_MAX_POINTS];
-	memset(temp, -1, PTM_MAX_POINTS * sizeof(int8_t));
-
-	int template_index = 0;
-	const double (*ref_template)[3] = ref->points;
-	if (output_conventional_orientation & (ref->type == PTM_MATCH_HCP
-											|| ref->type == PTM_MATCH_GRAPHENE
-											|| ref->type == PTM_MATCH_DCUB
-											|| ref->type == PTM_MATCH_DHEX))
-	{
-		template_index = ref->template_indices[bi];
-
-		for (int i=0;i<ref->num_nbrs+1;i++)
-			temp[ref->mapping_conventional[bi][i]] = mapping[i];
-
-		if (template_index == 1)
-			ref_template = ref->points_alt1;
-		else if (template_index == 2)
-			ref_template = ref->points_alt2;
-		else if (template_index == 3)
-			ref_template = ref->points_alt3;
-	}
-	else
-	{
-		for (int i=0;i<ref->num_nbrs+1;i++)
-			temp[ref->mapping[bi][i]] = mapping[i];
-	}
-
-	memcpy(mapping, temp, (ref->num_nbrs + 1) * sizeof(int8_t));
-
-	if (p_best_template != NULL)
-		*p_best_template = ref_template;
-
-	return template_index;
+                     double interatomic_distance) {
+    assert(type >= 1 && type <= 8);
+    double c[9] = {0,
+                   2 / sqrt(2),
+                   2 / sqrt(2),
+                   2 / sqrt(3),
+                   2 / sqrt(2),
+                   1,
+                   4 / sqrt(3),
+                   4 / sqrt(3),
+                   sqrt(3)};
+    return c[type] * interatomic_distance;
 }
 
 static void output_data(ptm::result_t *res, ptm_atomicenv_t* env,
-						bool output_conventional_orientation, bool calculate_ordering_type, bool calculate_deformation,
-						ptm_result_t* result, ptm_atomicenv_t* output_env) {
-	const ptm::refdata_t *ref = res->ref_struct;
-	if (ref != NULL) {
-		result->structure_type = ref->type;
-		if (calculate_ordering_type) {
-			result->ordering_type = ptm::find_alloy_type(ref, res->mapping, env->numbers);
-		}
+                        bool calculate_deformation, ptm_result_t* result) {
+    const ptm::refdata_t *ref = res->ref_struct;
+    if (ref == NULL)
+        return;
 
-		const double (*ref_template)[3] = NULL;
-		result->best_template_index = ptm_remap_template(	ref->type, output_conventional_orientation, 0,
-															NULL, res->q, NULL, res->mapping, &ref_template);
-		if (result->best_template_index >= 0) {
-			result->best_template = ref_template;
+    result->structure_type = ref->type;
+    result->ordering_type = ptm::find_alloy_type(ref, res->mapping, env->numbers);
 
-			const double (*ref_penrose)[3] = ref->penrose;
-			if (output_conventional_orientation & (    ref->type == PTM_MATCH_HCP
-								|| ref->type == PTM_MATCH_GRAPHENE
-								|| ref->type == PTM_MATCH_DCUB
-								|| ref->type == PTM_MATCH_DHEX))
-			{
-				if (result->best_template_index == 1)
-					ref_penrose = ref->penrose_alt1;
-				else if (result->best_template_index == 2)
-					ref_penrose = ref->penrose_alt2;
-				else if (result->best_template_index == 3)
-					ref_penrose = ref->penrose_alt3;
-			}
+    double qidentity[4] = {1, 0, 0, 0};
+    result->template_index = ptm_remap_template(ref->type, 0,
+                                                     qidentity, res->q, res->mapping);
+    if (calculate_deformation && result->template_index >= 0) {
 
-			if (calculate_deformation) {
-				double scaled_points[PTM_MAX_INPUT_POINTS][3];
-				ptm::subtract_barycentre(ref->num_nbrs + 1, env->points, scaled_points);
-				for (int i = 0; i < ref->num_nbrs + 1; i++) {
-					scaled_points[i][0] *= res->scale;
-					scaled_points[i][1] *= res->scale;
-					scaled_points[i][2] *= res->scale;
-				}
+        int num_points = ref->num_nbrs + 1;
+        double scaled_points[PTM_MAX_INPUT_POINTS][3];
+        ptm::subtract_barycentre(num_points, env->points, scaled_points);
+        for (int i = 0; i < num_points; i++) {
+            scaled_points[i][0] *= res->scale;
+            scaled_points[i][1] *= res->scale;
+            scaled_points[i][2] *= res->scale;
+        }
 
-				ptm::calculate_deformation_gradient(ref->num_nbrs + 1, ref_template,
-													res->mapping, scaled_points, ref_penrose,
-													result->F, result->F_res);
-				if (ref->type == PTM_MATCH_GRAPHENE) // hack for pseudo-2d structures
-					result->F[8] = 1;
+        ptm::calculate_deformation_gradient(num_points, res->mapping, scaled_points, ref->penrose[result->template_index],
+                                            result->F);
+        if (ref->type == PTM_MATCH_GRAPHENE) // hack for pseudo-2d structures
+            result->F[8] = 1;
+    }
 
-				ptm::polar_decomposition_3x3(result->F, false, result->U, result->P);
-			}
-		}
+    result->interatomic_distance = calculate_interatomic_distance(ref->type, res->scale);
+    result->lattice_constant = calculate_lattice_constant(ref->type, result->interatomic_distance);
+    result->rmsd = res->rmsd;
+    result->scale = res->scale;
+    memcpy(result->orientation, res->q, 4 * sizeof(double));
+}
 
-		double interatomic_distance = calculate_interatomic_distance(ref->type, res->scale);
-		double lattice_constant = calculate_lattice_constant(ref->type, interatomic_distance);
+static void output_environment(ptm::result_t *res, ptm_atomicenv_t* env,
+                               ptm_atomicenv_t* output_env) {
+    if (output_env == NULL)
+        return;
 
-		result->interatomic_distance = interatomic_distance;
-		result->lattice_constant = lattice_constant;
-		result->rmsd = res->rmsd;
-		result->scale = res->scale;
-		memcpy(result->orientation, res->q, 4 * sizeof(double));
-	}
+    const ptm::refdata_t *ref = res->ref_struct;
+    if (ref == NULL)
+        return;
 
-	if (output_env != NULL) {
-		int num_nbrs = ref == NULL ? env->num - 1 : ref->num_nbrs;
-		output_env->num = num_nbrs + 1;
+    int num_nbrs = ref == NULL ? env->num - 1 : ref->num_nbrs;
+    output_env->num = num_nbrs + 1;
 
-		for (int i = 0; i < num_nbrs + 1; i++) {
-			output_env->correspondences[i] = env->correspondences[res->mapping[i]];
-			output_env->atom_indices[i] = env->atom_indices[res->mapping[i]];
-			memcpy(output_env->points[i], env->points[res->mapping[i]], 3 * sizeof(double));
-		}
-	}
+    for (int i = 0; i < output_env->num; i++) {
+        output_env->correspondences[i] = env->correspondences[res->mapping[i]];
+        output_env->atom_indices[i] = env->atom_indices[res->mapping[i]];
+        memcpy(output_env->points[i], env->points[res->mapping[i]], 3 * sizeof(double));
+    }
 }
 
 extern bool ptm_initialized;
 
 int ptm_index(ptm_local_handle_t local_handle,
-				size_t atom_index, int (get_neighbours)(void* vdata, size_t _unused_lammps_variable, size_t atom_index, int num, ptm_atomicenv_t* env), void* nbrlist,
-				int32_t flags, bool output_conventional_orientation, bool calculate_ordering_type, bool calculate_deformation,
-				ptm_result_t* result, ptm_atomicenv_t* output_env)
+                size_t atom_index, int (get_neighbours)(void* vdata, size_t _unused_lammps_variable, size_t atom_index, int num, ptm_atomicenv_t* env), void* nbrlist,
+                int32_t flags, bool calculate_deformation,
+                ptm_result_t* result, ptm_atomicenv_t* output_env)
 {
-	int ret = 0;
-	assert(ptm_initialized);
-	if (!ptm_initialized)	//assert is not active in OVITO release build
-		return -1;
+    int ret = 0;
+    assert(ptm_initialized);
+    if (!ptm_initialized)    //assert is not active in OVITO release build
+        return -1;
 
-	//-------- initialize output values with failure case --------
-	ptm::result_t res;
-	res.ref_struct = NULL;
-	res.rmsd = INFINITY;
+    //-------- initialize output values with failure case --------
+    ptm::result_t res;
+    res.ref_struct = NULL;
+    res.rmsd = INFINITY;
     for (int i=0;i<PTM_MAX_POINTS;i++)
         res.mapping[i] = i;
 
-	memset(result, 0, sizeof(ptm_result_t));
-	//------------------------------------------------------------
+    memset(result, 0, sizeof(ptm_result_t));
+    //------------------------------------------------------------
 
-	ptm::convexhull_t ch;
-	double ch_points[PTM_MAX_INPUT_POINTS][3];
-	ptm_atomicenv_t env, dmn_env, grp_env;
-	env.num = dmn_env.num = grp_env.num = 0;
+    ptm::convexhull_t ch;
+    double ch_points[PTM_MAX_INPUT_POINTS][3];
+    ptm_atomicenv_t env, dmn_env, grp_env;
+    env.num = dmn_env.num = grp_env.num = 0;
 
-	if (flags & (PTM_CHECK_SC | PTM_CHECK_FCC | PTM_CHECK_HCP | PTM_CHECK_ICO | PTM_CHECK_BCC)) {
+    if (flags & (PTM_CHECK_SC | PTM_CHECK_FCC | PTM_CHECK_HCP | PTM_CHECK_ICO | PTM_CHECK_BCC)) {
 
-		const int num_inner = 1, num_outer = 0;
-		ret = ptm::calculate_two_shell_neighbour_ordering(num_inner, num_outer, atom_index, get_neighbours, nbrlist, NULL, &env);
+        const int num_inner = 1, num_outer = 0;
+        ret = ptm::calculate_two_shell_neighbour_ordering(num_inner, num_outer, atom_index, get_neighbours, nbrlist, NULL, &env);
         if (ret == 0) {
             int num_points = env.num;
-		    ptm::normalize_vertices(num_points, env.points, ch_points);
-		    ch.ok = false;
+            ptm::normalize_vertices(num_points, env.points, ch_points);
+            ch.ok = false;
 
-		    if ((flags & PTM_CHECK_SC) && num_points >= PTM_NUM_POINTS_SC)
-			    ret = match_general(&ptm::structure_sc, ch_points, env.points, &ch, &res);
+            if ((flags & PTM_CHECK_SC) && num_points >= PTM_NUM_POINTS_SC)
+                ret = match_general(&ptm::structure_sc, ch_points, env.points, &ch, &res);
 
-		    if ((flags & (PTM_CHECK_FCC | PTM_CHECK_HCP | PTM_CHECK_ICO)) && num_points >= PTM_NUM_POINTS_FCC)
-			    ret = match_fcc_hcp_ico(ch_points, env.points, flags, &ch, &res);
+            if ((flags & (PTM_CHECK_FCC | PTM_CHECK_HCP | PTM_CHECK_ICO)) && num_points >= PTM_NUM_POINTS_FCC)
+                ret = match_fcc_hcp_ico(ch_points, env.points, flags, &ch, &res);
 
-		    if ((flags & PTM_CHECK_BCC) && num_points >= PTM_NUM_POINTS_BCC)
-			    ret = match_general(&ptm::structure_bcc, ch_points, env.points, &ch, &res);
+            if ((flags & PTM_CHECK_BCC) && num_points >= PTM_NUM_POINTS_BCC)
+                ret = match_general(&ptm::structure_bcc, ch_points, env.points, &ch, &res);
         }
-	}
+    }
 
-	if (flags & (PTM_CHECK_DCUB | PTM_CHECK_DHEX)) {
+    if (flags & (PTM_CHECK_DCUB | PTM_CHECK_DHEX)) {
 
-		const int num_inner = 4, num_outer = 3;
-		ret = ptm::calculate_two_shell_neighbour_ordering(num_inner, num_outer, atom_index, get_neighbours, nbrlist, &env, &dmn_env);
-		if (ret == 0) {
-			ptm::normalize_vertices(PTM_NUM_NBRS_DCUB + 1, dmn_env.points, ch_points);
-			ch.ok = false;
+        const int num_inner = 4, num_outer = 3;
+        ret = ptm::calculate_two_shell_neighbour_ordering(num_inner, num_outer, atom_index, get_neighbours, nbrlist, &env, &dmn_env);
+        if (ret == 0) {
+            ptm::normalize_vertices(PTM_NUM_NBRS_DCUB + 1, dmn_env.points, ch_points);
+            ch.ok = false;
 
-			ret = match_dcub_dhex(ch_points, dmn_env.points, flags, &ch, &res);
-		}
-	}
+            ret = match_dcub_dhex(ch_points, dmn_env.points, flags, &ch, &res);
+        }
+    }
 
-	if (flags & PTM_CHECK_GRAPHENE) {
+    if (flags & PTM_CHECK_GRAPHENE) {
 
-		const int num_inner = 3, num_outer = 2;
-		ret = ptm::calculate_two_shell_neighbour_ordering(num_inner, num_outer, atom_index, get_neighbours, nbrlist, &env, &grp_env);
-		if (ret == 0) {
-			ret = match_graphene(grp_env.points, &res);
-		}
-	}
+        const int num_inner = 3, num_outer = 2;
+        ret = ptm::calculate_two_shell_neighbour_ordering(num_inner, num_outer, atom_index, get_neighbours, nbrlist, &env, &grp_env);
+        if (ret == 0) {
+            ret = match_graphene(grp_env.points, &res);
+        }
+    }
 
-	if (res.ref_struct == NULL)
-		return PTM_NO_ERROR;
+    if (res.ref_struct == NULL)
+        return PTM_NO_ERROR;
 
-	ptm_atomicenv_t* res_env = &env;
-	if (res.ref_struct->type == PTM_MATCH_DCUB || res.ref_struct->type == PTM_MATCH_DHEX)
-		res_env = &dmn_env;
-	else if (res.ref_struct->type == PTM_MATCH_GRAPHENE)
-		res_env = &grp_env;
+    ptm_atomicenv_t* res_env = &env;
+    if (res.ref_struct->type == PTM_MATCH_DCUB || res.ref_struct->type == PTM_MATCH_DHEX)
+        res_env = &dmn_env;
+    else if (res.ref_struct->type == PTM_MATCH_GRAPHENE)
+        res_env = &grp_env;
 
-	output_data(&res, res_env, output_conventional_orientation, calculate_ordering_type, calculate_deformation, result, output_env);
-	return PTM_NO_ERROR;
+    output_data(&res, res_env, calculate_deformation, result);
+    output_environment(&res, res_env, output_env);
+    return PTM_NO_ERROR;
 }
 

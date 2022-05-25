@@ -91,9 +91,9 @@ void PTMNeighborFinder::Query::findNeighbors(size_t particleIndex, std::optional
 							_orientation.y(),
 							_orientation.z()};
 		double dummy = 0;
-		_templateIndex = ptm_remap_template(ptm_type, true, _templateIndex,
-											qtarget, qptm, &dummy,
-											remap_permutation, nullptr);
+		_templateIndex = ptm_remap_template(ptm_type, _templateIndex,
+											qtarget, qptm,
+											remap_permutation);
 		//arrange orientation in OVITO format
 		_orientation.w() = qptm[0];
 		_orientation.x() = qptm[1];

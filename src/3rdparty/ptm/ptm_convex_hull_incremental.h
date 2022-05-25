@@ -1,4 +1,4 @@
-/*Copyright (c) 2016 PM Larsen
+/*Copyright (c) 2022 PM Larsen
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -19,14 +19,14 @@ namespace ptm {
 
 typedef struct
 {
-        int8_t facets[PTM_MAX_FACETS][3];
-        double plane_normal[PTM_MAX_FACETS][3];
-        bool processed[PTM_MAX_POINTS];
-        int initial_vertices[4];
-        double barycentre[3];
-        int num_facets;
-        int num_prev;
-        bool ok;
+    int8_t facets[PTM_MAX_FACETS][3];
+    double plane_normal[PTM_MAX_FACETS][3];
+    bool processed[PTM_MAX_POINTS];
+    int initial_vertices[4];
+    double barycentre[3];
+    int num_facets;
+    int num_prev;
+    bool ok;
 
 } convexhull_t;
 

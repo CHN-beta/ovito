@@ -37,6 +37,7 @@ ADD_LIBRARY(PolyhedralTemplateMatching
 	ptm_graph_tools.cpp
 	ptm_index.cpp
 	ptm_initialize_data.cpp
+	ptm_map_templates.cpp
 	ptm_multishell.cpp
 	ptm_neighbour_ordering.cpp
 	ptm_normalize_vertices.cpp

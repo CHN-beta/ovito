@@ -1,4 +1,4 @@
-/*Copyright (c) 2020 PM Larsen
+/*Copyright (c) 2022 PM Larsen
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -196,10 +196,6 @@ void decode_correspondences(int type, uint64_t encoded, int8_t* correspondences,
 
 }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 uint64_t ptm_encode_correspondences(int type, int num, int8_t* correspondences, int best_template_index)
 {
 	return ptm::encode_correspondences(type, num, correspondences, best_template_index);
@@ -209,8 +205,4 @@ void ptm_decode_correspondences(int type, uint64_t encoded, int8_t* corresponden
 {
 	return ptm::decode_correspondences(type, encoded, correspondences, p_best_template_index);
 }
-
-#ifdef __cplusplus
-}
-#endif
 
