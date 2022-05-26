@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -84,8 +84,9 @@ public:
 	virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 	/// Returns the number of animation frames this modifier can provide.
-	virtual int numberOfSourceFrames(int inputFrames) const override {
-		return secondaryDataSource() ? std::max(secondaryDataSource()->numberOfSourceFrames(), inputFrames) : inputFrames;
+	virtual int numberOfOutputFrames(ModifierApplication* modApp) const override {
+		int upstreamFrameCount = MultiDelegatingModifier::numberOfOutputFrames(modApp);
+		return secondaryDataSource() ? std::max(secondaryDataSource()->numberOfSourceFrames(), upstreamFrameCount) : upstreamFrameCount;
 	}
 
 	/// Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).

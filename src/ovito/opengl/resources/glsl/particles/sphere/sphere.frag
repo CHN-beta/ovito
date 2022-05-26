@@ -38,7 +38,6 @@ void main()
 
 	// Perform ray-sphere intersection test.
 	float b = dot(ray_dir_norm, sphere_dir);
-	float sphere_dir_sq = dot(sphere_dir, sphere_dir);
 	vec3 delta = ray_dir_norm * b - sphere_dir;
 	float x = dot(delta, delta);
 	float disc = particle_radius_squared_fs - x;

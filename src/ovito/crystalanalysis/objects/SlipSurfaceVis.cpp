@@ -49,8 +49,8 @@ SlipSurfaceVis::SlipSurfaceVis(ObjectCreationParams params) : SurfaceMeshVis(par
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-SlipSurfaceVis::PrepareMeshEngine::PrepareMeshEngine(const SurfaceMesh* microstructure, QVector<Plane3> cuttingPlanes, bool smoothShading) :
-        SurfaceMeshVis::PrepareSurfaceEngine(microstructure, false, std::move(cuttingPlanes), smoothShading, NoPseudoColoring, {}, Color(1,1,1), false),
+SlipSurfaceVis::PrepareMeshEngine::PrepareMeshEngine(const SurfaceMesh* microstructure, bool smoothShading) :
+        SurfaceMeshVis::PrepareSurfaceEngine(microstructure, false, smoothShading, NoPseudoColoring, {}, Color(1,1,1), false),
         _microstructure(static_object_cast<Microstructure>(microstructure))
 {
     if(const PropertyObject* phaseProperty = microstructure->regions()->getProperty(SurfaceMeshRegions::PhaseProperty)) {
@@ -84,7 +84,7 @@ void SlipSurfaceVis::PrepareMeshEngine::determineFaceColors()
 {
     ConstPropertyAccess<int> phaseProperty = _microstructure.regionProperty(SurfaceMeshRegions::PhaseProperty);
     auto originalFace = _originalFaceMap.begin();
-    for(TriMeshFace& face : _surfaceMesh->faces()) {
+    for(TriMeshFace& face : outputMesh()->faces()) {
         int materialIndex = 0;
         int region = _microstructure.faceRegion(*originalFace);
         int phaseId = phaseProperty[region];

@@ -426,10 +426,11 @@ PipelineFlowState ModifierApplication::evaluateInternalSynchronous(const Pipelin
 ******************************************************************************/
 int ModifierApplication::numberOfSourceFrames() const
 {
-	int n = input() ? input()->numberOfSourceFrames() : CachingPipelineObject::numberOfSourceFrames();
-	if(modifierAndGroupEnabled())
-		n = modifier()->numberOfSourceFrames(n);
-	return n;
+	if(modifierAndGroupEnabled()) {
+		OVITO_ASSERT(modifier() != nullptr);
+		return modifier()->numberOfOutputFrames(const_cast<ModifierApplication*>(this));
+	}
+	return input() ? input()->numberOfSourceFrames() : CachingPipelineObject::numberOfSourceFrames();
 }
 
 /******************************************************************************

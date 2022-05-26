@@ -78,6 +78,17 @@ OORef<ModifierApplication> Modifier::createModifierApplication()
 }
 
 /******************************************************************************
+* Returns the number of animation frames this modifier provides.
+******************************************************************************/
+int Modifier::numberOfOutputFrames(ModifierApplication* modApp) const 
+{ 
+	OVITO_ASSERT(modApp);
+	if(PipelineObject* input = modApp->input())
+		return input->numberOfSourceFrames();
+	return 1;
+}
+
+/******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
 Future<PipelineFlowState> Modifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -100,6 +100,7 @@ void SshConnection::cancel()
 void SshConnection::setState(State state, bool emitStateChangedSignal)
 {
     if(_state != state) {
+        ::_ssh_log(SSH_LOG_PROTOCOL, "Ovito::SshConnection::setState()", "state=%i", state);
 
         _state = state;
 
@@ -183,13 +184,30 @@ void SshConnection::processState()
             ::ssh_set_log_level(SSH_LOG_TRACE);
             ::ssh_set_log_callback([](int priority, const char *function, const char *buffer, void *userdata) {
                 OVITO_ASSERT(buffer);
-                qInfo().noquote().nospace() << "[" 
-                    << QTime::currentTime().toString(QStringLiteral("hh:mm:ss.zzz")) << ", " 
-                    << priority << "] " 
-                    << buffer;
+                SshConnection* con = static_cast<SshConnection*>(userdata);
+                if(con->_lastLogMessage != buffer) {
+                    qInfo().noquote().nospace() << "[" 
+                        << QTime::currentTime().toString(QStringLiteral("hh:mm:ss.zzz")) << ", " 
+                        << priority << "] " 
+                        << buffer;
+                    con->_lastLogMessage = buffer;
+                }
             });
+            ::ssh_set_log_userdata(this);
             int verbosity = SSH_LOG_FUNCTIONS;
             setLibsshOption(SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
+        }
+
+        // Let user override the list of authentication methods:
+        if(!qEnvironmentVariableIsEmpty("OVITO_SSH_AUTHENTICATION_METHODS")) {
+            bool ok;
+            _useAuths = (UseAuths)qgetenv("OVITO_SSH_AUTHENTICATION_METHODS").toInt(&ok);
+            if(!ok || _useAuths & ~(UseAuthNone | UseAuthAutoPubKey | UseAuthPassword | UseAuthKbi)) {
+                _errorMessage = tr("Invalid value of environment variable OVITO_SSH_AUTHENTICATION_METHODS.");
+                setState(StateError, false);
+                return;
+            }
+            ::_ssh_log(SSH_LOG_PROTOCOL, "Ovito::SshConnection::processState()", "overriding list of acceptable authentication methods: %i", (int)_useAuths);
         }
 
         // Register authentication callback.
@@ -427,6 +445,8 @@ void SshConnection::useAuth(UseAuths auths, bool enabled)
 ******************************************************************************/
 void SshConnection::tryNextAuth()
 {
+    ::_ssh_log(SSH_LOG_PROTOCOL, "Ovito::SshConnection::tryNextAuth()", "state=%i", _state);
+
     // If authentication methods have not been chosen or all chosen authentication
     // methods have failed, switch state to StateChooseAuth or StateAuthFailed,
     // respectively.
@@ -457,6 +477,7 @@ void SshConnection::tryNextAuth()
         // Disable authentication methods that are not supported by the server.
         {
             AuthMethods supportedMethods = supportedAuthMethods();
+            ::_ssh_log(SSH_LOG_PROTOCOL, "Ovito::SshConnection::tryNextAuth()", "server supportedMethods=%i", (int)supportedMethods);
             if(!supportedMethods.testFlag(AuthMethodPassword)) useAuth(UseAuthPassword, false);
             if(!supportedMethods.testFlag(AuthMethodKbi)) useAuth(UseAuthKbi, false);
             if(!supportedMethods.testFlag(AuthMethodPublicKey)) useAuth(UseAuthAutoPubKey, false);
@@ -503,13 +524,13 @@ void SshConnection::tryNextAuth()
         _useAuths &= ~UseAuthAutoPubKey;
         setState(StateAuthAutoPubkey, true);
     }
-    else if(_useAuths & UseAuthKbi) {
-        _useAuths &= ~UseAuthKbi;
-        setState(StateAuthKbi, true);
-    }
     else if(_useAuths & UseAuthPassword) {
         _useAuths &= ~UseAuthPassword;
         setState(StateAuthPassword, true);
+    }
+    else if(_useAuths & UseAuthKbi) {
+        _useAuths &= ~UseAuthKbi;
+        setState(StateAuthKbi, true);
     }
 }
 
@@ -531,6 +552,8 @@ void SshConnection::setPassword(QString password)
 ******************************************************************************/
 void SshConnection::handleAuthResponse(int rc, UseAuthFlag auth)
 {
+    ::_ssh_log(SSH_LOG_PROTOCOL, "Ovito::SshConnection::handleAuthResponse()", "rc=%i auth=%i", rc, auth);
+
     switch(rc) {
     case SSH_AUTH_AGAIN:
         enableWritableSocketNotifier();
@@ -696,8 +719,10 @@ int SshConnection::authenticationCallback(const char* prompt, char* buf, size_t 
         return -1;
 
     connection->_keyPassphrase.clear();
+    ::_ssh_log(SSH_LOG_PROTOCOL, "Ovito::SshConnection::authenticationCallback()", "emit signal needPassphrase");
     Q_EMIT connection->needPassphrase(prompt);
     if(!connection->_keyPassphrase.isEmpty()) {
+        ::_ssh_log(SSH_LOG_PROTOCOL, "Ovito::SshConnection::authenticationCallback()", "received passphrase from user");
         QByteArray utf8pw = connection->_keyPassphrase.toUtf8();
         qstrncpy(buf, utf8pw.constData(), len);
         return 0;

@@ -153,7 +153,7 @@ CutoffRadiusPresetsUI::CutoffRadiusPresetsUI(PropertiesEditor* parentEditor, con
 	comboBox()->insertItem(0, tr("Presets..."));
 	comboBox()->setCurrentIndex(0);
 
-	connect(comboBox(), (void (QComboBox::*)(int))&QComboBox::activated, this, &CutoffRadiusPresetsUI::onSelect);
+	connect(comboBox(), qOverload<int>(&QComboBox::activated), this, &CutoffRadiusPresetsUI::onSelect);
 }
 
 /******************************************************************************

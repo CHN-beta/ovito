@@ -304,6 +304,18 @@ public:
 	using base_class::back;
 };
 
+/// \brief Writes a union of time intervals to the debug stream.
+/// \relates TimeIntervalUnion
+inline QDebug operator<<(QDebug stream, const TimeIntervalUnion& ivu)
+{
+	QDebug dbg = stream.nospace();
+	dbg << "{";
+	for(const TimeInterval& iv : ivu)
+		dbg << "[" << iv.start() << "-" << iv.end() << "]";
+	dbg << "}";
+	return stream.space();
+}
+
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::TimeInterval);

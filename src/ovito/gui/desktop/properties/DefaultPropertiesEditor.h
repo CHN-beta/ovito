@@ -31,7 +31,7 @@ namespace Ovito {
 /**
  * \brief The default properties editor used for RefTarget-derived classes if they do not define their own editor type.
  */
-class DefaultPropertiesEditor : public PropertiesEditor
+class OVITO_GUI_EXPORT DefaultPropertiesEditor : public PropertiesEditor
 {
 	OVITO_CLASS(DefaultPropertiesEditor)
 

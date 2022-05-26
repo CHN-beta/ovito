@@ -1,4 +1,4 @@
-/*Copyright (c) 2016 PM Larsen
+/*Copyright (c) 2022 PM Larsen
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -10,6 +10,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <cmath>
 
 namespace ptm {
+
+double vector_norm(double* v) {
+    double x = v[0];
+    double y = v[1];
+    double z = v[2];
+    return sqrt(x*x + y*y + z*z);
+}
 
 void subtract_barycentre(int num, double (*points)[3], double (*normalized)[3])
 {
@@ -41,14 +48,8 @@ double normalize_vertices(int num, double (*points)[3], double (*normalized)[3])
 
     //calculate mean length
     double scale = 0.0;
-    for (int i=1;i<num;i++)
-    {
-        double x = normalized[i][0];
-        double y = normalized[i][1];
-        double z = normalized[i][2];
-
-        double norm = sqrt(x*x + y*y + z*z);
-        scale += norm;
+    for (int i=1;i<num;i++) {
+        scale += vector_norm(normalized[i]);
     }
     scale /= num;
 

@@ -306,11 +306,10 @@ FloatType GrainSegmentationEngine1::calculate_disorientation(int structureType, 
 	else if(structureType == PTMAlgorithm::HEX_DIAMOND) type = PTM_MATCH_DHEX;
 	else if(structureType == PTMAlgorithm::GRAPHENE) type = PTM_MATCH_GRAPHENE;
 
-	double disorientation = 0;
-	int8_t dummy_mapping[PTM_MAX_POINTS];
-	if(ptm_remap_template(type, true, 0, qtarget, q, &disorientation, dummy_mapping, nullptr) < 0) {
-		qWarning() << "Grain segmentation: remap failure";
-		OVITO_ASSERT(false); // remap failure
+	FloatType disorientation = (FloatType)ptm_map_and_calculate_disorientation(type, qtarget, q);
+	if (disorientation == std::numeric_limits<FloatType>::infinity()) {
+		qWarning() << "Grain segmentation: disorientation calculation failure";
+		OVITO_ASSERT(false);
 	}
 
 	qa.w() += q[0] * qb_norm;
@@ -356,6 +355,9 @@ bool GrainSegmentationEngine1::minimum_spanning_tree_clustering(
 ******************************************************************************/
 bool GrainSegmentationEngine1::determineMergeSequence()
 {
+	// The graph used for the Node Pair Sampling methods
+	Graph graph(_numParticles, neighborBonds().size());
+
 	// Build graph.
 	if(_algorithmType == GrainSegmentationModifier::GraphClusteringAutomatic || _algorithmType == GrainSegmentationModifier::GraphClusteringManual) {
 
@@ -415,7 +417,7 @@ FILE* fout = fopen(filename, "w");
 		size_t sa = uf.nodesize(uf.find(node.a));
 		size_t sb = uf.nodesize(uf.find(node.b));
 		size_t dsize = std::min(sa, sb);
-		node.gm_size = sqrt(sa * sb);
+		node.merge_size = 2. / (1. / sa + 1. / sb);    //harmonic mean
 		uf.merge(node.a, node.b);
 
 #if DEBUG_OUTPUT
@@ -527,23 +529,6 @@ void GrainSegmentationEngine2::perform()
 	}
 
 	const std::vector<GrainSegmentationEngine1::DendrogramNode>& dendrogram = _engine1->_dendrogram;
-
-#if 0
-	// Refine the graph partitions
-	if(_engine1->_algorithmType == GrainSegmentationModifier::GraphClusteringAutomatic) {
-		auto graph = _engine1->graph;
-		FloatType gamma = 1 / mergingThreshold;	 // resolution parameter
-
-		for(auto node = dendrogram.crbegin(); node != dendrogram.crend(); ++node) {
-			graph.reinstate_edge(node->a, node->b);
-			//printf("%e %e\n", node->distance, graph.wnode[node->a] * graph.wnode[node->b] / graph.adj[node->a][node->b]);
-
-			if (std::log(node->distance) < mergingThreshold) {
-				// test all options for reassignment
-			}
-		}
-	}
-#endif
 
 	ConstPropertyAccess<Quaternion> orientationsArray(_engine1->orientations());
 	std::vector<Quaternion> meanOrientation(orientationsArray.cbegin(), orientationsArray.cend());

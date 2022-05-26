@@ -97,8 +97,9 @@ void STLImporter::FrameLoader::loadFile()
 		mesh = state().createObject<TriMeshObject>(dataSource());
 	else
 		mesh->clear();
+	mesh->setIdentifier(QStringLiteral("mesh"));
 
-	// Open file for reading assuming it is an ascii STL file.
+	// Open file for reading, assuming it is an ASCII STL file for now.
 	CompressedTextReader stream(fileHandle());
 
 	// Jump to byte offset.

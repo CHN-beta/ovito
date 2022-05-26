@@ -71,7 +71,7 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
 	_sourcesComboBox = new PopupUpdateComboBox();
 	connect(this, &PropertiesEditor::contentsChanged, this, &ColorLegendOverlayEditor::updateSourcesList);
 	connect(_sourcesComboBox, &PopupUpdateComboBox::dropDownActivated, this, &ColorLegendOverlayEditor::updateSourcesList);
-	connect(_sourcesComboBox, QOverload<int>::of(&QComboBox::activated), this, &ColorLegendOverlayEditor::colorSourceSelected);
+	connect(_sourcesComboBox, qOverload<int>(&QComboBox::activated), this, &ColorLegendOverlayEditor::colorSourceSelected);
 	sourceLayout->addWidget(_sourcesComboBox, 1);
 
 	QGroupBox* positionBox = new QGroupBox(tr("Positioning"));

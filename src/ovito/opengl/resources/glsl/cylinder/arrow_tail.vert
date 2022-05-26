@@ -29,7 +29,7 @@ in vec3 head;
 in float radius;
 in vec4 color1;
 in vec4 color2;
-uniform vec3 unit_cube_triangle_strip[14];
+uniform vec3 unit_box_triangle_strip[14];
 
 // Outputs:
 flat out vec4 color_fs;
@@ -62,7 +62,7 @@ void main()
     }
 
 	// Apply model-view-projection matrix to box vertex position.
-    gl_Position = modelview_projection_matrix * vec4(base + (orientation_tm * unit_cube_triangle_strip[corner]), 1.0);
+    gl_Position = modelview_projection_matrix * vec4(base + (orientation_tm * unit_box_triangle_strip[corner]), 1.0);
 
     // Forward cylinder color to fragment shader.
     color_fs = color1;

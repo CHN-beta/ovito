@@ -61,6 +61,9 @@ public:
 	struct Neighbor : public NearestNeighborFinder::Neighbor
 	{
 		Vector3 idealVector;
+#if 0
+		Vector_3<int8_t> scaledVector;
+#endif
 		FloatType disorientation;
 	};
 
@@ -86,6 +89,9 @@ public:
         /// Returns the root-mean-square deviation calculated by the PTM for the current particle.
         double rmsd() const { return _rmsd; }
 
+        /// Returns the interatomic distance calculated by the PTM for the current particle.
+        double interatomicDistance() const { return _interatomicDistance; }
+
         /// Returns the local structure orientation computed by the PTM routine for the current particle.
         const Quaternion& orientation() const { return _orientation; }
 
@@ -108,6 +114,7 @@ public:
 
 		// Local quantities computed by the PTM algorithm:
 		double _rmsd;
+		double _interatomicDistance;
 		PTMAlgorithm::StructureType _structureType;
 		Quaternion _orientation;
 

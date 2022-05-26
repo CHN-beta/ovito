@@ -105,6 +105,7 @@ void VTKFileImporter::FrameLoader::loadFile()
 		mesh = state().createObject<TriMeshObject>(dataSource());
 	else
 		mesh->clear();
+	mesh->setIdentifier(QStringLiteral("mesh"));
 
 	// Parse point coordinates.
 	mesh->setVertexCount(pointCount);

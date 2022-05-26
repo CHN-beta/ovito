@@ -157,7 +157,7 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
 			},
 			// resetUIFunction:
 			{});
-	connect(_nodeComboBox, QOverload<int>::of(&QComboBox::activated), sourcePUI, &CustomParameterUI::updatePropertyValue);
+	connect(_nodeComboBox, qOverload<int>(&QComboBox::activated), sourcePUI, &CustomParameterUI::updatePropertyValue);
 	variablesLayout->addWidget(new QLabel(tr("Source pipeline:")), 0, 0, 1, 2);
 	variablesLayout->addWidget(sourcePUI->widget(), 1, 0, 1, 2);
 

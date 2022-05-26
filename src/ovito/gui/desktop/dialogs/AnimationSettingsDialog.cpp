@@ -71,7 +71,7 @@ AnimationSettingsDialog::AnimationSettingsDialog(AnimationSettings* animSettings
 	fpsBox->addItem(locale.toString(50), TICKS_PER_SECOND / 50);
 	fpsBox->addItem(locale.toString(60), TICKS_PER_SECOND / 60);
 	contentLayout->addWidget(fpsBox, 0, 1, 1, 2);
-	connect(fpsBox, (void (QComboBox::*)(int))&QComboBox::activated, this, &AnimationSettingsDialog::onFramesPerSecondChanged);
+	connect(fpsBox, qOverload<int>(&QComboBox::activated), this, &AnimationSettingsDialog::onFramesPerSecondChanged);
 
 	QGroupBox* interactiveBox = new QGroupBox(tr("Playback in interactive viewports"));
 	layout1->addWidget(interactiveBox);
@@ -95,7 +95,7 @@ AnimationSettingsDialog::AnimationSettingsDialog(AnimationSettings* animSettings
 	playbackSpeedBox->addItem(tr("x 10"), 10);
 	playbackSpeedBox->addItem(tr("x 20"), 20);
 	contentLayout->addWidget(playbackSpeedBox, 0, 2, 1, 2);
-	connect(playbackSpeedBox, (void (QComboBox::*)(int))&QComboBox::activated, this, &AnimationSettingsDialog::onPlaybackSpeedChanged);
+	connect(playbackSpeedBox, qOverload<int>(&QComboBox::activated), this, &AnimationSettingsDialog::onPlaybackSpeedChanged);
 
 	contentLayout->addWidget(new QLabel(tr("Every Nth frame:"), this), 1, 0);
 	QLineEdit* everyNthFrameBox = new QLineEdit(this);

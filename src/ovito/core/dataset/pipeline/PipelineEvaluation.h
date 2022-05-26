@@ -43,6 +43,9 @@ public:
 		_breakOnError(breakOnError), 
 		_cachingIntervals(time) {}
 
+	/// Constructs a request object for evaluating the pipeline using a prescribed caching pattern.
+	explicit PipelineEvaluationRequest(const TimeIntervalUnion& cachingIntervals) : _cachingIntervals(cachingIntervals) {}
+
 	/// Returns the animation time at which the pipeline is being evaluated.
 	TimePoint time() const { return _time; }
 

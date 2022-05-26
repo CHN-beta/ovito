@@ -28,7 +28,7 @@
 in vec3 base;
 in vec3 head;
 in float radius;
-uniform vec3 unit_cube_triangle_strip[14];
+uniform vec3 unit_box_triangle_strip[14];
 
 // Outputs:
 flat out vec4 color_fs;
@@ -61,7 +61,7 @@ void main()
     }
 
 	// Apply model-view-projection matrix to box vertex position.
-    gl_Position = modelview_projection_matrix * vec4(base + (orientation_tm * unit_cube_triangle_strip[corner]), 1.0);
+    gl_Position = modelview_projection_matrix * vec4(base + (orientation_tm * unit_box_triangle_strip[corner]), 1.0);
 
     // Compute color from object ID.
     color_fs = pickingModeColor(<InstanceID>);

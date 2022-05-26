@@ -97,6 +97,7 @@ void WavefrontOBJImporter::FrameLoader::loadFile()
 		mesh = state().createObject<TriMeshObject>(dataSource());
 	else
 		mesh->clear();
+	mesh->setIdentifier(QStringLiteral("mesh"));
 
 	// List of parsed vertex normals.
 	std::vector<Vector3> vertexNormals;

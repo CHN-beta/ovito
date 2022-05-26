@@ -46,7 +46,7 @@ namespace Ovito {
  * Compare(x,top())==false. Otherwise, the element at the root of the heap is removed
  * and x is inserted so as to keep the heap property.
  */
-template<typename T, typename Compare = std::less<T>, int QUEUE_SIZE_LIMIT = 32>
+template<typename T, typename Compare, int QUEUE_SIZE_LIMIT>
 class BoundedPriorityQueue
 {
 public:

@@ -133,21 +133,35 @@ public:
 
 		int ptm_type = ovito_to_ptm_structure_type(structureType);
 		const ptm::refdata_t* ref = ptm::refdata[ptm_type];
+		return ref->points[templateIndex];
+	}
+
+#if 0
+	static const int8_t (*get_scaled_template(StructureType structureType, int templateIndex))[3]
+	{
+		if (structureType == OTHER
+            || structureType == ICO) {  // ICO structure does not form a lattice
+			return nullptr;
+		}
+
+		int ptm_type = ovito_to_ptm_structure_type(structureType);
+		const ptm::refdata_t* ref = ptm::refdata[ptm_type];
 		if (templateIndex == 0) {
-			return ref->points;
+			return ref->scaled;
 		}
 		else if (templateIndex == 1) {
-			return ref->points_alt1;
+			return ref->scaled_alt1;
 		}
 		else if (templateIndex == 2) {
-			return ref->points_alt2;
+			return ref->scaled_alt2;
 		}
 		else if (templateIndex == 3) {
-			return ref->points_alt3;
+			return ref->scaled_alt3;
 		}
 		OVITO_ASSERT(0);
 		return nullptr;
 	}
+#endif
 
 	static FloatType calculate_disorientation(StructureType structureTypeA,
 											  StructureType structureTypeB,
@@ -263,8 +277,8 @@ public:
             return Quaternion((FloatType)_q[1], (FloatType)_q[2], (FloatType)_q[3], (FloatType)_q[0]);
         }
 
-        /// The index of the best-matching structure template.
-        int bestTemplateIndex() const { return _bestTemplateIndex; }
+        /// The index of the structure template.
+        int templateIndex() const { return _templateIndex; }
 
         /// Returns the number of neighbors for the PTM structure found for the current particle.
         int numTemplateNeighbors() const;
@@ -300,7 +314,7 @@ public:
 
 		uint64_t correspondence() {
 			int type = ovito_to_ptm_structure_type(structureType());
-			return ptm_encode_correspondences(type, _env.num, _env.correspondences, _bestTemplateIndex);
+			return ptm_encode_correspondences(type, _env.num, _env.correspondences, _templateIndex);
 		}
 
 	private:
@@ -318,8 +332,7 @@ public:
 		Matrix_3<double> _F{Matrix_3<double>::Zero()};
 		StructureType _structureType = OTHER;
 		int32_t _orderingType = ORDERING_NONE;
-		int _bestTemplateIndex;
-		const double (*_bestTemplate)[3] = nullptr;
+		int _templateIndex;
 		ptm_atomicenv_t _env;		
 	};
 

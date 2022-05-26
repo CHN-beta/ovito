@@ -53,7 +53,7 @@ protected:
 	public:
 
 		/// Constructor.
-		PrepareMeshEngine(const SurfaceMesh* microstructure, QVector<Plane3> cuttingPlanes, bool smoothShading);
+		PrepareMeshEngine(const SurfaceMesh* microstructure, bool smoothShading);
 
 	protected:
 
@@ -74,7 +74,7 @@ protected:
 
 	/// Creates the asynchronous task that builds the non-peridic representation of the input surface mesh.
 	virtual std::shared_ptr<PrepareSurfaceEngine> createSurfaceEngine(const SurfaceMesh* mesh) const override {
-		return std::make_shared<PrepareMeshEngine>(mesh, mesh->cuttingPlanes(), smoothShading());
+		return std::make_shared<PrepareMeshEngine>(mesh, smoothShading());
 	}
 
 	/// Create the viewport picking record for the surface mesh object.

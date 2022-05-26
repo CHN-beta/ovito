@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,6 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
 		return;
 	if(primitive.indices() && primitive.indices()->size() == 0)
         return;
-
 
 	rebindVAO();
 
@@ -108,14 +107,14 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
                             shader.load("sphere", "particles/sphere/sphere.vert", "particles/sphere/sphere.frag");
                         else
                             shader.load("sphere_picking", "particles/sphere/sphere_picking.vert", "particles/sphere/sphere_picking.frag");
-                        shader.setVerticesPerInstance(14); // Cube rendered as triangle strip.
+                        shader.setVerticesPerInstance(4); // Billboard quad geometry rendered as triangle strip.
                     }
                     else {
                         if(!isPicking())
                             shader.load("sphere.geom", "particles/sphere/sphere.geom.vert", "particles/sphere/sphere.frag", "particles/sphere/sphere.geom");
                         else
                             shader.load("sphere_picking.geom", "particles/sphere/sphere_picking.geom.vert", "particles/sphere/sphere_picking.frag", "particles/sphere/sphere_picking.geom");
-                        shader.setVerticesPerInstance(1); // Geometry shader generates the triangle strip from a point primitive.
+                        shader.setVerticesPerInstance(1); // Geometry shader generates the triangle strip from a single point primitive.
                     }
                 }
                 else if(primitive.renderingQuality() >= ParticlePrimitive::MediumQuality) {

@@ -151,8 +151,6 @@ PTMAlgorithm::StructureType PTMAlgorithm::Kernel::identifyStructure(size_t parti
 	int errorCode = ptm_index(_handle,
 			particleIndex, get_neighbours, (void*)&nbrdata,
 			flags,
-			true,
-			true,
 			_algo._calculateDefGradient,
 			&result,
 			&_env);
@@ -162,8 +160,7 @@ PTMAlgorithm::StructureType PTMAlgorithm::Kernel::identifyStructure(size_t parti
 	_scale = result.scale;
 	_rmsd = result.rmsd;
 	_interatomicDistance = result.interatomic_distance;
-	_bestTemplateIndex = result.best_template_index;
-	_bestTemplate = result.best_template;
+	_templateIndex = result.template_index;
 	memcpy(_q, result.orientation, 4 * sizeof(double));
 	if (_algo._calculateDefGradient) {
 		memcpy(_F.elements(), result.F,  9 * sizeof(double));
@@ -179,7 +176,7 @@ PTMAlgorithm::StructureType PTMAlgorithm::Kernel::identifyStructure(size_t parti
 		_interatomicDistance = 0;
 		_q[0] = _q[1] = _q[2] = _q[3] = 0;
 		_scale = 0;
-		_bestTemplateIndex = 0;
+		_templateIndex = 0;
 		_F.setZero();
 	}
 	else {
