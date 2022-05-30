@@ -89,7 +89,6 @@ void GrainSegmentationEngine1::perform()
 	//	decltype(_neighborBonds){}.swap(_neighborBonds);
 }
 
-
 /******************************************************************************
 * Creates neighbor bonds from stored PTM data.
 ******************************************************************************/

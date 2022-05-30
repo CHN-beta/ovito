@@ -34,29 +34,27 @@ bool GrainSegmentationEngine1::node_pair_sampling_clustering(GrainSegmentationEn
     FloatType totalWeight = 1;
 
 	size_t progress = 0;
-	size_t n = graph.num_nodes();
+	std::vector<size_t> chain;
 	while(graph.num_nodes()) {
 
 		// nearest-neighbor chain
 		size_t node = graph.next_node();
 		OVITO_ASSERT(node != std::numeric_limits<size_t>::max());
 
-		std::vector<size_t> chain{node};
-		while(chain.size()) {
+		chain.push_back(node);
+		while(!chain.empty()) {
 
 			size_t a = chain.back();
 			chain.pop_back();
 			OVITO_ASSERT(a != std::numeric_limits<size_t>::max());
 
-			FloatType d;
-			size_t b;
-			std::tie(d, b) = graph.nearest_neighbor(a);
+			auto [d, b] = graph.nearest_neighbor(a);
 			if(b == std::numeric_limits<size_t>::max()) {
 				OVITO_ASSERT(chain.size() == 0);
 				// Remove the connected component
 				graph.remove_node(a);
 			}
-			else if(chain.size()) {
+			else if(!chain.empty()) {
 				size_t c = chain.back();
 				chain.pop_back();
 
