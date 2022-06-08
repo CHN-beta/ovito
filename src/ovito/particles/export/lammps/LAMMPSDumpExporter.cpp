@@ -134,10 +134,10 @@ bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
 		case ParticlesObject::PotentialEnergyProperty: columnName = QStringLiteral("c_epot"); break;
 		case ParticlesObject::KineticEnergyProperty: columnName = QStringLiteral("c_kpot"); break;
 		case ParticlesObject::OrientationProperty:
-			if(pref.vectorComponent() == 0) columnName = QStringLiteral("c_orient[1]");
-			else if(pref.vectorComponent() == 1) columnName = QStringLiteral("c_orient[2]");
-			else if(pref.vectorComponent() == 2) columnName = QStringLiteral("c_orient[3]");
-			else if(pref.vectorComponent() == 2) columnName = QStringLiteral("c_orient[4]");
+			if(pref.vectorComponent() == 0) columnName = QStringLiteral("quati");
+			else if(pref.vectorComponent() == 1) columnName = QStringLiteral("quatj");
+			else if(pref.vectorComponent() == 2) columnName = QStringLiteral("quatk");
+			else if(pref.vectorComponent() == 3) columnName = QStringLiteral("quatw");
 			else columnName = QStringLiteral("orientation");
 			break;
 		case ParticlesObject::AsphericalShapeProperty:

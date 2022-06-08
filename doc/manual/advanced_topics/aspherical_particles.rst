@@ -63,22 +63,30 @@ allows you to output this per-particle information to a dump file using the foll
 
 :: 
 
-  compute orient all property/atom quati quatj quatk quatw
+  compute orient all property/atom quatw quati quatj quatk
   compute diameter all property/atom shapex shapey shapez
   dump 1 all custom 100 ellipsoid.dump id type x y z &
-                                       c_orient[1] c_orient[2] c_orient[3] c_orient[4] &
+                                       c_q[1] c_q[2] c_q[3] c_q[4] &
                                        c_diameter[1] c_diameter[2] c_diameter[3]
 
-You should map the ``quati``, ``quatj``, ``quatj``, and ``quatw`` atom properties of LAMMPS  
-to the ``Orientation.X``, ``Orientation.Y``, ``Orientation.Z``, and ``Orientation.W`` properties of OVITO 
-during import of the dump file. 
+During import of the dump file in OVITO, you should map the ``quati``, ``quatj``, ``quatj``, and ``quatw`` atom attributes from LAMMPS  
+to the ``Orientation.X``, ``Orientation.Y``, ``Orientation.Z``, and ``Orientation.W`` particle properties in OVITO (in this exact order). 
+This mapping will be established automatically if you `assign the right names to the columns <https://docs.lammps.org/dump_modify.html>`__ 
+when writing the dump file: 
 
-Similarly, the ``shapex``, ``shapey``, and ``shapez`` columns should be mapped to the properties ``Aspherical Shape.X``, ``Aspherical Shape.Y``, and ``Aspherical Shape.Z``
-within OVITO. This property plays a role for some of the particle display shapes described below. 
+:: 
 
-When importing a dump file, the correct mapping :ref:`is set up automatically <file_formats.input.lammps_dump.property_mapping>` if you name your computes in LAMMPS as in the above example. 
-Otherwise, you may have to adjust the mapping by hand in the :guilabel:`Edit column mapping` dialog, which is accessible from the :ref:`file import panel <scene_objects.file_source>` 
-after opening the dump or xyz file.
+  dump_modify 1 colname c_q[1] quatw colname c_q[2] quati colname c_q[3] quatj colname c_q[4] quatk
+  dump_modify 1 colname c_diameter[1] shapex colname c_diameter[2] shapey colname c_diameter[3] shapez
+
+Similarly, the ``shapex``, ``shapey``, and ``shapez`` columns will be mapped to the properties ``Aspherical Shape.X``, ``Aspherical Shape.Y``, and ``Aspherical Shape.Z``
+within OVITO, which controls the principal semi-axes of non-spherical particles as described below. 
+
+.. note::
+
+   The correct mapping can be set up automatically by OVITO only if you name the dump file columns as specified 
+   :ref:`here <file_formats.input.lammps_dump.property_mapping>`. Otherwise, you may have to adjust the mapping by hand in the :guilabel:`Edit column mapping` dialog, 
+   which is accessible from the :ref:`file import panel <file_formats.input.lammps_dump>` after opening the dump or xyz file.
 
 .. _howto.aspherical_particles.spheres:
 
