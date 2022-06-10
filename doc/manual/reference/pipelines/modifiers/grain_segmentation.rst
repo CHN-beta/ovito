@@ -10,11 +10,18 @@ in crystal regions having similar local lattice orientations. The algorithm work
   2. A graph representation of the input structure is created using the neighbors of each atom, where each atom is a graph node and each neighbor bond is a graph edge.
   3. Grains are formed by hierarchical clustering of the graph.
 
-The modifier assigns a new property named ``Grain`` to the particles
-to indicate which grain each atom belongs to (encoded as an integer grain identifier). The special grain identifier 0 means an atom does not belong to any grain.
+The modifier assigns a new property named ``Grain`` to each atom indicating which grain the atom belongs to 
+(grain numeric identifier). The special grain identifier 0 is assigned to atoms that do not belong to any grain.
 The modifier furthermore computes a mean lattice orientation for each identified grain and outputs a list of
-all grains as a :ref:`data table <scene_objects.data_table>`. The grain orientations are expressed as 4-component quaternions
-similar to the :ref:`per-atom lattice orientations computed by the PTM modifier <particles.modifiers.polyhedral_template_matching.orientations>`. 
+the grains as a :ref:`data table <scene_objects.data_table>` with the following per-grain information:
+
+  1. Numeric grain identifier
+  2. Grain size (in terms of the number of atoms belonging to the grain; whether grain boundary atoms are included depends on the :guilabel:`Adopt orphan atoms` option)
+  3. Display color (see option :guilabel:`Color particles by grain` below)
+  4. Crystal phase of the grain (see :ref:`PTM structure types <particles.modifiers.polyhedral_template_matching>`)
+  5. Mean lattice orientation (expressed as 4-component quaternion similar to the :ref:`per-atom lattice orientations computed by the PTM modifier <particles.modifiers.polyhedral_template_matching.orientations>`)
+
+The list of grains is ordered by size, starting with the largest grain (in terms of the number of atoms).
 
 .. caution::
 
@@ -89,10 +96,10 @@ Log merge threshold
   Note that this threshold parameter can be set to a negative value, because it is specified on a logarithmic distance scale.
 
 Minimum grain size
-  Grains below this size are dissolved. The atoms contained within are set as 'orphan' atoms (see option :guilabel:`Adopt orphan atoms`).
+  Grains below this minimum number of atoms are dissolved. Atoms in sub-critical grains, which get dissolved, will become orphan atoms (see option :guilabel:`Adopt orphan atoms`).
 
 Adopt orphan atoms
-  After clustering has been performed by the algorithm, some atoms might not be assigned to a grain, so-called 'orphan' atoms (according to `Hoffrogge and Barrales-Mora <https://doi.org/10.1016/j.commatsci.2016.11.027>`__).
+  After clustering has been performed by the algorithm, some atoms might not be assigned to a grain, so-called "orphan" atoms (according to `Hoffrogge and Barrales-Mora <https://doi.org/10.1016/j.commatsci.2016.11.027>`__).
   This includes atoms that are part of grain boundaries. This option lets the modifier assign these orphan atoms to the nearest grain.
 
 Handle coherent interfaces/stacking faults
@@ -114,7 +121,7 @@ Output bonds
 Example
 """""""
 
-The panel below illustrates the effect of varying the merge threshold in a polycrystalline graphene sample, using the *Graph Clustering* algorithm.
+The panel below illustrates the effect of varying the merge threshold in a `polycrystalline graphene sample <https://gitlab.com/stuko/ovito/-/blob/master/tests/files/POSCAR/Voronoi1.POSCAR.gz>`__, using the *Graph Clustering* algorithm.
 A good segmentation into 6 grains is achieved using a merge threshold of 14 (left).
 Reducing the threshold to 13.5 reveals a subgrain structure in the largest grain (middle). A further reduction of the threshold to 12.5 splits the largest grain into three subgrains (right).
 
