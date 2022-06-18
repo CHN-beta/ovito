@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2022 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -31,7 +31,7 @@ IF(NOT EMSCRIPTEN)
 ENDIF()
 
 # Locate the libssh library, needed for the built-in SSH client.
-IF(NOT OVITO_BUILD_CONDA AND NOT EMSCRIPTEN)
+IF(OVITO_BUILD_SSH_CLIENT AND NOT EMSCRIPTEN)
 	FIND_PACKAGE(Libssh)
 ENDIF()
 
@@ -147,16 +147,18 @@ ELSE()
 ENDIF()
 
 # Include optional SSH client code.
-IF(Libssh_FOUND)
-	LIST(APPEND SourceFiles
-		utilities/io/ssh/SshConnection.cpp
-		utilities/io/ssh/SshChannel.cpp
-		utilities/io/ssh/ProcessChannel.cpp
-		utilities/io/ssh/ScpChannel.cpp
-		utilities/io/ssh/LsChannel.cpp
-	)
-ELSE()
-	MESSAGE("Libssh library not found. OVITO will be built without built-in SSH client.")
+IF(OVITO_BUILD_SSH_CLIENT)
+	IF(Libssh_FOUND)
+		LIST(APPEND SourceFiles
+			utilities/io/ssh/SshConnection.cpp
+			utilities/io/ssh/SshChannel.cpp
+			utilities/io/ssh/ProcessChannel.cpp
+			utilities/io/ssh/ScpChannel.cpp
+			utilities/io/ssh/LsChannel.cpp
+		)
+	ELSE()
+		MESSAGE("Libssh library not found. OVITO will be built without built-in SSH client.")
+	ENDIF()
 ENDIF()
 
 # Make use of the zlib library provided by Emscripten.
@@ -201,7 +203,7 @@ IF(ZLIB_FOUND)
 ENDIF()
 
 # Link to Libssh.
-IF(Libssh_FOUND)
+IF(OVITO_BUILD_SSH_CLIENT AND Libssh_FOUND)
 	TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_SSH_CLIENT)
 	TARGET_LINK_LIBRARIES(Core PRIVATE Libssh::Libssh)
 ENDIF()
@@ -313,7 +315,7 @@ IF(ZLIB_FOUND AND NOT EMSCRIPTEN)
 ENDIF()
 
 # Deploy the libssh library and its dependencies.
-IF(Libssh_FOUND AND NOT EMSCRIPTEN)
+IF(OVITO_BUILD_SSH_CLIENT AND Libssh_FOUND AND NOT EMSCRIPTEN)
 	IF(WIN32 AND NOT OVITO_BUILD_CONDA)
 		LIST(GET LIBSSH_LIBRARIES 0 LIBSSH_FIRST_LIBRARY)
 		GET_FILENAME_COMPONENT(LIBSSH_LIBRARY_DIR "${LIBSSH_FIRST_LIBRARY}" PATH)
