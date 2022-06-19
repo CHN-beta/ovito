@@ -224,6 +224,11 @@ IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	TARGET_COMPILE_OPTIONS(Core PUBLIC "-Wno-undefined-var-template")
 ENDIF()
 
+IF(MSVC AND OVITO_BUILD_CONDA)
+	# Silence deprecation warnings in conda-forge's 'qt-main' package (qpdfwriter.h and qpagedpaintdevice.h).
+	TARGET_COMPILE_OPTIONS(Core PUBLIC "/wd4996")
+ENDIF()
+
 # Compute the relative path where the plugin libraries get installed relative to the executable. 
 FILE(RELATIVE_PATH OVITO_PLUGINS_RELATIVE_PATH "${OVITO_BINARY_DIRECTORY}" "${OVITO_PLUGINS_DIRECTORY}")
 TARGET_COMPILE_DEFINITIONS(Core PRIVATE "OVITO_PLUGINS_RELATIVE_PATH=\"${OVITO_PLUGINS_RELATIVE_PATH}\"")
