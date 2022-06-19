@@ -419,7 +419,6 @@ void DataSet::pipelineEvaluationFinished()
 	makeSceneReady(false);
 }
 
-
 /******************************************************************************
 * This is the high-level rendering function, which invokes the renderer to 
 * generate one or more output images of the scene. 
@@ -627,7 +626,7 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 
 			// Set up preliminary projection.
 			FloatType viewportAspectRatio = (FloatType)destinationRect.height() / (FloatType)destinationRect.width();
-			ViewProjectionParameters projParams = viewport->computeProjectionParameters(renderTime, viewportAspectRatio);
+			ViewProjectionParameters projParams = viewport->computeProjectionParameters(renderTime, viewportAspectRatio, renderer->waitForLongOperationsEnabled());
 
 			// Request scene bounding box.
 			Box3 boundingBox = renderer->computeSceneBoundingBox(renderTime, projParams, nullptr, operation);
@@ -635,7 +634,7 @@ bool DataSet::renderFrame(TimePoint renderTime, int frameNumber, RenderSettings*
 				return false;
 
 			// Determine final view projection.
-			projParams = viewport->computeProjectionParameters(renderTime, viewportAspectRatio, boundingBox);
+			projParams = viewport->computeProjectionParameters(renderTime, viewportAspectRatio, renderer->waitForLongOperationsEnabled(), boundingBox);
 
 			// Render one frame.
 			try {

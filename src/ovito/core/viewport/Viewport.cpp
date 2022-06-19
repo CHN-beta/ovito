@@ -237,7 +237,7 @@ void Viewport::setCameraPosition(const Point3& p)
 /******************************************************************************
 * Computes the projection matrix and other parameters.
 ******************************************************************************/
-ViewProjectionParameters Viewport::computeProjectionParameters(TimePoint time, FloatType aspectRatio, const Box3& sceneBoundingBox)
+ViewProjectionParameters Viewport::computeProjectionParameters(TimePoint time, FloatType aspectRatio, bool asynchronousEvaluation, const Box3& sceneBoundingBox)
 {
 	OVITO_ASSERT(aspectRatio > FLOATTYPE_EPSILON);
 
@@ -255,8 +255,16 @@ ViewProjectionParameters Viewport::computeProjectionParameters(TimePoint time, F
 		params.inverseViewMatrix = viewNode()->getWorldTransform(time, params.validityInterval);
 		params.viewMatrix = params.inverseViewMatrix.inverse();
 
+		// Evaluate data pipeline of the camera scene node.
+		PipelineEvaluationFuture pipelineEvaluation;
+		if(asynchronousEvaluation) {
+			pipelineEvaluation = viewNode()->evaluatePipeline(PipelineEvaluationRequest(time));
+			if(!pipelineEvaluation.waitForFinished())
+				pipelineEvaluation = {};
+		}
+		const PipelineFlowState& state = pipelineEvaluation.isValid() ? pipelineEvaluation.result() : viewNode()->evaluatePipelineSynchronous(false);
+
 		// Get camera settings (FOV etc.)
-		const PipelineFlowState& state = viewNode()->evaluatePipelineSynchronous(false);
 		if(const AbstractCameraObject* camera = state.data() ? state.data()->getObject<AbstractCameraObject>() : nullptr) {
 			// Get remaining parameters from camera object.
 			camera->projectionParameters(time, params);
@@ -360,7 +368,7 @@ void Viewport::zoomToBox(const Box3& box, FloatType viewportAspectRatio)
 		}
 		if(aspectRatio == 0)
 			return;
-		ViewProjectionParameters projParams = computeProjectionParameters(dataset()->animationSettings()->time(), aspectRatio, box);
+		ViewProjectionParameters projParams = computeProjectionParameters(dataset()->animationSettings()->time(), aspectRatio, false, box);
 
 		FloatType minX = FLOATTYPE_MAX, minY = FLOATTYPE_MAX;
 		FloatType maxX = FLOATTYPE_MIN, maxY = FLOATTYPE_MIN;
@@ -557,22 +565,22 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 		// Set up the renderer.
 		renderer->startRender(dataset(), renderSettings, vpRect.size());
 
+		// This is the async operation object used when calling rendering functions in the following.
+		MainThreadOperation renderOperation = MainThreadOperation::create(dataset()->userInterface(), ExecutionContext::Interactive);
+
 		// Set up preliminary projection without a known bounding box.
 		FloatType aspectRatio = (FloatType)vpRect.height() / vpRect.width();
-		_projParams = computeProjectionParameters(time, aspectRatio);
+		_projParams = computeProjectionParameters(time, aspectRatio, renderer->waitForLongOperationsEnabled());
 
 		// Adjust projection if render frame is shown.
 		if(renderPreviewMode())
 			adjustProjectionForRenderFrame(_projParams);
 
-		// This is the async operation object used when calling rendering functions in the following.
-		MainThreadOperation renderOperation = MainThreadOperation::create(dataset()->userInterface(), ExecutionContext::Interactive);
-
 		// Determine scene bounding box.
 		Box3 boundingBox = renderer->computeSceneBoundingBox(time, _projParams, this, renderOperation);
 
 		// Set up final projection with the now known bounding box.
-		_projParams = computeProjectionParameters(time, aspectRatio, boundingBox);
+		_projParams = computeProjectionParameters(time, aspectRatio, renderer->waitForLongOperationsEnabled(), boundingBox);
 
 		// Adjust projection if render frame is shown.
 		if(renderPreviewMode())
@@ -592,7 +600,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 							(renderFrameBox.minc.y() + 1) * vpRect.height() / 2,
 							renderFrameBox.width() * vpRect.width() / 2,
 							renderFrameBox.height() * vpRect.height() / 2);
-					renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), boundingBox));
+					renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), renderer->waitForLongOperationsEnabled(), boundingBox));
 					renderer->renderOverlays(true, renderViewportRect, renderFrameRect, renderOperation);
 				}
 			}
@@ -615,7 +623,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 							(renderFrameBox.minc.y() + 1) * vpRect.height() / 2,
 							renderFrameBox.width() * vpRect.width() / 2,
 							renderFrameBox.height() * vpRect.height() / 2);
-					renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), boundingBox));
+					renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), renderer->waitForLongOperationsEnabled(), boundingBox));
 					renderer->renderOverlays(false, renderViewportRect, renderFrameRect, renderOperation);
 				}
 			}
