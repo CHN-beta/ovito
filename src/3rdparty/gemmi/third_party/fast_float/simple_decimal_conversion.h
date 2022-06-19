@@ -16,6 +16,7 @@
 #include "ascii_number.h"
 #include "decimal_to_binary.h"
 #include <cstdint>
+#include <limits>
 
 namespace fast_float {
 
@@ -127,7 +128,7 @@ inline uint64_t round(decimal &h) {
   if ((h.num_digits == 0) || (h.decimal_point < 0)) {
     return 0;
   } else if (h.decimal_point > 18) {
-    return UINT64_MAX;
+    return std::numeric_limits<uint64_t>::max();
   }
   // at this point, we know that h.decimal_point >= 0
   uint32_t dp = uint32_t(h.decimal_point);
