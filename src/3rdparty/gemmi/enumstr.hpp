@@ -1,18 +1,20 @@
 // Copyright 2018 Global Phasing Ltd.
 //
-// EntityType, PolymerType <-> PDBx/mmCIF names
-// PolymerType <-> 3-letter string
+// Converts between enums (EntityType, PolymerType, Connection::Type,
+// SoftwareItem::Classification) and mmCIF strings.
 
-#ifndef GEMMI_ENTSTR_HPP_
-#define GEMMI_ENTSTR_HPP_
+#ifndef GEMMI_ENUMSTR_HPP_
+#define GEMMI_ENUMSTR_HPP_
 
-#include "model.hpp"  // for EntityType, PolymerType
+#include "metadata.hpp"  // for EntityType, PolymerType, SoftwareItem
+#include "util.hpp"      // for iequal
 
 namespace gemmi {
 
 inline std::string entity_type_to_string(EntityType entity_type) {
   switch (entity_type) {
     case EntityType::Polymer: return "polymer";
+    case EntityType::Branched: return "branched";
     case EntityType::NonPolymer: return "non-polymer";
     case EntityType::Water: return "water";
     default /*EntityType::Unknown*/: return "?";
@@ -21,6 +23,7 @@ inline std::string entity_type_to_string(EntityType entity_type) {
 
 inline EntityType entity_type_from_string(const std::string& t) {
   if (t == "polymer")     return EntityType::Polymer;
+  if (t == "branched")    return EntityType::Branched;
   if (t == "non-polymer") return EntityType::NonPolymer;
   if (t == "water")       return EntityType::Water;
   return EntityType::Unknown;
@@ -57,6 +60,21 @@ inline PolymerType polymer_type_from_string(const std::string& t) {
   if (t == "cyclic-pseudo-peptide")   return PolymerType::CyclicPseudoPeptide;
   if (t == "polysaccharide(L)")       return PolymerType::SaccharideL;
   return PolymerType::Unknown;
+}
+
+
+inline const char* connection_type_to_string(Connection::Type t) {
+  static constexpr const char* type_ids[] = {
+    "covale", "disulf", "hydrog", "metalc", "."
+  };
+  return type_ids[t];
+}
+
+inline Connection::Type connection_type_from_string(const std::string& t) {
+  for (int i = 0; i != Connection::Unknown; ++i)
+    if (connection_type_to_string(Connection::Type(i)) == t)
+      return Connection::Type(i);
+  return Connection::Unknown;
 }
 
 inline

@@ -7,6 +7,7 @@
 
 #include <cmath>      // for fabs, cos, sqrt, round
 #include <cstdio>     // for snprintf
+#include <algorithm>  // for min
 #include <array>
 #include <stdexcept>  // for out_of_range
 #include <string>
@@ -20,6 +21,12 @@ constexpr double pi() { return 3.1415926535897932384626433832795029; }
 // $ units -d15 'h * c / eV / angstrom'
 constexpr double hc() { return 12398.4197386209; }
 
+// The Bohr radius (a0) in Angstroms.
+constexpr double bohrradius() { return 0.529177210903; }
+
+// Used in conversion of ADPs (atomic displacement parameters).
+constexpr double u_to_b() { return 8 * pi() * pi(); }
+
 constexpr double deg(double angle) { return 180.0 / pi() * angle; }
 constexpr double rad(double angle) { return pi() / 180.0 * angle; }
 
@@ -28,11 +35,19 @@ constexpr double sq(double x) { return x * x; }
 
 inline int iround(double d) { return static_cast<int>(std::round(d)); }
 
+inline double angle_abs_diff(double a, double b, double full=360.0) {
+  double d = std::abs(a - b);
+  if (d > full)
+    d -= std::floor(d / full) * full;
+  return std::min(d, full - d);
+}
+
 struct Vec3 {
   double x, y, z;
 
   Vec3() : x(0), y(0), z(0) {}
   Vec3(double x_, double y_, double z_) : x(x_), y(y_), z(z_) {}
+  explicit Vec3(std::array<int, 3> h) : x(h[0]), y(h[1]), z(h[2]) {}
 
   double& at(int i) {
     switch (i) {
@@ -61,9 +76,14 @@ struct Vec3 {
   }
   double length_sq() const { return x * x + y * y + z * z; }
   double length() const { return std::sqrt(length_sq()); }
-  Vec3 normalized() const { return operator/(length()); }
+  Vec3 changed_magnitude(double m) const { return operator*(m / length()); }
+  Vec3 normalized() const { return changed_magnitude(1.0); }
   double dist_sq(const Vec3& o) const { return (*this - o).length_sq(); }
   double dist(const Vec3& o) const { return std::sqrt(dist_sq(o)); }
+  double cos_angle(const Vec3& o) const {
+    return dot(o) / std::sqrt(length_sq() * o.length_sq());
+  }
+  double angle(const Vec3& o) const { return std::acos(cos_angle(o)); }
   bool approx(const Vec3& o, double epsilon) const {
     return std::fabs(x - o.x) <= epsilon &&
            std::fabs(y - o.y) <= epsilon &&
@@ -93,6 +113,29 @@ struct Mat33 {
         double c1, double c2, double c3)
   : a{{a1, a2, a3}, {b1, b2, b3}, {c1, c2, c3}} {}
 
+  Vec3 row_copy(int i) const {
+    if (i < 0 || i > 2)
+      throw std::out_of_range("Mat33 row index must be 0, 1 or 2.");
+    return Vec3(a[i][0], a[i][1], a[i][2]);
+  }
+
+  Vec3 column_copy(int i) const {
+    if (i < 0 || i > 2)
+      throw std::out_of_range("Mat33 column index must be 0, 1 or 2.");
+    return Vec3(a[0][i], a[1][i], a[2][i]);
+  }
+
+  Mat33 operator+(const Mat33& b) const {
+    return Mat33(a[0][0] + b[0][0], a[0][1] + b[0][1], a[0][2] + b[0][2],
+                 a[1][0] + b[1][0], a[1][1] + b[1][1], a[1][2] + b[1][2],
+                 a[2][0] + b[2][0], a[2][1] + b[2][1], a[2][2] + b[2][2]);
+  }
+  Mat33 operator-(const Mat33& b) const {
+    return Mat33(a[0][0] - b[0][0], a[0][1] - b[0][1], a[0][2] - b[0][2],
+                 a[1][0] - b[1][0], a[1][1] - b[1][1], a[1][2] - b[1][2],
+                 a[2][0] - b[2][0], a[2][1] - b[2][1], a[2][2] - b[2][2]);
+  }
+
   Vec3 multiply(const Vec3& p) const {
     return {a[0][0] * p.x + a[0][1] * p.y + a[0][2] * p.z,
             a[1][0] * p.x + a[1][1] * p.y + a[1][2] * p.z,
@@ -102,6 +145,12 @@ struct Mat33 {
     return {a[0][0] * p.x + a[1][0] * p.y + a[2][0] * p.z,
             a[0][1] * p.x + a[1][1] * p.y + a[2][1] * p.z,
             a[0][2] * p.x + a[1][2] * p.y + a[2][2] * p.z};
+  }
+  // p has elements from the main diagonal of a 3x3 diagonal matrix
+  Mat33 multiply_by_diagonal(const Vec3& p) const {
+    return Mat33(a[0][0] * p.x, a[0][1] * p.y, a[0][2] * p.z,
+                 a[1][0] * p.x, a[1][1] * p.y, a[1][2] * p.z,
+                 a[2][0] * p.x, a[2][1] * p.y, a[2][2] * p.z);
   }
   Mat33 multiply(const Mat33& b) const {
     Mat33 r;
@@ -115,6 +164,7 @@ struct Mat33 {
                  a[0][1], a[1][1], a[2][1],
                  a[0][2], a[1][2], a[2][2]);
   }
+  double trace() const { return a[0][0] + a[1][1] + a[2][2]; }
 
   bool approx(const Mat33& other, double epsilon) const {
     for (int i = 0; i < 3; ++i)
@@ -147,15 +197,20 @@ struct Mat33 {
            a[1][0] == 0 && a[1][1] == 1 && a[1][2] == 0 &&
            a[2][0] == 0 && a[2][1] == 0 && a[2][2] == 1;
   }
+
+  double column_dot(int i, int j) const {
+    return a[0][i] * a[0][j] + a[1][i] * a[1][j] + a[2][i] * a[2][j];
+  }
 };
 
 // Symmetric matrix 3x3. Used primarily for an ADP tensor.
 template<typename T> struct SMat33 {
   T u11, u22, u33, u12, u13, u23;
 
-  std::array<T, 6> elements() const {
-    return {{u11, u22, u33, u12, u13, u23}};
-  }
+  // The PDB ANISOU record has the above order, but in a different context
+  // (such as metric tensor) the order of Voigt notation may be preferred.
+  std::array<T, 6> elements_pdb() const   { return {{u11, u22, u33, u12, u13, u23}}; }
+  std::array<T, 6> elements_voigt() const { return {{u11, u22, u33, u23, u13, u12}}; }
 
   Mat33 as_mat33() const {
     return Mat33(u11, u12, u13, u12, u22, u23, u13, u23, u33);
@@ -163,6 +218,10 @@ template<typename T> struct SMat33 {
 
   T trace() const { return u11 + u22 + u33; }
   bool nonzero() const { return trace() != 0; }
+
+  bool all_zero() const {
+    return u11 == 0 && u22 == 0 && u33 == 0 && u12 == 0 && u13 == 0 && u23 == 0;
+  }
 
   void scale(T s) const {
     u11 *= s; u22 *= s; u33 *= s; u12 *= s; u13 *= s; u23 *= s;
@@ -183,17 +242,36 @@ template<typename T> struct SMat33 {
     return r.x * r.x * u11 + r.y * r.y * u22 + r.z * r.z * u33 +
       2 * (r.x * r.y * u12 + r.x * r.z * u13 + r.y * r.z * u23);
   }
+  double r_u_r(const std::array<int,3>& h) const {
+    // it's faster to first convert ints to doubles (Vec3)
+    return r_u_r(Vec3(h));
+  }
+
+  Vec3 multiply(const Vec3& p) const {
+    return {u11 * p.x + u12 * p.y + u13 * p.z,
+            u12 * p.x + u22 * p.y + u23 * p.z,
+            u13 * p.x + u23 * p.y + u33 * p.z};
+  }
+
+  SMat33 operator-(const SMat33& o) const {
+    return {u11-o.u11, u22-o.u22, u33-o.u33, u12-o.u12, u13-o.u13, u23-o.u23};
+  }
+  SMat33 operator+(const SMat33& o) const {
+    return {u11+o.u11, u22+o.u22, u33+o.u33, u12+o.u12, u13+o.u13, u23+o.u23};
+  }
 
   // return M U M^T
-  SMat33<double> transformed_by(const Mat33& m) const {
+  template<typename Real=double>
+  SMat33<Real> transformed_by(const Mat33& m) const {
     // slightly faster than m.multiply(as_mat33()).multiply(m.transpose());
     auto elem = [&](int i, int j) {
-      return m[i][0] * (m[j][0] * u11 + m[j][1] * u12 + m[j][2] * u13) +
-             m[i][1] * (m[j][0] * u12 + m[j][1] * u22 + m[j][2] * u23) +
-             m[i][2] * (m[j][0] * u13 + m[j][1] * u23 + m[j][2] * u33);
+      return static_cast<Real>(
+          m[i][0] * (m[j][0] * u11 + m[j][1] * u12 + m[j][2] * u13) +
+          m[i][1] * (m[j][0] * u12 + m[j][1] * u22 + m[j][2] * u23) +
+          m[i][2] * (m[j][0] * u13 + m[j][1] * u23 + m[j][2] * u33));
     };
-    return SMat33<double>{elem(0, 0), elem(1, 1), elem(2, 2),
-                          elem(0, 1), elem(0, 2), elem(1, 2)};
+    return SMat33<Real>{elem(0, 0), elem(1, 1), elem(2, 2),
+                        elem(0, 1), elem(0, 2), elem(1, 2)};
   }
 
   T determinant() const {
@@ -281,18 +359,21 @@ struct Transform {
   }
 };
 
-struct BoundingBox {
-  Vec3 low = Vec3(INFINITY, INFINITY, INFINITY);
-  Vec3 high = Vec3(-INFINITY, -INFINITY, -INFINITY);
-  void add(const Vec3& p) {
-    if (p.x < low.x) low.x = p.x;
-    if (p.x > high.x) high.x = p.x;
-    if (p.y < low.y) low.y = p.y;
-    if (p.y > high.y) high.y = p.y;
-    if (p.z < low.z) low.z = p.z;
-    if (p.z > high.z) high.z = p.z;
+template<typename Pos>
+struct Box {
+  Pos minimum = Pos(INFINITY, INFINITY, INFINITY);
+  Pos maximum = Pos(-INFINITY, -INFINITY, -INFINITY);
+  void extend(const Pos& p) {
+    if (p.x < minimum.x) minimum.x = p.x;
+    if (p.y < minimum.y) minimum.y = p.y;
+    if (p.z < minimum.z) minimum.z = p.z;
+    if (p.x > maximum.x) maximum.x = p.x;
+    if (p.y > maximum.y) maximum.y = p.y;
+    if (p.z > maximum.z) maximum.z = p.z;
   }
-  Vec3 get_size() const { return high - low; }
+  Pos get_size() const { return maximum - minimum; }
+  void add_margins(const Pos& p) { minimum -= p; maximum += p; }
+  void add_margin(double m) { add_margins(Pos(m, m, m)); }
 };
 
 // popular single-pass algorithm for calculating variance and mean
@@ -336,7 +417,7 @@ struct Correlation {
   double mean_y = 0.;
   void add_point(double x, double y) {
     ++n;
-    double weight = (n - 1.0) / n;
+    double weight = (double)(n - 1) / n;
     double dx = x - mean_x;
     double dy = y - mean_y;
     sum_xx += weight * dx * dx;
@@ -349,6 +430,7 @@ struct Correlation {
   double x_variance() const { return sum_xx / n; }
   double y_variance() const { return sum_yy / n; }
   double covariance() const { return sum_xy / n; }
+  double mean_ratio() const { return mean_y / mean_x; }
   // the regression line
   double slope() const { return sum_xy / sum_xx; }
   double intercept() const { return mean_y - slope() * mean_x; }
@@ -360,17 +442,21 @@ struct DataStats {
   double dmax = NAN;
   double dmean = NAN;
   double rms = NAN;
+  size_t nan_count = 0;
 };
 
 template<typename T>
 DataStats calculate_data_statistics(const std::vector<T>& data) {
   DataStats stats;
-  if (data.empty())
-    return stats;
   double sum = 0;
   double sq_sum = 0;
-  stats.dmin = stats.dmax = data[0];
+  stats.dmin = INFINITY;
+  stats.dmax = -INFINITY;
   for (double d : data) {
+    if (std::isnan(d)) {
+      stats.nan_count++;
+      continue;
+    }
     sum += d;
     sq_sum += d * d;
     if (d < stats.dmin)
@@ -378,10 +464,26 @@ DataStats calculate_data_statistics(const std::vector<T>& data) {
     if (d > stats.dmax)
       stats.dmax = d;
   }
-  stats.dmean = sum / data.size();
-  stats.rms = std::sqrt(sq_sum / data.size() - stats.dmean * stats.dmean);
+  if (stats.nan_count != data.size()) {
+    stats.dmean = sum / (data.size() - stats.nan_count);
+    stats.rms = std::sqrt(sq_sum / (data.size() - stats.nan_count) - stats.dmean * stats.dmean);
+  } else {
+    stats.dmin = NAN;
+    stats.dmax = NAN;
+  }
   return stats;
 }
+
+// internally used functions
+namespace impl {
+template<typename T> bool is_same(T a, T b) { return a == b; }
+template<> inline bool is_same(float a, float b) {
+  return std::isnan(b) ? std::isnan(a) : a == b;
+}
+template<> inline bool is_same(double a, double b) {
+  return std::isnan(b) ? std::isnan(a) : a == b;
+}
+} // namespace impl
 
 } // namespace gemmi
 #endif

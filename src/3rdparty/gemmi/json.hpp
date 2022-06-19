@@ -1,7 +1,6 @@
 // Copyright 2017 Global Phasing Ltd.
 //
 // Reading CIF-JSON (COMCIFS) and mmJSON (PDBj) formats into cif::Document.
-// Not finished yet!
 
 #ifndef GEMMI_JSON_HPP_
 #define GEMMI_JSON_HPP_
@@ -16,8 +15,8 @@
 #include "third_party/sajson.h"
 
 #include "cifdoc.hpp"   // for Document, etc
-#include "fail.hpp"     // for fail
-#include "fileutil.hpp" // for file_open
+#include "fail.hpp"     // for fail, sys_fail
+#include "fileutil.hpp" // for read_file_into_buffer
 
 namespace gemmi {
 namespace cif {
@@ -109,7 +108,7 @@ inline Document read_mmjson_insitu(char* buffer, size_t size,
   sajson::document json = sajson::parse(sajson::dynamic_allocation(),
                                     sajson::mutable_string_view(size, buffer));
   if (!json.is_valid())
-    fail(name, ":", std::to_string(json.get_error_line()), " error: ",
+    fail(name + ":", std::to_string(json.get_error_line()), " error: ",
          json.get_error_message_as_string());
   fill_document_from_sajson(doc, json);
   doc.source = name;
@@ -117,26 +116,15 @@ inline Document read_mmjson_insitu(char* buffer, size_t size,
 }
 
 inline Document read_mmjson_file(const std::string& path) {
-  fileptr_t f = file_open(path.c_str(), "rb");
-  size_t buf_size = file_size(f.get(), path);
-  std::vector<char> buffer(buf_size);
-  if (std::fread(buffer.data(), buffer.size(), 1, f.get()) != 1)
-    fail(path + ": fread failed");
+  CharArray buffer = read_file_into_buffer(path);
   return read_mmjson_insitu(buffer.data(), buffer.size(), path);
 }
 
 template<typename T>
 Document read_mmjson(T&& input) {
-  if (input.is_stdin()) {
-    std::vector<char> buffer;
-    char chunk[16*1024];
-    while (size_t n = fread(chunk, 1, sizeof chunk, stdin))
-      buffer.insert(buffer.end(), chunk, chunk + n);
-    return read_mmjson_insitu(buffer.data(), buffer.size(), "stdin");
-  }
-  if (std::unique_ptr<char[]> mem = input.memory())
-    return read_mmjson_insitu(mem.get(), input.memory_size(), input.path());
-  return read_mmjson_file(input.path());
+  std::string name = input.is_stdin() ? "stdin" : input.path();
+  CharArray buffer = read_into_buffer(std::forward<T>(input));
+  return read_mmjson_insitu(buffer.data(), buffer.size(), name);
 }
 
 } // namespace cif

@@ -1,7 +1,7 @@
 // Copyright 2017 Global Phasing Ltd.
 //
-// CIF parser (based on PEGTL), struct Document that represents the CIF file,
-// and a set of actions for the parser to prepare Document.
+// CIF parser (based on PEGTL) with pluggable actions,
+// and a set of actions that prepare Document.
 
 #ifndef GEMMI_CIF_HPP_
 #define GEMMI_CIF_HPP_
@@ -14,6 +14,7 @@
 //#include "third_party/tao/pegtl/contrib/tracer.hpp"  // for debugging
 
 #include "cifdoc.hpp" // for Document, etc
+#include "input.hpp"  // for CharArray
 #if defined(_WIN32)
 #include "fileutil.hpp" // for file_open
 #endif
@@ -120,9 +121,9 @@ namespace rules {
                   whitespace,
                   pegtl::plus<pegtl::seq<loop_tag, whitespace, pegtl::discard>>,
                   pegtl::sor<pegtl::plus<pegtl::seq<loop_value, ws_or_eof,
-                                                     pegtl::discard>>,
-                  // handle incorrect CIF with empty loop
-                  pegtl::at<pegtl::sor<str_loop, pegtl::eof>>>,
+                                                    pegtl::discard>>,
+                             // handle incorrect CIF with empty loop
+                             pegtl::at<pegtl::sor<keyword, pegtl::eof>>>,
                   loop_end> {};
   struct missing_value : pegtl::bol {};
   struct dataitem : pegtl::if_must<item_tag, whitespace,
@@ -140,6 +141,9 @@ namespace rules {
   struct file : pegtl::seq<pegtl::opt<whitespace>,
                            pegtl::if_must<pegtl::not_at<pegtl::eof>,
                                           content, pegtl::eof>> {};
+  struct one_block : pegtl::seq<pegtl::opt<whitespace>,
+                                pegtl::if_must<pegtl::not_at<pegtl::eof>, datablock>> {};
+
 
 } // namespace rules
 
@@ -259,6 +263,12 @@ template<typename Input> Document read_input(Input&& in) {
   return doc;
 }
 
+template<typename Input>
+size_t parse_one_block(Document& d, Input&& in) {
+  pegtl::parse<rules::one_block, Action, Errors>(in, d);
+  return in.byte();
+}
+
 // pegtl::read_input may use mmap and be faster, but does not work
 // on Windows with Unicode filenames.
 #if defined(_WIN32)
@@ -320,19 +330,32 @@ template<typename T>
 Document read(T&& input) {
   if (input.is_stdin())
     return read_cstream(stdin, 16*1024, "stdin");
-  if (std::unique_ptr<char[]> mem = input.memory())
-    return read_memory(mem.get(), input.memory_size(), input.path().c_str());
+  if (CharArray mem = input.uncompress_into_buffer())
+    return read_memory(mem.data(), mem.size(), input.path().c_str());
   return read_file(input.path());
 }
 
 template<typename T>
 bool check_syntax_any(T&& input, std::string* msg) {
-  if (std::unique_ptr<char[]> mem = input.memory()) {
-    pegtl::memory_input<> in(mem.get(), input.memory_size(), input.path());
+  if (CharArray mem = input.uncompress_into_buffer()) {
+    pegtl::memory_input<> in(mem.data(), mem.size(), input.path());
     return check_syntax(in, msg);
   }
   GEMMI_CIF_FILE_INPUT(in, input.path());
   return check_syntax(in, msg);
+}
+
+template<typename T>
+size_t read_one_block(Document& d, T&& input, size_t limit) {
+  if (input.is_stdin())
+    return parse_one_block(d, pegtl::cstream_input<>(stdin, 16*1024, "stdin"));
+  if (input.is_compressed()) {
+    CharArray mem = input.uncompress_into_buffer(limit);
+    return parse_one_block(d, pegtl::memory_input<>(mem.data(), mem.size(),
+                                                    input.path().c_str()));
+  }
+  GEMMI_CIF_FILE_INPUT(in, input.path());
+  return parse_one_block(d, std::move(in));
 }
 
 #if defined(_MSC_VER)

@@ -6,8 +6,8 @@
 #define GEMMI_CCP4_HPP_
 
 #include <cassert>
-#include <cmath>     // for NAN, sqrt
-#include <cstdint>   // for uint16_t, uint32_t
+#include <cmath>     // for ceil, fabs, floor, round
+#include <cstdint>   // for uint16_t, int32_t
 #include <cstdio>    // for FILE
 #include <cstring>   // for memcpy
 #include <array>
@@ -25,16 +25,13 @@ namespace gemmi {
 using std::int32_t;
 
 // options for Ccp4<>::setup
-enum class GridSetup {
-  ReorderOnly,  // reorder axes to X, Y, Z
-  ResizeOnly,   // reorder and resize to the whole cell, but no symmetry ops
+enum class MapSetup {
   Full,         // reorder and expand to the whole unit cell
-  FullCheck     // additionally consistency of redundant data
+  NoSymmetry,   // reorder and resize to the whole cell, but no symmetry ops
+  ReorderOnly   // reorder axes to X, Y, Z
 };
 
-template<typename T=float>
-struct Ccp4 {
-  Grid<T> grid;
+struct Ccp4Base {
   DataStats hstats;  // data statistics read from / written to ccp4 map
   // stores raw headers if the grid was read from ccp4 map
   std::vector<int32_t> ccp4_header;
@@ -49,6 +46,9 @@ struct Ccp4 {
     if (!same_byte_order)
       swap_four_bytes(&value);
     return value;
+  }
+  std::array<int, 3> header_3i32(int w) const {
+    return {{ header_i32(w), header_i32(w+1), header_i32(w+2) }};
   }
   float header_float(int w) const {
     int32_t int_value = header_i32(w);
@@ -81,7 +81,65 @@ struct Ccp4 {
     std::memcpy(header_word(w), str.c_str(), str.size());
   }
 
-  void prepare_ccp4_header(int mode) {
+  std::array<int, 3> axis_positions() const {
+    if (ccp4_header.empty())
+      return {{0, 1, 2}}; // assuming it's X,Y,Z
+    std::array<int, 3> pos{{-1, -1, -1}};
+    for (int i = 0; i != 3; ++i) {
+      int mapi = header_i32(17 + i);
+      if (mapi <= 0 || mapi > 3 || pos[mapi - 1] != -1)
+        fail("Incorrect MAPC/MAPR/MAPS records");
+      pos[mapi - 1] = i;
+    }
+    return pos;
+  }
+
+  double header_rfloat(int w) const { // rounded to 5 digits
+    return std::round(1e5 * header_float(w)) / 1e5;
+  }
+
+  Box<Fractional> get_extent() const {
+    Box<Fractional> box;
+    // cf. setup()
+    auto pos = axis_positions();
+    std::array<int, 3> start = header_3i32(5);
+    std::array<int, 3> size = header_3i32(1);
+    std::array<int, 3> sampl = header_3i32(8);
+    for (int i = 0; i < 3; ++i) {
+      double scale = 1. / sampl[i];
+      int p = pos[i];
+      box.minimum.at(i) = scale * start[p] - 1e-9;
+      box.maximum.at(i) = scale * (start[p] + size[p] - 1) + 1e-9;
+    }
+    return box;
+  }
+
+  // Skew transformation (words 25-37) is supported by CCP4 maplib and PyMOL,
+  // but it's not in the MRC format and is not supported by most programs.
+  // From maplib.html: Skew transformation is from standard orthogonal
+  // coordinate frame (as used for atoms) to orthogonal map frame, as
+  //                            Xo(map) = S * (Xo(atoms) - t)
+  bool has_skew_transformation() const {
+    return header_i32(25) != 0;  // LSKFLG should be 0 or 1
+  }
+  Transform get_skew_transformation() const {
+    return {
+      // 26-34 SKWMAT
+      { header_float(26), header_float(27), header_float(28),
+        header_float(29), header_float(30), header_float(31),
+        header_float(32), header_float(33), header_float(34) },
+      // 35-37 SKWTRN
+      { header_float(35), header_float(36), header_float(37) }
+    };
+  }
+};
+
+template<typename T=float>
+struct Ccp4 : public Ccp4Base {
+  Grid<T> grid;
+
+  // this function assumes that the whole unit cell is covered with offset 0
+  void prepare_ccp4_header_except_mode_and_stats() {
     GroupOps ops;
     if (grid.spacegroup)
       ops = grid.spacegroup->operations();
@@ -113,29 +171,47 @@ struct Ccp4 {
     std::memset(header_word(57), ' ', 800 + ops.order() * 80);
     set_header_str(57, "written by GEMMI");
     int n = 257;
-    for (const Op& op : ops) {
+    for (Op op : ops) {
       set_header_str(n, op.triplet());
       n += 20;
     }
-    update_ccp4_header(mode);
   }
 
-  void update_ccp4_header(int mode, bool update_stats=false) {
+  void update_ccp4_header(int mode=-1, bool update_stats=true) {
+    if (mode > 2 && mode != 6)
+      fail("Only modes 0, 1, 2 and 6 are supported.");
+    if (grid.point_count() == 0)
+      fail("update_ccp4_header(): set the grid first (it has size 0)");
+    if (grid.axis_order == AxisOrder::Unknown)
+      fail("update_ccp4_header(): run setup() first");
     if (update_stats)
       hstats = calculate_data_statistics(grid.data);
-    if (mode != 0 && mode != 1 && mode != 2 && mode != 6)
-      fail("Only modes 0, 1, 2 and 6 are supported.");
-    if (ccp4_header.empty()) {
-      prepare_ccp4_header(mode);
-      return;
-    }
+    if (ccp4_header.empty())
+      prepare_ccp4_header_except_mode_and_stats();
     assert(ccp4_header.size() >= 256);
+    if (mode < 0) {
+      mode = mode_for_data();
+      if (mode < 0)
+        fail("update_ccp4_header: specify map mode explicitely (usually 2)");
+    }
     set_header_i32(4, mode);
     set_header_float(20, (float) hstats.dmin);
     set_header_float(21, (float) hstats.dmax);
     set_header_float(22, (float) hstats.dmean);
     set_header_float(55, (float) hstats.rms);
     // labels could be modified but it's not important
+  }
+
+  static int mode_for_data() {
+    if (typeid(T) == typeid(std::int8_t))
+      return 0;
+    if (typeid(T) == typeid(std::int16_t))
+      return 1;
+    if (typeid(T) == typeid(float))
+      return 2;
+    if (typeid(T) == typeid(std::uint16_t))
+      return 6;
+    return -1;
   }
 
   bool full_cell() const {
@@ -145,27 +221,9 @@ struct Ccp4 {
       // NXSTART et al. must be 0
       header_i32(5) == 0 && header_i32(6) == 0 && header_i32(7) == 0 &&
       // MX == NX
-      header_i32(8) == grid.nu && header_i32(9) == grid.nv &&
-                                  header_i32(10) == grid.nw &&
+      header_i32(8) == grid.nu && header_i32(9) == grid.nv && header_i32(10) == grid.nw &&
       // just in case, check ORIGIN
       header_i32(50) == 0 && header_i32(51) == 0 && header_i32(52) == 0;
-  }
-
-  std::array<int, 3> axis_positions() const {
-    if (ccp4_header.empty())
-      return {{0, 1, 2}}; // assuming it's X,Y,Z
-    std::array<int, 3> pos{{-1, -1, -1}};
-    for (int i = 0; i != 3; ++i) {
-      int mapi = header_i32(17 + i);
-      if (mapi <= 0 || mapi > 3 || pos[mapi - 1] != -1)
-        fail("Incorrect MAPC/MAPR/MAPS records");
-      pos[mapi - 1] = i;
-    }
-    return pos;
-  }
-
-  double header_rfloat(int w) const { // rounded to 5 digits
-    return std::round(1e5 * header_float(w)) / 1e5;
   }
 
   template<typename Stream>
@@ -206,11 +264,14 @@ struct Ccp4 {
     grid.spacegroup = find_spacegroup_by_number(header_i32(23));
     auto pos = axis_positions();
     grid.axis_order = AxisOrder::Unknown;
-    if (pos[0] == 0 && pos[1] == 1 && pos[2] == 2 && full_cell())
+    if (pos[0] == 0 && pos[1] == 1 && pos[2] == 2 && full_cell()) {
       grid.axis_order = AxisOrder::XYZ;
+      grid.calculate_spacing();
+    }
   }
 
-  double setup(GridSetup mode, T default_value);
+  double setup(T default_value, MapSetup mode=MapSetup::Full);
+  void set_extent(const Box<Fractional>& box);
 
   template<typename Stream>
   void read_ccp4_stream(Stream f, const std::string& path);
@@ -222,16 +283,17 @@ struct Ccp4 {
 
   inline void read_ccp4_from_memory(const char* data, size_t size,
                                     const std::string& name) {
-    return read_ccp4_stream(MemoryStream{data, data + size}, name);
+    read_ccp4_stream(MemoryStream(data, size), name);
   }
 
   template<typename Input>
   void read_ccp4(Input&& input) {
     if (input.is_stdin())
-      return read_ccp4_stream(FileStream{stdin}, "stdin");
-    if (input.is_compressed())
-      return read_ccp4_stream(input.get_uncompressing_stream(), input.path());
-    return read_ccp4_file(input.path());
+      read_ccp4_stream(FileStream{stdin}, "stdin");
+    else if (input.is_compressed())
+      read_ccp4_stream(input.get_uncompressing_stream(), input.path());
+    else
+      read_ccp4_file(input.path());
   }
 
   void write_ccp4_map(const std::string& path) const;
@@ -239,6 +301,12 @@ struct Ccp4 {
 
 
 namespace impl {
+
+template<typename From, typename To>
+To translate_map_point(From f) { return static_cast<To>(f); }
+// We convert map 2 to 0 by translating non-zero values to 1.
+template<> inline
+std::int8_t translate_map_point<float,std::int8_t>(float f) { return f != 0; }
 
 template<typename Stream, typename TFile, typename TMem>
 void read_data(Stream& f, std::vector<TMem>& content) {
@@ -254,7 +322,7 @@ void read_data(Stream& f, std::vector<TMem>& content) {
       if (!f.read(work.data(), sizeof(TFile) * len))
         fail("Failed to read all the data from the map file.");
       for (size_t j = 0; j < len; ++j)
-        content[i+j] = static_cast<TMem>(work[j]);
+        content[i+j] = translate_map_point<TFile,TMem>(work[j]);
     }
   }
 }
@@ -264,7 +332,7 @@ void write_data(const std::vector<TMem>& content, FILE* f) {
   if (typeid(TMem) == typeid(TFile)) {
     size_t len = content.size();
     if (std::fwrite(content.data(), sizeof(TFile), len, f) != len)
-      fail("Failed to write data to the map file.");
+      sys_fail("Failed to write data to the map file");
   } else {
     constexpr size_t chunk_size = 64 * 1024;
     std::vector<TFile> work(chunk_size);
@@ -273,7 +341,7 @@ void write_data(const std::vector<TMem>& content, FILE* f) {
       for (size_t j = 0; j < len; ++j)
         work[j] = static_cast<TFile>(content[i+j]);
       if (std::fwrite(work.data(), sizeof(TFile), len, f) != len)
-        fail("Failed to write data to the map file.");
+        sys_fail("Failed to write data to the map file");
     }
   }
 }
@@ -296,7 +364,8 @@ void Ccp4<T>::read_ccp4_stream(Stream f, const std::string& path) {
   else if (mode == 6)
     impl::read_data<Stream, std::uint16_t>(f, grid.data);
   else
-    fail("Only modes 0, 1, 2 and 6 are supported.");
+    fail("Mode " + std::to_string(mode) + " is not supported "
+         "(only 0, 1, 2 and 6 are supported).");
   //if (std::fgetc(f) != EOF)
   //  fail("The map file is longer then expected.");
 
@@ -310,31 +379,24 @@ void Ccp4<T>::read_ccp4_stream(Stream f, const std::string& path) {
   }
 }
 
-namespace impl {
-
-template<typename T> bool is_same(T a, T b) { return a == b; }
-template<> inline bool is_same(float a, float b) {
-  return std::isnan(b) ? std::isnan(a) : a == b;
-}
-template<> inline bool is_same(double a, double b) {
-  return std::isnan(b) ? std::isnan(a) : a == b;
-}
-
-}
-
 template<typename T>
-double Ccp4<T>::setup(GridSetup mode, T default_value) {
+double Ccp4<T>::setup(T default_value, MapSetup mode) {
   double max_error = 0.0;
   if (grid.axis_order == AxisOrder::XYZ || ccp4_header.empty())
     return max_error;
   // cell sampling does not change
-  int sampl[3] = { header_i32(8), header_i32(9), header_i32(10) };
+  std::array<int, 3> sampl = header_3i32(8);
   // get old metadata
   auto pos = axis_positions();
-  int start[3] = { header_i32(5), header_i32(6), header_i32(7) };
+  std::array<int, 3> start = header_3i32(5);
   int end[3] = { start[0] + grid.nu, start[1] + grid.nv, start[2] + grid.nw };
+  // if it's sufficient to transpose the map, switch to ReorderOnly mode
+  if (mode != MapSetup::ReorderOnly &&
+      start[0] == 0 && start[1] == 0 && start[2] == 0 &&
+      end[pos[0]] == sampl[0] && end[pos[1]] == sampl[1] && end[pos[2]] == sampl[2])
+    mode = MapSetup::ReorderOnly;
   // set new metadata
-  if (mode == GridSetup::ReorderOnly) {
+  if (mode == MapSetup::ReorderOnly) {
     set_header_3i32(5, start[pos[0]], start[pos[1]], start[pos[2]]);
     for (int i = 0; i < 3; ++i) {
       end[i] -= start[i];
@@ -364,28 +426,51 @@ double Ccp4<T>::setup(GridSetup mode, T default_value) {
         full[new_index] = val;
       }
   grid.data = std::move(full);
-  if (mode == GridSetup::Full) {
-    grid.axis_order = AxisOrder::XYZ;
-    grid.symmetrize([&default_value](T a, T b) {
-        return impl::is_same(a, default_value) ? b : a;
-    });
-  } else if (mode == GridSetup::FullCheck) {
+  if (mode == MapSetup::Full) {
     grid.axis_order = AxisOrder::XYZ;
     grid.symmetrize([&max_error, &default_value](T a, T b) {
-        if (impl::is_same(a, default_value)) {
+        if (impl::is_same(a, default_value))
           return b;
-        } else {
-          if (!impl::is_same(b, default_value))
-            max_error = std::max(max_error, std::fabs(double(a - b)));
-          return a;
-        }
+        if (!impl::is_same(b, default_value))
+          max_error = std::max(max_error, std::fabs(double(a - b)));
+        return a;
     });
   } else {
     grid.axis_order = AxisOrder::Unknown;
     if (pos[0] == 0 && pos[1] == 1 && pos[2] == 2 && full_cell())
       grid.axis_order = AxisOrder::XYZ;
   }
+  if (grid.axis_order == AxisOrder::XYZ)
+    grid.calculate_spacing();
   return max_error;
+}
+
+template<typename T>
+void Ccp4<T>::set_extent(const Box<Fractional>& box) {
+  if (ccp4_header.empty())
+    fail("set_extent(): no header in the map. Call update_ccp4_header() first");
+  if (!full_cell())
+    fail("Ccp4::set_extent() works only after setup()");
+  if (grid.axis_order != AxisOrder::XYZ)
+    fail("Ccp4::set_extent() works only with XYZ order");
+  int u0 = (int)std::ceil(box.minimum.x * grid.nu);
+  int v0 = (int)std::ceil(box.minimum.y * grid.nv);
+  int w0 = (int)std::ceil(box.minimum.z * grid.nw);
+  int nu = (int)std::floor(box.maximum.x * grid.nu) - u0 + 1;
+  int nv = (int)std::floor(box.maximum.y * grid.nv) - v0 + 1;
+  int nw = (int)std::floor(box.maximum.z * grid.nw) - w0 + 1;
+  // set the data
+  std::vector<T> new_data((size_t)nu * nv * nw);
+  grid.get_subarray(new_data.data(), {u0, v0, w0}, {nu, nv, nw});
+  grid.data.swap(new_data);
+  // and metadata
+  grid.nu = nu;
+  grid.nv = nv;
+  grid.nw = nw;
+  set_header_3i32(1, grid.nu, grid.nv, grid.nw); // NX, NY, NZ
+  set_header_3i32(5, u0, v0, w0);
+  // AxisOrder::XYZ is used only for grid covering full cell
+  grid.axis_order = AxisOrder::Unknown;
 }
 
 template<typename T>

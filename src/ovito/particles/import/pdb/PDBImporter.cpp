@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,11 +29,14 @@
 #include "PDBImporter.h"
 
 #include <3rdparty/gemmi/pdb.hpp>
+#include <3rdparty/gemmi/remarks.hpp>
 
-namespace gemmi { namespace pdb_impl {
+namespace gemmi { 
 template<>
 inline size_t copy_line_from_stream<Ovito::CompressedTextReader&>(char* line, int size, Ovito::CompressedTextReader& stream) 
 {
+	using namespace gemmi::pdb_impl;
+
 	// Return no line if end of file has been reached.
 	if(stream.eof())
 		return 0;
@@ -86,7 +89,7 @@ inline size_t copy_line_from_stream<Ovito::CompressedTextReader&>(char* line, in
 	// Return line length (up to maximum) to caller.
 	return std::min(len, (size_t)(size - 1));
 }
-}}
+}
 
 namespace Ovito::Particles {
 
@@ -126,6 +129,7 @@ void PDBImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
 	Frame frame(fileHandle());
 	frame.byteOffset = stream.byteOffset();
 	frame.lineNumber = stream.lineNumber();
+	bool endOnPreviousLine = false;
 	while(!stream.eof()) {
 
 		if(isCanceled())
@@ -140,6 +144,25 @@ void PDBImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
 			frames.push_back(frame);
 			frame.byteOffset = stream.byteOffset();
 			frame.lineNumber = stream.lineNumber();
+		}
+		else if(stream.lineStartsWithToken("REMARK    Step")) {
+			// Recognize and parse CP2K timestep information, which has the following format:
+			//   Step <NUMBER>, time = <TIME>, E = <ENERGY>
+			static const QRegularExpression cp2k_re(QStringLiteral(R"(REMARK\s+Step\s+(\d+))"));
+			QRegularExpressionMatch match = cp2k_re.match(stream.lineString());
+			if(match.hasMatch())
+				frame.label = QString("Timestep %1").arg(match.captured(1));
+		}
+		else if(stream.lineStartsWithToken("END")) {
+			if(frames.empty())
+				frames.push_back(frame);
+			endOnPreviousLine = true;
+			frame.byteOffset = stream.byteOffset();
+			frame.lineNumber = stream.lineNumber();
+		}
+		else if(endOnPreviousLine) {
+			frames.push_back(frame);
+			endOnPreviousLine = false;
 		}
 	}
 
@@ -164,12 +187,45 @@ void PDBImporter::FrameLoader::loadFile()
 
 	try {
 		// Parse the PDB file's contents.
-		gemmi::Structure structure = gemmi::pdb_impl::read_pdb_from_line_input(stream, qPrintable(frame().sourceFile.path()), gemmi::PdbReadOptions());
+		gemmi::Structure structure = gemmi::pdb_impl::read_pdb_from_stream(stream, qPrintable(frame().sourceFile.path()), gemmi::PdbReadOptions());
 		if(isCanceled()) return;
 
 		// Import PDB metadata fields as global attributes. 
-		for(const auto& m : structure.info)
+		for(const auto& m : structure.info) {
 			state().setAttribute(QString::fromStdString(m.first), QVariant::fromValue(QString::fromStdString(m.second)), dataSource());
+		}
+
+		// Import PDB remark lines as global attributes.
+		int remarkIndex = 0;
+		for(const std::string& remark : structure.raw_remarks) {
+			if(gemmi::remark_number(remark) == 0) {
+				QString remarkString = QString::fromStdString(remark);
+				if(remarkString.startsWith("REMARK"))
+					remarkString.remove(0, 6);
+				remarkString = std::move(remarkString).trimmed();
+				// Recognize CP2K trajectory records.
+				if(remarkString.startsWith("Step ")) {
+					// Parse CP2K timestep information, which has the following format:
+					//   Step <NUMBER>, time = <TIME>, E = <ENERGY>
+					static const QRegularExpression cp2k_re(QStringLiteral(R"(Step\s+(\d+)\s*,\s*time\s*=\s*([-+]?[0-9]*\.?[0-9]+)\s*,\s*E\s*=\s*([-+]?[0-9]*\.?[0-9]+))"));
+					QRegularExpressionMatch match = cp2k_re.match(remarkString);
+					if(match.hasMatch()) {
+						bool ok1, ok2, ok3;
+						qlonglong timestep = match.captured(1).toLongLong(&ok1);
+						FloatType time = match.captured(2).toDouble(&ok2);
+						FloatType energy = match.captured(3).toDouble(&ok3);
+						if(ok1)
+							state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), dataSource());
+						if(ok2)
+							state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(time), dataSource());
+						if(ok3)
+							state().setAttribute(QStringLiteral("Energy"), QVariant::fromValue(energy), dataSource());
+						continue;
+					}
+				}
+				state().setAttribute(QStringLiteral("pdb.remark.%1").arg(++remarkIndex), QVariant::fromValue(remarkString.trimmed()), dataSource());
+			}
+		}
 
 		structure.merge_chain_parts();
 		if(isCanceled()) return;
@@ -324,7 +380,7 @@ void PDBImporter::FrameLoader::loadFile()
 	else
 		setBondCount(0);
 
-	// If the loaded particles are centered on the coordinate origin but the periodi simulation box corner is positioned at (0,0,0), 
+	// If the loaded particles are centered on the coordinate origin but the periodic simulation box corner is positioned at (0,0,0), 
 	// then shift the cell to center it on (0,0,0) too, leaving the particle coordinates as is.
 	// correctOffcenterCell();
 

@@ -20,6 +20,15 @@ template<> inline size_t count_atom_sites(const Residue& res) {
   return res.atoms.size();
 }
 
+template<class T> size_t count_hydrogen_sites(const T& obj) {
+  size_t sum = 0;
+  for (const auto& child : obj.children())
+    sum += count_hydrogen_sites(child);
+  return sum;
+}
+template<> inline size_t count_hydrogen_sites(const Atom& atom) {
+  return (size_t) atom.is_hydrogen();
+}
 
 template<class T> double count_occupancies(const T& obj) {
   double sum = 0;
@@ -60,22 +69,43 @@ template<> inline CenterOfMass calculate_center_of_mass(const Atom& atom) {
   return CenterOfMass{Position(atom.pos * w_mass), w_mass};
 }
 
+inline Box<Position> calculate_box(const Structure& st, double margin=0.) {
+  Box<Position> box;
+  for (const Model& model : st.models)
+    for (const Chain& chain : model.chains)
+      for (const Residue& res : chain.residues)
+        for (const Atom& atom : res.atoms)
+          box.extend(atom.pos);
+  if (margin != 0.)
+    box.add_margin(margin);
+  return box;
+}
+
+inline Box<Fractional> calculate_fractional_box(const Structure& st, double margin=0.) {
+  Box<Fractional> box;
+  for (const Model& model : st.models)
+    for (const Chain& chain : model.chains)
+      for (const Residue& res : chain.residues)
+        for (const Atom& atom : res.atoms)
+          box.extend(st.cell.fractionalize(atom.pos));
+  if (margin != 0.)
+    box.add_margins({margin * st.cell.ar, margin * st.cell.br, margin * st.cell.cr});
+  return box;
+}
+
+
 // Calculate B_est from E. Merritt, Some B_eq are more equivalent than others,
 // Acta Cryst. A67, 512 (2011)
 // http://skuld.bmsc.washington.edu/parvati/ActaA_67_512.pdf
 inline double calculate_b_est(const Atom& atom) {
   auto eig = atom.aniso.calculate_eigenvalues();
-  return 8 * pi() * pi() * std::sqrt((eig[0] + eig[1] + eig[2]) /
-                                     (1/eig[0] + 1/eig[1] + 1/eig[2]));
-}
-
-inline double calculate_angle_v(const Vec3& a, const Vec3& b) {
-  return std::acos(a.dot(b) / std::sqrt(a.length_sq() * b.length_sq()));
+  return u_to_b() * std::sqrt((eig[0] + eig[1] + eig[2]) /
+                              (1/eig[0] + 1/eig[1] + 1/eig[2]));
 }
 
 inline double calculate_angle(const Position& p0, const Position& p1,
                               const Position& p2) {
-  return calculate_angle_v(p0 - p1, p2 - p1);
+  return (p0 - p1).angle(p2 - p1);
 }
 
 // discussion: https://stackoverflow.com/questions/20305272/

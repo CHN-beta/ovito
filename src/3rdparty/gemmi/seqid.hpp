@@ -1,6 +1,6 @@
 // Copyright 2017 Global Phasing Ltd.
 //
-// SeqId -- residue number and insertion code together
+// SeqId -- residue number and insertion code together.
 
 #ifndef GEMMI_SEQID_HPP_
 #define GEMMI_SEQID_HPP_
@@ -82,5 +82,75 @@ struct SeqId {
   }
 };
 
+// Sequence ID (sequence number + insertion code) + residue name + segment ID
+struct ResidueId {
+  SeqId seqid;
+  std::string segment; // segid - up to 4 characters in the PDB file
+  std::string name;
+
+  // used for first_conformation iterators, etc.
+  SeqId group_key() const { return seqid; }
+
+  bool matches(const ResidueId& o) const {
+    return seqid == o.seqid && segment == o.segment && name == o.name;
+  }
+  bool matches_noseg(const ResidueId& o) const {
+    return seqid == o.seqid && name == o.name;
+  }
+  bool operator==(const ResidueId& o) const { return matches(o); }
+  std::string str() const { return seqid.str() + "(" + name + ")"; }
+};
+
+inline std::string atom_str(const std::string& chain_name,
+                            const ResidueId& res_id,
+                            const std::string& atom_name,
+                            char altloc) {
+  std::string r = chain_name;
+  r += '/';
+  r += res_id.name;
+  r += ' ';
+  r += res_id.seqid.str();
+  r += '/';
+  r += atom_name;
+  if (altloc) {
+    r += '.';
+    r += altloc;
+  }
+  return r;
+}
+
+struct AtomAddress {
+  std::string chain_name;
+  ResidueId res_id;
+  std::string atom_name;
+  char altloc = '\0';
+
+  AtomAddress() = default;
+  AtomAddress(const std::string& ch, const ResidueId& resid,
+              const std::string& atom, char alt='\0')
+    : chain_name(ch), res_id(resid), atom_name(atom), altloc(alt) {}
+  AtomAddress(const std::string& ch, const SeqId& seqid, const std::string& res,
+              const std::string& atom, char alt='\0')
+    : chain_name(ch), res_id({seqid, "", res}), atom_name(atom), altloc(alt) {}
+  bool operator==(const AtomAddress& o) const {
+    return chain_name == o.chain_name && res_id.matches(o.res_id) &&
+           atom_name == o.atom_name && altloc == o.altloc;
+  }
+
+  std::string str() const {
+    return atom_str(chain_name, res_id, atom_name, altloc);
+  }
+};
+
 } // namespace gemmi
+
+namespace std {
+template <> struct hash<gemmi::ResidueId> {
+  size_t operator()(const gemmi::ResidueId& r) const {
+    size_t seqid_hash = (*r.seqid.num << 7) + (r.seqid.icode | 0x20);
+    return seqid_hash ^ hash<string>()(r.segment) ^ hash<string>()(r.name);
+  }
+};
+} // namespace std
+
 #endif

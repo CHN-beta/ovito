@@ -54,21 +54,28 @@ dynamically changes during the course of the simulation as `bonds break <https:/
 or `newly form <https://docs.lammps.org/fix_bond_react.html>`__. 
 The changing bond connectivity in such simulations can be dumped to an output file using the `dump local <https://docs.lammps.org/dump.html>`__
 command of LAMMPS in combination with the `compute property/local <https://docs.lammps.org/compute_property_local.html>`__ command,
-see the example below. In simulations using the ReaxFF potential, the `fix reax/c/bonds <https://docs.lammps.org/fix_reaxc_bonds.html>`__ command
+see the example below. In simulations using the ReaxFF potential, the `fix reaxff/bonds <https://docs.lammps.org/fix_reaxff_bonds.html>`__ command
 may be used to write the bonds list (including bond orders) to a text-based output file in regular time intervals.
 
-OVITO's *Load trajectory* modifier can read the varying bond topology from `dump local` or `reax/c/bonds` files and merge it with the molecular dataset.
-The loaded list of bonds will replace any static connectivity that may have been present in the initial LAMMPS data file. Typically, you will use two instances of the 
-*Load trajectory* modifier in the same pipeline, as shown on the side, to load the atomic trajectories as well as the time-varying bond information  
-from a reactive MD simulation.
+OVITO's *Load trajectory* modifier can read the varying bond topology from `dump local` or `reaxff/bonds` files and merge it with the molecular dataset.
+The loaded bonds list will replace any static connectivity that may have already been present in the initial LAMMPS data file. Typically, you will use two instances of the 
+*Load trajectory* modifier in the same pipeline to load the atomic trajectories as well as the time-varying bond information  
+from a reactive MD simulation:
 
 .. image:: /images/modifiers/load_trajectory_varying_bonds.png
   :width: 40%
-  :align: right
+  :align: left
+
+.. caution::
+
+  Make sure that you dump the atomic trajectories and the bonds information at the exact same MD timesteps when running an MD simulation.
+  OVITO does *not* use LAMMPS timesteps as a common time basis. It simply assumes that the atomic trajectory file and the bond topology file
+  both contain snapshots taken at exact same times, and each *Load Trajectory* modifier maps them sequentially to the program's animation timeline
+  without checking the consistency of the timestep information. 
 
 LAMMPS is able to output the changing bond topology in regular time intervals and also additional per-bond quantities such 
 as the bond lengths, bond forces or bond energies. Consider, for example, the following LAMMPS commands, which dump 
-the current bond list to an output file in regular timestep intervals::
+the current bonds list to an output file in regular timestep intervals::
 
   compute 1 all property/local btype batom1 batom2
   compute 2 all bond/local dist engpot

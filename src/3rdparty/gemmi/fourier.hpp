@@ -7,15 +7,10 @@
 
 #include <array>
 #include <complex>       // for std::conj
-#include "grid.hpp"      // for Grid
+#include "recgrid.hpp"   // for ReciprocalGrid
 #include "math.hpp"      // for rad
 #include "symmetry.hpp"  // for GroupOps, Op
 #include "fail.hpp"      // for fail
-
-#ifdef  __INTEL_COMPILER
-// warning #2196: routine is both "inline" and "noinline"
-# pragma warning disable 2196
-#endif
 
 #ifdef __MINGW32__  // MinGW may have problem with std::mutex etc
 # define POCKETFFT_CACHE_SIZE 0
@@ -33,7 +28,7 @@ double phase_in_angles(const std::complex<T>& v) {
 
 // the first arg is usually Mtz::data
 inline void add_asu_f_phi_to_float_vector(std::vector<float>& float_data,
-                                          const FPhiGrid<float>::AsuData& asu_data) {
+                                          const AsuData<std::complex<float>>& asu_data) {
   float_data.reserve(float_data.size() + asu_data.v.size() * 5);
   for (const auto& item : asu_data.v) {
     for (int i = 0; i != 3; ++i)
@@ -81,14 +76,6 @@ bool data_fits_into(const DataProxy& data, std::array<int, 3> size) {
         return false;
   }
   return true;
-}
-
-inline float friedel_mate_value(float v) { return v; }
-inline double friedel_mate_value(double v) { return v; }
-
-template<typename T>
-std::complex<T> friedel_mate_value(const std::complex<T>& v) {
-  return std::conj(v);
 }
 
 template<typename T>
@@ -143,7 +130,7 @@ void initialize_hkl_grid(ReciprocalGrid<T>& grid, const DataProxy& data,
     fail("No data.");
   if (!data.spacegroup())
     fail("No spacegroup.");
-  check_grid_factors(data.spacegroup(), size[0], size[1], size[2]);
+  check_grid_factors(data.spacegroup(), size);
   grid.unit_cell = data.unit_cell();
   grid.half_l = half_l;
   grid.axis_order = axis_order;
@@ -182,24 +169,25 @@ FPhiGrid<T> get_f_phi_on_grid(const FPhi& fphi,
   for (size_t i = 0; i < fphi.size(); i += fphi.stride()) {
     Miller hkl = fphi.get_hkl(i);
     T f = (T) fphi.get_f(i);
-    if (f > 0.f) {
-      double phi = fphi.get_phi(i);
-      for (const Op& op : ops.sym_ops) {
-        auto hklp = op.apply_to_hkl(hkl);
-        double shifted_phi = phi + op.phase_shift(hkl);
-        int lp = hklp[2];
-        if (axis_order == AxisOrder::ZYX)
-          std::swap(hklp[0], hklp[2]);
-        if (!grid.has_index(hklp[0], hklp[1], hklp[2]))
-          continue;
-        int sign = (!half_l || lp >= 0 ? 1 : -1);
-        size_t idx = grid.index_n(sign * hklp[0], sign * hklp[1], sign * hklp[2]);
-        if (grid.data[idx] == default_val)
-          grid.data[idx] = std::polar(f, (T) (sign * shifted_phi));
+    if (f == 0.f)  // is there enough of F=0 to justify this 'if'?
+      continue;
+    double phi = fphi.get_phi(i);
+    for (const Op& op : ops.sym_ops) {
+      auto hklp = op.apply_to_hkl(hkl);
+      int lp = hklp[2];
+      if (axis_order == AxisOrder::ZYX)
+        std::swap(hklp[0], hklp[2]);
+      if (!grid.has_index(hklp[0], hklp[1], hklp[2]))
+        continue;
+      int sign = (!half_l || lp >= 0 ? 1 : -1);
+      size_t idx = grid.index_n(sign * hklp[0], sign * hklp[1], sign * hklp[2]);
+      if (grid.data[idx] == default_val) {
+        T theta = sign * T(phi + op.phase_shift(hkl));
+        grid.data[idx] = std::complex<T>(f * std::cos(theta), f * std::sin(theta));
       }
     }
   }
-  if (!ops.is_centric())
+  if (!ops.is_centrosymmetric())
     add_friedel_mates(grid);
   return grid;
 }
@@ -232,7 +220,7 @@ ReciprocalGrid<T> get_value_on_grid(const DataProxy& data, size_t column,
       }
     }
   }
-  if (!ops.is_centric())
+  if (!ops.is_centrosymmetric())
     add_friedel_mates(grid);
   return grid;
 }
@@ -240,9 +228,13 @@ ReciprocalGrid<T> get_value_on_grid(const DataProxy& data, size_t column,
 
 template<typename T>
 void transform_f_phi_grid_to_map_(FPhiGrid<T>&& hkl, Grid<T>& map) {
-  // x -> conj(x) is equivalent to changing axis direction before FFT
+  // NaNs are not good for FFT, so we change them to 0.
+  // x -> conj(x) is equivalent to changing axis direction before FFT.
   for (std::complex<T>& x : hkl.data)
-    x.imag(-x.imag());
+    if (std::isnan(x.imag()))
+      x = 0;
+    else
+      x.imag(-x.imag());
   map.spacegroup = hkl.spacegroup;
   map.unit_cell = hkl.unit_cell;
   map.axis_order = hkl.axis_order;
@@ -251,7 +243,7 @@ void transform_f_phi_grid_to_map_(FPhiGrid<T>&& hkl, Grid<T>& map) {
     map.set_size(hkl.nu, hkl.nv, nw);
   } else { // hkl.axis_order == AxisOrder::ZYX
     int nu = hkl.half_l ? 2 * (hkl.nu - 1) : hkl.nu;
-    check_grid_factors(map.spacegroup, hkl.nw, hkl.nv, nu);
+    check_grid_factors(map.spacegroup, {{hkl.nw, hkl.nv, nu}});
     map.set_size_without_checking(nu, hkl.nv, hkl.nw);
   }
   // FIXME set_size_without_checking is changing axis_order - bad
@@ -296,7 +288,7 @@ Grid<T> transform_f_phi_to_map(const FPhi& fphi,
                                bool exact_size=false,
                                AxisOrder order=AxisOrder::XYZ) {
   if (exact_size) {
-    gemmi::check_grid_factors(fphi.spacegroup(), size[0], size[1], size[2]);
+    gemmi::check_grid_factors(fphi.spacegroup(), size);
   } else {
     size = get_size_for_hkl(fphi, size, sample_rate);
   }

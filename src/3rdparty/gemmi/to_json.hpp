@@ -1,5 +1,7 @@
 // Copyright 2017 Global Phasing Ltd.
 
+// Writing cif::Document or its parts as JSON (mmJSON, CIF-JSON, etc).
+
 #ifndef GEMMI_TO_JSON_HPP_
 #define GEMMI_TO_JSON_HPP_
 #include <cctype>    // for isdigit
@@ -21,7 +23,7 @@ public:
   bool with_data_keyword = false;  // for mmJSON
   bool bare_tags = false;  // "tag" instead of "_tag"
   bool values_as_arrays = false;  // "_tag": ["value"]
-  bool lc_names = true; // write case-insensitive names as lower case
+  bool lowercase_names = true; // write case-insensitive names as lower case
   int quote_numbers = 1;  // 0=never (no s.u.), 1=mix, 2=always
   std::string cif_dot = "null";  // how to convert '.' from CIF
   explicit JsonWriter(std::ostream& os) : os_(os), linesep_("\n ") {}
@@ -37,7 +39,7 @@ public:
     with_data_keyword = true;
     bare_tags = true;
     values_as_arrays = true;
-    lc_names = false;
+    lowercase_names = false;
     quote_numbers = 0;
   }
 
@@ -48,7 +50,7 @@ private:
   void change_indent(int n) { linesep_.resize(linesep_.size() + n, ' '); }
 
   // returns category with trailing dot
-  std::string get_tag_category(const std::string& tag) {
+  std::string get_tag_category(const std::string& tag) const {
     if (!group_ddl2_categories)
       return std::string{};
     size_t pos = tag.find('.');
@@ -57,7 +59,7 @@ private:
     return tag.substr(0, pos + 1);
   }
 
-  std::string get_loop_category(const Loop& loop) {
+  std::string get_loop_category(const Loop& loop) const {
     if (loop.tags.empty())
       return std::string{};
     std::string cat = get_tag_category(loop.tags[0]);
@@ -160,7 +162,7 @@ private:
   void open_cat(const std::string& cat, size_t* tag_pos) {
     if (!cat.empty()) {
       change_indent(+1);
-      write_string(cat.substr(0, cat.size() - 1), bare_tags ? 1 : 0, lc_names);
+      write_string(cat.substr(0, cat.size() - 1), bare_tags ? 1 : 0, lowercase_names);
       os_ << ": {" << linesep_;
       *tag_pos += cat.size() - 1;
     }
@@ -184,7 +186,7 @@ private:
     for (size_t i = 0; i < ncol; i++) {
       if (i != 0)
         os_ << "," << linesep_;
-      write_string(loop.tags[i], tag_pos, lc_names);
+      write_string(loop.tags[i], tag_pos, lowercase_names);
       os_ << ": [";
       for (size_t j = i; j < vals.size(); j += ncol) {
         if (j != i)
@@ -199,7 +201,7 @@ private:
 
   // works for both block and frame
   void write_map(const std::string& name, const std::vector<Item>& items) {
-    write_string(name, 0, lc_names);
+    write_string(name, 0, lowercase_names);
     os_ << ": ";
     change_indent(+1);
     char first = '{';
@@ -219,7 +221,7 @@ private:
             if (seen_cats.insert(cat).second)
               open_cat(cat, &tag_pos);
           }
-          write_string(item.pair[0], tag_pos, lc_names);
+          write_string(item.pair[0], tag_pos, lowercase_names);
           os_ << ": ";
           if (values_as_arrays)
             os_.put('[');
@@ -278,7 +280,9 @@ inline void JsonWriter::write_json(const Document& d) {
   for (const Block& block : d.blocks) {
     if (&block != &d.blocks[0])
       os_.put(',');
-    os_ << linesep_;
+    // start mmJSON with {"data_ so it can be easily recognized
+    if (&block != &d.blocks[0] || comcifs || !with_data_keyword)
+      os_ << linesep_;
     write_map((with_data_keyword ? "data_" : "") + block.name, block.items);
   }
   if (comcifs)
