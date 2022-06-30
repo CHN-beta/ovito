@@ -27,6 +27,7 @@
 
 #include <libssh/libssh.h>
 #include <libssh/callbacks.h>
+#include "LibsshWrapper.h"
 
 #ifdef max
     #undef max
@@ -164,7 +165,7 @@ public:
     void useKbiAuth(bool enabled) { useAuth(UseAuthKbi, enabled); }
 
     /// Returns the supported authentication methods.
-    AuthMethods supportedAuthMethods() const { return AuthMethods(::ssh_userauth_list(_session, 0)); }
+    AuthMethods supportedAuthMethods() const { return AuthMethods(LibsshWrapper::ssh_userauth_list()(_session, 0)); }
 
     /// Get all enabled authentication methods.
     UseAuths enabledAuths() const { return _useAuths; }

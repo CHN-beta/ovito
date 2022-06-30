@@ -62,6 +62,7 @@ OPTION(OVITO_USE_UNITY_BUILD "Use unity builds to speed up compilation (requires
 OPTION(OVITO_DISABLE_THREADING "Disable multi-threading code (meant only for development purposes)." "OFF")
 OPTION(OVITO_USE_GIT_REVISION_NUMBER "Include Git revision information in OVITO version string." "OFF")
 OPTION(OVITO_BUILD_SSH_CLIENT "Build the SSH client for remote file access (requires libssh)." "ON")
+OPTION(OVITO_LIBSSH_RUNTIME_LINKING "Load libssh at runtime" "OFF")
 
 # Decide which version of the Qt framework to use. Ovito supports Qt5 (>=5.12) and Qt6 (>=6.2). 
 SET(OVITO_QT_MAJOR_VERSION "Qt5" CACHE STRING "The major version of the Qt framework to use (Qt5 or Qt6).")
