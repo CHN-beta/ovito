@@ -328,8 +328,8 @@ IF(ZLIB_FOUND AND NOT EMSCRIPTEN)
 ENDIF()
 
 # Deploy the libssh library and its dependencies.
-IF(OVITO_BUILD_SSH_CLIENT AND Libssh_FOUND AND NOT EMSCRIPTEN)
-	IF(WIN32 AND NOT OVITO_BUILD_CONDA)
+IF(OVITO_BUILD_SSH_CLIENT AND Libssh_FOUND AND NOT EMSCRIPTEN AND NOT OVITO_BUILD_CONDA)
+	IF(WIN32)
 		LIST(GET LIBSSH_LIBRARIES 0 LIBSSH_FIRST_LIBRARY)
 		GET_FILENAME_COMPONENT(LIBSSH_LIBRARY_DIR "${LIBSSH_FIRST_LIBRARY}" PATH)
 		GET_FILENAME_COMPONENT(LIBSSH_LIBRARY_NAME "${LIBSSH_FIRST_LIBRARY}" NAME_WE)
@@ -357,22 +357,19 @@ IF(OVITO_BUILD_SSH_CLIENT AND Libssh_FOUND AND NOT EMSCRIPTEN)
 			INSTALL(FILES "${LIBSSH_LIBRARY}" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/")
 		ENDIF()
 
-	ELSEIF(UNIX AND (OVITO_REDISTRIBUTABLE_PACKAGE OR OVITO_BUILD_PYPI))
+	ELSEIF(UNIX AND OVITO_REDISTRIBUTABLE_PACKAGE)
 
 		FOREACH(lib ${LIBSSH_LIBRARIES})
 			OVITO_INSTALL_SHARED_LIB("${lib}" ".")
 		ENDFOREACH()
 
-		# Install OpenSSL (libcrypto) needed by libssh.
-		#
-		# NOTE: This was changed in OVITO 3.6.0. We no longer ship OpenSSL with OVITO for Linux, because it leads to conflicts
-		# on some Linux distributions. Rather fall back to using the system version of OpenSSL, which should exist on most machines.
-		#
-		# FIND_LIBRARY(LIB_CRYPTO_LOCATION NAMES libcrypto.so PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu NO_DEFAULT_PATH)
-		# IF(NOT LIB_CRYPTO_LOCATION)
-		#	MESSAGE(FATAL_ERROR "Could not find shared library libcrypto.so, which is required by libssh, in system path.")
-		#ENDIF()
-		#OVITO_INSTALL_SHARED_LIB("${LIB_CRYPTO_LOCATION}" ".")
-
+		# Install OpenSSL (libcrypto.so and libssl.so) needed by libssh.
+		FOREACH(lib libcrypto.so libssl.so)
+			FIND_LIBRARY(lib_location NAMES ${lib} PATHS /usr/lib /usr/lib64 /usr/local/lib /usr/lib/x86_64-linux-gnu NO_DEFAULT_PATH)
+			IF(NOT lib_location)
+				MESSAGE(FATAL_ERROR "Could not find shared library ${lib} in system path, which is required by libssh.")
+			ENDIF()
+			OVITO_INSTALL_SHARED_LIB("${lib_location}" ".")
+		ENDFOREACH()
 	ENDIF()
 ENDIF()

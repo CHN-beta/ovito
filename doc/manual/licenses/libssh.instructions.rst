@@ -30,12 +30,12 @@ The following commands have been used to generate them::
 Linux
 """""
 
-OVITO for Linux includes shared libraries that have been built from the unmodified sources of libssh 0.9.5.
+OVITO for Linux includes shared libraries that have been built from the unmodified sources of libssh 0.9.6.
 The following commands have been used to build them::
 
   # Build platform: CentOS 6.9
-  # Compiler: GCC 7.1 (CentOS devtoolset-7)
-  cmake -DCMAKE_BUILD_TYPE=Release -DWITH_SERVER=OFF .
+  # Compiler: GCC 9.1 (CentOS devtoolset-9)
+  cmake -DCMAKE_BUILD_TYPE=Release -DWITH_SERVER=OFF -DWITH_GSSAPI=OFF -DWITH_EXAMPLES=OFF .
   make install
 
 macOS
