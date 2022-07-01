@@ -92,7 +92,7 @@ IF((HDF5_FOUND OR OVITO_BUILD_CONDA) AND (TARGET netcdf OR TARGET netCDF::netcdf
 		ELSE()
 			GET_TARGET_PROPERTY(NETCDF_LIBRARY netCDF::netcdf LOCATION)
 		ENDIF()
-		OVITO_INSTALL_SHARED_LIB("${NETCDF_LIBRARY}" ".")
+		OVITO_INSTALL_SHARED_LIB("${NETCDF_LIBRARY}")
 
 		# Deploy HDF5 shared library, which is required by NetCDF lib.
 		IF(TARGET hdf5-shared)
@@ -107,7 +107,7 @@ IF((HDF5_FOUND OR OVITO_BUILD_CONDA) AND (TARGET netcdf OR TARGET netCDF::netcdf
 		IF(NOT HDF5_LIBRARY)
 			MESSAGE(FATAL_ERROR "CMake target for the HDF5 library does not exist. Please check you HDF5 installation.")
 		ENDIF()
-		OVITO_INSTALL_SHARED_LIB("${HDF5_LIBRARY}" ".")
+		OVITO_INSTALL_SHARED_LIB("${HDF5_LIBRARY}")
 
 		# Deploy HDF5_HL shared library, which is required by NetCDF lib.
 		IF(TARGET hdf5_hl-shared)
@@ -122,7 +122,7 @@ IF((HDF5_FOUND OR OVITO_BUILD_CONDA) AND (TARGET netcdf OR TARGET netCDF::netcdf
 		IF(NOT HDF5_HL_LIBRARY)
 			MESSAGE(FATAL_ERROR "CMake target for the HDF5_HL library does not exist. Please check you HDF5 installation.")
 		ENDIF()
-		OVITO_INSTALL_SHARED_LIB("${HDF5_HL_LIBRARY}" ".")
+		OVITO_INSTALL_SHARED_LIB("${HDF5_HL_LIBRARY}")
 
 	ENDIF()
 
