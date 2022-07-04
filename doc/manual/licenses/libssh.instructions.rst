@@ -9,13 +9,13 @@ In accordance with the requirements of this license, this page provides instruct
 Windows
 """""""
 
-OVITO for Windows includes binaries that have been built from the unmodified sources of libssh 0.9.4.
+OVITO for Windows includes binaries that have been built from the unmodified sources of libssh 0.9.6.
 The following commands have been used to generate them::
 
   # Compiler: Microsoft Visual C++ 2019 (command line tools)
-  # OpenSSL version: 1.1.1g
+  # OpenSSL version: 1.1.1p
   # Zlib version: 1.2.11
-  cd libssh-0.9.4
+  cd libssh-0.9.6
   mkdir build
   cd build
   cmake -G "NMake Makefiles" ^
@@ -23,6 +23,9 @@ The following commands have been used to generate them::
     -DCMAKE_INSTALL_PREFIX=../../libssh ^
     -DZLIB_INCLUDE_DIR=%cd:\=/%/../../zlib/include ^
     -DZLIB_LIBRARY=%cd:\=/%/../../zlib/lib/zlib.lib ^
+    -DWITH_SERVER=OFF ^
+    -DWITH_GSSAPI=OFF ^
+    -DWITH_EXAMPLES=OFF ^
     -DOPENSSL_ROOT_DIR=%cd:\=/%/../../openssl ^
     ..
   nmake install
@@ -30,8 +33,8 @@ The following commands have been used to generate them::
 Linux
 """""
 
-OVITO for Linux includes shared libraries that have been built from the unmodified sources of libssh 0.9.6.
-The following commands have been used to build them::
+OVITO for Linux includes a shared library that have been built from the unmodified sources of libssh 0.9.6.
+The following commands were used to build it::
 
   # Build platform: CentOS 6.9
   # Compiler: GCC 9.1 (CentOS devtoolset-9)
@@ -41,5 +44,8 @@ The following commands have been used to build them::
 macOS
 """""
 
-OVITO for macOS includes a binary version of libssh 0.8.9 that has been built with `MacPorts <https://www.macports.org>`__: ``port install -s libssh``
+OVITO for macOS (Apple Silicon, arm64) includes a binary version of libssh 0.9.6 that has been built via `Homebrew <https://brew.sh>`__: ``brew install libssh``
+See the corresponding `formulae <https://formulae.brew.sh/formula/libssh>`__.
+
+OVITO for macOS (Intel x86_64) includes a binary version of libssh 0.8.9 that has been built via `MacPorts <https://www.macports.org>`__: ``port install -s libssh``
 See the corresponding `Portfile <https://github.com/macports/macports-ports/blob/master/devel/libssh/Portfile>`__.
