@@ -30,6 +30,10 @@ flat in vec3 center;	// Transformed cone vertex in view coordinates
 flat in vec3 axis;		// Transformed cone axis in view coordinates
 flat in float cone_radius;	// The radius of the cone
 
+const float cone_ratio = 1.8; // Ratio of height to radius of arrow head code.
+const float cone_angle = atan(1.0 / cone_ratio);
+const float cone_cos_squared = cos(cone_angle) * cos(cone_angle); // squared cosine of the cone angle
+
 void main()
 {
     // Calculate ray passing through the fragment (in view space).
@@ -46,24 +50,20 @@ void main()
 		zmin = 0.0;
 	}
 
-	float height = length(axis);
-	float angle = atan(cone_radius / height);
-	float cos_angle = cos(angle);
-	float sin_angle = sin(angle);
-	float cosSqr = cos_angle * cos_angle;
-	float AdD = dot(axis, ray_dir_norm) / height;
+	vec3 axis_normed = normalize(axis);
+	float AdD = dot(axis_normed, ray_dir_norm);
 	vec3 E = ray_origin_shifted - center;
-	float AdE = dot(axis, E) / height;
+	float AdE = dot(axis_normed, E);
 	float DdE = dot(ray_dir_norm, E);
 	float EdE = dot(E, E);
-	float c2 = AdD*AdD - cosSqr;
-	float c1 = AdD*AdE - cosSqr*DdE;
-	float c0 = AdE*AdE - cosSqr*EdE;
+	float c2 = AdD*AdD - cone_cos_squared;
+	float c1 = AdD*AdE - cone_cos_squared*DdE;
+	float c0 = AdE*AdE - cone_cos_squared*EdE;
 
 	// Solve the quadratic. Keep only those X for which dot(A,X-V) >= 0.
 	float ray_t = zmin;
 
-	float epsilon = 1e-9;
+	float epsilon = 1e-9 * cone_radius * cone_radius;
 	if(abs(c2) >= epsilon) {
 		float discr = c1*c1 - c0*c2;
 		if(discr < -epsilon) {
@@ -77,16 +77,17 @@ void main()
 			// cone "behind" the vertex.  We are interested only in those
 			// intersections "in front" of the vertex.
 			float root = sqrt(discr);
+			float height_sq = dot(axis, axis);
 			float t = (-c1 - root) / c2;
 			E = ray_origin_shifted + t * ray_dir_norm - center;
 			float ddot = dot(E, axis);
-			if(ddot > 0.0 && ddot < height*height && t > zmin) {
+			if(ddot > 0.0 && ddot < height_sq && t > zmin) {
 				ray_t = t;
 			}
 			t = (-c1 + root) / c2;
 			vec3 E2 = ray_origin_shifted + t * ray_dir_norm - center;
 			ddot = dot(E2, axis);
-			if(ddot > 0.0 && ddot < height*height && t > zmin) {
+			if(ddot > 0.0 && ddot < height_sq && t > zmin) {
 				ray_t = t;
 				E = E2;
 			}

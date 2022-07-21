@@ -68,7 +68,13 @@ Troubleshooting
 ===============
 
 If you run into any problems during the installation of OVITO, you can contact the developers through our `online support forum <https://www.ovito.org/forum/>`_. 
-The OVITO team will be happy to help you. The most commonly encountered installation issues are described here: 
+The OVITO team will be happy to help you. The most commonly encountered installation issues on different platforms are addressed here: 
+
+  - :ref:`installation.troubleshooting.windows`
+  - :ref:`installation.troubleshooting.linux`
+  - :ref:`installation.troubleshooting.macos`
+
+.. _installation.troubleshooting.windows:
 
 Windows
 -------
@@ -86,10 +92,12 @@ Windows 7 no longer supported
     `OVITO Basic <https://anaconda.org/conda-forge/ovito>`__ or `OVITO Pro <https://www.ovito.org/python-downloads/>`__ on a Windows 7 computer, 
     because these are still built against the old Qt5 framework (as of April 2022).
 
+.. _installation.troubleshooting.linux:
+
 Linux
 -----
 
-Missing files or broken links
+Missing shared object files or broken links
   .. error::
 
     Starting the desktop application :command:`ovito` or the script interpreter :command:`ovitos` may fail with the following error::
@@ -97,8 +105,8 @@ Missing files or broken links
       ./ovito: error while loading shared libraries: libQt5DBus.so.5: 
               cannot open shared object file: No such file or directory
 
-    This error is typically caused by broken symbolic links inside the :file:`lib/ovito/` sub-directory after 
-    extracting the OVITO installation archive for Linux on a Windows computer. 
+    This error is typically caused by broken symbolic links in the :file:`lib/ovito/` sub-directory of the OVITO installation after 
+    extracting the installation package for Linux on a Windows computer. 
 
   .. admonition:: Solution
     
@@ -134,3 +142,25 @@ Missing XCB system libraries
       sudo yum install libxcb xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm
 
     Debian users should also pay attention to `this thread in the OVITO support forum <https://www.ovito.org/forum/topic/installation-problem/#postid-2272>`__.
+
+.. _installation.troubleshooting.macos:
+
+macOS
+-----
+
+OVITO Pro license activation fails
+  .. error::
+
+    The activation step could not be completed due to an issue with the local license information store. File path: :file:`$HOME/.config/Ovito/LicenseStore.ini`.
+    Please check if file access permissions are correctly set. OVITO Pro requires read/write access to this filesystem path. 
+
+  .. admonition:: Solution
+    
+    OVITO Pro needs to save its licensing information under the path :file:`$HOME/.config/Ovito/`, which is the `canonical storage location <https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html>`__ 
+    for configuration data of Linux/Unix applications.
+    On some macOS computers the :file:`$HOME/.config/` directory may have been marked as write-protected by the system administrator, 
+    which lets the license activation process fail. Please ask your system administator to make the :file:`$HOME/.config/Ovito/` subdirectory 
+    writable by applications running under your user account.  
+
+    If this is not possible for some reason, you can set the standard environment variable ``XDG_CONFIG_HOME`` to point to some directory other than :file:`$HOME/.config/`.
+    `This will redirect OVITO Pro <https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html>`__ to store its licensing information in a different location.

@@ -45,7 +45,7 @@ void main()
 	// Solve the quadratic. Keep only those X for which dot(A,X-V) >= 0.
 	float ray_t = zmin;
 
-	const float epsilon = 1e-9;
+	const float epsilon = 1e-9 * cone_radius * cone_radius;
 	if(abs(c2) >= epsilon) {
 		float discr = c1*c1 - c0*c2;
 		if(discr < -epsilon) {

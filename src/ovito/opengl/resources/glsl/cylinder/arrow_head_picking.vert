@@ -35,13 +35,16 @@ flat out vec4 color_fs;
 flat out vec3 center;	// Transformed cone vertex in view coordinates
 flat out vec3 axis;		// Transformed cone axis in view coordinates
 flat out float cone_radius;	// The radius of the cone
+
+const float cone_ratio = 1.8; // Ratio of height to radius of arrow head code.
+
 void main()
 {
     // The index of the box corner.
     int corner = <VertexID>;
 
     float arrowHeadRadius = radius * 2.5;
-    float arrowHeadLength = (arrowHeadRadius * 1.8);
+    float arrowHeadLength = cone_ratio * arrowHeadRadius;
 
     // Set up an axis tripod that is aligned with the cone.
     mat3 orientation_tm;
