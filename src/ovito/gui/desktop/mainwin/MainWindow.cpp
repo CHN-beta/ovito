@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -459,10 +459,11 @@ void MainWindow::exitWithFatalError(const Exception& ex)
 { 
 	if(viewportsPanel()->viewportConfiguration())
 		viewportsPanel()->viewportConfiguration()->suspendViewportUpdates();
-	QCoreApplication::removePostedEvents(nullptr, 0);
-	QMainWindow::close(); 
 	ex.reportError(true);
-	QCoreApplication::exit(1);
+	QTimer::singleShot(0, this, [this]() {
+		QMainWindow::close(); 
+		QCoreApplication::exit(1);
+	});
 }
 
 /******************************************************************************

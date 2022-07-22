@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -206,36 +206,61 @@ void OpenGLViewportWindow::paintGL()
 		format.setMinorVersion(1);
 	}
 
-	if(format.majorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MAJOR || (format.majorVersion() == OVITO_OPENGL_MINIMUM_VERSION_MAJOR && format.minorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MINOR)) {
-		// Avoid infinite recursion.
-		static bool errorMessageShown = false;
-		if(!errorMessageShown) {
-			errorMessageShown = true;
-			userInterface().exitWithFatalError(Exception(tr(
-					"The OpenGL graphics driver installed on this system does not support OpenGL version %6.%7 or newer.\n\n"
-					"Ovito requires modern graphics hardware and up-to-date graphics drivers to display 3D content. Your current system configuration is not compatible with Ovito and the application will quit now.\n\n"
-					"To avoid this error, please install the newest graphics driver of the hardware vendor or, if necessary, consider replacing your graphics card with a newer model.\n\n"
-					"The installed OpenGL graphics driver reports the following information:\n\n"
-					"OpenGL vendor: %1\n"
-					"OpenGL renderer: %2\n"
-					"OpenGL version: %3.%4 (%5)\n\n"
-					"Ovito requires at least OpenGL version %6.%7.")
-					.arg(QString(OpenGLSceneRenderer::openGLVendor()))
-					.arg(QString(OpenGLSceneRenderer::openGLRenderer()))
-					.arg(format.majorVersion())
-					.arg(format.minorVersion())
-					.arg(QString(OpenGLSceneRenderer::openGLVersion()))
-					.arg(OVITO_OPENGL_MINIMUM_VERSION_MAJOR)
-					.arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR)
-				));
-		}
-		return;
-	}
-
 	// Invalidate picking buffer every time the visible contents of the viewport change.
 	_pickingRenderer->reset();
 
 	if(!viewport()->dataset()->viewportConfig()->isSuspended()) {
+
+		if(format.majorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MAJOR || (format.majorVersion() == OVITO_OPENGL_MINIMUM_VERSION_MAJOR && format.minorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MINOR)) {
+			// Avoid infinite recursion.
+			static bool errorMessageShown = false;
+			if(!errorMessageShown) {
+				errorMessageShown = true;
+				userInterface().exitWithFatalError(Exception(tr(
+						"The OpenGL graphics driver installed on this system does not support OpenGL version %6.%7 or newer.\n\n"
+						"Ovito requires modern graphics hardware and up-to-date graphics drivers to display 3D content. Your current system configuration is not compatible with Ovito and the application will quit now.\n\n"
+						"To avoid this error, please install the newest graphics driver of the hardware vendor or, if necessary, consider replacing your graphics card with a newer model.\n\n"
+						"The installed OpenGL graphics driver reports the following information:\n\n"
+						"OpenGL vendor: %1\n"
+						"OpenGL renderer: %2\n"
+						"OpenGL version: %3.%4 (%5)\n\n"
+						"Ovito requires at least OpenGL version %6.%7.")
+						.arg(QString(OpenGLSceneRenderer::openGLVendor()))
+						.arg(QString(OpenGLSceneRenderer::openGLRenderer()))
+						.arg(format.majorVersion())
+						.arg(format.minorVersion())
+						.arg(QString(OpenGLSceneRenderer::openGLVersion()))
+						.arg(OVITO_OPENGL_MINIMUM_VERSION_MAJOR)
+						.arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR)
+					));
+			}
+			return;
+		}
+		
+#ifdef Q_OS_WIN
+		if(OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics" || OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics 2000" || OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics 3000") {
+			// Avoid infinite recursion.
+			static bool errorMessageShown = false;
+			if(!errorMessageShown) {
+				errorMessageShown = true;
+				userInterface().exitWithFatalError(Exception(tr(
+						"The graphics chip installed in this system is not compatible with OVITO, unfortunately.\n\n"
+						"Intel(R) HD Graphics, an integrated graphics chip released in the years 2010/2011, does not support the specific OpenGL functions required by OVITO. "
+						"There is no known workaround to make OVITO work on systems with this particular graphics unit. Please use OVITO on a computer with a more modern graphics processor.\n\n"
+						"Detected graphics interface:\n\n"
+						"OpenGL vendor: %1\n"
+						"OpenGL renderer: %2\n"
+						"OpenGL version: %3.%4 (%5)")
+						.arg(QString(OpenGLSceneRenderer::openGLVendor()))
+						.arg(QString(OpenGLSceneRenderer::openGLRenderer()))
+						.arg(format.majorVersion())
+						.arg(format.minorVersion())
+						.arg(QString(OpenGLSceneRenderer::openGLVersion()))
+					));
+			}
+			return;
+		}
+#endif
 
 		// Request a new frame from the resource manager for this render pass.
 		OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = _viewportRenderer->currentResourceFrame();
