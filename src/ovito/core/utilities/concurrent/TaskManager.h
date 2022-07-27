@@ -48,6 +48,11 @@ public:
     /// \note This method is *not* thread-safe and may only be called from the main thread.
 	const std::vector<TaskWatcher*>& runningTasks() const { return _runningTaskStack; }
 
+    /// \brief Returns the watchers for all currently registered tasks.
+    /// \return A list of TaskWatcher objects, one for each registered task that has not yet reached the 'finished' state.
+    /// \note This method is *not* thread-safe and may only be called from the main thread.
+	QList<TaskWatcher*> registeredTasks() const;
+
     /// \brief Registers a future with the TaskManager, which will subsequently track the progress of the associated operation.
     /// \param future The Future whose shared state should be registered.
     /// \note This function is thread-safe.

@@ -98,10 +98,9 @@ bool Task::startLocked() noexcept
 {
 	// Check if already started.
 	auto state = _state.load(std::memory_order_relaxed);
-    if(state & Started)
+    if(state & (Started | Finished))
         return false;
 
-    OVITO_ASSERT(!(state & Finished));
     _state.fetch_or(Started, std::memory_order_relaxed);
 
 	// Inform the registered task watchers.
