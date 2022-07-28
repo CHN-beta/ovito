@@ -9,7 +9,7 @@ About OVITO
 
 OVITO is a scientific data visualization and analysis software for molecular and other particle-based simulation models, 
 which are typically used in computational materials science, physics or chemistry disciplines. The software has served as a valuable
-tool in more than 7,000 research publications (as of 2021).
+tool in more than 8,000 research publications (as of 2022).
 
 OVITO is available for Windows, Linux, and macOS system. The software is being developed, distributed and supported by `OVITO GmbH <https://www.ovito.org>`__, 
 a Germany-based spin-off company founded by the original developer of OVITO, `Dr. Alexander Stukowski <http://scholar.google.com/citations?user=f8Tw3eEAAAAJ>`__.
