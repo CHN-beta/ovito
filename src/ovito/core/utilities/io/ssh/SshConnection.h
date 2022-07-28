@@ -301,7 +301,7 @@ private:
     UseAuths _failedAuths = UseAuthEmpty;
     UseAuthFlag _succeededAuth = UseAuthEmpty;
 
-    /// The structure with the callback funtions registered with libssh.
+    /// The structure with the callback functions registered with libssh.
     struct ssh_callbacks_struct _sessionCallbacks;
 
     QElapsedTimer _timeSinceLastChannelClosed;

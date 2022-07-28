@@ -159,7 +159,7 @@ OVITO Pro license activation fails
     OVITO Pro needs to save its licensing information under the path :file:`$HOME/.config/Ovito/`, which is the `canonical storage location <https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html>`__ 
     for configuration data of Linux/Unix applications.
     On some macOS computers the :file:`$HOME/.config/` directory may have been marked as write-protected by the system administrator, 
-    which lets the license activation process fail. Please ask your system administator to make the :file:`$HOME/.config/Ovito/` subdirectory 
+    which lets the license activation process fail. Please ask your system administrator to make the :file:`$HOME/.config/Ovito/` subdirectory 
     writable by applications running under your user account.  
 
     If this is not possible for some reason, you can set the standard environment variable ``XDG_CONFIG_HOME`` to point to some directory other than :file:`$HOME/.config/`.
