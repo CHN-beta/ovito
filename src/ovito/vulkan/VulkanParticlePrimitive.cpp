@@ -573,6 +573,14 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
             return;
     }
 
+    // Check size limits.
+    int bytesPerVertex = (primitive.particleShape() == ParticlePrimitive::BoxShape || primitive.particleShape() == ParticlePrimitive::EllipsoidShape || primitive.particleShape() == ParticlePrimitive::SuperquadricShape) 
+        ? sizeof(Matrix_4<float>) : sizeof(Vector_4<float>);
+    if(particleCount > std::numeric_limits<int32_t>::max() / verticesPerParticle / bytesPerVertex) {
+        qWarning() << "WARNING: Vulkan renderer - Trying to render too many particles at once, exceeding device limits.";
+        return;
+    }
+
     // Set up push constants.
     switch(primitive.particleShape()) {
         case ParticlePrimitive::SquareCubicShape:

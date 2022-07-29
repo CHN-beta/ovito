@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -58,6 +58,16 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 
     // The mesh object to be rendered.
     const TriMeshObject& mesh = *primitive.mesh();
+
+    // Check size limits of the mesh.
+    if(mesh.faceCount() > std::numeric_limits<int32_t>::max() / (3 * sizeof(ColoredVertexWithNormal))) {
+        qWarning() << "WARNING: OpenGL renderer - Mesh to be rendered has too many faces, exceeding device limits.";
+        return;
+    }
+    if(primitive.useInstancedRendering() && primitive.perInstanceTMs()->size() > std::numeric_limits<int32_t>::max() / (3 * sizeof(Vector_4<float>))) {
+        qWarning() << "WARNING: OpenGL renderer - Number of mesh instances to be rendered exceeds device limits.";
+        return;
+    }
 
     // Decide whether per-pixel pseudo-color mapping is used.
     bool renderWithPseudoColorMapping = false;
@@ -524,6 +534,11 @@ void OpenGLSceneRenderer::renderMeshWireframeImplementation(const MeshPrimitive&
     ConstDataBufferPtr wireframeLinesBuffer = generateMeshWireframeLines(primitive);
     shader.setVerticesPerInstance(wireframeLinesBuffer->size());
     shader.setInstanceCount(primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : 1);
+
+    if(shader.verticesPerInstance() > std::numeric_limits<int32_t>::max() / shader.instanceCount() / wireframeLinesBuffer->stride()) {
+        qWarning() << "WARNING: OpenGL renderer - Wireframe mesh consists of too many lines, exceeding device limits.";
+        return;
+    }
 
     // Bind vertex buffer for wireframe vertex positions.
     QOpenGLBuffer buffer = shader.uploadDataBuffer(wireframeLinesBuffer, OpenGLShaderHelper::PerVertex, QOpenGLBuffer::VertexBuffer);

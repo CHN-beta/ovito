@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -174,22 +174,33 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QO
 	}
 
     GLsizei bufferSize;
+    bool exceedsLimits = false;
     // Are we using a geometry shader? If yes, there is just one input vertex per instance.
     if(usingGeometryShader()) {
         OVITO_ASSERT(inputRate == PerInstance);
+        exceedsLimits = instanceCount() > (std::numeric_limits<GLsizei>::max() / elementSize);
         bufferSize = elementSize * instanceCount();
     }
     // Does the OpenGL implementation support instanced arrays (requires OpenGL 3.3+)?
     else if(_renderer->glversion() >= QT_VERSION_CHECK(3, 3, 0)) {
-        if(inputRate == PerVertex)
+        if(inputRate == PerVertex) {
+            exceedsLimits = verticesPerInstance() > (std::numeric_limits<GLsizei>::max() / elementSize);
         	bufferSize = elementSize * verticesPerInstance();
-        else
+        }
+        else {
+            exceedsLimits = instanceCount() > (std::numeric_limits<GLsizei>::max() / elementSize);
         	bufferSize = elementSize * instanceCount();
+        }
     }
     else {
         // On older GL contexts, we have to emulate instanced arrays by duplicating all vertex data N times.
+        exceedsLimits = instanceCount() > (std::numeric_limits<GLsizei>::max() / elementSize / verticesPerInstance());
         bufferSize = elementSize * verticesPerInstance() * instanceCount();
     }
+
+	// Check if the requested vertex buffer size exceeds limits.
+    if(exceedsLimits)
+        _renderer->throwRendererException(QStringLiteral("OpenGL buffer allocation failed, because requested size exceeds limits."));
 
 	// Allocate the buffer memory.
     bufferObject.allocate(bufferSize);

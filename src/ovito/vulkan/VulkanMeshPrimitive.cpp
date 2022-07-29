@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -362,6 +362,12 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 
     const TriMeshObject& mesh = *primitive.mesh();
 
+    // Check size limits of the mesh.
+    if(mesh.faceCount() * 3 > std::numeric_limits<VkDeviceSize>::max() / sizeof(ColoredVertexWithNormal)) {
+        qWarning() << "WARNING: Vulkan renderer - mesh to be rendered has too many faces, exceeding Vulkan device limits.";
+        return;
+    }
+
     // Compute full view-projection matrix including correction for OpenGL/Vulkan convention difference.
     QMatrix4x4 mvp = clipCorrection() * projParams().projectionMatrix * modelViewTM();
 
@@ -636,6 +642,8 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 
         // Upload the per-instance TMs to GPU memory.
         VkBuffer instanceTMBuffer = getMeshInstanceTMBuffer(primitive);
+        if(!instanceTMBuffer)
+            return;
 
         // Bind buffer with the instance matrices to the second binding of the shader.
         VkDeviceSize offset = 0;
@@ -781,6 +789,12 @@ VkBuffer VulkanSceneRenderer::getMeshInstanceTMBuffer(const MeshPrimitive& primi
 {
     OVITO_ASSERT(primitive.useInstancedRendering() && primitive.perInstanceTMs());
 
+    // Check size limit.
+    if(primitive.perInstanceTMs()->size() > std::numeric_limits<VkDeviceSize>::max() / (3 * sizeof(Vector_4<float>))) {
+        qWarning() << "WARNING: Vulkan renderer - Number of mesh instances to be rendered exceeds device limits";
+        return {};
+    }
+
     // The look-up key for storing the per-instance TMs in the Vulkan buffer cache.
     RendererResourceKey<struct VulkanMeshPrimitiveInstanceTMCache, ConstDataBufferPtr> instanceTMsKey{ primitive.perInstanceTMs() };
 
@@ -873,6 +887,7 @@ void VulkanSceneRenderer::renderMeshWireframeImplementation(const MeshPrimitive&
     // Bind vertex buffer for instance TMs.
     if(primitive.useInstancedRendering()) {
         VkBuffer buffer = getMeshInstanceTMBuffer(primitive);
+        if(!buffer) return;
         deviceFunctions()->vkCmdBindVertexBuffers(currentCommandBuffer(), 1, 1, &buffer, &offset);
     }
 
