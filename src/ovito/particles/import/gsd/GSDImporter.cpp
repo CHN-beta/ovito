@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -229,7 +229,8 @@ void GSDImporter::FrameLoader::loadFile()
 	const Vector3 defaultVelocity = Vector3::Zero();
 	const Vector3I defaultImage = Vector3I::Zero();
 	const FloatType defaultDiameter = 1.0;
-	const Quaternion defaultQuaternion = Quaternion(1,0,0,0);
+	const Quaternion identityQuaternion = Quaternion(1,0,0,0);
+	const Quaternion nullQuaternion = Quaternion(0,0,0,0);
 
 	readOptionalProperty(gsd, "particles/mass", frameNumber, ParticlesObject::MassProperty, particles(), &defaultMass, sizeof(defaultMass));
 	readOptionalProperty(gsd, "particles/charge", frameNumber, ParticlesObject::ChargeProperty, particles(), &defaultCharge, sizeof(defaultCharge));
@@ -240,12 +241,25 @@ void GSDImporter::FrameLoader::loadFile()
 		for(FloatType& r : radiusProperty)
 			r /= 2;
 	}
-	if(PropertyAccess<Quaternion> orientationProperty = readOptionalProperty(gsd, "particles/orientation", frameNumber, ParticlesObject::OrientationProperty, particles(), &defaultQuaternion, sizeof(defaultQuaternion))) {
+	if(PropertyAccess<Quaternion> orientationProperty = readOptionalProperty(gsd, "particles/orientation", frameNumber, ParticlesObject::OrientationProperty, particles(), &identityQuaternion, sizeof(identityQuaternion))) {
 		// Convert quaternion representation from GSD format to OVITO's internal format.
 		// Left-shift all quaternion components by one: (W,X,Y,Z) -> (X,Y,Z,W).
 		for(Quaternion& q : orientationProperty)
 			std::rotate(q.begin(), q.begin() + 1, q.end());
 	}
+
+	// Read in "particles/angmom" chunk as user-defined property named "angmom". It's not clear how to map the HOOMD quaternion to OVITO's "Angular Momentum" vector property.
+	// But it should be possible, see https://hoomd-blue.readthedocs.io/en/v2.9.5/aniso.html#quaternions-for-angular-momentum
+	readOptionalProperty(gsd, "particles/angmom", frameNumber, ParticlesObject::UserProperty, particles(), &nullQuaternion, sizeof(nullQuaternion));
+
+	// Read "particles/body" chunk.
+	const int defaultBody = -1;
+	readOptionalProperty(gsd, "particles/body", frameNumber, ParticlesObject::UserProperty, particles(), &defaultBody, sizeof(defaultBody));
+
+	// Read "particles/moment_inertia" chunk.
+	const Vector3 defaultMomentInertia(0,0,0);
+	readOptionalProperty(gsd, "particles/moment_inertia", frameNumber, ParticlesObject::UserProperty, particles(), &defaultMomentInertia, sizeof(defaultMomentInertia));
+
 	if(isCanceled()) return;
 
 	// Read any user-defined particle properties.

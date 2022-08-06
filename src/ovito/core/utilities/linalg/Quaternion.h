@@ -117,9 +117,9 @@ public:
 	/// It is assumed that \a tm is a pure rotation matrix.
 	explicit QuaternionT(const Matrix_3<T>& tm, T epsilon = T(FLOATTYPE_EPSILON));
 
-	/// Casts the quanternion to another component type \a U.
+	/// Casts the quaternion to another component type \a U.
 	template<typename U>
-	Q_DECL_CONSTEXPR explicit operator QuaternionT<U>() const { return QuaternionT<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()), static_cast<U>(w())); }
+	Q_DECL_CONSTEXPR QuaternionT<U> toDataType() const { return QuaternionT<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()), static_cast<U>(w())); }
 
 	/// \brief Sets the quaternion to the identity quaternion.
 	QuaternionT& setIdentity() {
