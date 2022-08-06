@@ -886,7 +886,7 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
                         ++radius;
 
                     if(orientation) {
-                        QuaternionT<float> quat = QuaternionT<float>(*orientation++);
+                        QuaternionT<float> quat = (orientation++)->toDataType<float>();
                         float c = sqrt(quat.dot(quat));
                         if(c <= (float)FLOATTYPE_EPSILON)
                             quat.setIdentity();
@@ -919,7 +919,7 @@ void VulkanSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
                     }
 
                     if(orientationArray) {
-                        QuaternionT<float> quat = QuaternionT<float>(orientationArray[index]);
+                        QuaternionT<float> quat = orientationArray[index].toDataType<float>();
                         float c = sqrt(quat.dot(quat));
                         if(c <= (float)FLOATTYPE_EPSILON)
                             quat.setIdentity();
