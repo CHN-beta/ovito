@@ -982,7 +982,6 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 			// Create the rendering primitive for the cylinders.
 			visCache.cylinderPrimitive.setShape(CylinderPrimitive::CylinderShape);
 			visCache.cylinderPrimitive.setShadingMode(CylinderPrimitive::NormalShading);
-			visCache.cylinderPrimitive.setRenderingQuality(CylinderPrimitive::HighQuality);
 
 			// Determine cylinder colors.
 			if(!colorBuffer)
@@ -1225,10 +1224,8 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 			positionBufferSpheres[1] = positionBuffer2[0] = pos + (dir * FloatType(0.5));
 			cylinderBuffer.setShape(CylinderPrimitive::CylinderShape);
 			cylinderBuffer.setShadingMode(CylinderPrimitive::NormalShading);
-			cylinderBuffer.setRenderingQuality(CylinderPrimitive::HighQuality);
 			highlightCylinderBuffer.setShape(CylinderPrimitive::CylinderShape);
 			highlightCylinderBuffer.setShadingMode(CylinderPrimitive::NormalShading);
-			highlightCylinderBuffer.setRenderingQuality(CylinderPrimitive::HighQuality);
 			cylinderBuffer.setUniformColor(color);
 			cylinderBuffer.setUniformWidth(2 * radius);
 			cylinderBuffer.setPositions(positionBuffer1.take(), positionBuffer2.take());

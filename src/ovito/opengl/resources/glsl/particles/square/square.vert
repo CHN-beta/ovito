@@ -30,6 +30,7 @@ uniform vec2 unit_quad_triangle_strip[4];
 
 // Outputs:
 flat out vec4 color_fs;
+
 void main()
 {
     // The index of the quad corner.

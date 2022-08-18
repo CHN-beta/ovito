@@ -313,7 +313,6 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 			// Create the rendering primitive for the connections between backbone and base sites.
 			visCache.connectionPrimitive.setShape(CylinderPrimitive::CylinderShape);
 			visCache.connectionPrimitive.setShadingMode(CylinderPrimitive::NormalShading);
-			visCache.connectionPrimitive.setRenderingQuality(CylinderPrimitive::HighQuality);
 			visCache.connectionPrimitive.setUniformWidth(2 * cylinderRadius());
 			visCache.connectionPrimitive.setColors(colors);
 			DataBufferAccessAndRef<Point3> headPositions = DataBufferPtr::create(dataset(), particles->elementCount(), DataBuffer::Float, 3);

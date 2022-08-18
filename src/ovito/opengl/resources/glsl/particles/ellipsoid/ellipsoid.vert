@@ -35,6 +35,7 @@ flat out vec4 color_fs;
 flat out mat3 view_to_sphere_fs;
 flat out mat3 sphere_to_view_fs;
 flat out vec3 particle_view_pos_fs;
+
 void main()
 {
     // The index of the box corner.

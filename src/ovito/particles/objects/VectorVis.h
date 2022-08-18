@@ -87,7 +87,6 @@ public:
 public:
 
     Q_PROPERTY(Ovito::Particles::VectorVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
-    Q_PROPERTY(Ovito::CylinderPrimitive::RenderingQuality renderingQuality READ renderingQuality WRITE setRenderingQuality)
 
 protected:
 
@@ -122,9 +121,6 @@ protected:
 	/// The shading mode for arrows.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(VectorVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
 	DECLARE_SHADOW_PROPERTY_FIELD(shadingMode);
-
-	/// The rendering quality mode for arrows.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(CylinderPrimitive::RenderingQuality, renderingQuality, setRenderingQuality);
 
 	/// The transparency value of the arrows.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, transparencyController, setTransparencyController);

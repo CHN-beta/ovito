@@ -34,6 +34,7 @@ in vec4 color2;
 
 // Outputs:
 flat out vec4 color_fs;
+
 void main()
 {
     // Vector pointing from camera to cylinder base in object space:

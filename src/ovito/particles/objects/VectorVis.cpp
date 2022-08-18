@@ -40,7 +40,6 @@ DEFINE_PROPERTY_FIELD(VectorVis, arrowColor);
 DEFINE_PROPERTY_FIELD(VectorVis, arrowWidth);
 DEFINE_PROPERTY_FIELD(VectorVis, scalingFactor);
 DEFINE_PROPERTY_FIELD(VectorVis, shadingMode);
-DEFINE_PROPERTY_FIELD(VectorVis, renderingQuality);
 DEFINE_REFERENCE_FIELD(VectorVis, transparencyController);
 DEFINE_PROPERTY_FIELD(VectorVis, offset);
 DEFINE_PROPERTY_FIELD(VectorVis, coloringMode);
@@ -57,7 +56,6 @@ SET_PROPERTY_FIELD_LABEL(VectorVis, scalingFactor, "Scaling factor");
 SET_PROPERTY_FIELD_LABEL(VectorVis, reverseArrowDirection, "Reverse direction");
 SET_PROPERTY_FIELD_LABEL(VectorVis, arrowPosition, "Position");
 SET_PROPERTY_FIELD_LABEL(VectorVis, shadingMode, "Shading mode");
-SET_PROPERTY_FIELD_LABEL(VectorVis, renderingQuality, "RenderingQuality");
 SET_PROPERTY_FIELD_LABEL(VectorVis, transparencyController, "Transparency");
 SET_PROPERTY_FIELD_LABEL(VectorVis, offset, "Offset");
 SET_PROPERTY_FIELD_LABEL(VectorVis, coloringMode, "Coloring mode");
@@ -77,7 +75,6 @@ VectorVis::VectorVis(ObjectCreationParams params) : DataVis(params),
 	_arrowWidth(0.5),
 	_scalingFactor(1),
 	_shadingMode(FlatShading),
-	_renderingQuality(CylinderPrimitive::LowQuality),
 	_offset(Vector3::Zero()),
 	_coloringMode(UniformColoring)
 {
@@ -233,7 +230,6 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 		ConstDataObjectRef,		// Vector property
 		ConstDataObjectRef,		// Particle position property
 		ShadingMode,			// Arrow shading mode
-		CylinderPrimitive::RenderingQuality,	// Arrow rendering quality
 		FloatType,				// Scaling factor
 		FloatType,				// Arrow width
 		Color,					// Arrow color
@@ -257,7 +253,6 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 			vectorProperty,
 			positionProperty,
 			shadingMode(),
-			renderingQuality(),
 			scalingFactor(),
 			arrowWidth(),
 			arrowColor(),
@@ -321,7 +316,6 @@ PipelineStatus VectorVis::render(TimePoint time, const ConstDataObjectPath& path
 		// Create arrow rendering primitive.
 		arrows.setShape(CylinderPrimitive::ArrowShape);
 		arrows.setShadingMode(static_cast<CylinderPrimitive::ShadingMode>(shadingMode()));
-		arrows.setRenderingQuality(renderingQuality());
 		arrows.setUniformWidth(2 * arrowWidth());
 		arrows.setUniformColor(arrowColor());
 		arrows.setPositions(arrowBasePositions.take(), arrowHeadPositions.take());

@@ -270,7 +270,6 @@ PipelineStatus TrajectoryVis::render(TimePoint time, const ConstDataObjectPath& 
 				// Create rendering primitive for the line segments.
 				visCache.segments.setShape(CylinderPrimitive::CylinderShape);
 				visCache.segments.setShadingMode(static_cast<CylinderPrimitive::ShadingMode>(shadingMode()));
-				visCache.segments.setRenderingQuality(CylinderPrimitive::HighQuality);
 				visCache.segments.setColors(segmentColors ? segmentColors.take() : segmentPseudoColors.take());
 				visCache.segments.setUniformColor(lineColor());
 				visCache.segments.setUniformWidth(lineDiameter);

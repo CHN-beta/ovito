@@ -494,7 +494,7 @@ Future<std::vector<QUrl>> FileSourceImporter::findWildcardMatches(const QUrl& so
 			// A file called "abc9.xyz" must come before a file named "abc10.xyz", which is not
 			// the default lexicographic ordering.
 			QMap<QString, QString> sortedFilenames;
-			for(const QString& oldName : entries) {
+			for(QString& oldName : entries) {
 				// Generate a new name from the original filename that yields the correct ordering.
 				QString newName;
 				QString number;
@@ -511,7 +511,7 @@ Future<std::vector<QUrl>> FileSourceImporter::findWildcardMatches(const QUrl& so
 				if(!number.isEmpty())
 					newName.append(number.rightJustified(12, '0'));
 				if(!sortedFilenames.contains(newName))
-					sortedFilenames[newName] = oldName;
+					sortedFilenames[newName] = std::move(oldName);
 				else
 					sortedFilenames[oldName] = oldName;
 			}
@@ -519,8 +519,8 @@ Future<std::vector<QUrl>> FileSourceImporter::findWildcardMatches(const QUrl& so
 			// Generate final list of frames.
 			std::vector<QUrl> urls;
 			urls.reserve(sortedFilenames.size());
-			for(const auto& iter : sortedFilenames) {
-				QFileInfo fileInfo(directory, iter);
+			for(auto iter = sortedFilenames.constBegin(); iter != sortedFilenames.constEnd(); ++iter) {
+				QFileInfo fileInfo(directory, iter.value());
 				QUrl url = sourceUrl;
 				if(isLocalPath)
 					url = QUrl::fromLocalFile(fileInfo.filePath());
