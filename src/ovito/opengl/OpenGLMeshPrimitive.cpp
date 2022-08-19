@@ -37,13 +37,6 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 {
     QOpenGLTexture* colorMapTexture = nullptr;
 
-	// Stores data of a single vertex passed to the shader.
-	struct ColoredVertexWithNormal {
-		Point_3<float> position;
-		Vector_3<float> normal;
-		ColorAT<float> color;
-	};
-
     // Make sure there is something to be rendered. Otherwise, step out early.
 	if(!primitive.mesh() || primitive.mesh()->faceCount() == 0)
 		return;
@@ -60,7 +53,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     const TriMeshObject& mesh = *primitive.mesh();
 
     // Check size limits of the mesh.
-    if(mesh.faceCount() > std::numeric_limits<int32_t>::max() / (3 * sizeof(ColoredVertexWithNormal))) {
+    if(mesh.faceCount() > std::numeric_limits<int32_t>::max() / (3 * sizeof(MeshPrimitive::RenderVertex))) {
         qWarning() << "WARNING: OpenGL renderer - Mesh to be rendered has too many faces, exceeding device limits.";
         return;
     }
@@ -133,160 +126,27 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     };
 
     // Upload vertex buffer to GPU memory.
-    QOpenGLBuffer meshBuffer = shader.createCachedBuffer(std::move(meshCacheKey), sizeof(ColoredVertexWithNormal), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer) {
-        ColoredVertexWithNormal* renderVertices = reinterpret_cast<ColoredVertexWithNormal*>(buffer);
-        if(!mesh.hasNormals()) {
-            quint32 allMask = 0;
-
-            // Compute face normals.
-            std::vector<Vector_3<float>> faceNormals(mesh.faceCount());
-            auto faceNormal = faceNormals.begin();
-            for(auto face = mesh.faces().constBegin(); face != mesh.faces().constEnd(); ++face, ++faceNormal) {
-                const Point3& p0 = mesh.vertex(face->vertex(0));
-                Vector3 d1 = mesh.vertex(face->vertex(1)) - p0;
-                Vector3 d2 = mesh.vertex(face->vertex(2)) - p0;
-                *faceNormal = d1.cross(d2).toDataType<float>();
-                if(*faceNormal != Vector_3<float>::Zero()) {
-                    allMask |= face->smoothingGroups();
-                }
-            }
-
-            // Initialize render vertices.
-            ColoredVertexWithNormal* rv = renderVertices;
-            faceNormal = faceNormals.begin();
-            ColorAT<float> defaultVertexColor = primitive.uniformColor().toDataType<float>();
-            for(auto face = mesh.faces().constBegin(); face != mesh.faces().constEnd(); ++face, ++faceNormal) {
-
-                // Initialize render vertices for this face.
-                for(size_t v = 0; v < 3; v++, rv++) {
-                    if(face->smoothingGroups())
-                        rv->normal = Vector_3<float>::Zero();
-                    else
-                        rv->normal = *faceNormal;
-                    rv->position = mesh.vertex(face->vertex(v)).toDataType<float>();
-                    if(mesh.hasVertexColors()) {
-                        rv->color = mesh.vertexColor(face->vertex(v)).toDataType<float>();
-                        if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
-                    }
-                    else if(renderWithPseudoColorMapping && mesh.hasVertexPseudoColors()) {
-                        rv->color.r() = mesh.vertexPseudoColor(face->vertex(v));
-                    }
-                    else if(mesh.hasFaceColors()) {
-                        rv->color = mesh.faceColor(face - mesh.faces().constBegin()).toDataType<float>();
-                        if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
-                    }
-                    else if(renderWithPseudoColorMapping && mesh.hasFacePseudoColors()) {
-                        rv->color.r() = mesh.facePseudoColor(face - mesh.faces().constBegin());
-                    }
-                    else if(face->materialIndex() < primitive.materialColors().size() && face->materialIndex() >= 0) {
-                        rv->color = primitive.materialColors()[face->materialIndex()].toDataType<float>();
-                    }
-                    else {
-                        rv->color = defaultVertexColor;
-                    }
-
-                    // Override color of faces that are selected.
-                    if(face->isSelected() && isInteractive() && !isPicking()) {
-                        if(!renderWithPseudoColorMapping)
-                            rv->color = ColorAT<float>(primitive.faceSelectionColor());
-                        else
-                            rv->color.r() = std::numeric_limits<float>::infinity();
-                    }
-                }
-            }
-
-            if(allMask) {
-                std::vector<Vector_3<float>> groupVertexNormals(mesh.vertexCount());
-                for(int group = 0; group < OVITO_MAX_NUM_SMOOTHING_GROUPS; group++) {
-                    quint32 groupMask = quint32(1) << group;
-                    if((allMask & groupMask) == 0)
-                        continue;	// Group is not used.
-
-                    // Reset work arrays.
-                    std::fill(groupVertexNormals.begin(), groupVertexNormals.end(), Vector_3<float>::Zero());
-
-                    // Compute vertex normals at original vertices for current smoothing group.
-                    faceNormal = faceNormals.begin();
-                    for(auto face = mesh.faces().constBegin(); face != mesh.faces().constEnd(); ++face, ++faceNormal) {
-                        // Skip faces that do not belong to the current smoothing group.
-                        if((face->smoothingGroups() & groupMask) == 0) continue;
-
-                        // Add face's normal to vertex normals.
-                        for(size_t fv = 0; fv < 3; fv++)
-                            groupVertexNormals[face->vertex(fv)] += *faceNormal;
-                    }
-
-                    // Transfer vertex normals from original vertices to render vertices.
-                    rv = renderVertices;
-                    for(const auto& face : mesh.faces()) {
-                        if(face.smoothingGroups() & groupMask) {
-                            for(size_t fv = 0; fv < 3; fv++, ++rv)
-                                rv->normal += groupVertexNormals[face.vertex(fv)];
-                        }
-                        else rv += 3;
-                    }
-                }
-            }
-        }
-        else {
-            // Use normals stored in the mesh.
-            ColoredVertexWithNormal* rv = renderVertices;
-            const Vector3* faceNormal = mesh.normals().begin();
-            ColorAT<float> defaultVertexColor = primitive.uniformColor().toDataType<float>();
-            for(auto face = mesh.faces().constBegin(); face != mesh.faces().constEnd(); ++face) {
-                // Initialize render vertices for this face.
-                for(size_t v = 0; v < 3; v++, rv++) {
-                    rv->normal = (*faceNormal++).toDataType<float>();
-                    rv->position = mesh.vertex(face->vertex(v)).toDataType<float>();
-                    if(mesh.hasVertexColors()) {
-                        rv->color = mesh.vertexColor(face->vertex(v)).toDataType<float>();
-                        if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
-                    }
-                    else if(renderWithPseudoColorMapping && mesh.hasVertexPseudoColors()) {
-                        rv->color.r() = mesh.vertexPseudoColor(face->vertex(v));
-                    }
-                    else if(mesh.hasFaceColors()) {
-                        rv->color = mesh.faceColor(face - mesh.faces().constBegin()).toDataType<float>();
-                        if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
-                    }
-                    else if(renderWithPseudoColorMapping && mesh.hasFacePseudoColors()) {
-                        rv->color.r() = mesh.facePseudoColor(face - mesh.faces().constBegin());
-                    }
-                    else if(face->materialIndex() >= 0 && face->materialIndex() < primitive.materialColors().size()) {
-                        rv->color = primitive.materialColors()[face->materialIndex()].toDataType<float>();
-                    }
-                    else {
-                        rv->color = defaultVertexColor;
-                    }
-
-                    // Override color of faces that are selected.
-                    if(face->isSelected() && isInteractive()) {
-                        if(!renderWithPseudoColorMapping)
-                            rv->color = ColorAT<float>(primitive.faceSelectionColor());
-                        else
-                            rv->color.r() = std::numeric_limits<float>::infinity();
-                    }
-                }
-            }
-        }
+    QOpenGLBuffer meshBuffer = shader.createCachedBuffer(std::move(meshCacheKey), sizeof(MeshPrimitive::RenderVertex), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer) {
+        bool highlightSelectedFaces = isInteractive() && !isPicking();
+    	primitive.generateRenderableVertices(reinterpret_cast<MeshPrimitive::RenderVertex*>(buffer), highlightSelectedFaces, renderWithPseudoColorMapping);
     });
 
 	// Bind vertex buffer to vertex attributes.
-	shader.bindBuffer(meshBuffer, "position", GL_FLOAT, 3, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, position), OpenGLShaderHelper::PerVertex);
+	shader.bindBuffer(meshBuffer, "position", GL_FLOAT, 3, sizeof(MeshPrimitive::RenderVertex), offsetof(MeshPrimitive::RenderVertex, position), OpenGLShaderHelper::PerVertex);
     if(!isPicking())
-    	shader.bindBuffer(meshBuffer, "normal",   GL_FLOAT, 3, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, normal),   OpenGLShaderHelper::PerVertex);
+    	shader.bindBuffer(meshBuffer, "normal",   GL_FLOAT, 3, sizeof(MeshPrimitive::RenderVertex), offsetof(MeshPrimitive::RenderVertex, normal),   OpenGLShaderHelper::PerVertex);
         
 	if(!renderWithPseudoColorMapping) {
         if(!isPicking() && (!primitive.useInstancedRendering() || !primitive.perInstanceColors())) {
             // Rendering with true RGBA colors.
-            shader.bindBuffer(meshBuffer, "color", GL_FLOAT, 4, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, color), OpenGLShaderHelper::PerVertex);
+            shader.bindBuffer(meshBuffer, "color", GL_FLOAT, 4, sizeof(MeshPrimitive::RenderVertex), offsetof(MeshPrimitive::RenderVertex, color), OpenGLShaderHelper::PerVertex);
         }
     }
     else {
         OVITO_ASSERT(!isPicking());
         
         // Rendering  with pseudo-colors and a color mapping function.
-        shader.bindBuffer(meshBuffer, "pseudocolor", GL_FLOAT, 1, sizeof(ColoredVertexWithNormal), offsetof(ColoredVertexWithNormal, color), OpenGLShaderHelper::PerVertex);
+        shader.bindBuffer(meshBuffer, "pseudocolor", GL_FLOAT, 2, sizeof(MeshPrimitive::RenderVertex), offsetof(MeshPrimitive::RenderVertex, color), OpenGLShaderHelper::PerVertex);
         shader.setUniformValue("opacity", primitive.uniformColor().a());
         shader.setUniformValue("selection_color", ColorA(primitive.faceSelectionColor()));
         float minValue = primitive.pseudoColorMapping().minValue();
@@ -480,31 +340,7 @@ ConstDataBufferPtr OpenGLSceneRenderer::generateMeshWireframeLines(const MeshPri
     ConstDataBufferPtr& wireframeLines = OpenGLResourceManager::instance()->lookup<ConstDataBufferPtr>(std::move(cacheKey), currentResourceFrame());
 
     if(!wireframeLines) {
-        const TriMeshObject& mesh = *primitive.mesh();
-
-		// Count how many polygon edge are in the mesh.
-		size_t numVisibleEdges = 0;
-		for(const TriMeshFace& face : mesh.faces()) {
-			for(size_t e = 0; e < 3; e++)
-				if(face.edgeVisible(e)) numVisibleEdges++;
-		}
-
-		// Allocate storage buffer for line elements.
-        DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(dataset(), numVisibleEdges * 2, DataBuffer::Float, 3);
-
-		// Generate line elements.
-        Point3* outVert = lines.begin();
-		for(const TriMeshFace& face : mesh.faces()) {
-			for(size_t e = 0; e < 3; e++) {
-				if(face.edgeVisible(e)) {
-					*outVert++ = mesh.vertex(face.vertex(e));
-					*outVert++ = mesh.vertex(face.vertex((e+1)%3));
-				}
-			}
-		}
-        OVITO_ASSERT(outVert == lines.end());
-
-        wireframeLines = lines.take();
+        wireframeLines = primitive.generateWireframeLines();
     }
 
     return wireframeLines;

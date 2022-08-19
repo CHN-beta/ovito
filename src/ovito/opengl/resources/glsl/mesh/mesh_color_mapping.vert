@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,22 +29,23 @@ uniform float color_range_max;
 // Inputs:
 in vec3 position;
 in vec3 normal;
-in float pseudocolor;
+in vec2 pseudocolor;
 
 // Outputs:
 out float pseudocolor_fs;
 flat out float selected_face_fs;
 out vec3 normal_fs;
+
 void main()
 {
 	// Apply model-view-projection matrix to vertex.
     gl_Position = modelview_projection_matrix * vec4(position, 1.0);
 
     // Pass vertex pseudo-color on to fragment shader.
-    pseudocolor_fs = (pseudocolor - color_range_min) / (color_range_max - color_range_min);
+    pseudocolor_fs = (pseudocolor.r - color_range_min) / (color_range_max - color_range_min);
 
     // Pass face selection state to fragment shader.
-    selected_face_fs = float(isinf(pseudocolor));
+    selected_face_fs = pseudocolor.g;
  
     // Transform vertex normal from object to view space.
     normal_fs = vec3(normal_tm * vec4(normal, 0.0));
