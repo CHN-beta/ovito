@@ -130,8 +130,9 @@ public:
 
         face_index faceIndex = createFace();
 
-        VertexIterator v1, v2;
-        for(v2 = begin, v1 = v2++; v2 != end; v1 = v2++) {
+        VertexIterator v2 = begin;
+        VertexIterator v1 = v2++;
+        for(; v2 != end; ++v1, ++v2) {
             createEdge(*v1, *v2, faceIndex);
         }
         createEdge(*v1, *begin, faceIndex);
@@ -162,7 +163,7 @@ public:
     bool connectOppositeHalfedges();
 
     /// Links each half-edge leaving from the given vertex to an opposite (reverse) half-edge leading back to the vertex.
-    void connectOppositeHalfedges(vertex_index vert);
+    void connectOppositeHalfedgesAtVertex(vertex_index vert);
 
     /// Duplicates those vertices which are shared by more than one manifold.
     /// The method may only be called on a closed mesh.

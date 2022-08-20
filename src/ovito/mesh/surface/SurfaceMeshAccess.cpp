@@ -396,7 +396,7 @@ void SurfaceMeshAccess::constructConvexHull(std::vector<Point3> vecs, FloatType 
 	createFace({tetverts[1], tetverts[2], tetverts[3]}, region);
 	// Connect opposite half-edges to link the four faces together.
 	for(size_t i = 0; i < 4; i++)
-		mutableTopology()->connectOppositeHalfedges(tetverts[i]);
+		mutableTopology()->connectOppositeHalfedgesAtVertex(tetverts[i]);
 
 	if(vecs.size() == 4)
 		return;	// If the input point set consists only of 4 points, then we are done after constructing the initial tetrahedron.

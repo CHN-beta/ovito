@@ -187,7 +187,7 @@ bool SurfaceMeshTopology::connectOppositeHalfedges()
 * Links each half-edge leaving from the given vertex to an opposite (reverse)
 * half-edge leading back to the vertex.
 ******************************************************************************/
-void SurfaceMeshTopology::connectOppositeHalfedges(vertex_index vert)
+void SurfaceMeshTopology::connectOppositeHalfedgesAtVertex(vertex_index vert)
 {
 	for(edge_index edge = firstVertexEdge(vert); edge != InvalidIndex; edge = _nextVertexEdges[edge]) {
 		if(hasOppositeEdge(edge)) continue;
