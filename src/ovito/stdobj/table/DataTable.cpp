@@ -33,6 +33,7 @@ DEFINE_PROPERTY_FIELD(DataTable, axisLabelY);
 DEFINE_PROPERTY_FIELD(DataTable, plotMode);
 DEFINE_REFERENCE_FIELD(DataTable, x);
 DEFINE_REFERENCE_FIELD(DataTable, y);
+DEFINE_SHADOW_PROPERTY_FIELD(DataTable, plotMode);
 
 /******************************************************************************
 * Registers all standard properties with the property traits class.

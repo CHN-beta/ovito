@@ -394,8 +394,10 @@ FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const Pipeli
 		dislocationTypeIds.buffer()->addElementType(entry.first);
 
 	DataTable* lengthTableObj = replaceDataObjects ? state.getMutableLeafObject<DataTable>(DataTable::OOClass(), QStringLiteral("disloc-lengths")) : nullptr;
-	if(!lengthTableObj)
+	if(!lengthTableObj) {
 		lengthTableObj = state.createObject<DataTable>(QStringLiteral("disloc-lengths"), dataSource, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation lengths"), dislocationLengthsProperty.take(), dislocationTypeIds.take());
+		lengthTableObj->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(DataTable::plotMode)});
+	}
 	else {
 		DataOORef<const PropertyObject> x = dislocationTypeIds.take();
 		DataOORef<const PropertyObject> y = dislocationLengthsProperty.take();
@@ -410,8 +412,10 @@ FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const Pipeli
 		dislocationCountsProperty[entry.first->numericId()] = entry.second;
 
 	DataTable* countTableObj = replaceDataObjects ? state.getMutableLeafObject<DataTable>(DataTable::OOClass(), QStringLiteral("disloc-counts")) : nullptr;
-	if(!countTableObj)
+	if(!countTableObj) {
 		countTableObj = state.createObject<DataTable>(QStringLiteral("disloc-counts"), dataSource, DataTable::BarChart, DislocationAnalysisModifier::tr("Dislocation counts"), dislocationCountsProperty.take());
+		countTableObj->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(DataTable::plotMode)});
+	}
 	else
 		countTableObj->setContent(maxId+1, DataRefVector<PropertyObject>{{ dislocationCountsProperty.take() }});
 	countTableObj->insertProperty(0, lengthTableObj->x());
