@@ -187,7 +187,7 @@ VulkanPipeline& VulkanSceneRenderer::createMeshPrimitivePipeline(VulkanPipeline&
                 0, // location
                 0, // binding
                 VK_FORMAT_R32G32B32_SFLOAT,
-                offsetof(ColoredVertexWithNormal, position) // offset
+                offsetof(MeshPrimitive::RenderVertex, position) // offset
             },
             { // instance transformation (row 1):
                 1, // location
@@ -286,7 +286,7 @@ VulkanPipeline& VulkanSceneRenderer::createMeshPrimitivePipeline(VulkanPipeline&
                 0, // location
                 0, // binding
                 VK_FORMAT_R32G32B32_SFLOAT,
-                offsetof(ColoredVertexWithNormal, position) // offset
+                offsetof(MeshPrimitive::RenderVertex, position) // offset
             },
             { // instance transformation (row 1):
                 1, // location
@@ -356,7 +356,7 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     const TriMeshObject& mesh = *primitive.mesh();
 
     // Check size limits of the mesh.
-    if(mesh.faceCount() * 3 > std::numeric_limits<VkDeviceSize>::max() / sizeof(ColoredVertexWithNormal)) {
+    if(mesh.faceCount() * 3 > std::numeric_limits<VkDeviceSize>::max() / sizeof(MeshPrimitive::RenderVertex)) {
         qWarning() << "WARNING: Vulkan renderer - mesh to be rendered has too many faces, exceeding Vulkan device limits.";
         return;
     }
