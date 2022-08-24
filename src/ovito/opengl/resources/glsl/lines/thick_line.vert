@@ -33,6 +33,7 @@ in vec4 color_to;
 
 // Outputs:
 out vec4 color_fs;
+
 void main()
 {
     // The index of the quad corner.
