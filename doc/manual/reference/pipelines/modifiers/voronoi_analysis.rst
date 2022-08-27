@@ -8,10 +8,13 @@ Voronoi analysis
   :align: right
 
 This analysis modifier calculates the Voronoi tessellation of the simulation box, taking the particle positions as Voronoi cell centers.
-By default two quantities are output by the analysis modifier for each particle:
-The *volume* of the particle's Voronoi cell and the number of faces the Voronoi cell has. Since the face count
-is equal to the number of nearest neighbors of a particle, this quantity is also called the *coordination number*.
-The modifier outputs both quantities as new particle properties, which allows them to be referenced in subsequent
+By default three quantities are output by the analysis modifier for each particle:
+
+- The *volume* of the particle's Voronoi cell.
+- The number of faces the Voronoi cell has. Since the face count is equal to the number of nearest neighbors of a particle, this quantity is also called the *coordination number*.
+- The distance from the particle to the farthest vertex of its Voronoi cell. This distance is also the radius of the biggest empty sphere (ie. containing no particle) touching the particle. It can thus be used to quantify the size of the cavities near the particles, by assuming that particles are points with no size. For this reason the quantity is called *cavity radius*.
+
+The modifier outputs these quantities as new particle properties, which allows them to be referenced in subsequent
 analysis or filtering steps.
 
 Voronoi indices
