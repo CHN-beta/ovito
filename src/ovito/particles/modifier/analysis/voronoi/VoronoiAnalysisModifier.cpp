@@ -221,6 +221,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
 	// Prepare output data arrays.
 	PropertyAccess<FloatType> atomicVolumesArray(atomicVolumes());
+	PropertyAccess<FloatType> cavityRadiiArray(cavityRadii());
 	PropertyAccess<int> coordinationNumbersArray(coordinationNumbers());
 	PropertyAccess<int> maxFaceOrdersArray(maxFaceOrders());
 
@@ -234,6 +235,10 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 		// Compute cell volume.
 		double vol = v.volume();
 		atomicVolumesArray[index] = (FloatType)vol;
+
+		// Compute cell max radius
+		double maxRad = std::sqrt(v.max_radius_squared());
+		cavityRadiiArray[index] = (FloatType)maxRad;
 
 		// Accumulate total volume of Voronoi cells.
 		// Loop is for lock-free write access to shared max counter.
@@ -770,6 +775,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::applyResults(const Modifier
 
 	particles->createProperty(coordinationNumbers());
 	particles->createProperty(atomicVolumes());
+	particles->createProperty(cavityRadii());
 
 	if(modifier->computeIndices()) {
 		if(voronoiIndices())
