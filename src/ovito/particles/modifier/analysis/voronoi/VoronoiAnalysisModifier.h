@@ -91,6 +91,7 @@ private:
 			_computeBonds(computeBonds),
 			_coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(request.dataset(), fingerprint.particleCount(), ParticlesObject::CoordinationProperty, DataBuffer::InitializeMemory)),
 			_atomicVolumes(ParticlesObject::OOClass().createUserProperty(request.dataset(), fingerprint.particleCount(), PropertyObject::Float, 1, QStringLiteral("Atomic Volume"), DataBuffer::InitializeMemory)),
+			_cavityRadii(ParticlesObject::OOClass().createUserProperty(request.dataset(), fingerprint.particleCount(), PropertyObject::Float, 1, QStringLiteral("Cavity Radius"), DataBuffer::InitializeMemory)),
 			_maxFaceOrders(computeIndices ? ParticlesObject::OOClass().createUserProperty(request.dataset(), fingerprint.particleCount(), PropertyObject::Int, 1, QStringLiteral("Max Face Order"), DataBuffer::InitializeMemory) : nullptr),
 			_inputFingerprint(std::move(fingerprint)),
 			_polyhedraMesh(std::move(polyhedraMesh)) {}
@@ -106,6 +107,9 @@ private:
 
 		/// Returns the property storage that contains the computed atomic volumes.
 		const PropertyPtr& atomicVolumes() const { return _atomicVolumes; }
+
+		/// Returns the property storage that contains the computed cavity radii.
+		const PropertyPtr& cavityRadii() const { return _cavityRadii; }
 
 		/// Returns the property storage that contains the computed Voronoi indices.
 		const PropertyPtr& voronoiIndices() const { return _voronoiIndices; }
@@ -140,6 +144,7 @@ private:
 
 		const PropertyPtr _coordinationNumbers;
 		const PropertyPtr _atomicVolumes;
+		const PropertyPtr _cavityRadii;
 		PropertyPtr _voronoiIndices;
 		const PropertyPtr _maxFaceOrders;
 		std::vector<Bond> _bonds;
