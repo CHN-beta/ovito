@@ -158,6 +158,7 @@ private:
 		PropertyPtr _radiiOfGyration;
 		PropertyPtr _gyrationTensors;
 		ParticleOrderingFingerprint _inputFingerprint;
+		bool _hasZeroWeightCluster = false;
 	};
 
 	/// Computes the modifier's results.
