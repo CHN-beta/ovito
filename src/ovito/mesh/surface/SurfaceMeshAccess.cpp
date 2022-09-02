@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -181,7 +181,8 @@ std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMesh
 					edge1v.normalizeSafely();
 					do {
 						visitedEdges.push_back(edge);
-						OVITO_ASSERT(hasOppositeEdge(edge)); // Make sure the mesh is closed.
+						if(!hasOppositeEdge(edge))
+							throw Exception("Point location query requires a surface mesh that is closed.");
 						edge_index nextEdge = nextFaceEdge(oppositeEdge(edge));
 						OVITO_ASSERT(vertex1(nextEdge) == vindex);
 						Vector3 edge2v = wrapVector(vertexPosition(vertex2(nextEdge)) - vertexPos);
@@ -223,7 +224,8 @@ std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMesh
 	size_type edgeCount = this->edgeCount();
 	for(edge_index edge = 0; edge < edgeCount; edge++) {
 		if(!faceSubset.empty() && !faceSubset[adjacentFace(edge)]) continue;
-		OVITO_ASSERT_MSG(hasOppositeEdge(edge), "SurfaceMeshAccess::locatePoint()", "Surface mesh is not fully closed. This should not happen.");
+		if(!hasOppositeEdge(edge))
+			throw Exception("Point location query requires a surface mesh that is closed.");
 		const Point3& p1 = vertexPosition(vertex1(edge));
 		const Point3& p2 = vertexPosition(vertex2(edge));
 		Vector3 edgeDir = wrapVector(p2 - p1);
