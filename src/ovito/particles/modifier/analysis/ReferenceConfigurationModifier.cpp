@@ -215,7 +215,7 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 			throwException(tr("Reference configuration has not been specified yet or is empty. Please pick a reference simulation file."));
 
 		// Make sure we really got back the requested reference frame.
-		if(referenceInput.data()->sourceFrame() != referenceFrame) {
+		if(int sourceFrame = referenceInput.data()->sourceFrame(); sourceFrame != -1 && sourceFrame != referenceFrame) {
 			if(referenceFrame > 0)
 				throwException(tr("Requested reference frame %1 is out of range. Make sure the loaded reference configuration file contains a sufficent number of frames.").arg(referenceFrame));
 			else
