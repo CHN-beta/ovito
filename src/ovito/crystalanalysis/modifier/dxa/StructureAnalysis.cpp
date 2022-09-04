@@ -453,10 +453,12 @@ void StructureAnalysis::initializeListOfStructures()
 ******************************************************************************/
 bool StructureAnalysis::identifyStructures(ProgressingTask& operation)
 {
+	OVITO_ASSERT(Task::currentTask() == &operation);
+
 	// Prepare the neighbor list.
 	int maxNeighborListSize = std::min((int)_neighborListsSize + 1, (int)MAX_NEIGHBORS);
 	NearestNeighborFinder neighFinder(maxNeighborListSize);
-	if(!neighFinder.prepare(positions(), cell(), _particleSelection.buffer(), &operation))
+	if(!neighFinder.prepare(positions(), cell(), _particleSelection.buffer()))
 		return false;
 
 	// Identify local structure around each particle.

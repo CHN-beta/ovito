@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,10 +30,11 @@ namespace Ovito::Particles {
 /******************************************************************************
 * Initialization function.
 ******************************************************************************/
-bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selectionProperty, ProgressingTask* operation)
+bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selectionProperty)
 {
 	OVITO_ASSERT(positions);
-	if(operation) operation->setProgressMaximum(0);
+	Task* currentTask = Task::currentTask();
+	OVITO_ASSERT(currentTask != nullptr);
 
 	_cutoffRadius = cutoffRadius;
 	_cutoffRadiusSquared = cutoffRadius * cutoffRadius;
@@ -157,7 +158,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 				for(int iz = -stencilRadiusZ; iz <= stencilRadiusZ; iz++) {
 					if(std::abs(ix) < stencilRadius && std::abs(iy) < stencilRadius && std::abs(iz) < stencilRadius)
 						continue;
-					if(operation && operation->isCanceled())
+					if(currentTask && currentTask->isCanceled())
 						return false;
 					FloatType shortestDistance = FLOATTYPE_MAX;
 					for(int dx = -1; dx <= 1; dx++) {
@@ -187,7 +188,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, ConstPropertyAccess<P
 	const Point3* p = positions.cbegin();
 	for(size_t pindex = 0; pindex < particles.size(); pindex++, ++p) {
 
-		if(operation && operation->isCanceled())
+		if(currentTask && currentTask->isCanceled())
 			return false;
 
 		NeighborListParticle& a = particles[pindex];

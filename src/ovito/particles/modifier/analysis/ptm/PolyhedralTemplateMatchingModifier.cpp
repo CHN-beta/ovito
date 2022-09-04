@@ -177,7 +177,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
 	}
 
 	// Initialize the algorithm object.
-	if(!_algorithm->prepare(positions(), cell(), selection(), this))
+	if(!_algorithm->prepare(positions(), cell(), selection()))
 		return;
 
 	// Get access to the particle selection flags.

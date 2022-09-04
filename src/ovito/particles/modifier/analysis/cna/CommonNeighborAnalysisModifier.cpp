@@ -103,7 +103,7 @@ void CommonNeighborAnalysisModifier::AdaptiveCNAEngine::perform()
 
 	// Prepare the neighbor list.
 	NearestNeighborFinder neighFinder(MAX_NEIGHBORS);
-	if(!neighFinder.prepare(positions(), cell(), selection(), this))
+	if(!neighFinder.prepare(positions(), cell(), selection()))
 		return;
 
 	// Create output storage.
@@ -139,7 +139,7 @@ void CommonNeighborAnalysisModifier::IntervalCNAEngine::perform()
 
 	// Prepare the neighbor list.
 	NearestNeighborFinder neighFinder(MAX_NEIGHBORS);
-	if(!neighFinder.prepare(positions(), cell(), selection(), this))
+	if(!neighFinder.prepare(positions(), cell(), selection()))
 		return;
 
 	// Create output storage.
@@ -172,7 +172,7 @@ void CommonNeighborAnalysisModifier::FixedCNAEngine::perform()
 
 	// Prepare the neighbor list.
 	CutoffNeighborFinder neighborListBuilder;
-	if(!neighborListBuilder.prepare(_cutoff, positions(), cell(), selection(), this))
+	if(!neighborListBuilder.prepare(_cutoff, positions(), cell(), selection()))
 		return;
 
 	// Create output storage.

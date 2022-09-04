@@ -95,7 +95,7 @@ void GrainSegmentationEngine1::perform()
 bool GrainSegmentationEngine1::createNeighborBonds()
 {
 	PTMNeighborFinder neighFinder(false);
-	if(!neighFinder.prepare(positions(), cell(), nullptr, structureTypes(), orientations(), correspondences(), this))
+	if(!neighFinder.prepare(positions(), cell(), nullptr, structureTypes(), orientations(), correspondences()))
 		return false;
 
 	setProgressMaximum(_numParticles);
@@ -206,7 +206,7 @@ bool GrainSegmentationEngine1::rotateInterfaceAtoms()
 
 	// Construct local neighbor list builder.
 	PTMNeighborFinder neighFinder(false);
-	if(!neighFinder.prepare(positions(), cell(), nullptr, structureTypes(), orientations(), correspondences(), this))
+	if(!neighFinder.prepare(positions(), cell(), nullptr, structureTypes(), orientations(), correspondences()))
 		return false;
 	PTMNeighborFinder::Query neighQuery(neighFinder);
 

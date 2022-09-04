@@ -842,10 +842,10 @@ void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices,
 		return;
 
 	const QVector<Point3>& vertices = mesh()->vertices();
-	const ColorA* vertexColors = mesh()->hasVertexColors() ? mesh()->vertexColors().constBegin() : nullptr;
-	const ColorA* faceColors = mesh()->hasFaceColors() ? mesh()->faceColors().constBegin() : nullptr;
-	const FloatType* vertexPseudoColors = (enablePseudoColorMapping && mesh()->hasVertexPseudoColors()) ? mesh()->vertexPseudoColors().constBegin() : nullptr;
-	const FloatType* facePseudoColors = (enablePseudoColorMapping && mesh()->hasFacePseudoColors()) ? mesh()->facePseudoColors().constBegin() : nullptr;
+	const ColorA* vertexColors = mesh()->hasVertexColors() ? mesh()->vertexColors().constData() : nullptr;
+	const ColorA* faceColors = mesh()->hasFaceColors() ? mesh()->faceColors().constData() : nullptr;
+	const FloatType* vertexPseudoColors = (enablePseudoColorMapping && mesh()->hasVertexPseudoColors()) ? mesh()->vertexPseudoColors().constData() : nullptr;
+	const FloatType* facePseudoColors = (enablePseudoColorMapping && mesh()->hasFacePseudoColors()) ? mesh()->facePseudoColors().constData() : nullptr;
 	ColorAT<float> defaultVertexColor = uniformColor().toDataType<float>();
 
 	auto rv = renderableVertices;
@@ -956,7 +956,7 @@ void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices,
 	}
 	else {
 		// Use normals stored in the mesh.
-		const Vector3* faceNormal = mesh()->normals().constBegin();
+		const Vector3* faceNormal = mesh()->normals().constData();
 		for(const auto& face : mesh()->faces()) {
 			// Initialize render vertices for this face.
 			for(size_t v = 0; v < 3; v++, rv++) {

@@ -72,6 +72,9 @@ public:
     ~Task();
 #endif
 
+    /// Returns the task object that is currently making the call to this function.
+    static Task* currentTask() noexcept;
+
     /// Returns whether this shared state has been canceled by a previous call to cancel().
     bool isCanceled() const { return (_state.load(std::memory_order_relaxed) & Canceled); }
 
@@ -96,6 +99,9 @@ public:
 
     /// \brief Switches the task into the 'finished' state.
     void setFinished() noexcept;
+
+    /// \brief Puts a finished task back into the started state. This method should be used with care.
+    void restart();
 
     /// \brief Switches the task into the 'exception' state to signal that an exception has occurred.
     ///
@@ -300,9 +306,6 @@ protected:
 
     /// Returns the mutex that is used to manage concurrent access to this task.
     QMutex& taskMutex() const { return _mutex; }
-
-    /// Returns the task object that is currently making the call to this function.
-    static Task* currentTask() noexcept;
 
     /// Registers a task object as the current task in the current thread.
     static void setCurrentTask(Task* task) noexcept;

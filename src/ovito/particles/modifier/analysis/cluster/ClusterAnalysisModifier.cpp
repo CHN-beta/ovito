@@ -341,7 +341,7 @@ void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vec
 {
 	// Prepare the neighbor finder.
 	CutoffNeighborFinder neighborFinder;
-	if(!neighborFinder.prepare(cutoff(), positions(), cell(), selection(), this))
+	if(!neighborFinder.prepare(cutoff(), positions(), cell(), selection()))
 		return;
 
 	size_t particleCount = positions()->size();

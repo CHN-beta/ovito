@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,11 +44,10 @@ PTMNeighborFinder::PTMNeighborFinder(bool all_properties) : NearestNeighborFinde
 bool PTMNeighborFinder::prepare(ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selection,
 								ConstPropertyPtr structuresArray,
 								ConstPropertyPtr orientationsArray,
-								ConstPropertyPtr correspondencesArray,
-								ProgressingTask* operation)
+								ConstPropertyPtr correspondencesArray)
 {
 	// Initialize the internal NearestNeighborFinder.
-	if(!NearestNeighborFinder::prepare(std::move(positions), cell, std::move(selection), operation))
+	if(!NearestNeighborFinder::prepare(std::move(positions), cell, std::move(selection)))
 		return false;
 
 	OVITO_ASSERT(structuresArray);

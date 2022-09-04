@@ -214,6 +214,23 @@ void Task::exceptionLocked(std::exception_ptr&& ex) noexcept
 }
 
 /******************************************************************************
+* Puts a finished task back into the started state. This method should be used with care.
+******************************************************************************/
+void Task::restart()
+{
+	const MutexLocker locker(&taskMutex());
+
+	OVITO_ASSERT(isFinished());
+	OVITO_ASSERT(_continuations.isEmpty());
+
+	_exceptionStore = {};
+	_state.fetch_and(~(Started | Finished | Canceled));
+	OVITO_ASSERT(!isFinished() && !isCanceled());
+
+	startLocked();
+}
+
+/******************************************************************************
 * Adds a callback to this task's list, which will get notified during state changes.
 ******************************************************************************/
 void Task::addCallback(detail::TaskCallbackBase* cb, bool replayStateChanges) noexcept
@@ -290,7 +307,7 @@ bool Task::waitFor(detail::TaskReference awaitedTask)
 	if(waitingTask->isCanceled())
 		return false;
 
-	// You should never invoke waitFor() on a task object that has already finished!
+	// You should never invoke waitFor() from a task that has already finished!
 	OVITO_ASSERT(!waitingTask->isFinished());
 
 	// Quick check if the awaited task has already finished.

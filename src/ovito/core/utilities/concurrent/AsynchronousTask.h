@@ -118,7 +118,6 @@ public:
 	}
 
 	/// Runs the given function in a separate worker thread and waits until the function returns.
-	/// The function should accept a reference to a ProgressingTask, which allows it to be interrupted.
 	/// Returns false if execution has been canceled due to cancelation of the task calling this function.
 	template<typename Function>
 	static bool runAsyncAndJoin(Function&& f) {
@@ -126,7 +125,7 @@ public:
 		QMutex waitMutex;
 		bool done = false;
 		auto future = AsynchronousTask::runAsync([&wc, &waitMutex, &done, f = std::forward<Function>(f)](ProgressingTask& task) {
-			std::move(f)(task);
+			std::move(f)();
 			QMutexLocker locker(&waitMutex);
 			done = true;
 			wc.wakeAll();

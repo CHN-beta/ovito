@@ -483,7 +483,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
 		// Prepare the nearest neighbor list generator.
 		NearestNeighborFinder nearestNeighborFinder;
-		if(!nearestNeighborFinder.prepare(positions(), _simCell, selection(), this))
+		if(!nearestNeighborFinder.prepare(positions(), _simCell, selection()))
 			return;
 
 		// This is the size we use to initialize Voronoi cells. Must be larger than the simulation box.

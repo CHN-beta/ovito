@@ -104,7 +104,7 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
 
 	// Prepare the neighbor list.
 	NearestNeighborFinder neighFinder(_nneighbors);
-	if(!neighFinder.prepare(positions(), cell(), selection(), this))
+	if(!neighFinder.prepare(positions(), cell(), selection()))
 		return;
 
 	// Access output array.
