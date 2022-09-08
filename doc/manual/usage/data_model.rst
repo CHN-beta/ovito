@@ -5,15 +5,15 @@ Data model
 ==========
 
 This page gives an introduction to the data model used by OVITO to represent molecular structures and other particle-based datasets.
-Understanding the basic concepts of OVITO's data model is important in order for you to work efficiently with the data analysis and
+Understanding the basic concepts of OVITO's data model is important for you to work efficiently with the data analysis and
 visualization functions of the program, which operate on particle simulation data.
 
 Particle properties
 -------------------
 
-:ref:`Particle properties <scene_objects.particles>` are numeric values associated with the individual particles.
+:ref:`Particle properties <scene_objects.particles>` are numeric values associated with individual particles.
 They play a central role in the data model of OVITO and the way molecular and other structures are represented. 
-Typical particle properties are the particle position, chemical type and velocity. The user can assign any number of additional properties to particles, 
+Typical particle properties are the particle position, chemical type, and velocity. The user can assign any number of additional properties to particles, 
 either explicitly or as a result of computations performed by the program.
 
 This general property concept is employed for other types of data elements as well, not only particles. 
@@ -28,12 +28,12 @@ Technically, an OVITO particle property is a uniform data array containing a num
 are of the same data type, which may be scalar or vectorial. The length of the property array is always equal
 to the number of particles in the system. 
 
-Each property has a unique name, for example ``Position`` or ``Potential Energy``. 
+Each property has a unique name, for example, ``Position`` or ``Potential Energy``. 
 OVITO has a built-in list of :ref:`commonly-used property names <particle-properties-list>`, which have a meaning to the program and a prescribed data layout, but
 you are free to define additional properties with user-defined names. 
 
-The ``Position`` particle property is special, because it is always present. Particles cannot exist without spatial coordinates. 
-Other standard properties such as ``Color``, ``Radius`` or ``Selection`` are optional. They may or may not be present. 
+The ``Position`` particle property is special because it is always present. Particles cannot exist without spatial coordinates. 
+Other standard properties such as ``Color``, ``Radius``, or ``Selection`` are optional. They may or may not be present. 
 If they are not already loaded from the imported simulation file, you can add them within the program using various functions. 
 The mentioned standard properties :ref:`affect how OVITO renders the particles <usage.particle_properties.special>`. 
 By assigning values to these properties, you can control the visual appearance of the particles.
@@ -63,7 +63,7 @@ Assigning property values
 -------------------------
 
 OVITO provides a rich set of functions for modifying the properties of particles. These so-called *modifiers*
-will be introduced in more detail in a following section of this manual. But to already give you a first idea of the principle:
+will be introduced in more detail in a later section of this manual. But to already give you a first idea of the principle:
 The :ref:`particles.modifiers.assign_color` modifier function lets you assign a uniform color of your choice
 to all currently selected particles. It does that by setting the ``Color`` property of the
 particles to the given RGB value (if the ``Color`` property doesn't exist yet, it is automatically created). 
@@ -77,9 +77,9 @@ and then perform some operation only on that subset of particles.
 
 Another typical modifier is the :ref:`particles.modifiers.coordination_analysis` modifier.
 It computes the number of neighbors of each particle within a given cutoff range and stores the computation results in a new particle property named ``Coordination``. 
-Subsequently, you can refer to the values of this property, for example to select particles having a coordination number in a certain range
+Subsequently, you can refer to the values of this property, e.g., to select particles having a coordination number in a certain range
 or to color particles based on their coordination number (see :ref:`particles.modifiers.color_coding` modifier).
 
-Of course it is possible to export the particle property values to an output file. OVITO supports a variety of output formats for that (see the 
+Of course, it is possible to export the particle property values to an output file. OVITO supports a variety of output formats for that (see the 
 :ref:`data export <usage.export>` section of this manual). For instance, the *XYZ* format is a simple table
 format supporting an arbitrary set of output columns.

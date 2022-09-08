@@ -7,27 +7,27 @@ Expression selection
   :width: 30%
   :align: right
 
-This modifier let you select particles or bonds based on user-defined criteria, i.e. by entering a Boolean expression,
-which is evaluated by the modifier for every particle/bond in the system.
-Those element for which the expression yields a non-zero value (*true*)
-will be selected; all other elements, for which the expression evaluates to zero (*false*), are deselected.
+This modifier let you select particles, bonds or other data elements based on user-defined criteria, i.e., by entering a Boolean expression,
+which is evaluated by the modifier for every input element.
+Those elements get selected for which the Boolean expression yields a non-zero result (*true*); 
+all other elements, for which the expression evaluates to zero (*false*), get deselected.
 
-The Boolean expression can contain references to particle and bond properties as well as global quantities, e.g. the simulation cell size or the current timestep number.
+The Boolean expression can contain references to local properties as well as global quantities, e.g. the simulation cell size or the current timestep number.
 Hence, the modifier can be used to dynamically select elements based on properties such as position,
-type, energy, etc. and any combination thereof. The list of available
-input variables is displayed in the lower panel as shown in the screenshot.
+type, energy, etc. and any combination thereof. The list of available input variables that may be incorporated into the expression
+is displayed in the lower panel as shown in the screenshot.
 
 Boolean expressions can contain comparison operators like ``==``, ``!=``, ``>=``, etc.,
-and several conditions can be combined using logical AND and OR operators (``&&`` and ``||``).
+and several conditions can be combined using logical *AND* and *OR* operators (``&&`` and ``||``).
 
-Note that variable names and function names are case-sensitive. Variable names are restricted to alphanumeric characters and
-underscores. OVITO automatically replaces invalid characters in property names with an underscore to generate valid variable names
-that can be referenced in the expression.
+Note that variable names and function names are case-sensitive and restricted to alphanumeric characters and
+underscores. That's why OVITO automatically replaces invalid characters in property names with an underscore to generate valid variable names
+that can be used in the expression.
 
 Expression syntax
 """""""""""""""""
 
-The expression syntax supported by the modifier is very similar to the C programming language. Arithmetic expressions can be created from
+The expression syntax is very similar to the C programming language. Arithmetic expressions can be created from
 float literals, variables or functions using the following operators in this order of precedence:
 
 .. table::

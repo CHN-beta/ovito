@@ -314,7 +314,7 @@ void CreateBondsModifier::BondsEngine::perform()
 	
 	// Prepare the neighbor list.
 	CutoffNeighborFinder neighborFinder;
-	if(!neighborFinder.prepare(_maxCutoff, _positions, _simCell, {}, this))
+	if(!neighborFinder.prepare(_maxCutoff, _positions, _simCell, {}))
 		return;
 
 	// The lower bond length cutoff squared.

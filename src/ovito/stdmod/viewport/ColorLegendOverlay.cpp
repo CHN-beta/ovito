@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -112,7 +112,6 @@ ColorLegendOverlay::ColorLegendOverlay(ObjectCreationParams params) : ViewportOv
 		return true;
 	});
 
-
 	// If there is no ColorCodingModifier in the scene, initialize the overlay to use 
 	// the first available typed property as color source.
 	if(params.loadUserDefaults() && modifier() == nullptr && !sourceProperty()) {
@@ -150,6 +149,10 @@ void ColorLegendOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
 {
 	DataOORef<const PropertyObject> typedProperty;
+
+	// Check alignment parameter.
+	if(!renderer->isInteractive())
+		checkAlignmentParameterValue(alignment());
 
 	// Check whether a source has been set for this color legend:
 	if(modifier() || colorMapping()) {

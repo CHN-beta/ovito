@@ -121,7 +121,7 @@ void OpenGLSceneRenderer::renderThickLinesImplementation(const LinePrimitive& pr
         return;
     }
 
-    // Put start/end vertex positions into one combined Vulkan buffer.
+    // Put start/end vertex positions into one combined vertex buffer.
 	QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(primitive.positions(), OpenGLShaderHelper::PerInstance);
 	shader.bindBuffer(positionsBuffer, "position_from", GL_FLOAT, 3, 2 * sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
 	shader.bindBuffer(positionsBuffer, "position_to", GL_FLOAT, 3, 2 * sizeof(Point_3<float>), sizeof(Point_3<float>), OpenGLShaderHelper::PerInstance);

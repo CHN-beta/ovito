@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -95,12 +95,15 @@ void TextLabelOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
 void TextLabelOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
-{
+{	
 	if(renderer->isInteractive()) {
 		const PipelineFlowState& flowState = sourceNode() ? sourceNode()->evaluatePipelineSynchronous(true) : PipelineFlowState();
 		renderImplementation(renderer, physicalViewportRect, flowState);
 	}
 	else {
+		// Check alignment parameter.
+		checkAlignmentParameterValue(alignment());
+
 		if(sourceNode()) {
 			PipelineEvaluationFuture pipelineEvaluation = sourceNode()->evaluatePipeline(PipelineEvaluationRequest(renderer->time()));
 			if(!pipelineEvaluation.waitForFinished())

@@ -89,6 +89,9 @@ public:
 	/// A promise is not copy assignable.
 	MainThreadOperation& operator=(const MainThreadOperation& other) = delete;
 
+	/// Puts the task object back into the started state. 
+	void restart();
+
 	/// Returns the abstract user interface this operation is being performed in. 
 	UserInterface& userInterface() const { return _userInterface; }
 

@@ -433,7 +433,8 @@ std::shared_ptr<SurfaceMeshVis::PrepareSurfaceEngine> SurfaceMeshVis::createSurf
 void SurfaceMeshVis::PrepareSurfaceEngine::perform()
 {
 	setProgressText(tr("Preparing mesh for display"));
-	if(_generateCapPolygons)
+	bool generateCapPolygons = (_generateCapPolygons && cell() && cell()->volume3D() > FLOATTYPE_EPSILON && inputMesh()->topology()->isClosed());
+	if(generateCapPolygons)
 		beginProgressSubStepsWithWeights({1,1,12,1,8});
 	else
 		beginProgressSubStepsWithWeights({1,1,12,1});
@@ -470,10 +471,9 @@ void SurfaceMeshVis::PrepareSurfaceEngine::perform()
 	determineFaceColors();
 	if(isCanceled()) return;
 
-	if(_generateCapPolygons) {
+	if(generateCapPolygons) {
 		nextProgressSubStep();
-		if(cell() && cell()->volume3D() > FLOATTYPE_EPSILON)
-			buildCapTriangleMesh();
+		buildCapTriangleMesh();
 	}
 
 	setResult(

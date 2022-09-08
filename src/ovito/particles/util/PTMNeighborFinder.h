@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,8 +54,7 @@ public:
 	bool prepare(ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selection,
 				 ConstPropertyPtr structuresArray,
 				 ConstPropertyPtr orientationsArray,
-				 ConstPropertyPtr correspondencesArray,
-				 ProgressingTask* operation);
+				 ConstPropertyPtr correspondencesArray);
 
 	/// Stores information about a single neighbor of the central particle.
 	struct Neighbor : public NearestNeighborFinder::Neighbor

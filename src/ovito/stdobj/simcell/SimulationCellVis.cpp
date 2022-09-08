@@ -192,7 +192,6 @@ void SimulationCellVis::renderSolid(TimePoint time, const SimulationCellObject* 
 
 		visCache.edges.setShape(CylinderPrimitive::CylinderShape);
 		visCache.edges.setShadingMode(CylinderPrimitive::NormalShading);
-		visCache.edges.setRenderingQuality(CylinderPrimitive::HighQuality);
 		visCache.edges.setUniformColor(cellColor());
 		visCache.edges.setUniformWidth(2 * cellLineWidth());
 

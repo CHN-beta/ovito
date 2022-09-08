@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -221,6 +221,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
 	// Prepare output data arrays.
 	PropertyAccess<FloatType> atomicVolumesArray(atomicVolumes());
+	PropertyAccess<FloatType> cavityRadiiArray(cavityRadii());
 	PropertyAccess<int> coordinationNumbersArray(coordinationNumbers());
 	PropertyAccess<int> maxFaceOrdersArray(maxFaceOrders());
 
@@ -234,6 +235,10 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 		// Compute cell volume.
 		double vol = v.volume();
 		atomicVolumesArray[index] = (FloatType)vol;
+
+		// Compute cell max radius
+		double maxRad = std::sqrt(v.max_radius_squared());
+		cavityRadiiArray[index] = (FloatType)maxRad;
 
 		// Accumulate total volume of Voronoi cells.
 		// Loop is for lock-free write access to shared max counter.
@@ -338,9 +343,13 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 							for(size_t dim = 0; dim < 3; dim++) {
 								if(_simCell->hasPbc(dim)) {
 									pbcShift[dim] = (int)std::round(_simCell->inverseMatrix().prodrow(diff, dim));
-									OVITO_ASSERT(std::abs((FloatType)pbcShift[dim] - _simCell->inverseMatrix().prodrow(diff, dim)) <= 1e-9);
 								}
 							}
+#ifdef OVITO_DEBUG
+							// Verify the computed pbc shift vector. The corrected neighbor vector should now align with the face normal vector.
+							delta -= _simCell->reducedToAbsolute(pbcShift.toDataType<FloatType>());
+							OVITO_ASSERT(std::abs(delta.dot(normal) / delta.length() / normal.length()) > 1.0 - FLOATTYPE_EPSILON);
+#endif
 							Bond bond = { index, (size_t)neighbor_id, pbcShift };
 							if(!bond.isOdd()) {
 								QMutexLocker locker(bondMutex);
@@ -474,7 +483,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
 		// Prepare the nearest neighbor list generator.
 		NearestNeighborFinder nearestNeighborFinder;
-		if(!nearestNeighborFinder.prepare(positions(), _simCell, selection(), this))
+		if(!nearestNeighborFinder.prepare(positions(), _simCell, selection()))
 			return;
 
 		// This is the size we use to initialize Voronoi cells. Must be larger than the simulation box.
@@ -770,6 +779,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::applyResults(const Modifier
 
 	particles->createProperty(coordinationNumbers());
 	particles->createProperty(atomicVolumes());
+	particles->createProperty(cavityRadii());
 
 	if(modifier->computeIndices()) {
 		if(voronoiIndices())

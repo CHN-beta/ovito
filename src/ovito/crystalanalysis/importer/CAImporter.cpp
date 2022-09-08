@@ -421,12 +421,10 @@ void CAImporter::FrameLoader::loadFile()
 		else if(stream.lineStartsWith("DEFECT_MESH_VERTICES ")) {
 
 			// Create surface mesh.
-			SurfaceMesh* defectSurfaceObj;
-			if(const SurfaceMesh* existingSurfaceObj = state().getObject<SurfaceMesh>()) {
-				defectSurfaceObj = state().makeMutable(existingSurfaceObj);
-			}
-			else {
+			SurfaceMesh* defectSurfaceObj = state().getMutableLeafObject<SurfaceMesh>(SurfaceMesh::OOClass(), QStringLiteral("dxa-defect-mesh"));
+			if(!defectSurfaceObj) {
 				defectSurfaceObj = state().createObject<SurfaceMesh>(dataSource(), tr("Defect mesh"));
+				defectSurfaceObj->setIdentifier(QStringLiteral("dxa-defect-mesh"));
 				SurfaceMeshVis* vis = defectSurfaceObj->visElement<SurfaceMeshVis>();
 				vis->setShowCap(true);
 				vis->setSmoothShading(true);

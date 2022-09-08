@@ -39,12 +39,10 @@ IMPLEMENT_OVITO_CLASS(BondPickInfo);
 DEFINE_PROPERTY_FIELD(BondsVis, bondWidth);
 DEFINE_PROPERTY_FIELD(BondsVis, bondColor);
 DEFINE_PROPERTY_FIELD(BondsVis, shadingMode);
-DEFINE_PROPERTY_FIELD(BondsVis, renderingQuality);
 DEFINE_PROPERTY_FIELD(BondsVis, coloringMode);
 SET_PROPERTY_FIELD_LABEL(BondsVis, bondWidth, "Bond width");
 SET_PROPERTY_FIELD_LABEL(BondsVis, bondColor, "Uniform bond color");
 SET_PROPERTY_FIELD_LABEL(BondsVis, shadingMode, "Shading mode");
-SET_PROPERTY_FIELD_LABEL(BondsVis, renderingQuality, "Rendering quality");
 SET_PROPERTY_FIELD_LABEL(BondsVis, coloringMode, "Coloring mode");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondsVis, bondWidth, WorldParameterUnit, 0);
 
@@ -55,7 +53,6 @@ BondsVis::BondsVis(ObjectCreationParams params) : DataVis(params),
 	_bondWidth(0.4),
 	_bondColor(0.6, 0.6, 0.6),
 	_shadingMode(NormalShading),
-	_renderingQuality(CylinderPrimitive::HighQuality),
 	_coloringMode(ParticleBasedColoring)
 {
 }
@@ -204,8 +201,7 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 		FloatType,				// Bond width
 		Color,					// Bond uniform color
 		ColoringMode,			// Bond coloring mode
-		ShadingMode,			// Bond shading mode
-		CylinderPrimitive::RenderingQuality // Bond rendering quality
+		ShadingMode				// Bond shading mode
 	>;
 
 	// The data structure stored in the vis cache.
@@ -231,8 +227,7 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 			bondWidth(),
 			bondColor(),
 			coloringMode(),
-			shadingMode(),
-			renderingQuality()));
+			shadingMode()));
 
 	// Make sure the primitive for the nodal vertices gets created if particles display is turned off or if particles are semi-transparent.
 	bool renderNodalVertices = !transparencyProperty && !bondWidthProperty && (!particleVis || particleVis->isEnabled() == false || particleTransparencyProperty != nullptr);
@@ -352,7 +347,6 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 
 			visCache.cylinders.setShape(CylinderPrimitive::CylinderShape);
 			visCache.cylinders.setShadingMode(static_cast<CylinderPrimitive::ShadingMode>(shadingMode()));
-			visCache.cylinders.setRenderingQuality(renderingQuality());
 			visCache.cylinders.setRenderSingleCylinderCap(transparencyProperty != nullptr);
 			visCache.cylinders.setUniformWidth(bondDiameter);
 			visCache.cylinders.setWidths(bondWidths.take());

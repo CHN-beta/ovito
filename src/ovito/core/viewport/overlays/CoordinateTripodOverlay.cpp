@@ -108,6 +108,9 @@ void CoordinateTripodOverlay::propertyChanged(const PropertyFieldDescriptor* fie
 ******************************************************************************/
 void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
 {
+	// Check alignment parameter.
+	checkAlignmentParameterValue(alignment());
+
 	FloatType tripodSize = this->tripodSize() * physicalViewportRect.height();
 	if(tripodSize <= 0) return;
 

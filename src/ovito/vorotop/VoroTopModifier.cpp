@@ -481,7 +481,7 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
     else {
         // Prepare the nearest neighbor list generator.
         NearestNeighborFinder nearestNeighborFinder;
-        if(!nearestNeighborFinder.prepare(positions(), cell(), selection(), this))
+        if(!nearestNeighborFinder.prepare(positions(), cell(), selection()))
             return;
 
         // This is the size we use to initialize Voronoi cells. Must be larger than the simulation box.

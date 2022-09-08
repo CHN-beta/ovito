@@ -95,6 +95,7 @@ private:
 
 	/// The plotting mode for this data table.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(PlotMode, plotMode, setPlotMode);
+	DECLARE_SHADOW_PROPERTY_FIELD(plotMode);
 
 	/// Property containing the X coordinates of data points for plotting.
 	DECLARE_REFERENCE_FIELD_FLAGS(const PropertyObject*, x, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);

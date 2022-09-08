@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -113,11 +113,10 @@ public:
 	/// \param posProperty The positions of the particles.
 	/// \param cellData The simulation cell data.
 	/// \param selectionProperty Determines which particles are included in the neighbor search (optional).
-	/// \param operation A callback object that will be used to the report progress.
 	/// \return \c false when the operation has been canceled by the user;
 	///         \c true on success.
 	/// \throw Exception on error.
-	bool prepare(ConstPropertyAccess<Point3> posProperty, const SimulationCellObject* cellData, ConstPropertyAccess<int> selectionProperty, ProgressingTask* operation);
+	bool prepare(ConstPropertyAccess<Point3> posProperty, const SimulationCellObject* cellData, ConstPropertyAccess<int> selectionProperty);
 
 	/// Returns the maximum number of neighbors this class will find.
 	int maxNeighbors() const { return numNeighbors; }

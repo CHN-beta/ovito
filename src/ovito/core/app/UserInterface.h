@@ -68,6 +68,10 @@ public:
 	/// Closes the user interface and shuts down the entire application after displaying an error message.
 	virtual void exitWithFatalError(const Exception& ex);
 
+	/// Tells the UI to process any pending events in the event queue and return immediately.
+	/// The function can return true to indicate that the running operation should be canceled. 
+	virtual bool processEvents();
+
 	/// Returns the manager of the user interface actions.
 	ActionManager* actionManager() const { return _actionManager; }
 

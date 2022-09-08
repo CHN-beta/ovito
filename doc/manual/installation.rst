@@ -13,7 +13,7 @@ System Requirements
 
 OVITO requires a 64-bit operating system and runs on processors with x86-64 or arm64 architecture.
 The graphical user interface of OVITO requires 3D graphics hardware with support for the `OpenGL <https://en.wikipedia.org/wiki/OpenGL>`_ programming interface (OpenGL 2.1 or newer). 
-In general it is recommended that you install the latest graphics driver provided by your hardware vendor before running OVITO as some older drivers may not fully support modern OpenGL specifications, which can lead to compatibility problems.
+In general, it is recommended that you install the latest graphics driver provided by your hardware vendor before running OVITO as some older drivers may not fully support modern OpenGL specifications, which can lead to compatibility problems.
 
 Operating system compatibility:
 
@@ -33,7 +33,7 @@ Installation instructions
 
 *Windows*:
     Run the installer program :file:`ovito-x.y.z-win64.exe` to install OVITO in a directory of your choice.
-    Note that Windows might ask whether you really want to launch the installer, because it was downloaded from the web and it is not digitally signed.
+    Note that Windows might ask whether you really want to launch the installer because it was downloaded from the web and is not digitally signed.
 
 *macOS*:
     Double-click the downloaded :file:`.dmg` disk image file to open it, agree to the program license, and drag the :program:`Ovito` application bundle into your :file:`Applications` folder.
@@ -57,10 +57,10 @@ this kind of remote visualization mode is supported by the HPC cluster(s) you wo
 Python module installation
 ==========================
 
-The **OVITO Pro** program packages ship with an :ref:`integrated Python interpreter <ovitos_interpreter>` (:command:`ovitos`) that gets installed alongside with the desktop application,
+The **OVITO Pro** program packages ship with an :ref:`integrated Python interpreter <ovitos_interpreter>` (:command:`ovitos`) that gets installed alongside the desktop application,
 allowing you to execute Python scripts written for OVITO. 
-Optionally, you can install the ``ovito`` Python module into existing Python interpreters on your system  (e.g. :program:`Anaconda` or the standard :program:`CPython` interpreter) in case you would like to make use of 
-OVITO's functionality in script-based workflows. Please refer to :ref:`this section <use_ovito_with_system_interpreter>` for further setup instructions.
+Optionally, you can install the ``ovito`` Python module into an external Python interpreter on your system  (e.g. :program:`Anaconda` or the standard :program:`CPython` interpreter) in case you would like to make use of 
+OVITO's functionality in script-based workflows. Please refer to :ref:`this section <pydoc:use_ovito_with_system_interpreter>` for further setup instructions.
 
 .. _installation.troubleshooting:
 
@@ -88,7 +88,7 @@ Windows 7 no longer supported
   .. admonition:: Solution
     
     Modern versions of OVITO are based on the Qt6 cross-platform framework, which `requires Windows 10 or later to run <https://doc.qt.io/qt-6/supported-platforms.html>`__. 
-    Windows 7 has reached its end of life and is no longer supported. Please upgrade your Windows operating system. With some luck you may be able to run the Anaconda versions of 
+    Windows 7 has reached its end of life and is no longer supported. Please upgrade your Windows operating system. With some luck, you may be able to run the Anaconda versions of 
     `OVITO Basic <https://anaconda.org/conda-forge/ovito>`__ or `OVITO Pro <https://www.ovito.org/python-downloads/>`__ on a Windows 7 computer, 
     because these are still built against the old Qt5 framework (as of April 2022).
 
@@ -117,7 +117,7 @@ Missing shared object files or broken links
 Missing XCB system libraries
   .. error::
 
-    You may see the the following error when running :command:`ovito` on a Linux machine::
+    You may see the following error when running :command:`ovito` on a Linux machine::
 
       qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
       This application failed to start because no Qt platform plugin could be initialized. 
@@ -158,7 +158,7 @@ OVITO Pro license activation fails
     
     OVITO Pro needs to save its licensing information under the path :file:`$HOME/.config/Ovito/`, which is the `canonical storage location <https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html>`__ 
     for configuration data of Linux/Unix applications.
-    On some macOS computers the :file:`$HOME/.config/` directory may have been marked as write-protected by the system administrator, 
+    On some macOS computers, the :file:`$HOME/.config/` directory may have been marked as write-protected by the system administrator, 
     which lets the license activation process fail. Please ask your system administrator to make the :file:`$HOME/.config/Ovito/` subdirectory 
     writable by applications running under your user account.  
 

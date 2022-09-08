@@ -43,7 +43,6 @@ class OVITO_PARTICLES_EXPORT BondsVis : public DataVis
 	Q_CLASSINFO("DisplayName", "Bonds");
 
     Q_PROPERTY(Ovito::Particles::BondsVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
-    Q_PROPERTY(Ovito::CylinderPrimitive::RenderingQuality renderingQuality READ renderingQuality WRITE setRenderingQuality)
 
 public:
 
@@ -96,9 +95,6 @@ protected:
 
 	/// Shading mode for bond rendering.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(BondsVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
-
-	/// Rendering quality mode for bonds.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(CylinderPrimitive::RenderingQuality, renderingQuality, setRenderingQuality);
 
 	/// Determines how the bonds are colored.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(BondsVis::ColoringMode, coloringMode, setColoringMode, PROPERTY_FIELD_MEMORIZE);

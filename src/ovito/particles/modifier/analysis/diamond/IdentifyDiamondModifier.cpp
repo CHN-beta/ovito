@@ -79,7 +79,7 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
 
 	// Prepare the neighbor list builder.
 	NearestNeighborFinder neighborFinder(4);
-	if(!neighborFinder.prepare(positions(), cell(), selection(), this))
+	if(!neighborFinder.prepare(positions(), cell(), selection()))
 		return;
 
 	// This data structure stores information about a single neighbor.

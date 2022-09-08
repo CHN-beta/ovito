@@ -316,7 +316,7 @@ void ParticleImporter::FrameLoader::generateBonds()
 	
 	// Prepare the neighbor list.
 	CutoffNeighborFinder neighborFinder;
-	if(!neighborFinder.prepare(maxCutoff, positionProperty, state().getObject<SimulationCellObject>(), {}, this))
+	if(!neighborFinder.prepare(maxCutoff, positionProperty, state().getObject<SimulationCellObject>(), {}))
 		return;	
 
 	ConstPropertyAccess<int> particleTypesArray(typeProperty);

@@ -223,12 +223,11 @@ public:
     /// \param positions The particle coordinates.
     /// \param cell The simulation cell information.
     /// \param selection Per-particle selection flags determining which particles are included in the neighbor search (optional).
-    /// \param promise A callback object that will be used to the report progress during the algorithm initialization (optional).
     /// \return \c false when the operation has been canceled by the user;
     ///         \c true on success.
     /// \throw Exception on error.
-    bool prepare(ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selection = {}, ProgressingTask* operation = nullptr) {
-        return NearestNeighborFinder::prepare(std::move(positions), cell, std::move(selection), operation);
+    bool prepare(ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selection = {}) {
+        return NearestNeighborFinder::prepare(std::move(positions), cell, std::move(selection));
     }
 
     /// This nested class performs a PTM calculation on a single input particle.

@@ -28,7 +28,7 @@ Color coding modifier
   gradient and min/max value interval.
 
 Typed properties
-  Alternatively, the legend can display a list of discrete element types associated with a typed property in the data pipeline's output. 
+  Alternatively, the legend can display a list of discrete element types associated with a :ref:`typed property <scene_objects.particle_types>` in the data pipeline's output. 
   Typical examples are the particle properties ``Particle Type``, ``Structure Type`` or ``Residue Type``. 
   The legend will display the name and color of each type defined for the selected source property. 
 

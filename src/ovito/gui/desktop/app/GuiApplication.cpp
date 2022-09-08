@@ -190,11 +190,11 @@ MainThreadOperation GuiApplication::startupApplication()
 			return nullptr;
 		}
 #endif
-		return MainThreadOperation::create(*mainWin, ExecutionContext::Interactive);
+		return MainThreadOperation::create(*mainWin);
 	}
 	else {
 		// Use this application's command line user interface.
-		return MainThreadOperation::create(*this, ExecutionContext::Scripting);
+		return MainThreadOperation::create(*this);
 	}
 }
 

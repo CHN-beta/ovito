@@ -639,7 +639,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
 
 	// Prepare the neighbor list.
 	CutoffNeighborFinder neighborListBuilder;
-	if(!neighborListBuilder.prepare(neighCutoff(), positions(), cell(), {}, this))
+	if(!neighborListBuilder.prepare(neighCutoff(), positions(), cell(), {}))
 		return;
 
 	// Perform analysis on each particle in parallel.

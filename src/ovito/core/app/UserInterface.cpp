@@ -42,6 +42,16 @@ void UserInterface::exitWithFatalError(const Exception& ex)
 }
 
 /******************************************************************************
+* Tells the UI to process any pending events in the event queue and return immediately.
+* The function can return true to indicate that the running operation should be canceled. 
+******************************************************************************/
+bool UserInterface::processEvents()
+{
+	QCoreApplication::processEvents();
+	return false;
+}
+
+/******************************************************************************
 * Creates a frame buffer of the requested size and displays it as a window in the user interface.
 ******************************************************************************/
 std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, int height, MainThreadOperation& renderingOperation) 

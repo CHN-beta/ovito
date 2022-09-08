@@ -414,7 +414,6 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 		// Create rendering primitive for the line segments.
 		primitives.segments.setShape(showLineDirections() ? CylinderPrimitive::ArrowShape : CylinderPrimitive::CylinderShape);
 		primitives.segments.setShadingMode(shadingMode());
-		primitives.segments.setRenderingQuality(CylinderPrimitive::HighQuality);
 		primitives.segments.setUniformWidth(lineDiameter);
 		primitives.segments.setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
 		primitives.segments.setColors(segmentColors.take());
@@ -450,7 +449,6 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 				// Create rendering primitive for the Burgers vector arrows.
 				primitives.burgersArrows.setShape(CylinderPrimitive::ArrowShape);
 				primitives.burgersArrows.setShadingMode(shadingMode());
-				primitives.burgersArrows.setRenderingQuality(CylinderPrimitive::HighQuality);
 				primitives.burgersArrows.setUniformWidth(std::max(burgersVectorWidth(), FloatType(0)));
 				primitives.burgersArrows.setUniformColor(burgersVectorColor());
 				primitives.burgersArrows.setPositions(baseArrowPoints.take(), headArrowPoints.take());
@@ -535,7 +533,6 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	CylinderPrimitive segmentBuffer;
 	segmentBuffer.setShape(CylinderPrimitive::CylinderShape);
 	segmentBuffer.setShadingMode(CylinderPrimitive::FlatShading);
-	segmentBuffer.setRenderingQuality(CylinderPrimitive::HighQuality);
 	segmentBuffer.setUniformWidth(lineDiameter);
 	segmentBuffer.setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
 	segmentBuffer.setUniformColor(Color(1,1,1));

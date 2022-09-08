@@ -139,7 +139,7 @@ void ExpandSelectionModifier::ExpandSelectionNearestEngine::expandSelection()
 
 	// Prepare the neighbor list.
 	NearestNeighborFinder neighFinder(_numNearestNeighbors);
-	if(!neighFinder.prepare(positions(), simCell(), {}, this))
+	if(!neighFinder.prepare(positions(), simCell(), {}))
 		return;
 
 	OVITO_ASSERT(inputSelection() != outputSelection());
@@ -187,7 +187,7 @@ void ExpandSelectionModifier::ExpandSelectionCutoffEngine::expandSelection()
 {
 	// Prepare the neighbor list.
 	CutoffNeighborFinder neighborListBuilder;
-	if(!neighborListBuilder.prepare(_cutoffRange, positions(), simCell(), {}, this))
+	if(!neighborListBuilder.prepare(_cutoffRange, positions(), simCell(), {}))
 		return;
 
 	PropertyAccess<int> outputSelectionArray(outputSelection());

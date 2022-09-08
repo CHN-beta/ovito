@@ -53,6 +53,9 @@ public:
 	/// The default method implementation does nothing.
 	virtual void moveLayerInViewport(const Vector2& delta) {}
 
+	/// Helper method that checks whether the given Qt alignment value contains exactly one horizontal and one vertical alignment flag.
+	void checkAlignmentParameterValue(int alignment) const;
+
 private:
 
 	/// Option for rendering the overlay contents behind the three-dimensional content.

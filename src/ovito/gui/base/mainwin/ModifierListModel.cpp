@@ -454,7 +454,7 @@ void ModifierListModel::insertModifier()
 		}
 		else if(!action->templateName().isEmpty()) {
 			// Load modifier template from the store.
-			MainThreadOperation operation = MainThreadOperation::create(dataset->userInterface(), ExecutionContext::Interactive);
+			MainThreadOperation operation = MainThreadOperation::create(dataset->userInterface());
 			QVector<OORef<Modifier>> modifierSet = ModifierTemplates::get()->instantiateTemplate(action->templateName(), dataset, operation);
 			// Put the modifiers into a group if the template consists of two or more modifiers.
 			OORef<ModifierGroup> modifierGroup;

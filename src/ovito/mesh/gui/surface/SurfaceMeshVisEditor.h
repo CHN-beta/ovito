@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,6 +55,7 @@ private:
 	IntegerRadioButtonParameterUI* _coloringModeUI;
 	ColorParameterUI* _surfaceColorUI;
 	SubObjectParameterUI* _colorMappingParamUI;
+	BooleanGroupBoxParameterUI* _capGroupUI;
 };
 
 }	// End of namespace

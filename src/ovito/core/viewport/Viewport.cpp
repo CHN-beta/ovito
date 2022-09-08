@@ -566,7 +566,7 @@ void Viewport::renderInteractive(SceneRenderer* renderer)
 		renderer->startRender(dataset(), renderSettings, vpRect.size());
 
 		// This is the async operation object used when calling rendering functions in the following.
-		MainThreadOperation renderOperation = MainThreadOperation::create(dataset()->userInterface(), ExecutionContext::Interactive);
+		MainThreadOperation renderOperation = MainThreadOperation::create(dataset()->userInterface());
 
 		// Set up preliminary projection without a known bounding box.
 		FloatType aspectRatio = (FloatType)vpRect.height() / vpRect.width();

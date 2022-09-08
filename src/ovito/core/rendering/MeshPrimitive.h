@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,7 +51,10 @@ public:
 	}
 
 	/// \brief Returns the number of triangle faces stored in the buffer.
-	int faceCount() { return _mesh ? _mesh->faceCount() : 0; }
+	int faceCount() const { return _mesh ? _mesh->faceCount() : 0; }
+
+	/// \brief Returns the number of mesh vertices stored in the buffer.
+	int vertexCount() const { return _mesh ? _mesh->vertexCount() : 0; }
 
 	/// Returns the triangle mesh stored in this geometry buffer.
 	const DataOORef<const TriMeshObject>& mesh() const { return _mesh; }
@@ -130,6 +133,20 @@ public:
 
 	/// Returns how a rasterizing renderer should handle semi-transparent meshes.
 	DepthSortingMode depthSortingMode() const { return _depthSortingMode; }
+
+	/// Vertex information emitted during rendering of a triangle mesh. 
+	struct RenderVertex 
+	{
+		Point_3<float> position;
+		Vector_3<float> normal;
+		ColorAT<float> color;
+	};
+
+	/// Generates the renderable triangles. Each triangle consists of three vertices.
+	void generateRenderableVertices(RenderVertex* renderableVertices, bool highlightSelectedFaces, bool enablePseudoColorMapping) const;
+
+	/// Generates a list of vertices for rendering the wireframe as individual line segments.
+	ConstDataBufferPtr generateWireframeLines() const;
 
 private:
 

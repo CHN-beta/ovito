@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -91,13 +91,13 @@ void SurfaceMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
 	BooleanParameterUI* highlightEdgesUI = new BooleanParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::highlightEdges));
 	sublayout->addWidget(highlightEdgesUI->checkBox(), 2, 0, 1, 2);
 
-	BooleanGroupBoxParameterUI* capGroupUI = new BooleanGroupBoxParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::showCap));
-	capGroupUI->groupBox()->setTitle(tr("Cap polygons"));
-	sublayout = new QGridLayout(capGroupUI->childContainer());
+	_capGroupUI = new BooleanGroupBoxParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::showCap));
+	_capGroupUI->groupBox()->setTitle(tr("Cap polygons"));
+	sublayout = new QGridLayout(_capGroupUI->childContainer());
 	sublayout->setContentsMargins(4,4,4,4);
 	sublayout->setSpacing(4);
 	sublayout->setColumnStretch(1, 1);
-	layout->addWidget(capGroupUI->groupBox());
+	layout->addWidget(_capGroupUI->groupBox());
 
 	ColorParameterUI* capColorUI = new ColorParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::capColor));
 	sublayout->addWidget(capColorUI->label(), 0, 0);
@@ -106,13 +106,6 @@ void SurfaceMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
 	FloatParameterUI* capTransparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::capTransparencyController));
 	sublayout->addWidget(new QLabel(tr("Transparency:")), 1, 0);
 	sublayout->addLayout(capTransparencyUI->createFieldLayout(), 1, 1);
-
-	// Show the 'Cap polygons' UI only for surface meshes which are closed.
-	connect(this, &PropertiesEditor::contentsReplaced, this, [this, box = capGroupUI->groupBox()](RefTarget* editObject) {
-		SurfaceMeshVis* surfaceMeshVis = static_object_cast<SurfaceMeshVis>(editObject);
-		box->setVisible(surfaceMeshVis && surfaceMeshVis->surfaceIsClosed());
-		container()->updateRollouts();
-	});
 
 	// Open a sub-editor for the property color mapping.
 	_colorMappingParamUI = new SubObjectParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::surfaceColorMapping), rolloutParams.after(rollout));
@@ -171,7 +164,17 @@ void SurfaceMeshVisEditor::updateColoringOptions()
 	_coloringModeUI->buttonGroup()->button(SurfaceMeshVis::FacePseudoColoring  )->setEnabled(surfaceMesh && surfaceMesh->faces()    && !surfaceMesh->faces()->properties().isEmpty() && !hasExplicitColors);
 	_coloringModeUI->buttonGroup()->button(SurfaceMeshVis::RegionPseudoColoring)->setEnabled(surfaceMesh && surfaceMesh->regions()  && !surfaceMesh->regions()->properties().isEmpty() && !hasExplicitColors);
 	_coloringModeUI->buttonGroup()->button(SurfaceMeshVis::NoPseudoColoring)->setEnabled(surfaceMesh && !hasExplicitColors);
-}
 
+	// Detect whether the current mesh is closed or not.
+	// Depending on this we display the 'cap polygons' panel.
+	if(surfaceMesh && surfaceMesh->topology()) {
+		bool isClosed = editObject() && static_object_cast<SurfaceMeshVis>(editObject())->surfaceIsClosed() && surfaceMesh->topology()->isClosed();
+		_capGroupUI->setEnabled(isClosed);
+//		if(isClosed != _capGroupUI->groupBox()->isVisible()) {
+//			_capGroupUI->groupBox()->setVisible(isClosed);
+//			container()->updateRollouts();
+//		}
+	}
+}
 
 }	// End of namespace
