@@ -44,7 +44,7 @@ QVector<DataObjectReference> VoxelGridAffineTransformationModifierDelegate::OOMe
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
-PipelineStatus VoxelGridAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus VoxelGridAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	// Transform the spatial domains of VoxelGrid objects.
 
@@ -54,7 +54,7 @@ PipelineStatus VoxelGridAffineTransformationModifierDelegate::apply(const Modifi
 
 				// Determine transformation matrix.
 				AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
-				const AffineTransformation tm = mod->effectiveAffineTransformation(state);
+				const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
 
 				VoxelGrid* newObject = state.makeMutable(existingObject);
 				newObject->mutableDomain()->setCellMatrix(tm * existingObject->domain()->cellMatrix());

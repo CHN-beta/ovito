@@ -33,14 +33,14 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshAffineTransformationModifierDelegate);
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
-PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
 
 	for(const DataObject* obj : state.data()->objects()) {
 		// Process SurfaceMesh objects.
 		if(const SurfaceMesh* existingSurface = dynamic_object_cast<SurfaceMesh>(obj)) {
-			const AffineTransformation tm = mod->effectiveAffineTransformation(state);
+			const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
 			
 			// Make sure the input mesh data structure is valid. 
 			existingSurface->verifyMeshIntegrity();
@@ -75,7 +75,7 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const Modi
 		}
 		// Process TriangleMesh objects.
 		else if(const TriMeshObject* existingMeshObj = dynamic_object_cast<TriMeshObject>(obj)) {
-			const AffineTransformation tm = mod->effectiveAffineTransformation(state);
+			const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
 
 			// Create a copy of the TriMeshObject.
 			TriMeshObject* newMeshObj = state.makeMutable(existingMeshObj);

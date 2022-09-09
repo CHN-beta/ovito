@@ -146,7 +146,7 @@ void DelegatingModifier::applyDelegate(const ModifierEvaluationRequest& request,
 		throwException(tr("The modifier's pipeline input does not contain the expected kind of data."));
 
 	// Call the delegate function.
-	PipelineStatus delegateStatus = delegate()->apply(request, state, additionalInputs);
+	PipelineStatus delegateStatus = delegate()->apply(request, state, state, additionalInputs);
 
 	// Append status text and code returned by the delegate function to the status returned to our caller.
 	PipelineStatus status = state.status();
@@ -224,6 +224,9 @@ void MultiDelegatingModifier::applyDelegates(const ModifierEvaluationRequest& re
 	OVITO_ASSERT(!dataset()->undoStack().isRecording());
 	OVITO_ASSERT(request.modApp()->modifier() == this);
 
+	// Make a shallow copy of the input pipeline state.
+	PipelineFlowState inputState = state;
+
 	for(ModifierDelegate* delegate : delegates()) {
 
 		// Skip function if not applicable.
@@ -231,7 +234,7 @@ void MultiDelegatingModifier::applyDelegates(const ModifierEvaluationRequest& re
 			continue;
 
 		// Call the delegate function.
-		PipelineStatus delegateStatus = delegate->apply(request, state, additionalInputs);
+		PipelineStatus delegateStatus = delegate->apply(request, state, inputState, additionalInputs);
 
 		// Append status text and code returned by the delegate function to the status returned to our caller.
 		PipelineStatus status = state.status();

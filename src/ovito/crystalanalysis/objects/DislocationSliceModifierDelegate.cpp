@@ -45,7 +45,7 @@ QVector<DataObjectReference> DislocationSliceModifierDelegate::OOMetaClass::getA
 /******************************************************************************
 * Performs the actual rejection of particles.
 ******************************************************************************/
-PipelineStatus DislocationSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus DislocationSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
 	if(mod->createSelection())

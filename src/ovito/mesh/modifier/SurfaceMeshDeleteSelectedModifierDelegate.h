@@ -61,7 +61,7 @@ public:
 	Q_INVOKABLE SurfaceMeshRegionsDeleteSelectedModifierDelegate(ObjectCreationParams params) : DeleteSelectedModifierDelegate(params) {}
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
 }	// End of namespace

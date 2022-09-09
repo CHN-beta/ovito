@@ -47,7 +47,7 @@ QVector<DataObjectReference> ParticlesCombineDatasetsModifierDelegate::OOMetaCla
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	// Get the secondary dataset.
 	if(additionalInputs.empty())

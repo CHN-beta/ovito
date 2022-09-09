@@ -46,7 +46,7 @@ QVector<DataObjectReference> ParticlesSliceModifierDelegate::OOMetaClass::getApp
 /******************************************************************************
 * Performs the actual rejection of particles.
 ******************************************************************************/
-PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	const ParticlesObject* inputParticles = state.expectObject<ParticlesObject>();
 	inputParticles->verifyIntegrity();

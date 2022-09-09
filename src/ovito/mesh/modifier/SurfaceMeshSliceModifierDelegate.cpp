@@ -34,7 +34,7 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshSliceModifierDelegate);
 /******************************************************************************
 * Performs the slicing of a surface mesh.
 ******************************************************************************/
-PipelineStatus SurfaceMeshSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus SurfaceMeshSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
 	QString statusMessage;

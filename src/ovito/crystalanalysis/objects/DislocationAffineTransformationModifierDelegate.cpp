@@ -45,7 +45,7 @@ QVector<DataObjectReference> DislocationAffineTransformationModifierDelegate::OO
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
-PipelineStatus DislocationAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus DislocationAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
 
@@ -54,7 +54,7 @@ PipelineStatus DislocationAffineTransformationModifierDelegate::apply(const Modi
 
 	for(const DataObject* obj : state.data()->objects()) {
 		if(const DislocationNetworkObject* inputDislocations = dynamic_object_cast<DislocationNetworkObject>(obj)) {
-			const AffineTransformation tm = mod->effectiveAffineTransformation(state);
+			const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
 			DislocationNetworkObject* outputDislocations = state.makeMutable(inputDislocations);
 
 			// Apply transformation to the vertices of the dislocation lines.

@@ -58,7 +58,7 @@ VoxelGridSliceModifierDelegate::VoxelGridSliceModifierDelegate(ObjectCreationPar
 /******************************************************************************
 * Calculates a cross-section of a voxel grid.
 ******************************************************************************/
-PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	OVITO_ASSERT(!dataset()->undoStack().isRecording());
 
