@@ -20,7 +20,7 @@ Supported file formats
 
 The *external file* data source can read various file formats containing different kinds of :ref:`data objects <scene_objects>`.
 Furthermore, the :ref:`file export function <usage.export>` of OVITO allows you to write the results of the data pipeline to
-disk in various output format:
+disk in various output formats:
 
 .. toctree::
   :maxdepth: 1
@@ -69,16 +69,16 @@ will be combined into one long trajectory, showing the contained simulation fram
 See also :ref:`this section <usage.import.sequence>` on how to import simulation trajectories.
 
 OVITO automatically generates a default search pattern for you when importing 
-a file with a number it its name. You can turn this behavior permanently off 
+a file with a number in its name. You can turn this behavior permanently off 
 by unchecking the "auto-generate" option.
 
 Trajectory - Playback ratio
 """""""""""""""""""""""""""
 
 After importing a new trajectory consisting of *N* simulation snapshots,
-OVITO will adjust the animation interval (which is shown as timeline below the viewports) 
+OVITO will adjust the animation interval (which is shown as a timeline below the viewports) 
 to the same length and show one trajectory frame per animation frame.
-Thus, there will be a one-to-one relationship between imported trajectory frame and 
+Thus, there will be a one-to-one relationship between imported trajectory frames and 
 rendered animation frames.  
 
 If desired, this standard 1/1 frame ratio can be changed by pressing the :guilabel:`Change`
@@ -96,7 +96,7 @@ Configure trajectory playback
 This dialog lets you control how the series of snapshots from the loaded simulation trajectory 
 is mapped to OVITO's animation timeline. You can change the default 1:1 mapping to 
 either a 1:n mapping, in which case each trajectory frame is replicated and rendered *n*
-times, or to a n:1 mapping, in which case only every n-th trajectory frame will be rendered.
+times, or to an n:1 mapping, in which case only every n-th trajectory frame will be rendered.
  
 A 1:n mapping is useful for stretching a simulation trajectory consisting of relatively few
 snapshots and rendering a longer movie. OVITO provides the :ref:`particles.modifiers.smooth_trajectory` modifier,

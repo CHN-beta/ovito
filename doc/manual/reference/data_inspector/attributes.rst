@@ -9,9 +9,9 @@ Attributes
 
 This page of the :ref:`data inspector <data_inspector>` lists all attribute values
 associated with the current dataset. :ref:`Global attributes <usage.global_attributes>`
-are properties that have been attached to a dataset, for example the current simulation timestep
+are properties that have been attached to a dataset, for example, the current simulation timestep
 or the number of selected particles. Attributes may have time-dependent values which change with animation time,
-in particular if they are dynamically computed by the data pipeline for each frame.
+in particular, if they are dynamically computed by the data pipeline for each frame.
 
 Each attribute has a unique name and a current value (numeric or textual), which are listed
 in the table of the data inspector. Some attributes, e.g. ``SourceFile`` and ``SourceFrame``,

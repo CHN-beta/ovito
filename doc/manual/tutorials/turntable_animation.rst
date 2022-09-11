@@ -39,13 +39,13 @@ Step 3: Adjust center of rotation
   :alt: Rotate tool
 
 OVITO animation capabilities only allow you to move the virtual camera on straight paths through the three-dimensional scene. Thus,
-revolving the camera on a circular orbit around an object requires a different approach. Instead of 
-animating the camera itself, we are going to actually rotate the simulation model while keeping the camera fixed.
+revolving the camera in a circular orbit around an object requires a different approach. Instead of 
+animating the camera itself, we are going to rotate the simulation model while keeping the camera fixed.
 
 You can adjust the rotation of the whole model, relative to the global scene coordinate system, using the `Rotate` tool |rotate-tool-button| found in the main toolbar of OVITO.
 After activating this mode, three numeric input fields appear in the status bar at the bottom of the program window, which let you 
 adjust the current `Euler angles <https://en.wikipedia.org/wiki/Euler_angles>`__ of the selected object, i.e. its rotation around the three axes of the global coordinate system.
-For a turntable animation we will have to vary the third Euler angle (Z), which specifies the object's rotation around the z-axis.
+For a turntable animation, we will have to vary the third Euler angle (Z), which specifies the object's rotation around the z-axis.
 
 .. figure:: /images/tutorials/turntable_animation/euler_angles_input_fields.jpg
    :width: 65%
@@ -58,7 +58,7 @@ For a turntable animation we will have to vary the third Euler angle (Z), which 
    :align: right
 
 While playing with the value of the z-angle, you will notice, however, that the model is revolving around the wrong location in space. 
-That's because the `Rotate` tool always uses the object's coordinate origin and not its center of mass as pivot point. 
+That's because the `Rotate` tool always uses the object's coordinate origin and not its center of mass as the pivot point. 
 The simulation box in this example happens to be positioned such that its 
 corner is at :math:`(0,0,0)`, the origin of the simulation coordinate system (you can inspect the cell info :ref:`here <scene_objects.simulation_cell>`). 
 Thus, in order to change the effective center of rotation, we'll first have to translate the model to center it on the coordinate system origin. 
@@ -104,9 +104,9 @@ Make sure the `Rotate` tool |rotate-tool-button| is still selected in the main t
 .. image:: /images/tutorials/turntable_animation/open_anim_key_dialog_button.jpg
    :width: 50%
 
-This opens the animation keys dialog window. OVITO's :ref:`parameter animation system <usage.animation>` is based on so-called *key frames*, which 
+This opens the animation keys dialog window. OVITO's :ref:`parameter animation system <usage.animation>` is based on so-called *keyframes*, which 
 means that the user specifies the value(s) of an animated parameter, for example the dataset's orientation, at specific 
-points along the timeline. In between these key frames the program will automatically interpolate from one key value to the next
+points along the timeline. In between these keyframes the program will automatically interpolate from one key value to the next
 to create a smooth transition. 
 
 For animating one complete rotation of the dataset, i.e. revolving once by 360 degrees around the z-axis, two animation keys
@@ -121,7 +121,7 @@ and make sure the values in the table match the ones shown in the screenshot:
 .. image:: /images/tutorials/turntable_animation/animation_key_dialog.jpg
    :width: 60%
 
-Note that the orientation of the dataset in three-dimensional space is specified in each key frame by an axis of rotation (three vector components)
+Note that the orientation of the dataset in three-dimensional space is specified in each keyframe by an axis of rotation (three vector components)
 and a signed rotation angle around that axis.
 
 Further information

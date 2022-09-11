@@ -15,7 +15,7 @@ Non-spherical particle shapes
 
    User-defined particle shapes
 
-OVITO has built-in support for a range of different particles shapes aside from the standard spherical shape.
+OVITO has built-in support for a range of different particle shapes aside from the standard spherical shape.
 Furthermore, it supports user-defined particle shapes, which are specified in terms of polyhedral meshes:
 
  - spheres
@@ -46,7 +46,7 @@ each particle individually:
 
 The property assignment can happen directly during import of your data file into OVITO by mapping values from corresponding
 file columns to the right target properties in OVITO. Furthermore, you can subsequently assign values to these properties as needed by inserting
-the :ref:`particles.modifiers.compute_property` modifier into the a data pipeline.
+the :ref:`particles.modifiers.compute_property` modifier into the data pipeline.
 
 The orientation of non-spherical particles is controlled by the ``Orientation`` particle property,
 which consists of four components :math:`\mathrm{q} = (x, y, z, w)` forming a `quaternion <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`__. 
@@ -172,16 +172,15 @@ Spherocylinders (capsules)
    :width: 25%
    :align: right
 
-The size of spherocylindrical particles is controlled in the same way as cylindrical particles. OVITO additionally render two hemispheres at each end of the cylinder,
-which extend the height of the cylinder.
+The size of spherocylindrical particles is controlled in the same way as cylindrical particles. OVITO additionally renders two hemispheres at each end of the cylinder extending its height.
 
 .. _howto.aspherical_particles.circles_and_squares:
 
 Circles and squares
 """""""""""""""""""
 
-Circle and square are two-dimensional (i.e. flat) shapes, whose size is controlled by the ``Radius`` particle property. The orientation
-of each particle in three-dimensional space is determined automatically such that it exactly faces the viewer. Thus, their orientations are view-dependent 
+Circles and squares are two-dimensional, i.e. flat, shapes, whose size is controlled by the ``Radius`` particle property. The orientation
+of each particle in three-dimensional space is determined automatically such that it exactly faces the viewer. Thus, their orientations are view-dependent, 
 and the ``Orientation`` particle property, if present, is ignored. In other words, you don't have the possibility to control their orientations explicitly
 (use a mesh-based shape instead if you need control).
 
@@ -199,7 +198,7 @@ User-defined shapes
    :width: 25%
    :align: right
 
-On the level of individual particle types you can assign custom particle shapes imported from external geometry files.
+On the level of individual particle types, you can assign custom particle shapes imported from external geometry files.
 OVITO supports loading general polyhedral meshes, which can serve as user-defined particle shapes, from various :ref:`file input formats <file_formats.input>`
 such as STL, OBJ, or VTK/VTP.
 
@@ -209,5 +208,5 @@ Set the particle type's :guilabel:`Shape` to `Mesh/User-defined` and import the 
 
 The vertex coordinates of the loaded polyhedral mesh get scaled by the value of the ``Radius`` property of each particle (if present)
 and rotated by the quaternion stored in the ``Orientation`` property (if present). Alternatively, you can set the 
-:guilabel:`Display radius` parameter of the type to scale all particles of that type, or adjust the :guilabel:`Radius scaling factor`
+:guilabel:`Display radius` parameter of the type to scale all particles of that type or adjust the :guilabel:`Radius scaling factor`
 in the :ref:`Particles <visual_elements.particles>` visual element to scale all particles uniformly.

@@ -51,7 +51,7 @@ Inspecting properties
 
    Data inspector displaying the table of particle properties
 
-Standard properties such as ``Position``, ``Particle Type`` and ``Velocity`` are typically initialized from the 
+Standard properties such as ``Position``, ``Particle Type``, or ``Velocity`` are typically initialized from the 
 imported simulation file. Some file formats such as *LAMMPS dump* or the `extended XYZ format <http://libatoms.github.io/QUIP/io.html#module-ase.io.extxyz>`_
 can store an arbitrary number of extra data columns. These auxiliary attributes are automatically mapped to corresponding particle properties within OVITO.
 

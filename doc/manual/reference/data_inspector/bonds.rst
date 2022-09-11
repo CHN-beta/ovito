@@ -20,7 +20,7 @@ see the :ref:`Expression Selection <particles.modifiers.expression_select>` modi
 To reset the filter and show the full list of bonds again, use the :guilabel:`X` button.
 
 The ``Topology`` bond property contains the indices of the two particles connected by a bond.
-This information may be used to select the bonds connected to a particular particle. For example to select all bonds adjacent to
+This information may be used to select the bonds connected to a particular particle. For example, to select all bonds adjacent to
 the first particle (particle index 0), we could use the following filter expression::
 
   Topology.A==0 || Topology.B==0

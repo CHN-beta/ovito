@@ -21,12 +21,12 @@ To reset the filter and show the full list of particles again, use the :guilabel
 The crosshair button activates a mouse input mode, which lets you pick individual particles in the viewports.
 As you select particles in the viewports, the filter expression is automatically updated to show the properties of
 the highlighted particles. Hold down the :kbd:`Ctrl` key (:kbd:`Command` key on macOS) to
-select multiple particles. Click the crosshair button again or right click in a viewport to deactivate the input mode.
+select multiple particles. Click the crosshair button again or right-click in a viewport to deactivate the input mode.
 
 The middle tool button shows a second table displaying the distances between particles.
 Here, OVITO reports the pair-wise distances for the first four particles in the particle list.
 Typically you want to filter the particle list (either using the interactive method or a filter expression)
-to define a set of 2, 3 or 4 particles for which to compute the inter-particle distances.
+to define a set of 2, 3, or 4 particles for which to compute the inter-particle distances.
 Note that periodic boundary conditions are not taken into account when pair-wise distances are calculated
 using this function. If you are interested in *wrapped* distances, then you should
 :ref:`create bonds <particles.modifiers.create_bonds>` between the particles and measure the length of these

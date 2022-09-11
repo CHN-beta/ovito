@@ -4,7 +4,7 @@ Remote file access
 ==================
 
 OVITO comes with built-in SSH and HTTP clients for accessing files located on remote machines. This feature can save you from having to transfer
-files stored in remote locations, for example on a HPC cluster, to your local desktop computer first.
+files stored in remote locations, for example on an HPC cluster, to your local desktop computer first.
 To open a file stored on a remote host, select :menuselection:`File --> Load Remote File` from the menu.
 
 The current version of OVITO does not provide a way to browse directories on remote machines. You have to directly specify
@@ -12,7 +12,7 @@ the full path to the remote file as an URL of the form::
 
   sftp://user@hostname/path/filename
 
-Replace :command:`user` with your SSH login name for your remote machine, :command:`hostname` with the host name of the remote machine,
+Replace :command:`user` with your SSH login name for your remote machine, :command:`hostname` with the hostname of the remote machine,
 and :command:`/path/filename` with the full path to the simulation data file to load. Note that the use of the "~" shortcut to a user's home directory is *not* supported; you have to specify the absolute directory path.
 
 Furthermore, you can let OVITO download data from a web server location by specifying an URL of the form::
@@ -34,7 +34,7 @@ until you hit the :guilabel:`Reload` button in the :ref:`External File <scene_ob
 Troubleshooting connection problems
 -----------------------------------
 
-Establishing a connection between OVITO and the SSH server may fail if client and server cannot agree on a common authentication and encryption method. 
+Establishing a connection between OVITO and the SSH server may fail if the client and server cannot agree on a common authentication and encryption method. 
 OVITO's built-in SSH client is based on the :program:`libssh` library, which supports a specific set of SSH key exchange methods, 
 public key algorithms, ciphers and authentication methods (`see here <https://www.libssh.org/features/>`__). During the handshaking process,
 both parties need to agree on at least one common choice from each of these categories to successfully establish an SSH connection. 
@@ -43,7 +43,7 @@ both parties need to agree on at least one common choice from each of these cate
 
   The :program:`libssh` library is not identical with the `OpenSSH <https://www.openssh.com>`__ command line programs (:program:`ssh` & :program:`scp`), 
   which are installed on most Unix/Linux systems and which support a wider range of SSH connection methods. 
-  These tools are, however, difficult to integrate into a cross-platform software such as OVITO.
+  These tools are, however, difficult to integrate into cross-platform software such as OVITO.
 
 Which SSH connection methods the server side supports depends on the specific configuration of your SSH server. Please consult 
 the documentation for your remote system or contact the administrator of your remote host if you are not sure. 

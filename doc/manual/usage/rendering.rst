@@ -14,15 +14,15 @@ The :guilabel:`Render active viewport` button launches the image rendering proce
 OVITO will open a separate window to show the generated image, which can be saved to disk or copied to the clipboard from there.
 
 The :ref:`Render settings <core.render_settings>` panel controls various
-settings such as the resolution of the generated image and its background color. You can either set a filename in the render settings panel
-in advance under which the rendered picture or movie will be automatically written to disk, or to manually save the picture later once rendering is complete
+settings such as the resolution of the generated image and its background color. You can set a filename in the render settings panel
+in advance under which the rendered picture or movie will be saved. Or you can manually save the picture later on once rendering is complete
 and you are happy with the result.
 
-OVITO Pro comes with several rendering engines to choose from, which differ in terms of speed, visual quality and memory requirements.
+OVITO Pro comes with several rendering engines to choose from, which differ in terms of speed, visual quality, and memory requirements.
 The default :ref:`OpenGL renderer <rendering.opengl_renderer>` is the fastest one and produces pictures that are more or less
 identical to what you see in the interactive viewports. The :ref:`Tachyon <rendering.tachyon_renderer>` and 
 :ref:`OSPRay <rendering.ospray_renderer>` rendering engines, on the other hand,
-are software-based ray tracing engines, which are able to generate high-quality visualizations that include shadows, ambient occlusion shading and depth of field effects.
+are software-based ray tracing engines, which are able to generate high-quality visualizations that include shadows, ambient occlusion shading, and depth of field effects.
 See the :ref:`reference section <rendering>` to learn more about the rendering capabilities of OVITO.
 
 

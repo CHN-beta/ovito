@@ -18,8 +18,8 @@ Tutorials
    :align: right
 
 Learn how to highlight a group of atoms, initially located in a narrow region, with a marker color to visualize the atomic motion 
-in the interior of the crystal during the course of the simulation. In particular this tutorial will introduce you to the 
-:ref:`particles.modifiers.freeze_property` modifier in OVITO, which helps preserving the initial selection state of a group of particles. 
+in the interior of the crystal during the course of the simulation. In particular, this tutorial will introduce you to the 
+:ref:`particles.modifiers.freeze_property` modifier in OVITO, which helps preserve the initial selection state of a group of particles. 
 
 .. rubric:: :ref:`Turntable animation of a model <tutorials.turntable_animation>`
 

@@ -10,7 +10,7 @@ OSPRay renderer |ovito-pro|
 OSPRay is a software-based ray-tracing engine, which can generate high-fidelity renderings of the scene including
 global illumination effects, shadows and depth of field (focal blur). The OSPRay renderer has a smaller memory footprint than
 the :ref:`Tachyon renderer <rendering.tachyon_renderer>`. It is thus suitable for rendering very large datasets
-with a higher visual quality than the default :ref:`OpenGL renderer <rendering.opengl_renderer>`.
+with higher visual quality than the default :ref:`OpenGL renderer <rendering.opengl_renderer>`.
 
 For more information on the capabilities of the OSPRay engine and its technical background,
 please visit the website https://www.ospray.org.
@@ -26,7 +26,7 @@ Refinement passes
 
 Samples per pixel
   The number of ray-tracing samples computed per pixel of the output image (default value: 2). 
-  Larger values can help reducing aliasing artifacts and will yield better results if the *depth of field* 
+  Larger values can help reduce aliasing artifacts and will yield better results if the *depth of field* 
   option has been enabled. 
 
 Ray recursion depth

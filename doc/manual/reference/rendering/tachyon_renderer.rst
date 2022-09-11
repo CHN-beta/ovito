@@ -8,9 +8,9 @@ Tachyon renderer |ovito-pro|
   :align: right
 
 This is a software-based ray-tracing renderer. It can produce renderings of the scene with
-ambient occlusion lighting, shadows and depth of field. The visual quality of the Tachyon renderer
+ambient occlusion lighting, shadows, and depth of field. The visual quality of the Tachyon renderer
 is slightly better than the one provided by the :ref:`OSPRay renderer <rendering.ospray_renderer>`,
-but it requires more memory. Both rendering engines offer higher visual quality than the :ref:`OpenGL renderer <rendering.opengl_renderer>`,
+but it requires more memory. Both rendering engines offer higher visual quality than the :ref:`OpenGL renderer <rendering.opengl_renderer>`
 but are typically considerably slower.
 
 Parameters
@@ -33,8 +33,8 @@ Ambient occlusion
   e.g. outdoors on an overcast day.
   
 Sample count
-  Ambient occlusion is implemented using a Monte Carlo technique. This parameters controls the number of samples to compute.
-  A higher sample number leads to a more even shading, but requires more computation time.
+  Ambient occlusion is implemented using a Monte Carlo technique. This parameter controls the number of samples to compute.
+  A higher sample number leads to a more even shading but requires more computation time.
 
 Depth of field
   This option enables `depth-of-field <http://en.wikipedia.org/wiki/Depth_of_field>`__ (DOF) rendering, which

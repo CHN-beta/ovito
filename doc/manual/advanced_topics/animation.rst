@@ -6,7 +6,7 @@ Parameter and camera animations
    <titleabbrev>Animations</titleabbrev>
 
 In addition to simply visualizing a simulation trajectory, OVITO provides powerful animation capabilities,
-which let you animate the virtual camera, modifiers or visual parameters. The following sections explain OVITO's
+which let you animate the virtual camera, modifiers, or visual parameters. The following sections explain OVITO's
 animation system in more detail.
 
 .. image:: /images/usage/animation/file_source_animation_panel.*
@@ -29,7 +29,7 @@ Normally there is a one-to-one mapping between the two, i.e., the number of anim
 automatically adjusted to match the number of frames of the loaded simulation trajectory.
 This default behavior can be overridden in the :ref:`Animation settings <animation.animation_settings_dialog>` dialog.
 Then you will be in control of the animation length. If you extend the animation interval beyond the
-number of imported simulation frames, you will get additional static vide frames at the end of the rendered animation.
+number of imported simulation frames, you will get additional static video frames at the end of the rendered animation.
 
 Furthermore, the :ref:`Configure trajectory playback <scene_objects.file_source.configure_playback>` dialog,
 which is accessible from the :ref:`External file <scene_objects.file_source>` panel (see screenshot),
@@ -42,11 +42,11 @@ of the simulation will then be visible for two consecutive video frames. A playb
 Then, every other simulation frame gets skipped in the rendered animation.
    
 The :guilabel:`Starting at animation frame` setting specifies where on OVITO's timeline the
-playback of the simulation trajectory begins. By default it starts immediately at animation frame 0, but you can
-change this number, e.g. to insert static frames frames at the beginning of a movie.
+playback of the simulation trajectory begins. By default, it starts immediately at animation frame 0, but you can
+change this number, e.g. to insert static frames at the beginning of a movie.
 
 Note that OVITO provides the possibility to insert several simulation datasets into one scene to show them
-simultaneously side-by-side or on top of each other. By default OVITO adjusts the length of the timeline
+simultaneously side-by-side or on top of each other. By default, OVITO adjusts the length of the timeline
 to fully accommodate all loaded trajectories.
 
 .. image:: /images/animation_settings_dialog/animation_settings_dialog.*
@@ -57,11 +57,11 @@ to fully accommodate all loaded trajectories.
 Playback speed
 --------------
 
-In the :ref:`Animation settings dialog <animation.animation_settings_dialog>`
+In the :ref:`Animation settings dialog <animation.animation_settings_dialog>`,
 you set the playback speed (frames per second) of the current animation. This number determines the frame rate of
 video files produced by OVITO (e.g. AVI or MPEG). It also affects the playback within OVITO's viewports, which, however, typically
 occurs at a lower effective rate because loading the next simulation snapshot from disk can easily take too long to reach the
-realtime frame rate.
+real-time frame rate.
 
 
 Animating by means of time-dependent formulas
@@ -82,12 +82,12 @@ time-dependent and OVITO will recompute the results on every animation frame.
   :width: 25%
   :align: right
 
-Animation via key frames
-------------------------
+Animation via keyframes
+-----------------------
 
 OVITO also provides a key-based animation framework. It lets you specify the value of an animatable parameter
 at certain animation times (for example at the beginning and at the end of the animation). In between these
-key frames, the value of the parameter is then determined using smooth interpolation (typically linear).
+keyframes, the value of the parameter is then determined using smooth interpolation (typically linear).
 
 .. image:: /images/usage/animation/keyframe_dialog.*
   :width: 25%
@@ -100,7 +100,7 @@ new animation keys. Animation keys are time-value pairs.
     
 In the next screenshot on the right, two animation keys have been defined for the *Distance* parameter of the slicing plane,
 one at frame 0 and the other at frame 50. Thus, the parameter will have a value of 20.0
-at the beginning of the animation and reach 80.0 at the second animation key frame.
+at the beginning of the animation and reach 80.0 at the second animation keyframe.
   
 Note that an animatable parameter always has at least one animation key.
 As long as there is only that single key, it defines the constant value of the parameter.
@@ -119,12 +119,12 @@ the so-called *Auto-key mode*:
 While this mode is active, the time slider background is highlighted red and any change made to an animatable
 parameter in the program will automatically generate a new animation key at the current animation time.
 For example, after activating *Auto-key mode*, you can jump to animation frame 0
-using the time slider and set the *Distance* parameter of the Slice modifier to a value 20.
+using the time slider and set the *Distance* parameter of the Slice modifier to a value of 20.
 You then go to the last frame of the animation and change the parameter value to 80.
-Each of the two parameter changes results in the creation of a new animation key at the corresponding animation time.
+Each of these two parameter changes results in the creation of a new animation key at the corresponding animation time.
 
 Don't forget to deactivate *Auto-key mode* after you are done creating the desired
-animation keys. Otherwise you might inadvertently define more keys for other parameters which you don't
+animation keys. Otherwise, you might inadvertently define more keys for other parameters which you don't
 want to animate. The *Auto-key mode* provides a convenient alternative for creating
 new animation keys, which can be faster than using the animation key dialog introduced in the previous section.
 
@@ -139,9 +139,9 @@ for the currently selected scene object and its parameters:
   :width: 55%
 
 Each key is represented by a small marker at the corresponding position of the timeline. Positioning the
-mouse cursor over a marker will show the key's information in a small tool tip window.
+mouse cursor over a marker will show the key's information in a small tooltip window.
 You can use the mouse to drag animation keys to a different position on the timeline.
-Right-clicking on a key opens a context menu which allows you delete the key.
+Right-clicking on a key opens a context menu that allows you to delete the key.
 
 Note that the track bar will only display the animation keys of parameters that are actually animated,
 i.e., which have at least two keys defined. Thus, as soon as only one key is left, it

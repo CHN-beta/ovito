@@ -25,7 +25,7 @@ Frames per second
 
 Playback speed
   Controls the playback speed of the animation in OVITO's interactive viewports.
-  This factor is multiplied with the frame rate (FPS) described
+  This factor is multiplied by the frame rate (FPS) described
   parameter above. Note that the effective playback speed may be much slower if
   loading, computing, and displaying the next frame takes a long time.
 
