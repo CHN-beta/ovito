@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -78,7 +78,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 
 	class PipelineListView : public QListView {
 	public:
-		PipelineListView(QWidget* parent) : QListView(parent) {}
+		PipelineListView(QWidget* parent, ModifyCommandPage* commandPanelPage) : QListView(parent), _commandPanelPage(commandPanelPage) {}
 		virtual QSize sizeHint() const override { return QSize(256, 260); }
 	protected:
 		virtual bool edit(const QModelIndex& index, QAbstractItemView::EditTrigger trigger, QEvent* event) override {
@@ -112,6 +112,29 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 			}
 			return QListView::edit(index, trigger, event);
 		}
+		virtual void contextMenuEvent(QContextMenuEvent* event) override {
+			QMenu menu;
+			if(QAction* groupAction = _commandPanelPage->_actionManager->getAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP); groupAction->isEnabled()) {
+				menu.addAction(groupAction);
+			}
+			if(PipelineListItem* currentItem = _commandPanelPage->pipelineListModel()->selectedItem()) {
+				if(currentItem->itemType() == PipelineListItem::Modifier || currentItem->itemType() == PipelineListItem::ModifierGroup || currentItem->itemType() == PipelineListItem::VisualElement) {
+					menu.addSeparator();
+					menu.addAction(_commandPanelPage->_actionManager->getAction(ACTION_EDIT_RENAME_PIPELINE_ITEM));
+				}
+				if(currentItem->itemType() == PipelineListItem::Modifier || currentItem->itemType() == PipelineListItem::DataSource || currentItem->itemType() == PipelineListItem::VisualElement) {
+					menu.addSeparator();
+					menu.addAction(_commandPanelPage->_actionManager->getAction(ACTION_PIPELINE_MAKE_INDEPENDENT));
+				}
+			}
+			if(QAction* deleteAction = _commandPanelPage->_actionManager->getAction(ACTION_MODIFIER_DELETE); deleteAction->isEnabled()) {
+				menu.addSeparator();
+				menu.addAction(deleteAction);
+			}
+			menu.exec(event->globalPos());
+		}
+	private:
+		ModifyCommandPage* _commandPanelPage;
 	};
 
 	_splitter = new QSplitter(Qt::Vertical);
@@ -123,7 +146,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 	subLayout->setContentsMargins(0,0,0,0);
 	subLayout->setSpacing(2);
 
-	_pipelineWidget = new PipelineListView(upperContainer);
+	_pipelineWidget = new PipelineListView(upperContainer, this);
 	_pipelineWidget->setDragDropMode(QAbstractItemView::InternalMove);
 	_pipelineWidget->setDragEnabled(true);
 	_pipelineWidget->setAcceptDrops(true);
@@ -156,7 +179,6 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 	editToolbar->addAction(_actionManager->getAction(ACTION_MODIFIER_MOVE_DOWN));
 	editToolbar->addSeparator();
 	editToolbar->addAction(_actionManager->getAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP));
-	editToolbar->addAction(_actionManager->getAction(ACTION_PIPELINE_MAKE_INDEPENDENT));
 
 	QAction* manageModifierTemplatesAction = _actionManager->createCommandAction(ACTION_MODIFIER_MANAGE_TEMPLATES, tr("Manage Modifier Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved modifier templates."));
 	connect(manageModifierTemplatesAction, &QAction::triggered, [&mainWindow]() {
@@ -164,6 +186,10 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 		dlg.exec();
 	});
 	editToolbar->addAction(manageModifierTemplatesAction);
+
+	connect(_actionManager->getAction(ACTION_EDIT_RENAME_PIPELINE_ITEM), &QAction::triggered, this, [this]() {
+		_pipelineWidget->edit(_pipelineWidget->currentIndex());
+	});
 
 	layout->addWidget(_splitter, 2, 0, 1, 2);
 	layout->setRowStretch(2, 1);

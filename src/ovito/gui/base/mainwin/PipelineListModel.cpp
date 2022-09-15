@@ -83,7 +83,7 @@ QT_WARNING_POP
 	_toggleModifierGroupAction = actionManager->createCommandAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP, tr("Group Modifiers"), "modify_modifier_group_create", tr("Creates or dissolves a group of modifiers in the pipeline editor."));
 	_toggleModifierGroupAction->setCheckable(true);
 	connect(_toggleModifierGroupAction, &QAction::triggered, this, &PipelineListModel::toggleModifierGroup);
-	_makeElementIndependentAction = actionManager->createCommandAction(ACTION_PIPELINE_MAKE_INDEPENDENT, tr("Replace With Independent Copy"), "modify_make_element_independent", tr("Duplicate an entry that is shared by multiple pipelines."));
+	_makeElementIndependentAction = actionManager->createCommandAction(ACTION_PIPELINE_MAKE_INDEPENDENT, tr("Make Independent"), "modify_make_element_independent", tr("Duplicate an item that is shared by multiple pipelines to make it independent from the other pipeline(s)."));
 	connect(_makeElementIndependentAction, &QAction::triggered, this, &PipelineListModel::makeElementIndependent);
 }
 
@@ -778,6 +778,12 @@ void PipelineListModel::updateActions()
 	_deleteItemAction->setEnabled(!objects.empty() && boost::algorithm::all_of(objects, [](RefTarget* obj) {
 		return dynamic_object_cast<ModifierApplication>(obj) || dynamic_object_cast<ModifierGroup>(obj);
 	}));
+	if(objects.size() == 1 && dynamic_object_cast<ModifierApplication>(objects[0]))
+		_deleteItemAction->setText(tr("Delete Modifier"));
+	else if(objects.size() == 1 && dynamic_object_cast<ModifierGroup>(objects[0]))
+		_deleteItemAction->setText(tr("Delete Modifier Group"));
+	else
+		_deleteItemAction->setText(tr("Delete"));
 
 	// Check if the selected object is a shared object which can be made independent.
 	_makeElementIndependentAction->setEnabled(
@@ -786,6 +792,7 @@ void PipelineListModel::updateActions()
 
 	// Update the state of the move up/down actions.
 	if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(currentObject)) {
+		_moveItemDownAction->setText(tr("Move Modifier Down"));
 		_moveItemDownAction->setEnabled(
 			modApp->input()
 			&& (dynamic_object_cast<ModifierApplication>(modApp->input()) != nullptr || modApp->modifierGroup() != nullptr)
@@ -793,6 +800,7 @@ void PipelineListModel::updateActions()
 			&& modApp->pipelines(true).empty() == false
 			&& (modApp->modifierGroup() == nullptr || modApp->modifierGroup()->modifierApplications().size() > 1));
 
+		_moveItemUpAction->setText(tr("Move Modifier Up"));
 		_moveItemUpAction->setEnabled(
 			(modApp->getPredecessorModApp() != nullptr || modApp->modifierGroup() != nullptr)
 			&& (modApp->isPipelineBranch(true) == false || modApp->modifierGroup() != nullptr)
@@ -802,6 +810,8 @@ void PipelineListModel::updateActions()
 	else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(currentObject)) {
 		_moveItemUpAction->setEnabled(false);
 		_moveItemDownAction->setEnabled(false);
+		_moveItemUpAction->setText(tr("Move Modifier Group Up"));
+		_moveItemDownAction->setText(tr("Move Modifier Group Down"));
 
 		// Determine whether it would be possible to move the entire modifier group up and/or down.
 		if(group->pipelines(true).empty() == false) {
@@ -816,11 +826,14 @@ void PipelineListModel::updateActions()
 	else {
 		_moveItemUpAction->setEnabled(false);
 		_moveItemDownAction->setEnabled(false);
+		_moveItemUpAction->setText(tr("Move Up"));
+		_moveItemDownAction->setText(tr("Move Down"));
 	}
 
 	// Update the modifier grouping action.
 	_toggleModifierGroupAction->setChecked(false);
 	_toggleModifierGroupAction->setEnabled(false);
+	_toggleModifierGroupAction->setText(tr("Create Modifier Group"));
 	// Are all selected objects modifier applications and are they not in a group?
 	if(!objects.empty() && boost::algorithm::all_of(objects, [](RefTarget* obj) { 
 			ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj);
@@ -834,12 +847,14 @@ void PipelineListModel::updateActions()
 				break;
 			}
 		}
-		if(isContinguousSequence)
+		if(isContinguousSequence) {
 			_toggleModifierGroupAction->setEnabled(true);
+		}
 	}
 	else if(dynamic_object_cast<ModifierGroup>(currentObject) != nullptr) {
 		_toggleModifierGroupAction->setEnabled(true);
 		_toggleModifierGroupAction->setChecked(true);
+		_toggleModifierGroupAction->setText(tr("Ungroup Modifiers"));
 	}
 }
 

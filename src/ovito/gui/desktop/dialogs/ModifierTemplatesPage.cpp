@@ -281,7 +281,7 @@ void ModifierTemplatesPage::onExportTemplates()
 {
 	try {
 		if(ModifierTemplates::get()->templateList().empty())
-			throw Exception(tr("The are no modifier templates to export."));
+			throw Exception(tr("There are no modifier templates to export."));
 
 		QString filename = QFileDialog::getSaveFileName(_settingsDialog,
 			tr("Export Modifier Templates"), QString(), tr("OVITO Modifier Templates (*.ovmod)"));

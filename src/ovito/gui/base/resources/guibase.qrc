@@ -33,6 +33,7 @@
 	<file>icons/ovito-light/actions/edit_clone_pipeline.svg</file>
 	<file>icons/ovito-light/actions/edit_rename_pipeline.svg</file>
 	<file>icons/ovito-light/actions/edit_rename_pipeline_disabled.svg</file>
+	<file>icons/ovito-light/actions/edit_rename_pipeline_item.svg</file>
 	<file>icons/ovito-light/actions/edit_mode_select.svg</file>
 	<file>icons/ovito-light/actions/edit_mode_move.svg</file>
 	<file>icons/ovito-light/actions/edit_mode_rotate.svg</file>
@@ -147,6 +148,7 @@
 	<file>icons/ovito-dark/actions/edit_clone_pipeline.svg</file>
 	<file>icons/ovito-dark/actions/edit_rename_pipeline.svg</file>
 	<file>icons/ovito-dark/actions/edit_rename_pipeline_disabled.svg</file>
+	<file>icons/ovito-dark/actions/edit_rename_pipeline_item.svg</file>
 	<file>icons/ovito-dark/actions/edit_mode_select.svg</file>
 	<file>icons/ovito-dark/actions/edit_mode_move.svg</file>
 	<file>icons/ovito-dark/actions/edit_mode_rotate.svg</file>

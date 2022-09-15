@@ -116,33 +116,36 @@ change the selection expression in the second pipeline and select a different se
 Finally, the `Assign color` modifier gets shared by both pipelines. That means the selected particles
 in both pipelines will always get assigned the same color.
  
-After the cloning operation has been executed, you will see the newly created pipeline
-in the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` of OVITO:
-
 .. image:: /images/clone_pipeline/cloned_pipeline_editor.png
-  :width: 30%
-  :align: left
+  :width: 38%
+  :align: right
 
-The horizontal line labeled :guilabel:`Pipeline branch` indicates that the part below the line
-is shared by the current pipeline with other pipelines in the same scene. Inserting, removing, or changing modifiers below this line is thus going to affect also
-these other pipelines.
+After the cloning operation has been executed, you will see the newly created pipeline
+in the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>`.
 
-Some of the list entries in the pipeline editor are rendered using an italic font. OVITO uses italic font to indicate that
-an object is shared between two or more pipelines. The `Assign color` modifier, for example, was cloned
-using mode `Share`. Thus, it is part of both the original pipeline and the cloned pipeline.
-Changing the color parameter of the `Assign color` modifier will thus trigger a recomputation
-of both pipelines in which the modifier is used.
+The horizontal line labeled :guilabel:`Pipeline branch` indicates that the part below 
+is shared by the current pipeline and other pipelines in the same scene. 
+Inserting, removing, or changing modifiers below this line is thus going to affect these other pipelines as well.
 
-You might realize later on that sharing the `Assign color` modifier was not a good idea.
-For instance, you may decide to assign a different color to the selected particles in the cloned pipeline but keep the color
-in the original pipeline. To do this, OVITO provides the function :guilabel:`Replace with independent copy`,
-which is marked with a red circle in the screenshot above. It allows you to replace the shared `Assign color` modifier
-with an independent copy. Subsequently, changing the parameters of the modifier will no longer
-affect the other pipeline.
+Some of the items in the pipeline editor are rendered in italic font. With that, OVITO indicates that
+two or more pipelines share this entry. The `Assign color` modifier, for instance, was cloned
+using mode `Share`. It is now part of the original pipeline *and* the cloned pipeline simultaneously.
+Changing a parameter of this modifier would trigger a recomputation of both pipelines.
 
-Notice that the :ref:`visual elements <visual_elements>` are also displayed with an italic font in the pipeline editor.
-This is because these visual elements are produced by the data source of the pipeline, which is located in the upstream section of the pipeline
-that is shared by multiple pipelines. Again, because these visual elements are shared objects, changing their
-parameters or turning their display on or off will affect the rendering of both datasets produced by the two pipelines.
-In this case, you can also use the function :guilabel:`Replace with independent copy` to duplicate the visual elements
-if needed and control the visual appearance of particles and bonds individually for the original and the cloned pipeline.
+Let's say you later realize that sharing the `Assign color` modifier was not the right idea.
+For instance, you may decide to assign different colors to the particles in the two pipelines. 
+For "un-sharing" the modifier, OVITO provides the function :guilabel:`Make Independent`,
+which is accessible via the item's context menu shown in the screenshot. This function replaces the shared `Assign color` modifier
+with an independent copy in the current pipeline. Subsequently, changing the modifier's parameters will no longer
+implicitly affect other pipelines. You now get the possibility to use different parameter values in different pipelines.
+
+Notice that the :ref:`visual elements <visual_elements>` in the pipeline editor are also displayed using italic font.
+That's because these visual elements are produced by the file data source in the upstream pipeline, i.e. in the branch 
+common to both pipelines. While the underlying simulation data gets implicitly duplicated at pipeline branches (to enable different 
+computational outputs of the two pipelines), the visual elements do not. A single set of visual elements remains responsible 
+for rendering the outputs of the two pipelines. 
+
+Because these visual elements are shared objects, changing their parameters or turning them on or off affects the rendering of 
+both datasets produced by the two pipelines. If this is not what you want, you can use the function :guilabel:`Make Independent` 
+again to duplicate the visual elements, which will allow you to control the visual appearance of particles and bonds for the 
+original and the cloned pipeline individually.
