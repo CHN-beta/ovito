@@ -36,6 +36,7 @@
 #include <ovito/gui/desktop/app/GuiApplication.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dialogs/ModifierTemplatesPage.h>
+#include <ovito/gui/desktop/dialogs/CopyPipelineItemDialog.h>
 #include "ModifyCommandPage.h"
 
 #include <QtNetwork>
@@ -78,7 +79,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 
 	class PipelineListView : public QListView {
 	public:
-		PipelineListView(QWidget* parent, ModifyCommandPage* commandPanelPage) : QListView(parent), _commandPanelPage(commandPanelPage) {}
+		PipelineListView(QWidget* parent) : QListView(parent) {}
 		virtual QSize sizeHint() const override { return QSize(256, 260); }
 	protected:
 		virtual bool edit(const QModelIndex& index, QAbstractItemView::EditTrigger trigger, QEvent* event) override {
@@ -112,29 +113,6 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 			}
 			return QListView::edit(index, trigger, event);
 		}
-		virtual void contextMenuEvent(QContextMenuEvent* event) override {
-			QMenu menu;
-			if(QAction* groupAction = _commandPanelPage->_actionManager->getAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP); groupAction->isEnabled()) {
-				menu.addAction(groupAction);
-			}
-			if(PipelineListItem* currentItem = _commandPanelPage->pipelineListModel()->selectedItem()) {
-				if(currentItem->itemType() == PipelineListItem::Modifier || currentItem->itemType() == PipelineListItem::ModifierGroup || currentItem->itemType() == PipelineListItem::VisualElement) {
-					menu.addSeparator();
-					menu.addAction(_commandPanelPage->_actionManager->getAction(ACTION_EDIT_RENAME_PIPELINE_ITEM));
-				}
-				if(currentItem->itemType() == PipelineListItem::Modifier || currentItem->itemType() == PipelineListItem::DataSource || currentItem->itemType() == PipelineListItem::VisualElement) {
-					menu.addSeparator();
-					menu.addAction(_commandPanelPage->_actionManager->getAction(ACTION_PIPELINE_MAKE_INDEPENDENT));
-				}
-			}
-			if(QAction* deleteAction = _commandPanelPage->_actionManager->getAction(ACTION_MODIFIER_DELETE); deleteAction->isEnabled()) {
-				menu.addSeparator();
-				menu.addAction(deleteAction);
-			}
-			menu.exec(event->globalPos());
-		}
-	private:
-		ModifyCommandPage* _commandPanelPage;
 	};
 
 	_splitter = new QSplitter(Qt::Vertical);
@@ -146,7 +124,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 	subLayout->setContentsMargins(0,0,0,0);
 	subLayout->setSpacing(2);
 
-	_pipelineWidget = new PipelineListView(upperContainer, this);
+	_pipelineWidget = new PipelineListView(upperContainer);
 	_pipelineWidget->setDragDropMode(QAbstractItemView::InternalMove);
 	_pipelineWidget->setDragEnabled(true);
 	_pipelineWidget->setAcceptDrops(true);
@@ -158,6 +136,23 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 	_pipelineWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 	_pipelineWidget->setIconSize(_pipelineListModel->iconSize());
 	subLayout->addWidget(_pipelineWidget);
+
+	// Set up context menu.
+	_pipelineWidget->addAction(_actionManager->getAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP));
+	QAction* separator = new QAction(_pipelineWidget);
+	separator->setSeparator(true);
+	_pipelineWidget->addAction(separator);
+	_pipelineWidget->addAction(_actionManager->getAction(ACTION_PIPELINE_RENAME_ITEM));
+	separator = new QAction(_pipelineWidget);
+	separator->setSeparator(true);
+	_pipelineWidget->addAction(separator);
+	_pipelineWidget->addAction(_actionManager->getAction(ACTION_PIPELINE_COPY_ITEM));
+	_pipelineWidget->addAction(_actionManager->getAction(ACTION_PIPELINE_MAKE_INDEPENDENT));
+	separator = new QAction(_pipelineWidget);
+	separator->setSeparator(true);
+	_pipelineWidget->addAction(separator);
+	_pipelineWidget->addAction(_actionManager->getAction(ACTION_MODIFIER_DELETE));
+	_pipelineWidget->setContextMenuPolicy(Qt::ActionsContextMenu);
 
 	// Listen to selection changes in the pipeline editor list widget.
 	connect(_pipelineListModel, &PipelineListModel::selectedItemChanged, this, &ModifyCommandPage::onSelectedItemChanged);
@@ -187,8 +182,29 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 	});
 	editToolbar->addAction(manageModifierTemplatesAction);
 
-	connect(_actionManager->getAction(ACTION_EDIT_RENAME_PIPELINE_ITEM), &QAction::triggered, this, [this]() {
+	connect(_actionManager->getAction(ACTION_PIPELINE_RENAME_ITEM), &QAction::triggered, this, [this]() {
 		_pipelineWidget->edit(_pipelineWidget->currentIndex());
+	});
+
+	connect(_actionManager->getAction(ACTION_PIPELINE_COPY_ITEM), &QAction::triggered, [&]() {
+		// Collect all currently selected pipeline objects.
+		QVector<OORef<PipelineObject>> objects;
+		for(RefTarget* obj : _pipelineListModel->selectedObjects()) {
+			if(PipelineObject* pobj = dynamic_object_cast<PipelineObject>(obj)) {
+				if(!objects.contains(pobj))
+					objects.push_back(pobj);
+			}
+			else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(obj)) {
+				for(ModifierApplication* modApp : group->modifierApplications()) {
+					if(!objects.contains(modApp))
+						objects.push_back(modApp);
+				}
+			}
+		}
+		if(!objects.empty()) {
+			CopyPipelineItemDialog dlg(&mainWindow, _pipelineListModel->selectedPipeline(), std::move(objects));
+			dlg.exec();
+		}
 	});
 
 	layout->addWidget(_splitter, 2, 0, 1, 2);

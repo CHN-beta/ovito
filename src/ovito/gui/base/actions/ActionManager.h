@@ -103,7 +103,9 @@ namespace Ovito {
 /// This action creates or dissolves a modifier group in the pipeline editor.
 #define ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP	"PipelineToggleModifierGroup"
 /// This action renames the selected entry in the pipeline editor.
-#define ACTION_EDIT_RENAME_PIPELINE_ITEM    "PipelineItemRename"
+#define ACTION_PIPELINE_RENAME_ITEM    		"PipelineItemRename"
+/// Copies/clones a modifier or source from one pipeline to another.
+#define ACTION_PIPELINE_COPY_ITEM    		"PipelineItemCopyTo"
 
 /// This action deletes the currently selected viewport layer.
 #define ACTION_VIEWPORT_LAYER_DELETE			"ViewportLayerDelete"

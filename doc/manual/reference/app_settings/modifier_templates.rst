@@ -10,8 +10,8 @@ Modifier templates
 Modifier templates are a way for you to define modifiers with preconfigured settings for quick access.
 This is useful in situations where you need to apply the same modifier(s) with the exact same settings 
 to different datasets repeatedly. The modifier templates you define are preserved across program sessions
-and can even be transferred between computers. Furthermore, a modifier template can consists of several modifiers allowing
-you to insert often-used sequences or combinations of modifiers into the data pipeline with only one click.
+and can even be transferred between computers. Furthermore, a modifier template can consist of several modifiers, allowing
+you to insert often-used sequences or combinations of modifiers into the data pipeline with a single click.
     
 Modifier templates are managed in the :ref:`application settings dialog <application_settings>`.
 Note that the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` contains a button to quickly open that dialog. All modifier templates 

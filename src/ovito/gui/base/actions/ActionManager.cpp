@@ -67,7 +67,6 @@ ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QA
 	createCommandAction(ACTION_EDIT_CLONE_PIPELINE, tr("Clone Pipeline..."), "edit_clone_pipeline", tr("Duplicate the current pipeline to show multiple datasets side by side."));
 	createCommandAction(ACTION_EDIT_RENAME_PIPELINE, tr("Rename Pipeline..."), "edit_rename_pipeline", tr("Assign a new name to the selected pipeline."));
 	createCommandAction(ACTION_EDIT_DELETE, tr("Delete Pipeline"), "edit_delete_pipeline", tr("Delete the selected object from the scene."));
-	createCommandAction(ACTION_EDIT_RENAME_PIPELINE_ITEM, tr("Rename..."), "edit_rename_pipeline_item", tr("Rename the selected pipeline entry."));
 
 	createCommandAction(ACTION_SETTINGS_DIALOG, tr("Application Settings..."), "application_preferences", tr("Open the application settings dialog"), QKeySequence::Preferences);
 

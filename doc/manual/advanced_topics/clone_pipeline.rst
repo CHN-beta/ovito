@@ -146,6 +146,34 @@ computational outputs of the two pipelines), the visual elements do not. A singl
 for rendering the outputs of the two pipelines. 
 
 Because these visual elements are shared objects, changing their parameters or turning them on or off affects the rendering of 
-both datasets produced by the two pipelines. If this is not what you want, you can use the function :guilabel:`Make Independent` 
-again to duplicate the visual elements, which will allow you to control the visual appearance of particles and bonds for the 
+both datasets produced by the two pipelines. If this is not what you want, again you can use the function :guilabel:`Make Independent` 
+to duplicate the visual elements. Subsequently, you can control the visual appearance of particles and bonds for the 
 original and the cloned pipeline individually.
+
+.. _clone_pipeline.copy_pipeline_items_dialog:
+
+Copying modifiers between pipelines
+"""""""""""""""""""""""""""""""""""
+
+.. image:: /images/clone_pipeline/copy_pipeline_item_menu.png
+  :width: 35%
+  :align: right
+
+.. image:: /images/clone_pipeline/copy_pipeline_items_dialog.png
+  :width: 35%
+  :align: right
+
+Select :guilabel:`Copy to...` from the context menu of a modifier to copy it 
+from one pipeline to another pipeline in the same scene. OVITO displays a dialog box (see screenshot below),
+which lets you select the destination of the copy operation and the copying mode.
+Turn on the option :guilabel:`Share with source pipeline` to insert a reference to the original 
+modifier into the other pipeline. Subsequently, both pipelines will share the same modifier, and
+changing the modifier's parameters will affect the results of both pipelines. Turn off the option to perform 
+a regular duplication, which produces an independent copy of the original modifier.
+
+The :guilabel:`Copy to...` function may also be used to copy one or modifiers *within* the same pipeline. 
+This can be useful if you need to perform the same processing steps multiple times as part of a single pipeline (see also 
+:ref:`modifier_templates` as an alternative approach).
+
+In addition to modifiers, the :guilabel:`Copy to...` function also lets you copy the :ref:`file source <scene_objects.file_source>` of a pipeline
+to another pipeline in the scene, which replaces the original data source of the destination pipeline.

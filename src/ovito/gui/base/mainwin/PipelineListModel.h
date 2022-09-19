@@ -321,6 +321,12 @@ private:
 
 	/// Action that creates an independent copy of a cloned pipeline object.
 	QAction* _makeElementIndependentAction;
+
+	/// Action that copies the selected pipeline item(s) to another pipeline in the scene.
+	QAction* _copyItemToPipelineAction;
+
+	/// Action that renames selected pipeline item(s).
+	QAction* _renamePipelineItemAction;
 };
 
 }	// End of namespace

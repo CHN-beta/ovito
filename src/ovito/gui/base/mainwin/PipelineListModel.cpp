@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -85,6 +85,8 @@ QT_WARNING_POP
 	connect(_toggleModifierGroupAction, &QAction::triggered, this, &PipelineListModel::toggleModifierGroup);
 	_makeElementIndependentAction = actionManager->createCommandAction(ACTION_PIPELINE_MAKE_INDEPENDENT, tr("Make Independent"), "modify_make_element_independent", tr("Duplicate an item that is shared by multiple pipelines to make it independent from the other pipeline(s)."));
 	connect(_makeElementIndependentAction, &QAction::triggered, this, &PipelineListModel::makeElementIndependent);
+	_copyItemToPipelineAction = actionManager->createCommandAction(ACTION_PIPELINE_COPY_ITEM, tr("Copy To..."), "modify_pipeline_copy_item_to", tr("Copy (or clone) the item to another pipeline or within this pipeline."));
+	_renamePipelineItemAction = actionManager->createCommandAction(ACTION_PIPELINE_RENAME_ITEM, tr("Rename..."), "edit_rename_pipeline_item", tr("Rename the selected pipeline entry."));
 }
 
 /******************************************************************************
@@ -790,6 +792,12 @@ void PipelineListModel::updateActions()
 		isSharedObject(currentObject)
 		&& (dynamic_object_cast<ModifierApplication>(currentObject) == nullptr || static_object_cast<ModifierApplication>(currentObject)->modifierGroup() == nullptr || static_object_cast<ModifierApplication>(currentObject)->pipelines(true).size() == 1));
 
+	_copyItemToPipelineAction->setEnabled(boost::algorithm::any_of(objects, [](RefTarget* obj) {
+		return dynamic_object_cast<PipelineObject>(obj) || dynamic_object_cast<ModifierGroup>(obj);
+	}));
+
+	_renamePipelineItemAction->setEnabled(ModifierApplication::OOClass().isMember(currentObject) || ModifierGroup::OOClass().isMember(currentObject) || DataVis::OOClass().isMember(currentObject));
+
 	// Update the state of the move up/down actions.
 	if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(currentObject)) {
 		_moveItemDownAction->setText(tr("Move Modifier Down"));
@@ -1114,8 +1122,11 @@ bool PipelineListModel::isSharedObject(RefTarget* obj)
 {
 	if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
 		if(modApp->modifier()) {
+			const auto& modApps = modApp->modifier()->modifierApplications();
+			if(modApps.size() > 1)
+				return true;
 			QSet<PipelineSceneNode*> pipelines;
-			for(ModifierApplication* ma : modApp->modifier()->modifierApplications())
+			for(ModifierApplication* ma : modApps)
 				pipelines.unite(ma->pipelines(true));
 			return pipelines.size() > 1;
 		}
@@ -1402,10 +1413,7 @@ PipelineObject* PipelineListModel::makeElementIndependentImpl(PipelineObject* pi
 			if(currentObj == pipelineObj) {
 				// Clone the selected modifier if it is referenced by multiple modapps.
 				if(predecessorModApp->modifier()) {
-					QSet<PipelineSceneNode*> pipelines;
-					for(ModifierApplication* modApp : predecessorModApp->modifier()->modifierApplications())
-						pipelines.unite(modApp->pipelines(true));
-					if(pipelines.size() > 1)
+					if(predecessorModApp->modifier()->modifierApplications().size() > 1)
 						predecessorModApp->setModifier(cloneHelper.cloneObject(predecessorModApp->modifier(), true));
 				}
 				return predecessorModApp;
