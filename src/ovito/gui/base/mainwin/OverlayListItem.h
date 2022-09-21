@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,13 +51,16 @@ public:
 	OverlayListItem(ViewportOverlay* overlay, OverlayItemType itemType);
 
 	/// Returns the status of the object represented by the list item.
-	PipelineStatus status() const;
+	const PipelineStatus& status() const;
 
 	/// Returns the title text for this list item.
 	QString title(Viewport* selectedViewport) const;
 
 	/// Returns the type of this list item.
 	OverlayItemType itemType() const { return _itemType; }
+
+	/// Returns a short piece information (typically a string) to be displayed next to the object's title in the UI.
+	QVariant shortInfo() const;
 
 Q_SIGNALS:
 

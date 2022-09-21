@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -81,10 +81,15 @@ void SelectTypeModifier::initializeModifier(const ModifierInitializationRequest&
 ******************************************************************************/
 void SelectTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	// Whenever the selected property class of this modifier is changed, update the source property reference accordingly.
 	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !dataset()->undoStack().isUndoingOrRedoing()) {
+		// Whenever the selected property class of this modifier is changed, update the source property reference accordingly.
 		setSourceProperty(sourceProperty().convertToContainerClass(subject().dataClass()));
 	}
+	else if((field == PROPERTY_FIELD(SelectTypeModifier::sourceProperty) || field == PROPERTY_FIELD(SelectTypeModifier::selectedTypeIDs)) && !isBeingLoaded()) {
+		// Changes of some the modifier's parameters affect the result of SelectTypeModifier::getPipelineEditorShortInfo().
+		notifyDependents(ReferenceEvent::ObjectStatusChanged);
+	}
+
 	GenericPropertyModifier::propertyChanged(field);
 }
 
@@ -158,7 +163,7 @@ void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
 		.arg(container->getOOMetaClass().elementDescriptionName())
 		.arg((FloatType)nSelected * 100 / std::max((size_t)1,typeProperty.size()), 0, 'f', 1);
 
-	state.setStatus(PipelineStatus(PipelineStatus::Success, std::move(statusMessage)));
+	state.setStatus(PipelineStatus(std::move(statusMessage)));
 }
 
 #ifdef OVITO_QML_GUI
@@ -212,5 +217,32 @@ void SelectTypeModifier::setElementTypeSelectionState(int elementTypeId, const Q
 	}
 }
 #endif
+
+/******************************************************************************
+* Returns a short piece information (typically a string or color) to be 
+* displayed next to the object's title in the pipeline editor.
+******************************************************************************/
+QVariant SelectTypeModifier::getPipelineEditorShortInfo(ModifierApplication* modApp) const 
+{
+	QString shortInfo;
+	if(modApp && subject() && !sourceProperty().isNull() && sourceProperty().containerClass() == subject().dataClass()) {
+		const PipelineFlowState& state = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
+		if(const PropertyContainer* container = state.getLeafObject(subject())) {
+			if(const PropertyObject* inputProperty = sourceProperty().findInContainer(container)) {
+				auto sortedIds = selectedTypeIDs().values();
+				boost::sort(sortedIds);
+				for(int id : sortedIds) {
+					if(!shortInfo.isEmpty())
+						shortInfo += QStringLiteral(", ");
+					if(const ElementType* t = inputProperty->elementType(id))
+						shortInfo += t->nameOrNumericId();
+					else
+						shortInfo += QString::number(id);
+				}
+			}
+		}
+	}
+	return shortInfo;
+}
 
 }	// End of namespace

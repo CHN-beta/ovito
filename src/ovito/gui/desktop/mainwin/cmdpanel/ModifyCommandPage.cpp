@@ -37,6 +37,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dialogs/ModifierTemplatesPage.h>
 #include <ovito/gui/desktop/dialogs/CopyPipelineItemDialog.h>
+#include "CommandPanel.h"
 #include "ModifyCommandPage.h"
 
 #include <QtNetwork>
@@ -44,7 +45,7 @@
 namespace Ovito {
 
 /******************************************************************************
-* Initializes the modify page.
+* Initializes the modify tab.
 ******************************************************************************/
 ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : QWidget(parent),
 		_datasetContainer(mainWindow.datasetContainer()), _actionManager(mainWindow.actionManager())
@@ -135,6 +136,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 	_pipelineWidget->setSelectionModel(_pipelineListModel->selectionModel());
 	_pipelineWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 	_pipelineWidget->setIconSize(_pipelineListModel->iconSize());
+	_pipelineWidget->setItemDelegate(new ExtendedListItemDelegate(_pipelineWidget, PipelineListModel::StatusInfoRole));
 	subLayout->addWidget(_pipelineWidget);
 
 	// Set up context menu.

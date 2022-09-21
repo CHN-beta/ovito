@@ -52,7 +52,8 @@ public:
 		CheckedRole,
 		IsCollapsedRole,
 		DecorationRole,
-		ToolTipRole
+		ToolTipRole,
+		StatusInfoRole,
 	};
 
 	/// Constructor.

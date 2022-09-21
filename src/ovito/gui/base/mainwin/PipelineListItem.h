@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -66,6 +66,9 @@ public:
 
 	/// Returns the status of the object represented by the list item.
 	const PipelineStatus& status() const;
+
+	/// Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
+	QVariant shortInfo() const;
 
 	/// Returns whether an active computation is in progress for this object.
 	bool isObjectActive() const;

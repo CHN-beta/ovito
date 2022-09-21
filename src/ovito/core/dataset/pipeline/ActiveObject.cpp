@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -143,6 +143,15 @@ void ActiveObject::timerEvent(QTimerEvent* event)
 		notifyDependents(ReferenceEvent::ObjectStatusChanged);
 	}
 	RefTarget::timerEvent(event);
+}
+
+/******************************************************************************
+* Returns a short piece information (typically a string or color) to be 
+* displayed next to the object's title in the pipeline editor.
+******************************************************************************/
+QVariant ActiveObject::getPipelineEditorShortInfo() const 
+{
+	return status().shortInfo();
 }
 
 }	// End of namespace

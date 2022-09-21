@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,6 +57,9 @@ public:
 		setOffsetX(roundPercent(offsetX() + delta.x()));
 		setOffsetY(roundPercent(offsetY() + delta.y()));
 	}
+
+	/// Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
+	virtual QVariant getPipelineEditorShortInfo() const override;
 
 protected:
 

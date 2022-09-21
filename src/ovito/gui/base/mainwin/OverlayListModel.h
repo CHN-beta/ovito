@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,13 +32,17 @@
 namespace Ovito {
 
 /**
- * A Qt model class used to populate the QListView widget on the viewports overlay page of the command panel.
+ * A Qt model class used to populate the QListView widget on the viewport layer tab of the command panel.
  */
 class OVITO_GUIBASE_EXPORT OverlayListModel : public QAbstractListModel
 {
 	Q_OBJECT
 
 public:
+
+	enum ItemRoles {
+		StatusInfoRole = Qt::UserRole + 1,
+	};
 
 	/// Constructor.
 	OverlayListModel(QObject* parent);

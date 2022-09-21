@@ -158,6 +158,9 @@ void DelegatingModifier::applyDelegate(const ModifierEvaluationRequest& request,
 		else
 			status.setText(delegateStatus.text());
 	}
+	if(delegateStatus.shortInfo().isValid()) {
+		status.setShortInfo(delegateStatus.shortInfo());
+	}
 	state.setStatus(std::move(status));
 }
 

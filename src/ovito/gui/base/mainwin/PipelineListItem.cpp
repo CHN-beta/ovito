@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -110,6 +110,17 @@ const PipelineStatus& PipelineListItem::status() const
 		static const PipelineStatus defaultStatus;
 		return defaultStatus;
 	}
+}
+
+/******************************************************************************
+* Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
+******************************************************************************/
+QVariant PipelineListItem::shortInfo() const
+{
+	if(ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(object())) {
+		return activeObject->getPipelineEditorShortInfo();
+	}
+	return {};
 }
 
 /******************************************************************************

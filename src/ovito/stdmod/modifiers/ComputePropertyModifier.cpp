@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -67,6 +67,19 @@ ComputePropertyModifier::ComputePropertyModifier(ObjectCreationParams params) : 
 		if(delegate())
 			setOutputProperty(PropertyReference(delegate()->inputContainerClass(), QStringLiteral("My property")));
 	}
+}
+
+/******************************************************************************
+* Is called when the value of a property of this object has changed.
+******************************************************************************/
+void ComputePropertyModifier::propertyChanged(const PropertyFieldDescriptor* field)
+{
+	if(field == PROPERTY_FIELD(ComputePropertyModifier::outputProperty) && !isBeingLoaded()) {
+		// Changes of some the modifier's parameters affect the result of ComputePropertyModifier::getPipelineEditorShortInfo().
+		notifyDependents(ReferenceEvent::ObjectStatusChanged);
+	}
+
+	AsynchronousDelegatingModifier::propertyChanged(field);
 }
 
 /******************************************************************************

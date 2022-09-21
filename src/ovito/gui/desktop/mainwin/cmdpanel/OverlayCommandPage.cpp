@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,6 +30,7 @@
 #include <ovito/gui/base/mainwin/OverlayListModel.h>
 #include <ovito/gui/base/mainwin/OverlayListItem.h>
 #include <ovito/gui/base/mainwin/OverlayTypesModel.h>
+#include "CommandPanel.h"
 #include "OverlayCommandPage.h"
 
 namespace Ovito {
@@ -102,6 +103,7 @@ OverlayCommandPage::OverlayCommandPage(MainWindow& mainWindow, QWidget* parent) 
 	_overlayListWidget->setEditTriggers(QAbstractItemView::SelectedClicked);
 	_overlayListWidget->setModel(_overlayListModel);
 	_overlayListWidget->setSelectionModel(_overlayListModel->selectionModel());
+	_overlayListWidget->setItemDelegate(new ExtendedListItemDelegate(_overlayListWidget, OverlayListModel::StatusInfoRole));
 	subLayout->addWidget(_overlayListWidget);
 	connect(_overlayListWidget, &OverlayListWidget::doubleClicked, this, &OverlayCommandPage::onLayerDoubleClicked);
 

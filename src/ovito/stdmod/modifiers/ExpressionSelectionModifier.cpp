@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,6 +49,19 @@ ExpressionSelectionModifier::ExpressionSelectionModifier(ObjectCreationParams pa
 		// Let this modifier operate on particles by default.
 		createDefaultModifierDelegate(ExpressionSelectionModifierDelegate::OOClass(), QStringLiteral("ParticlesExpressionSelectionModifierDelegate"), params);
 	}
+}
+
+/******************************************************************************
+* Is called when the value of a property of this object has changed.
+******************************************************************************/
+void ExpressionSelectionModifier::propertyChanged(const PropertyFieldDescriptor* field)
+{
+	if(field == PROPERTY_FIELD(ExpressionSelectionModifier::expression) && !isBeingLoaded()) {
+		// Changes of some modifier parameters affect the result of ExpressionSelectionModifier::getPipelineEditorShortInfo().
+		notifyDependents(ReferenceEvent::ObjectStatusChanged);
+	}
+
+	DelegatingModifier::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -110,7 +123,7 @@ PipelineStatus ExpressionSelectionModifierDelegate::apply(const ModifierEvaluati
 
 	// Update status display in the UI.
 	QString statusMessage = tr("%1 out of %2 elements selected (%3%)").arg(nselected.load()).arg(selProperty.size()).arg((FloatType)nselected.load() * 100 / std::max((size_t)1,selProperty.size()), 0, 'f', 1);
-	return PipelineStatus(PipelineStatus::Success, std::move(statusMessage));
+	return PipelineStatus(std::move(statusMessage));
 }
 
 /******************************************************************************

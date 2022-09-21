@@ -98,6 +98,9 @@ public:
 	/// \brief Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
 	virtual QMap<int, QString> animationFrameLabels() const override;
 
+	/// \brief Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
+	virtual QVariant getPipelineEditorShortInfo() const override;
+
 	/// \brief Traverses the pipeline from this modifier application up to the source and
 	/// returns the source object that generates the input data for the pipeline.
 	PipelineObject* pipelineSource() const;

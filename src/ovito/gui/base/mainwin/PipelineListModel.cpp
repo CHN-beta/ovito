@@ -560,6 +560,9 @@ QVariant PipelineListModel::data(const QModelIndex& index, int role) const
 		if(item->itemType() == PipelineListItem::ModifierGroup)
 			return static_object_cast<ModifierGroup>(item->object())->isCollapsed();
 	}
+	else if(role == StatusInfoRole) {
+		return item->shortInfo();
+	}
 	else if(role == Qt::DecorationRole) {
 		// This role is only used by the QWidgets GUI.
 		if(item->itemType() == PipelineListItem::ModifierGroup) {
@@ -759,7 +762,8 @@ QHash<int, QByteArray> PipelineListModel::roleNames() const
 		{ ItemTypeRole, "type" },
 		{ CheckedRole, "ischecked" },
 		{ DecorationRole, "decoration" },
-		{ ToolTipRole, "tooltip" }
+		{ ToolTipRole, "tooltip" },
+		{ StatusInfoRole, "statusinfo" }
 	};
 }
 

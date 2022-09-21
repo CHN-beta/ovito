@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,12 +55,15 @@ bool OverlayListItem::referenceEvent(RefTarget* source, const ReferenceEvent& ev
 /******************************************************************************
 * Returns the status of the object represented by the list item.
 ******************************************************************************/
-PipelineStatus OverlayListItem::status() const
+const PipelineStatus& OverlayListItem::status() const
 {
-	if(overlay())
+	if(overlay()) {
 		return overlay()->status();
-	else
-		return {};
+	}
+	else {
+		static const PipelineStatus defaultStatus;
+		return defaultStatus;
+	}
 }
 
 /******************************************************************************
@@ -76,6 +79,17 @@ QString OverlayListItem::title(Viewport* selectedViewport) const
 	case SceneLayer: return tr("3D scene layer");
 	default: return {};
 	}
+}
+
+/******************************************************************************
+* Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
+******************************************************************************/
+QVariant OverlayListItem::shortInfo() const
+{
+	if(overlay()) {
+		return overlay()->getPipelineEditorShortInfo();
+	}
+	return {};
 }
 
 }	// End of namespace

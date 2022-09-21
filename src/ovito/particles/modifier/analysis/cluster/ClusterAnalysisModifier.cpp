@@ -569,7 +569,9 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(const Modifier
 	if(modifier->computeRadiusOfGyration() && _gyrationTensors)
 		table->createProperty(_gyrationTensors);
 
-	PipelineStatus status(PipelineStatus::Success, tr("Found %n cluster(s).", "", numClusters()));
+	PipelineStatus status(
+		tr("Found %n cluster(s).", "", numClusters()),
+		numClusters() == 1 ? tr("1 cluster") : tr("%n clusters", "", numClusters()));
 
 	if(_hasZeroWeightCluster) {
 		status.setType(PipelineStatus::Warning);

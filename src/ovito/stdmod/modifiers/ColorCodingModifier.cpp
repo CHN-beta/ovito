@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -113,6 +113,19 @@ TimeInterval ColorCodingModifier::validityInterval(const ModifierEvaluationReque
 		if(endValueController()) iv.intersect(endValueController()->validityInterval(request.time()));
 	}
 	return iv;
+}
+
+/******************************************************************************
+* Is called when the value of a property of this object has changed.
+******************************************************************************/
+void ColorCodingModifier::propertyChanged(const PropertyFieldDescriptor* field)
+{
+	if(field == PROPERTY_FIELD(ColorCodingModifier::sourceProperty) && !isBeingLoaded()) {
+		// Changes of some the modifier's parameters affect the result of ColorCodingModifier::getPipelineEditorShortInfo().
+		notifyDependents(ReferenceEvent::ObjectStatusChanged);
+	}
+
+	DelegatingModifier::propertyChanged(field);
 }
 
 /******************************************************************************

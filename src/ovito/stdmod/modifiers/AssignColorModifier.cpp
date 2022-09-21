@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -65,6 +65,19 @@ TimeInterval AssignColorModifier::validityInterval(const ModifierEvaluationReque
 	if(colorController()) 
 		iv.intersect(colorController()->validityInterval(request.time()));
 	return iv;
+}
+
+/******************************************************************************
+* Is called when a RefTarget referenced by this object has generated an event.
+******************************************************************************/
+bool AssignColorModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+{
+	if(event.type() == ReferenceEvent::TargetChanged && source == colorController()) {
+		// Changes of some the modifier's parameters affect the result of AssignColorModifier::getPipelineEditorShortInfo().
+		notifyDependents(ReferenceEvent::ObjectStatusChanged);
+	}
+
+	return DelegatingModifier::referenceEvent(source, event);
 }
 
 /******************************************************************************

@@ -242,7 +242,9 @@ void GrainSegmentationEngine2::applyResults(const ModifierEvaluationRequest& req
 
 	state.addAttribute(QStringLiteral("GrainSegmentation.grain_count"), QVariant::fromValue(numGrains), request.modApp());
 
-	state.setStatus(PipelineStatus(PipelineStatus::Success, GrainSegmentationModifier::tr("Found %1 grains").arg(numGrains)));
+	state.setStatus(PipelineStatus(
+		GrainSegmentationModifier::tr("Found %1 grains").arg(numGrains), 
+		GrainSegmentationModifier::tr("%1 grains").arg(numGrains)));
 }
 
 }	// End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -64,6 +64,9 @@ public:
 
 	/// \brief Returns true if at least one computation task associated with this object is currently active. 
 	bool isObjectActive() const { return _isInActivateState; }
+
+	/// \brief Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
+	virtual QVariant getPipelineEditorShortInfo() const;
 
 Q_SIGNALS:
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -101,6 +101,9 @@ public:
 
 	/// \brief Returns the the current status of the modifier's applications.
 	PipelineStatus globalStatus() const;
+
+	/// \brief Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+	virtual QVariant getPipelineEditorShortInfo(ModifierApplication* modApp) const { return {}; }
 
 	/// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
 	virtual void initializeModifier(const ModifierInitializationRequest& request) {}
