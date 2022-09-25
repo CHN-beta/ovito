@@ -217,6 +217,7 @@ void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObject
 
 	const DataObject* self = dataPath.back();
 	const OvitoClass& selfClass = self->getOOClass();
+	OVITO_ASSERT(self->dataset());
 	OVITO_ASSERT(selfClass == this->getOOClass());
 	OVITO_ASSERT(!self->dataset()->undoStack().isRecording());
 	

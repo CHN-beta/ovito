@@ -383,18 +383,11 @@ void MainWindow::createMainToolbar()
 
 	_mainToolbar->addAction(actionManager()->getAction(ACTION_COMMAND_QUICKSEARCH));
 
-#if 0
-	QLabel* pipelinesLabel = new QLabel(tr("Pipelines: "));
-	pipelinesLabel->setIndent(36);
-	_mainToolbar->addWidget(pipelinesLabel);
-	_mainToolbar->addWidget(new SceneNodeSelectionBox(_datasetContainer, actionManager()));
-#else
 	QLabel* pipelinesLabel = new QLabel(tr("  Pipelines: "));
 	pipelinesLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 	pipelinesLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 	_mainToolbar->addWidget(pipelinesLabel);
 	_mainToolbar->addWidget(new SceneNodeSelectionBox(_datasetContainer, actionManager()));
-#endif
 }
 
 /******************************************************************************

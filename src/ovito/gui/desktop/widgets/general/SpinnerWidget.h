@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -169,16 +169,16 @@ protected:
 
 	/// Returns the current formatting mode that is used to convert the spinner value
 	/// to the string shown in the text box and vice versa.
-	ParameterUnit* _unit;
+	QPointer<ParameterUnit> _unit;
 
 	/// The current value of the spinner.
-	FloatType _value;
+	FloatType _value = 0;
 
 	/// The lower limit of the spinner value.
-	FloatType _minValue;
+	FloatType _minValue = FLOATTYPE_MIN;
 
 	/// The upper limit of the spinner value.
-	FloatType _maxValue;
+	FloatType _maxValue = FLOATTYPE_MAX;
 
 	/// The standard value that, if set in the spinner, should be highlighted.
 	FloatType _standardValue = std::numeric_limits<FloatType>::quiet_NaN();
@@ -194,10 +194,10 @@ protected:
 	QString _originalText;
 
 	/// Indicates if the upper spinner button is currently pressed.
-	bool _upperBtnPressed;
+	bool _upperBtnPressed = false;
 
 	/// Indicates if the lower spinner button is currently pressed.
-	bool _lowerBtnPressed;
+	bool _lowerBtnPressed = false;
 
 	/// Saves the start mouse position for dragging.
 	int _startMouseY;
