@@ -567,7 +567,9 @@ void MainWindow::showStatusBarMessage(const QString& message, int timeout)
 ******************************************************************************/
 void MainWindow::clearStatusBarMessage() 
 {
-	_statusBar->clearMessage();
+	// Conditional call to clearMessage() because clearMessage() always repaints the status bar, even it is not showing any message (as of Qt 6.3.2).
+	if(!_statusBar->currentMessage().isEmpty())
+		_statusBar->clearMessage();
 }
 
 /******************************************************************************
