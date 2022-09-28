@@ -86,7 +86,7 @@
  * the edge and vertex structure accordingly.
  *
  * Once the cell is computed, there are many routines for computing features of
- * the the Voronoi cell, such as its volume, surface area, or centroid. There
+ * the Voronoi cell, such as its volume, surface area, or centroid. There
  * are also many routines for outputting features of the Voronoi cell, or
  * writing its shape in formats that can be read by Gnuplot or POV-Ray.
  *

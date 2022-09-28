@@ -276,7 +276,7 @@ void QwtPlotLayout::setAlignCanvasToScales( bool on )
 
   The axisId parameter is somehow confusing as it identifies a border
   of the plot and not the axes, that are aligned. F.e when QwtPlot::yLeft
-  is set, the left end of the the x-axes ( QwtPlot::xTop, QwtPlot::xBottom )
+  is set, the left end of the x-axes ( QwtPlot::xTop, QwtPlot::xBottom )
   is aligned.
 
   \param axisId Axis index

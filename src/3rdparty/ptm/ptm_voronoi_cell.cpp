@@ -1267,7 +1267,7 @@ inline void voronoicell_base::reset_edges() {
 
 /** Checks to see if a given vertex is inside, outside or within the test
  * plane. If the point is far away from the test plane, the routine immediately
- * returns whether it is inside or outside. If the routine is close the the
+ * returns whether it is inside or outside. If the routine is close the
  * plane and within the specified tolerance, then the special check_marginal()
  * routine is called.
  * \param[in] n the vertex to test.

@@ -525,7 +525,7 @@ void QwtPlotZoomer::moveBy( double dx, double dy )
 }
 
 /*!
-  Move the the current zoom rectangle.
+  Move the current zoom rectangle.
 
   \param pos New position
 

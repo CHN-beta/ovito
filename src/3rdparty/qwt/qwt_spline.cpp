@@ -1188,7 +1188,7 @@ QPolygonF QwtSplineC1::equidistantPolygon( const QPolygonF &points,
 
   C1 spline interpolations are based on finding values for the first
   derivates at the control points. The interpolating polynomials can
-  be calculated from the the first derivates using QwtSplinePolynomial::fromSlopes().
+  be calculated from the first derivates using QwtSplinePolynomial::fromSlopes().
 
   The default implementation is a two pass calculation. In derived classes it
   might be overloaded by a one pass implementation.
@@ -1368,7 +1368,7 @@ QVector<double> QwtSplineC2::slopes( const QPolygonF &points ) const
 
   C2 spline interpolations are based on finding values for the second
   derivates of f at the control points. The interpolating polynomials can
-  be calculated from the the second derivates using QwtSplinePolynomial::fromCurvatures.
+  be calculated from the second derivates using QwtSplinePolynomial::fromCurvatures.
 
   The default implementation is a 2 pass calculation. In derived classes it
   might be overloaded by a one pass implementation.

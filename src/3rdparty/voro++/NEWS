@@ -274,7 +274,7 @@ Version 0.2.6 (March 23, 2009)
   makes use of the exit() routine rather than throwing errors, and it returns
   various status codes (defined in config.hh) for different types of abnormal
   behavior.
-* Changed two occurences of "cin" to "cout" in the draw_particles routines
+* Changed two occurrences of "cin" to "cout" in the draw_particles routines
 * Corrected error in comment in the tetrahedron example
 * Minor comment cleanups of the worklist_gen.pl script
 * Updated Doxyfile to version 1.5.8

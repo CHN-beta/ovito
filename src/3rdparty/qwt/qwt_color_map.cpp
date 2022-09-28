@@ -753,7 +753,7 @@ void QwtHueColorMap::setHueInterval( int hue1, int hue2 )
 }
 
 /*!
-   \brief Set the the saturation coordinate
+   \brief Set the saturation coordinate
 
    saturation needs to be in the range 0 to 255,
 
@@ -773,7 +773,7 @@ void QwtHueColorMap::setSaturation( int saturation )
 }
 
 /*!
-   \brief Set the the value coordinate
+   \brief Set the value coordinate
 
    value needs to be in the range 0 to 255,
 
@@ -793,7 +793,7 @@ void QwtHueColorMap::setValue( int value )
 }
 
 /*!
-   \brief Set the the alpha coordinate
+   \brief Set the alpha coordinate
 
    alpha needs to be in the range 0 to 255,
    where 255 means opaque and 0 means transparent.
@@ -981,7 +981,7 @@ QwtSaturationValueColorMap::~QwtSaturationValueColorMap()
 }
 
 /*!
-   \brief Set the the hue coordinate
+   \brief Set the hue coordinate
 
    Hue coordinates ouside 0 to 359 will be interpreted as hue % 360..
 
@@ -1055,7 +1055,7 @@ void QwtSaturationValueColorMap::setValueInterval( int value1, int value2 )
 }
 
 /*!
-   \brief Set the the alpha coordinate
+   \brief Set the alpha coordinate
 
    alpha needs to be in the range 0 to 255,
    where 255 means opaque and 0 means transparent.

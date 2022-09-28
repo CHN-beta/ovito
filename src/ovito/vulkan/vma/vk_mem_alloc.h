@@ -3501,7 +3501,7 @@ It needs to be called after writing to a mapped memory for memory types that are
 Unmap operation doesn't do that automatically.
 
 - `offset` must be relative to the beginning of allocation.
-- `size` can be `VK_WHOLE_SIZE`. It means all memory from `offset` the the end of given allocation.
+- `size` can be `VK_WHOLE_SIZE`. It means all memory from `offset` the end of given allocation.
 - `offset` and `size` don't have to be aligned.
   They are internally rounded down/up to multiply of `nonCoherentAtomSize`.
 - If `size` is 0, this call is ignored.
@@ -3528,7 +3528,7 @@ It needs to be called before reading from a mapped memory for memory types that 
 Map operation doesn't do that automatically.
 
 - `offset` must be relative to the beginning of allocation.
-- `size` can be `VK_WHOLE_SIZE`. It means all memory from `offset` the the end of given allocation.
+- `size` can be `VK_WHOLE_SIZE`. It means all memory from `offset` the end of given allocation.
 - `offset` and `size` don't have to be aligned.
   They are internally rounded down/up to multiply of `nonCoherentAtomSize`.
 - If `size` is 0, this call is ignored.

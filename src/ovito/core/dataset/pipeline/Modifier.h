@@ -99,7 +99,7 @@ public:
 	/// \undoable
 	void setObjectTitle(const QString& title) { setTitle(title); }
 
-	/// \brief Returns the the current status of the modifier's applications.
+	/// \brief Returns the current status of the modifier's applications.
 	PipelineStatus globalStatus() const;
 
 	/// \brief This method is called by the system when the modifier has been inserted into a data pipeline.

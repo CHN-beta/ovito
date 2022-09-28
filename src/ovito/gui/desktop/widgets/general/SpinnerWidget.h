@@ -183,7 +183,7 @@ protected:
 	/// The standard value that, if set in the spinner, should be highlighted.
 	FloatType _standardValue = std::numeric_limits<FloatType>::quiet_NaN();
 
-	/// The current step size used by the the spinner.
+	/// The current step size used by the spinner.
 	/// This stays constant during a drag operation.
 	FloatType _currentStepSize;
 

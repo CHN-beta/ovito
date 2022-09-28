@@ -84,7 +84,7 @@ public:
           and the first control point.
 
           \note Only works for parametrizations, where the parameter increment
-                for the the final closing line is positive.
+                for the final closing line is positive.
                 This excludes QwtSplineParametrization::ParameterX and
                 QwtSplineParametrization::ParameterY
          */

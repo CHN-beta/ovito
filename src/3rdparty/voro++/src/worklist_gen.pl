@@ -14,7 +14,7 @@
 # subregions that the block is divided into.
 $hr=4;
 
-# This parameter is automatically set to the the number of subregions that the
+# This parameter is automatically set to the number of subregions that the
 # block is divided into
 $r=$hr*2;
 

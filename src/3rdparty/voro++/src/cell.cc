@@ -1535,7 +1535,7 @@ inline bool voronoicell_base::search_edge(int l,int &m,int &k) {
  * 1.3.2.2 of the POV-Ray documentation. The mesh2 output consists of a list of
  * vertex vectors, followed by a list of triangular faces. The routine also
  * makes use of the optional inside_vector specification, which makes the mesh
- * object solid, so the the POV-Ray Constructive Solid Geometry (CSG) can be
+ * object solid, so the POV-Ray Constructive Solid Geometry (CSG) can be
  * applied.
  * \param[in] (x,y,z) a displacement vector to be added to the cell's position.
  * \param[in] fp a file handle to write to. */
@@ -1579,7 +1579,7 @@ inline void voronoicell_base::reset_edges() {
 
 /** Checks to see if a given vertex is inside, outside or within the test
  * plane. If the point is far away from the test plane, the routine immediately
- * returns whether it is inside or outside. If the routine is close the the
+ * returns whether it is inside or outside. If the routine is close the
  * plane and within the specified tolerance, then the special check_marginal()
  * routine is called.
  * \param[in] n the vertex to test.
