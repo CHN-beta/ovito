@@ -35,29 +35,6 @@ SET_PROPERTY_FIELD_LABEL(DataObject, visElements, "Visual elements");
 SET_PROPERTY_FIELD_LABEL(DataObject, editableProxy, "Editable proxy");
 
 /******************************************************************************
-* Produces a string representation of the object path.
-******************************************************************************/
-QString ConstDataObjectPath::toString() const
-{
-	QString s;
-	for(const DataObject* o : *this) {
-		if(!s.isEmpty()) s += QChar('/');
-		s += o->identifier();
-	}
-	return s;
-}
-
-/******************************************************************************
-* Returns a string representation of the object path that is suitable for 
-* display in the user interface.
-******************************************************************************/
-QString ConstDataObjectPath::toUIString() const
-{
-	if(empty()) return {};
-	return back()->getOOMetaClass().formatDataObjectPath(*this);
-}
-
-/******************************************************************************
 * Generates a human-readable string representation of the data object reference.
 ******************************************************************************/
 QString DataObject::OOMetaClass::formatDataObjectPath(const ConstDataObjectPath& path) const
