@@ -164,6 +164,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
 	// Output mesh face property storing the index of the neighboring Voronoi cell for each face.
 	PropertyObject* adjacentCellProperty = nullptr;
+	// Output mesh face property storing the bond index corresponding to each Voronoi face.
+	PropertyObject* faceBondIndexProperty = nullptr;
 	/// Output mesh region property storing the volume of each Voronoi cell. 
 	PropertyObject* cellVolumeProperty = nullptr;
 	/// Output mesh region property storing the number of faces of each Voronoi cell. 
@@ -177,6 +179,12 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
 		// Create the "Adjacent Cell" face property, which stores the index of the neighboring Voronoi cell.
 		adjacentCellProperty = polyhedraMesh.createFaceProperty(QStringLiteral("Adjacent Cell"), PropertyObject::Int);
+
+		// Create the "Bond Index" face property, which stores the which bond belongs to which Voronoi face.
+		if(_computeBonds) {
+			faceBondIndexProperty = polyhedraMesh.createFaceProperty(QStringLiteral("Bond Index"), PropertyObject::Int64);
+			faceBondIndexProperty->fill<qlonglong>(-1);
+		}
 
 		// Create as many mesh regions as there are input particles.
 		polyhedraMesh.createRegions(_positions->size());
@@ -353,6 +361,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 							Bond bond = { index, (size_t)neighbor_id, pbcShift };
 							if(!bond.isOdd()) {
 								QMutexLocker locker(bondMutex);
+								if(_polyhedraMesh)
+									PropertyAccess<qlonglong>{faceBondIndexProperty}[meshFace] = bonds().size();
 								bonds().push_back(bond);
 							}
 						}
@@ -718,6 +728,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 		nextProgressSubStep();
 		setProgressMaximum(polyhedraMesh.faceCount());
 
+		PropertyAccess<qlonglong> faceBondIndices(faceBondIndexProperty);
+
 		// Connect pairs of internal Voronoi faces.
 		for(SurfaceMeshAccess::face_index face = 0; face < polyhedraMesh.faceCount(); face++) {
 			if(polyhedraMesh.hasOppositeFace(face)) continue;
@@ -744,6 +756,12 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 				if(oppositeEdge != SurfaceMeshAccess::InvalidIndex) {
 					OVITO_ASSERT(!polyhedraMesh.hasOppositeFace(adjacentFace));
 					polyhedraMesh.linkOppositeFaces(face, adjacentFace);
+					if(faceBondIndices) {
+						if(faceBondIndices[face] != -1)
+							faceBondIndices[adjacentFace] = faceBondIndices[face];
+						else
+							faceBondIndices[face] = faceBondIndices[adjacentFace];
+					}
 					break;
 				}
 			}
