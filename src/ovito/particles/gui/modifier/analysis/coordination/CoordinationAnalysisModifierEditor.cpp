@@ -31,6 +31,13 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "CoordinationAnalysisModifierEditor.h"
 
+# include <iostream>
+# include <optional>
+# include <string>
+
+# define FMT_HEADER_ONLY
+# include <fmt/format.h>
+
 namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(CoordinationAnalysisModifierEditor);
@@ -115,6 +122,27 @@ void CoordinationAnalysisModifierEditor::plotRDF()
 			if(minX) break;
 		}
 		_rdfPlot->setAxisScale(QwtPlot::xBottom, std::floor(minX * 9.0 / table->intervalEnd()) / 10.0 * table->intervalEnd(), table->intervalEnd());
+		if (qEnvironmentVariableIsSet("OVITO_CHNPATCH_RDF_EXPORT"))
+		{
+			std::optional<int> currentFrame;
+			if (auto modApp = modifierApplication())
+				if (auto& dataset = modApp->dataset())
+					if (auto* animationSettings = dataset->animationSettings())
+						currentFrame = animationSettings->currentFrame();
+			fmt::print("{} {}\n", "OVITO_CHNPATCH_RDF_EXPORT", currentFrame.value_or(0));
+			fmt::print("{}\t", (!table->x() || !table->axisLabelX().isEmpty()) ? table->axisLabelX().toStdString() : table->x()->name().toStdString());
+			for (auto cmpnt = 0; cmpnt < table->y()->componentNames().size(); cmpnt++)
+				fmt::print("{}\t", table->y()->componentNames()[cmpnt].toStdString());
+			fmt::print("\n");
+			for(size_t i = 0; i < rdfXArray.size(); i++)
+			{
+				fmt::print("{}\t", rdfXArray[i]);
+				for(size_t cmpnt = 0; cmpnt < rdfYArray.componentCount(); cmpnt++)
+					fmt::print("{}\t", rdfYArray.get(i, cmpnt));
+				fmt::print("\n");
+			}
+			fmt::print("\n");
+		}
 	}
 	_rdfPlot->setTable(table);
 }

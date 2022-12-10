@@ -33,6 +33,13 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "DislocationAnalysisModifierEditor.h"
 
+# include <iostream>
+# include <optional>
+# include <string>
+
+# define FMT_HEADER_ONLY
+# include <fmt/format.h>
+
 namespace Ovito::CrystalAnalysis {
 
 IMPLEMENT_OVITO_CLASS(DislocationAnalysisModifierEditor);
@@ -177,6 +184,21 @@ void DislocationTypeListParameterUI::updateDislocationCounts(const PipelineFlowS
 	// Access the data table in the pipeline state containing the dislocation counts and lengths.
 	_dislocationCounts = modApp ? state.getObjectBy<DataTable>(modApp, QStringLiteral("disloc-counts")) : nullptr;
 	_dislocationLengths = modApp ? state.getObjectBy<DataTable>(modApp, QStringLiteral("disloc-lengths")) : nullptr;
+	if (qEnvironmentVariableIsSet("OVITO_CHNPATCH_DXA_EXPORT") && _dislocationCounts && _dislocationLengths)
+	{
+		std::optional<int> currentFrame;
+		if (auto& dataset = modApp->dataset())
+			if (auto* animationSettings = dataset->animationSettings())
+				currentFrame = animationSettings->currentFrame();
+		fmt::print("{} {}\n", "OVITO_CHNPATCH_DXA_EXPORT", currentFrame.value_or(0));
+		fmt::print("{}\t", (!_dislocationCounts->x() || !_dislocationCounts->axisLabelX().isEmpty()) ? _dislocationCounts->axisLabelX().toStdString() : _dislocationCounts->x()->name().toStdString());
+		fmt::print("{}\t{}\n", "_dislocationCounts", "_dislocationLengths");
+		ConstPropertyAccessAndRef<int, false> id(_dislocationCounts->x());
+		ConstPropertyAccessAndRef<int, false> counts(_dislocationCounts->y());
+		ConstPropertyAccessAndRef<FloatType, false> lengths(_dislocationLengths->y());
+		// for (int i = 0; i < id.size(); i++)
+		// 	fmt::print("{}\t{}\t{}\t{}\n", id[i], structureTypeById(id[i]).name(), counts[i], lengths[i]);
+	}
 	setEditObject(editor()->editObject());
 }
 
