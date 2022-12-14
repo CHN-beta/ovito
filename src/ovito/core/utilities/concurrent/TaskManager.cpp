@@ -110,6 +110,14 @@ TaskWatcher* TaskManager::addTaskInternal(const TaskPtr& task)
 }
 
 /******************************************************************************
+* Returns the watchers for all currently registered tasks.
+******************************************************************************/
+QList<TaskWatcher*> TaskManager::registeredTasks() const 
+{ 
+	return findChildren<TaskWatcher*>(QString{}, Qt::FindDirectChildrenOnly); 
+}
+
+/******************************************************************************
 * Enables or disables printing of task status messages to the console for 
 * this task manager.
 ******************************************************************************/
@@ -157,8 +165,9 @@ void TaskManager::taskFinishedInternal()
 {
 	TaskWatcher* watcher = static_cast<TaskWatcher*>(sender());
 
-	OVITO_ASSERT(std::find(_runningTaskStack.begin(), _runningTaskStack.end(), watcher) != _runningTaskStack.end());
-	_runningTaskStack.erase(std::find(_runningTaskStack.begin(), _runningTaskStack.end(), watcher));
+	if(auto iter = std::find(_runningTaskStack.begin(), _runningTaskStack.end(), watcher); iter != _runningTaskStack.end()) {
+		_runningTaskStack.erase(iter);
+	}
 
 	Q_EMIT taskFinished(watcher);
 
@@ -171,7 +180,7 @@ void TaskManager::taskFinishedInternal()
 ******************************************************************************/
 void TaskManager::shutdown()
 {
-	for(TaskWatcher* watcher : runningTasks()) {
+	for(TaskWatcher* watcher : registeredTasks()) {
 		if(watcher->task())
 			watcher->task()->cancel();
 	}

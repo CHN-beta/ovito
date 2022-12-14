@@ -27,5 +27,5 @@ The software will look in the following filesystem locations for the session sta
       - :file:`~/Library/Application Support/Ovito/Ovito/defaults.ovito`
 
 You can create the file in one of these locations simply using the :menuselection:`File --> Save Session State As` function of OVITO. 
-Make sure the saved session state contains an empty scene (no pipelines or objects), because it just serves as an initial starting point before 
+Make sure the saved session state contains an empty scene (no pipelines or objects) because it just serves as an initial starting point before 
 you import an actual simulation dataset into the scene.

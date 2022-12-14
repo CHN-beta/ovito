@@ -35,6 +35,9 @@ SshConnection::SshConnection(const SshConnectionParameters& serverInfo, QObject*
     _password = serverInfo.password;
     connect(this, &SshConnection::stateChanged, this, &SshConnection::processStateGuard, Qt::QueuedConnection);
 
+    // Load Libssh at runtime.
+    LibsshWrapper::initialize();
+
     // Ensure that connections are always properly closed.
     OVITO_ASSERT(QCoreApplication::instance() != nullptr);
     connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, &SshConnection::disconnectFromHost);
@@ -47,7 +50,7 @@ SshConnection::~SshConnection()
 {
     disconnectFromHost();
     if(_session)
-        ::ssh_free(_session);
+        LibsshWrapper::ssh_free()(_session);
 }
 
 /******************************************************************************
@@ -76,8 +79,8 @@ void SshConnection::disconnectFromHost()
         destroySocketNotifiers();
 
         if(_session) {
-            ::ssh_disconnect(_session);
-            ::ssh_free(_session);
+            LibsshWrapper::ssh_disconnect()(_session);
+            LibsshWrapper::ssh_free()(_session);
             _session = nullptr;
         }
 
@@ -100,7 +103,7 @@ void SshConnection::cancel()
 void SshConnection::setState(State state, bool emitStateChangedSignal)
 {
     if(_state != state) {
-        ::_ssh_log(SSH_LOG_PROTOCOL, "Ovito::SshConnection::setState()", "state=%i", state);
+        LibsshWrapper::_ssh_log()(SSH_LOG_PROTOCOL, "Ovito::SshConnection::setState()", "state=%i", state);
 
         _state = state;
 
@@ -171,18 +174,18 @@ void SshConnection::processState()
     case StateInit:
         OVITO_ASSERT(!_session);
 
-        _session = ::ssh_new();
+        _session = LibsshWrapper::ssh_new()();
         if(!_session) {
             _errorMessage = tr("Failed to create SSH session object.");
             setState(StateError, false);
             return;
         }
-        ::ssh_set_blocking(_session, 0);
+        LibsshWrapper::ssh_set_blocking()(_session, 0);
 
         // Enable debug log output if OVITO_SSH_LOG environment variable is set.
         if(!qEnvironmentVariableIsEmpty("OVITO_SSH_LOG")) {
-            ::ssh_set_log_level(SSH_LOG_TRACE);
-            ::ssh_set_log_callback([](int priority, const char *function, const char *buffer, void *userdata) {
+            LibsshWrapper::ssh_set_log_level()(SSH_LOG_TRACE);
+            LibsshWrapper::ssh_set_log_callback()([](int priority, const char *function, const char *buffer, void *userdata) {
                 OVITO_ASSERT(buffer);
                 SshConnection* con = static_cast<SshConnection*>(userdata);
                 if(con->_lastLogMessage != buffer) {
@@ -193,7 +196,7 @@ void SshConnection::processState()
                     con->_lastLogMessage = buffer;
                 }
             });
-            ::ssh_set_log_userdata(this);
+            LibsshWrapper::ssh_set_log_userdata()(this);
             int verbosity = SSH_LOG_FUNCTIONS;
             setLibsshOption(SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
         }
@@ -207,7 +210,7 @@ void SshConnection::processState()
                 setState(StateError, false);
                 return;
             }
-            ::_ssh_log(SSH_LOG_PROTOCOL, "Ovito::SshConnection::processState()", "overriding list of acceptable authentication methods: %i", (int)_useAuths);
+            LibsshWrapper::_ssh_log()(SSH_LOG_PROTOCOL, "Ovito::SshConnection::processState()", "overriding list of acceptable authentication methods: %i", (int)_useAuths);
         }
 
         // Register authentication callback.
@@ -215,7 +218,7 @@ void SshConnection::processState()
         _sessionCallbacks.userdata = this;
         _sessionCallbacks.auth_function = &SshConnection::authenticationCallback;
         ssh_callbacks_init(&_sessionCallbacks);
-        ::ssh_set_callbacks(_session, &_sessionCallbacks);
+        LibsshWrapper::ssh_set_callbacks()(_session, &_sessionCallbacks);
 
         // Activate download stream compression.
         setLibsshOption(SSH_OPTIONS_COMPRESSION_S_C, "yes");
@@ -224,13 +227,13 @@ void SshConnection::processState()
                 && setLibsshOption(SSH_OPTIONS_HOST, qPrintable(_connectionParams.host))
                 && (_connectionParams.port == 0 || setLibsshOption(SSH_OPTIONS_PORT, &_connectionParams.port)))
         {
-            ::ssh_options_parse_config(_session, nullptr);
+            LibsshWrapper::ssh_options_parse_config()(_session, nullptr);
             setState(StateConnecting, true);
         }
         return;
 
     case StateConnecting:
-        switch(::ssh_connect(_session)) {
+        switch(LibsshWrapper::ssh_connect()(_session)) {
         case SSH_AGAIN:
             createSocketNotifiers();
             enableWritableSocketNotifier();
@@ -250,7 +253,7 @@ void SshConnection::processState()
     case StateServerIsKnown:
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
-        switch(auto knownState = ::ssh_is_server_known(_session)) {
+        switch(auto knownState = LibsshWrapper::ssh_is_server_known()(_session)) {
 QT_WARNING_POP
         case SSH_SERVER_ERROR:
             setState(StateError, false);
@@ -276,15 +279,15 @@ QT_WARNING_POP
         return;
 
     case StateAuthNone:
-        handleAuthResponse(::ssh_userauth_none(_session, nullptr), UseAuthNone);
+        handleAuthResponse(LibsshWrapper::ssh_userauth_none()(_session, nullptr), UseAuthNone);
         return;
 
     case StateAuthAutoPubkey:
-        handleAuthResponse(::ssh_userauth_autopubkey(_session, nullptr), UseAuthAutoPubKey);
+        handleAuthResponse(LibsshWrapper::ssh_userauth_autopubkey()(_session, nullptr), UseAuthAutoPubKey);
         return;
 
     case StateAuthPassword:
-        if(::ssh_get_status(_session) == SSH_CLOSED || ::ssh_get_status(_session) == SSH_CLOSED_ERROR) {
+        if(LibsshWrapper::ssh_get_status()(_session) == SSH_CLOSED || LibsshWrapper::ssh_get_status()(_session) == SSH_CLOSED_ERROR) {
             setState(StateError, false);
         }
         else if(!_passwordSet) {
@@ -292,7 +295,7 @@ QT_WARNING_POP
         }
         else {
             QByteArray utf8pw = _password.toUtf8();
-            auto rc = ::ssh_userauth_password(_session, nullptr, utf8pw.constData());
+            auto rc = LibsshWrapper::ssh_userauth_password()(_session, nullptr, utf8pw.constData());
 
             if(rc != SSH_AUTH_AGAIN) {
                 _passwordSet = false;
@@ -304,12 +307,12 @@ QT_WARNING_POP
         return;
 
     case StateAuthKbi: {
-        auto rc = ::ssh_userauth_kbdint(_session, nullptr, nullptr);
+        auto rc = LibsshWrapper::ssh_userauth_kbdint()(_session, nullptr, nullptr);
         if(rc == SSH_AUTH_INFO) {
             // Sometimes SSH_AUTH_INFO is returned even though there are no
             // KBI questions available, in that case, continue as if
             // SSH_AUTH_AGAIN was returned.
-            if(::ssh_userauth_kbdint_getnprompts(_session) <= 0)
+            if(LibsshWrapper::ssh_userauth_kbdint_getnprompts()(_session) <= 0)
                 enableWritableSocketNotifier();
             else
                 setState(StateAuthKbiQuestions, false);
@@ -320,7 +323,7 @@ QT_WARNING_POP
         } return;
 
     case StateOpened:
-        if(::ssh_get_status(_session) == SSH_CLOSED || ::ssh_get_status(_session) == SSH_CLOSED_ERROR) {
+        if(LibsshWrapper::ssh_get_status()(_session) == SSH_CLOSED || LibsshWrapper::ssh_get_status()(_session) == SSH_CLOSED_ERROR) {
             setState(StateError, false);
         }
         else {
@@ -342,7 +345,7 @@ bool SshConnection::setLibsshOption(enum ssh_options_e type, const void* value)
     OVITO_ASSERT(_session);
     if(_state == StateError)
         return false;
-    if(::ssh_options_set(_session, type, value) != 0) {
+    if(LibsshWrapper::ssh_options_set()(_session, type, value) != 0) {
         setState(StateError, true);
         return false;
     }
@@ -355,12 +358,12 @@ bool SshConnection::setLibsshOption(enum ssh_options_e type, const void* value)
 void SshConnection::createSocketNotifiers()
 {
     if(!_readNotifier) {
-        _readNotifier = new QSocketNotifier(::ssh_get_fd(_session), QSocketNotifier::Read, this);
+        _readNotifier = new QSocketNotifier(LibsshWrapper::ssh_get_fd()(_session), QSocketNotifier::Read, this);
         connect(_readNotifier, &QSocketNotifier::activated, this, &SshConnection::handleSocketReadable);
     }
 
     if(!_writeNotifier) {
-        _writeNotifier = new QSocketNotifier(::ssh_get_fd(_session), QSocketNotifier::Write, this);
+        _writeNotifier = new QSocketNotifier(LibsshWrapper::ssh_get_fd()(_session), QSocketNotifier::Write, this);
         connect(_writeNotifier, &QSocketNotifier::activated, this, &SshConnection::handleSocketWritable);
     }
 }
@@ -394,7 +397,7 @@ void SshConnection::enableWritableSocketNotifier()
         _enableWritableNofifier = true;
     }
     else if(_writeNotifier) {
-        auto status = ::ssh_get_status(_session);
+        auto status = LibsshWrapper::ssh_get_status()(_session);
         if(status == SSH_CLOSED_ERROR || status == SSH_CLOSED) {
             setState(StateError, false);
             return;
@@ -445,7 +448,7 @@ void SshConnection::useAuth(UseAuths auths, bool enabled)
 ******************************************************************************/
 void SshConnection::tryNextAuth()
 {
-    ::_ssh_log(SSH_LOG_PROTOCOL, "Ovito::SshConnection::tryNextAuth()", "state=%i", _state);
+    LibsshWrapper::_ssh_log()(SSH_LOG_PROTOCOL, "Ovito::SshConnection::tryNextAuth()", "state=%i", _state);
 
     // If authentication methods have not been chosen or all chosen authentication
     // methods have failed, switch state to StateChooseAuth or StateAuthFailed,
@@ -477,7 +480,7 @@ void SshConnection::tryNextAuth()
         // Disable authentication methods that are not supported by the server.
         {
             AuthMethods supportedMethods = supportedAuthMethods();
-            ::_ssh_log(SSH_LOG_PROTOCOL, "Ovito::SshConnection::tryNextAuth()", "server supportedMethods=%i", (int)supportedMethods);
+            LibsshWrapper::_ssh_log()(SSH_LOG_PROTOCOL, "Ovito::SshConnection::tryNextAuth()", "server supportedMethods=%i", (int)supportedMethods);
             if(!supportedMethods.testFlag(AuthMethodPassword)) useAuth(UseAuthPassword, false);
             if(!supportedMethods.testFlag(AuthMethodKbi)) useAuth(UseAuthKbi, false);
             if(!supportedMethods.testFlag(AuthMethodPublicKey)) useAuth(UseAuthAutoPubKey, false);
@@ -552,7 +555,7 @@ void SshConnection::setPassword(QString password)
 ******************************************************************************/
 void SshConnection::handleAuthResponse(int rc, UseAuthFlag auth)
 {
-    ::_ssh_log(SSH_LOG_PROTOCOL, "Ovito::SshConnection::handleAuthResponse()", "rc=%i auth=%i", rc, auth);
+    LibsshWrapper::_ssh_log()(SSH_LOG_PROTOCOL, "Ovito::SshConnection::handleAuthResponse()", "rc=%i auth=%i", rc, auth);
 
     switch(rc) {
     case SSH_AUTH_AGAIN:
@@ -618,12 +621,12 @@ QString SshConnection::hostPublicKeyHash()
 {
     ssh_key key;
 #if LIBSSH_VERSION_INT > SSH_VERSION_INT(0, 7, 5)
-    if(::ssh_get_server_publickey(_session, &key) != SSH_OK) {
+    if(LibsshWrapper::ssh_get_server_publickey()(_session, &key) != SSH_OK) {
         qWarning() << "Call to ssh_get_server_publickey() failed";
         return {};
     }
 #else
-    if(::ssh_get_publickey(_session, &key) != SSH_OK) {
+    if(LibsshWrapper::ssh_get_publickey()(_session, &key) != SSH_OK) {
         qWarning() << "Call to ssh_get_publickey() failed";
         return {};
     }
@@ -631,17 +634,17 @@ QString SshConnection::hostPublicKeyHash()
 
     unsigned char* hash;
     size_t hash_len;
-    if(::ssh_get_publickey_hash(key, SSH_PUBLICKEY_HASH_MD5, &hash, &hash_len) < 0) {
-        ::ssh_key_free(key);
+    if(LibsshWrapper::ssh_get_publickey_hash()(key, SSH_PUBLICKEY_HASH_MD5, &hash, &hash_len) < 0) {
+        LibsshWrapper::ssh_key_free()(key);
         return {};
     }
 
-    char* hexa = ::ssh_get_hexa(hash, hash_len);
+    char* hexa = LibsshWrapper::ssh_get_hexa()(hash, hash_len);
     QString string(hexa);
 
-    ::ssh_string_free_char(hexa);
-    ::ssh_clean_pubkey_hash(&hash);
-    ::ssh_key_free(key);
+    LibsshWrapper::ssh_string_free_char()(hexa);
+    LibsshWrapper::ssh_clean_pubkey_hash()(&hash);
+    LibsshWrapper::ssh_key_free()(key);
 
     return string;
 }
@@ -654,7 +657,7 @@ bool SshConnection::markCurrentHostKnown()
 {
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
-    switch(::ssh_write_knownhost(_session)) {
+    switch(LibsshWrapper::ssh_write_knownhost()(_session)) {
 QT_WARNING_POP
     case SSH_OK:
         setState(StateServerIsKnown, true);
@@ -676,7 +679,7 @@ QString SshConnection::errorMessage() const
     if(!_errorMessage.isEmpty())
         return _errorMessage;
     else if(_session)
-        return QString(::ssh_get_error(_session));
+        return QString(LibsshWrapper::ssh_get_error()(_session));
     else
         return tr("Could not initialize SSH session.");
 }
@@ -688,9 +691,9 @@ QString SshConnection::username() const
 {
     QString user;
     char* s;
-    if(::ssh_options_get(_session, SSH_OPTIONS_USER, &s) == SSH_OK) {
+    if(LibsshWrapper::ssh_options_get()(_session, SSH_OPTIONS_USER, &s) == SSH_OK) {
         user = s;
-        ::ssh_string_free_char(s);
+        LibsshWrapper::ssh_string_free_char()(s);
     }
     return user;
 }
@@ -702,9 +705,9 @@ QString SshConnection::hostname() const
 {
     QString host;
     char* s;
-    if(::ssh_options_get(_session, SSH_OPTIONS_HOST, &s) == SSH_OK) {
+    if(LibsshWrapper::ssh_options_get()(_session, SSH_OPTIONS_HOST, &s) == SSH_OK) {
         host = s;
-        ::ssh_string_free_char(s);
+        LibsshWrapper::ssh_string_free_char()(s);
     }
     return host;
 }
@@ -719,10 +722,10 @@ int SshConnection::authenticationCallback(const char* prompt, char* buf, size_t 
         return -1;
 
     connection->_keyPassphrase.clear();
-    ::_ssh_log(SSH_LOG_PROTOCOL, "Ovito::SshConnection::authenticationCallback()", "emit signal needPassphrase");
+    LibsshWrapper::_ssh_log()(SSH_LOG_PROTOCOL, "Ovito::SshConnection::authenticationCallback()", "emit signal needPassphrase");
     Q_EMIT connection->needPassphrase(prompt);
     if(!connection->_keyPassphrase.isEmpty()) {
-        ::_ssh_log(SSH_LOG_PROTOCOL, "Ovito::SshConnection::authenticationCallback()", "received passphrase from user");
+        LibsshWrapper::_ssh_log()(SSH_LOG_PROTOCOL, "Ovito::SshConnection::authenticationCallback()", "received passphrase from user");
         QByteArray utf8pw = connection->_keyPassphrase.toUtf8();
         qstrncpy(buf, utf8pw.constData(), len);
         return 0;
@@ -740,16 +743,16 @@ QList<SshConnection::KbiQuestion> SshConnection::kbiQuestions()
     if(_state == StateAuthKbiQuestions) {
 
         QList<KbiQuestion> questions;
-        QString instruction = ::ssh_userauth_kbdint_getinstruction(_session);
+        QString instruction = LibsshWrapper::ssh_userauth_kbdint_getinstruction()(_session);
 
-        int len = ::ssh_userauth_kbdint_getnprompts(_session);
+        int len = LibsshWrapper::ssh_userauth_kbdint_getnprompts()(_session);
 
         for(int i = 0; i < len; i++) {
 
             char echo = 0;
             const char *prompt = 0;
 
-            prompt = ::ssh_userauth_kbdint_getprompt(_session, i, &echo);
+            prompt = LibsshWrapper::ssh_userauth_kbdint_getprompt()(_session, i, &echo);
             OVITO_ASSERT(prompt);
 
             KbiQuestion kbi_question;
@@ -779,7 +782,7 @@ void SshConnection::setKbiAnswers(QStringList answers)
         int i = 0;
         for(const QString& answer : answers) {
             QByteArray utf8 = answer.toUtf8();
-            ::ssh_userauth_kbdint_setanswer(_session, i, utf8.constData());
+            LibsshWrapper::ssh_userauth_kbdint_setanswer()(_session, i, utf8.constData());
         }
 
         setState(StateAuthKbi, true);

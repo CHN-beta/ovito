@@ -15,7 +15,7 @@ After setting up MacPorts, run::
 
 from the terminal to install the required dependencies of OVITO.
 
-Next, download and install `Qt 5.15.x for Mac <https://www.qt.io/download/>`_.
+Next, download and install `Qt 6 for Mac <https://www.qt.io/download/>`_.
 
 Next, download the source code and build the shared version of the `ffmpeg <https://ffmpeg.org/>`_ video encoding library (optional)::
   
@@ -49,7 +49,8 @@ Within the source directory, create a build sub-directory and let CMake generate
   cd build
   cmake -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_INSTALL_PREFIX=../install \
-      -DCMAKE_PREFIX_PATH=`echo $HOME/Qt/5.*.*/clang_64/` \
+      -DOVITO_QT_MAJOR_VERSION=Qt6 \
+      -DCMAKE_PREFIX_PATH=`echo $HOME/Qt/6.*.*/clang_64/` \
       -DFFMPEG_INCLUDE_DIR=$HOME/ffmpeg/include \
       -DFFMPEG_LIBRARY_DIR=$HOME/ffmpeg/lib \
       ..

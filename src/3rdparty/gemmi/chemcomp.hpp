@@ -1,7 +1,7 @@
 // Copyright 2018 Global Phasing Ltd.
 //
-// Chemical component represents a monomer from the Refmac monomer library,
-// or from PDB CCD.
+// ChemComp - chemical component that represents a monomer from Refmac
+// monomer library, or from PDB CCD.
 
 #ifndef GEMMI_CHEMCOMP_HPP_
 #define GEMMI_CHEMCOMP_HPP_
@@ -48,8 +48,11 @@ struct Restraints {
         residue = res2;
       else
         throw std::out_of_range("Unexpected component ID");
-      const Atom* ret = residue->find_atom(atom, altloc);
-      return ret && ret->flag != 'M' ? ret : nullptr;
+      if (const Atom* ret = residue->find_atom(atom, altloc))
+        // skip riding hydrogens, they won't be restrained (to be revised)
+        if (ret->calc_flag != CalcFlag::Calculated || !ret->is_hydrogen())
+          return ret;
+      return nullptr;
     }
     Atom* get_from(Residue& res1, Residue* res2, char altloc) const {
       const Residue& cres1 = res1;
@@ -62,21 +65,33 @@ struct Restraints {
     return name1 < name2 ? name1 + "-" + name2 : name2 + "-" + name1;
   }
 
+  enum class DistanceOf { ElectronCloud, Nucleus };
+
   struct Bond {
     AtomId id1, id2;
     BondType type;
     bool aromatic;
     double value;
     double esd;
+    double value_nucleus;
+    double esd_nucleus;
     std::string str() const { return id1.atom + "-" + id2.atom; }
     std::string lexicographic_str() const {
       return Restraints::lexicographic_str(id1.atom, id2.atom);
+    }
+    double distance(DistanceOf of) const {
+      return of == DistanceOf::ElectronCloud ? value : value_nucleus;
+    }
+    template<typename T> const AtomId* other(const T& a) const {
+      if (id1 == a) return &id2;
+      if (id2 == a) return &id1;
+      return nullptr;
     }
   };
 
   struct Angle {
     AtomId id1, id2, id3;
-    double value;
+    double value;  // degrees
     double esd;
     double radians() const { return rad(value); }
     std::string str() const {
@@ -152,27 +167,10 @@ struct Restraints {
 
   template<typename T>
   const AtomId* first_bonded_atom(const T& a) const {
-    for (const Bond& bond : bonds) {
-      if (bond.id1 == a)
-        return &bond.id2;
-      if (bond.id2.atom == a)
-        return &bond.id1;
-    }
+    for (const Bond& bond : bonds)
+      if (const AtomId* other = bond.other(a))
+        return other;
     return nullptr;
-  }
-
-  template<typename A, typename T>
-  void for_each_bonded_atom(const A& a, const T& func) const {
-    for (const Bond& bond : bonds) {
-      const AtomId* other = nullptr;
-      if (bond.id1 == a)
-        other = &bond.id2;
-      else if (bond.id2 == a)
-        other = &bond.id1;
-      if (other != nullptr)
-        if (!func(*other))
-          break;
-    }
   }
 
   // BFS
@@ -183,15 +181,15 @@ struct Restraints {
     visited.push_back(b);
     std::vector<int> parent(visited.size(), -1);
     for (int n = start; end == -1 && n != (int) visited.size(); ++n) {
-      for_each_bonded_atom(visited[n], [&](const AtomId& id) {
-          if (id == a)
+      for (const Bond& bond : bonds)
+        if (const AtomId* id = bond.other(visited[n])) {
+          if (*id == a)
             end = (int) visited.size();
-          if (!in_vector(id, visited)) {
-            visited.push_back(id);
+          if (!in_vector(*id, visited)) {
+            visited.push_back(*id);
             parent.push_back(n);
           }
-          return true;
-      });
+        }
     }
     std::vector<AtomId> path;
     for (int n = end; n != -1; n = parent[n])
@@ -246,22 +244,7 @@ struct Restraints {
     return const_cast<Restraints*>(this)->find_chir(ctr, a, b, c);
   }
 
-  double chiral_abs_volume(const Restraints::Chirality& ch) const {
-    double mult = get_bond(ch.id_ctr, ch.id1).value *
-                  get_bond(ch.id_ctr, ch.id2).value *
-                  get_bond(ch.id_ctr, ch.id3).value;
-    double x = 1;
-    double y = 2;
-    for (double a : {get_angle(ch.id1, ch.id_ctr, ch.id2).value,
-                     get_angle(ch.id2, ch.id_ctr, ch.id3).value,
-                     get_angle(ch.id3, ch.id_ctr, ch.id1).value}) {
-      constexpr double deg2rad = pi() / 180.0;
-      double cosine = a == 90. ? 0. : std::cos(deg2rad * a);
-      x -= cosine * cosine;
-      y *= cosine;
-    }
-    return mult * std::sqrt(x + y);
-  }
+  double chiral_abs_volume(const Restraints::Chirality& ch) const;
 
   std::vector<Plane>::iterator get_plane(const std::string& label) {
     return std::find_if(planes.begin(), planes.end(),
@@ -277,15 +260,31 @@ struct Restraints {
   }
 };
 
-inline double angle_abs_diff(double a, double b) {
-  double d = std::abs(a - b);
-  if (d > 360.0)
-    d -= std::floor(d / 360.0) * 360.0;
-  return d < 180.0 ? d : 360.0 - d;
+template<typename Restr>
+double angle_z(double value_rad, const Restr& restr, double full=360.) {
+  return angle_abs_diff(deg(value_rad), restr.value, full) / restr.esd;
 }
 
-template<typename Restr> double angle_z(double value_rad, const Restr& restr) {
-  return angle_abs_diff(deg(value_rad), restr.value) / restr.esd;
+inline double chiral_abs_volume(double bond1, double bond2, double bond3,
+                                double angle1, double angle2, double angle3) {
+  double mult = bond1 * bond2 * bond3;
+  double x = 1;
+  double y = 2;
+  for (double a : {angle1, angle2, angle3}) {
+    double cosine = a == 90. ? 0. : std::cos(rad(a));
+    x -= cosine * cosine;
+    y *= cosine;
+  }
+  return mult * std::sqrt(x + y);
+}
+
+inline double Restraints::chiral_abs_volume(const Restraints::Chirality& ch) const {
+  return gemmi::chiral_abs_volume(get_bond(ch.id_ctr, ch.id1).value,
+                                  get_bond(ch.id_ctr, ch.id2).value,
+                                  get_bond(ch.id_ctr, ch.id3).value,
+                                  get_angle(ch.id1, ch.id_ctr, ch.id2).value,
+                                  get_angle(ch.id2, ch.id_ctr, ch.id3).value,
+                                  get_angle(ch.id3, ch.id_ctr, ch.id1).value);
 }
 
 struct ChemComp {
@@ -301,7 +300,7 @@ struct ChemComp {
     gemmi::Atom to_full_atom() const {
       gemmi::Atom atom;
       atom.name = id;
-      atom.flag = 'M'; // refmac convention for "modelled" missing atoms
+      atom.calc_flag = CalcFlag::Calculated;
       atom.occ = 0.0f;
       atom.b_iso = 0.0f;
       atom.element = el;
@@ -320,14 +319,17 @@ struct ChemComp {
     return std::find_if(atoms.begin(), atoms.end(),
                         [&](const Atom& a) { return a.id == atom_id; });
   }
-  std::vector<Atom>::const_iterator find_atom(const std::string& atom_id) const{
+  std::vector<Atom>::const_iterator find_atom(const std::string& atom_id) const {
     return const_cast<ChemComp*>(this)->find_atom(atom_id);
+  }
+  bool has_atom(const std::string& atom_id) const {
+    return find_atom(atom_id) == atoms.end();
   }
 
   int get_atom_index(const std::string& atom_id) const {
     auto it = find_atom(atom_id);
     if (it == atoms.end())
-      fail("Chemical componenent ", name, " has no atom ", atom_id);
+      fail("Chemical component ", name, " has no atom ", atom_id);
     return int(it - atoms.begin());
   }
 
@@ -335,31 +337,41 @@ struct ChemComp {
     return atoms[get_atom_index(atom_id)];
   }
 
+  // Check if the group is peptide* or X-peptide*
+  bool is_peptide_group() const {
+    return group.size() > 6 && alpha_up(group[2]) == 'P';
+  }
+
+  // Check if the group is DNA or RNA
+  bool is_nucleotide_group() const {
+    return group.size() == 3 && alpha_up(group[1]) == 'N';
+  }
+
   void remove_nonmatching_restraints() {
     vector_remove_if(rt.bonds, [&](const Restraints::Bond& x) {
-      return find_atom(x.id1.atom) == atoms.end() ||
-             find_atom(x.id2.atom) == atoms.end();
+      return !has_atom(x.id1.atom) ||
+             !has_atom(x.id2.atom);
     });
     vector_remove_if(rt.angles, [&](const Restraints::Angle& x) {
-      return find_atom(x.id1.atom) == atoms.end() ||
-             find_atom(x.id2.atom) == atoms.end() ||
-             find_atom(x.id3.atom) == atoms.end();
+      return !has_atom(x.id1.atom) ||
+             !has_atom(x.id2.atom) ||
+             !has_atom(x.id3.atom);
     });
     vector_remove_if(rt.torsions, [&](const Restraints::Torsion& x) {
-      return find_atom(x.id1.atom) == atoms.end() ||
-             find_atom(x.id2.atom) == atoms.end() ||
-             find_atom(x.id3.atom) == atoms.end() ||
-             find_atom(x.id4.atom) == atoms.end();
+      return !has_atom(x.id1.atom) ||
+             !has_atom(x.id2.atom) ||
+             !has_atom(x.id3.atom) ||
+             !has_atom(x.id4.atom);
     });
     vector_remove_if(rt.chirs, [&](const Restraints::Chirality& x) {
-      return find_atom(x.id_ctr.atom) == atoms.end() ||
-             find_atom(x.id1.atom) == atoms.end() ||
-             find_atom(x.id2.atom) == atoms.end() ||
-             find_atom(x.id3.atom) == atoms.end();
+      return !has_atom(x.id_ctr.atom) ||
+             !has_atom(x.id1.atom) ||
+             !has_atom(x.id2.atom) ||
+             !has_atom(x.id3.atom);
     });
     for (Restraints::Plane& plane : rt.planes)
       vector_remove_if(plane.ids, [&](const Restraints::AtomId& x) {
-        return find_atom(x.atom) == atoms.end();
+        return !has_atom(x.atom);
       });
   }
 
@@ -425,7 +437,18 @@ inline ChiralityType chirality_from_string(const std::string& s) {
     case 'p': return ChiralityType::Positive;
     case 'n': return ChiralityType::Negative;
     case 'b': return ChiralityType::Both;
+    case '.': return ChiralityType::Both;
     default: throw std::out_of_range("Unexpected chirality: " + s);
+  }
+}
+
+inline ChiralityType chirality_from_flag_and_volume(const std::string& s,
+                                                    double volume) {
+  switch (s[0] | 0x20) {
+    case 's': return volume > 0 ? ChiralityType::Positive
+                                : ChiralityType::Negative;
+    case 'n': return ChiralityType::Both;
+    default: throw std::out_of_range("Unexpected volume_flag: " + s);
   }
 }
 
@@ -442,7 +465,11 @@ inline ChemComp make_chemcomp_from_block(const cif::Block& block_) {
   ChemComp cc;
   cc.name = block_.name.substr(starts_with(block_.name, "comp_") ? 5 : 0);
   cif::Block& block = const_cast<cif::Block&>(block_);
+  // CCD uses _chem_comp.type, monomer libraries use .group in separate block,
+  // but just in case check for the presence of _chem_comp.group here.
   cif::Column group_col = block.find_values("_chem_comp.group");
+  if (!group_col)
+    group_col = block.find_values("_chem_comp.type");
   if (group_col)
     cc.group = group_col.str(0);
   for (auto row : block.find("_chem_comp_atom.",
@@ -455,13 +482,16 @@ inline ChemComp make_chemcomp_from_block(const cif::Block& block_) {
                              {"atom_id_1", "atom_id_2",              // 0, 1
                               "?type", "?value_order",               // 2, 3
                               "?aromatic", "?pdbx_aromatic_flag",    // 4, 5
-                              "?value_dist", "?value_dist_esd"})) {  // 6, 7
+                              "?value_dist", "?value_dist_esd",      // 6, 7
+                              "?value_dist_nucleus", "?value_dist_nucleus_esd"})) { // 8, 9
     bool aromatic_flag = (row.one_of(4, 5)[0] | 0x20) == 'y';
     double dist = row.has(6) ? cif::as_number(row[6]) : NAN;
     double esd = row.has(7) ? cif::as_number(row[7]) : NAN;
+    double dist_nucl = row.has(8) ? cif::as_number(row[8]) : NAN;
+    double esd_nucl = row.has(9) ? cif::as_number(row[9]) : NAN;
     cc.rt.bonds.push_back({{1, row.str(0)}, {1, row.str(1)},
                           bond_type_from_string(row.one_of(2, 3)),
-                          aromatic_flag, dist, esd});
+                          aromatic_flag, dist, esd, dist_nucl, esd_nucl});
   }
   for (auto row : block.find("_chem_comp_angle.",
                              {"atom_id_1", "atom_id_2", "atom_id_3",
@@ -487,6 +517,24 @@ inline ChemComp make_chemcomp_from_block(const cif::Block& block_) {
       cc.rt.chirs.push_back({{1, row.str(0)},
                              {1, row.str(1)}, {1, row.str(2)}, {1, row.str(3)},
                              chirality_from_string(row[4])});
+  // mmCIF compliant
+  cif::Table chir_tab = block.find("_chem_comp_chir_atom.",
+                                   {"chir_id", "atom_id"});
+  if (chir_tab.ok()) {
+    std::map<std::string, std::vector<std::string>> chir_atoms;
+    for (auto chir : chir_tab)
+      chir_atoms[chir[0]].push_back(chir[1]);
+    for (auto row : block.find("_chem_comp_chir.",
+                               {"id", "atom_id", "volume_flag", "volume_three"})) {
+        auto atoms = chir_atoms.find(row.str(0));
+        if (atoms != chir_atoms.end() && atoms->second.size() == 3)
+          cc.rt.chirs.push_back({{1, row.str(1)},
+                                 {1, atoms->second[0]}, {1, atoms->second[1]},
+                                 {1, atoms->second[2]},
+                                 chirality_from_flag_and_volume(row[2],
+                                                                cif::as_number(row[3]))});
+    }
+  }
   for (auto row : block.find("_chem_comp_plane_atom.",
                              {"plane_id", "atom_id" , "dist_esd"})) {
     Restraints::Plane& plane = cc.rt.get_or_add_plane(row.str(0));

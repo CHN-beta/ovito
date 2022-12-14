@@ -1,6 +1,6 @@
 // Copyright 2020 Global Phasing Ltd.
 //
-// Reciprocal space utilities.
+// Reciprocal space helper functions.
 
 #ifndef GEMMI_RECIPROC_HPP_
 #define GEMMI_RECIPROC_HPP_
@@ -11,24 +11,6 @@
 #include "unitcell.hpp"  // for UnitCell
 
 namespace gemmi {
-
-template <typename T, typename FP=typename std::iterator_traits<T>::value_type>
-std::array<FP,2> calculate_min_max_disregarding_nans(T begin, T end) {
-  std::array<FP,2> minmax = {{NAN, NAN}};
-  T i = begin;
-  while (i != end && std::isnan(*i))
-    ++i;
-  if (i != end) {
-    minmax[0] = minmax[1] = *i;
-    while (++i != end) {
-      if (*i < minmax[0])
-        minmax[0] = *i;
-      else if (*i > minmax[1])
-        minmax[1] = *i;
-    }
-  }
-  return minmax;
-}
 
 // dmin should include a tiny margin for numerical errors
 template<typename Func>

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,6 +63,7 @@ VulkanViewportWindow::VulkanViewportWindow(Viewport* viewport, UserInterface* us
 
 	_widget->setMouseTracking(true);
     _widget->setFocusPolicy(Qt::StrongFocus);
+    _widget->setAcceptDrops(false); // File drop events are handled by the root main window. This makes them propagate up the widget hierarchy.
 }
 
 /******************************************************************************

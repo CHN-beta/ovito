@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -227,15 +227,21 @@ public:
 	/// Returns the vector component names of the selected output property.
 	QStringList propertyComponentNames() const;
 
+	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+	virtual QVariant getPipelineEditorShortInfo(ModifierApplication* modApp) const override { return outputProperty().name(); }
+
 protected:
 
-	/// \brief Is called when the value of a reference field of this RefMaker changes.
+	/// Is called when the value of a reference field of this RefMaker changes.
 	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
+	/// Is called when the value of a property of this object has changed.
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+	
 	/// Creates a computation engine that will compute the modifier's results.
 	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
-protected:
+private:
 
 	/// The math expressions for calculating the property values. One for every vector component.
 	DECLARE_MODIFIABLE_PROPERTY_FIELD(QStringList, expressions, setExpressions);

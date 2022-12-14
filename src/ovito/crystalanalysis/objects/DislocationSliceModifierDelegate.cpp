@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,7 +45,7 @@ QVector<DataObjectReference> DislocationSliceModifierDelegate::OOMetaClass::getA
 /******************************************************************************
 * Performs the actual rejection of particles.
 ******************************************************************************/
-PipelineStatus DislocationSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus DislocationSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
 	if(mod->createSelection())
@@ -56,18 +56,20 @@ PipelineStatus DislocationSliceModifierDelegate::apply(const ModifierEvaluationR
 	FloatType sliceWidth;
 	std::tie(plane, sliceWidth) = mod->slicingPlane(request.time(), state.mutableStateValidity(), state);
 
-	for(const DataObject* obj : state.data()->objects()) {
+	for(const DataObject* obj : inputState.data()->objects()) {
 		if(const DislocationNetworkObject* inputDislocations = dynamic_object_cast<DislocationNetworkObject>(obj)) {
-			QVector<Plane3> planes = inputDislocations->cuttingPlanes();
-			if(sliceWidth <= 0) {
-				planes.push_back(plane);
+			if(state.data()->contains(obj)) {
+				QVector<Plane3> planes = inputDislocations->cuttingPlanes();
+				if(sliceWidth <= 0) {
+					planes.push_back(plane);
+				}
+				else {
+					planes.push_back(Plane3( plane.normal,  plane.dist + sliceWidth/2));
+					planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth/2));
+				}
+				DislocationNetworkObject* outputDislocations = state.makeMutable(inputDislocations);
+				outputDislocations->setCuttingPlanes(std::move(planes));
 			}
-			else {
-				planes.push_back(Plane3( plane.normal,  plane.dist + sliceWidth/2));
-				planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth/2));
-			}
-			DislocationNetworkObject* outputDislocations = state.makeMutable(inputDislocations);
-			outputDislocations->setCuttingPlanes(std::move(planes));
 		}
 	}
 

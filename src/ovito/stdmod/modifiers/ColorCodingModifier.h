@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,7 +47,7 @@ class OVITO_STDMOD_EXPORT ColorCodingModifierDelegate : public ModifierDelegate
 public:
 
 	/// Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 
 	/// Returns the type of input property container that this delegate can process.
 	PropertyContainerClassPtr inputContainerClass() const {
@@ -134,6 +134,9 @@ public:
 	void setColorGradientType(const QString& typeName);
 #endif
 
+	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+	virtual QVariant getPipelineEditorShortInfo(ModifierApplication* modApp) const override { return sourceProperty().nameWithComponent(); }
+
 public Q_SLOTS:
 
 	/// Sets the start and end value to the minimum and maximum value of the selected input property.
@@ -153,6 +156,9 @@ protected:
 
 	/// Is called when the value of a reference field of this RefMaker changes.
 	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+
+	/// Is called when the value of a property of this object has changed.
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 private:
 

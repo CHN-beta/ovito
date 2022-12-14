@@ -102,6 +102,18 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
 
 	shader.setInstanceCount(primitive.basePositions()->size());
 
+    struct BaseHeadRadius {
+        Vector_3<float> base;
+        Vector_3<float> head;
+        float radius;
+    };
+
+    // Check size limits.
+    if(shader.instanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / std::max(sizeof(BaseHeadRadius), 2 * sizeof(ColorAT<float>))) {
+        qWarning() << "WARNING: OpenGL renderer - Trying to render too many cylinders at once, exceeding device limits.";
+        return;
+    }
+
     // Are we rendering semi-transparent cylinders?
     bool useBlending = !isPicking() && (primitive.transparencies() != nullptr) && !orderIndependentTransparency();
 	if(useBlending) shader.enableBlending();
@@ -135,12 +147,6 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
         primitive.headPositions(),
         primitive.widths(),
         primitive.widths() ? FloatType(0) : primitive.uniformWidth()
-    };
-
-    struct BaseHeadRadius {
-        Vector_3<float> base;
-        Vector_3<float> head;
-        float radius;
     };
 
     // Upload vertex buffer with the base and head positions and radii.

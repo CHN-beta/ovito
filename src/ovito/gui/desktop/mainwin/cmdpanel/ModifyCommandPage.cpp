@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,6 +36,8 @@
 #include <ovito/gui/desktop/app/GuiApplication.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dialogs/ModifierTemplatesPage.h>
+#include <ovito/gui/desktop/dialogs/CopyPipelineItemDialog.h>
+#include "CommandPanel.h"
 #include "ModifyCommandPage.h"
 
 #include <QtNetwork>
@@ -43,7 +45,7 @@
 namespace Ovito {
 
 /******************************************************************************
-* Initializes the modify page.
+* Initializes the modify tab.
 ******************************************************************************/
 ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : QWidget(parent),
 		_datasetContainer(mainWindow.datasetContainer()), _actionManager(mainWindow.actionManager())
@@ -71,9 +73,6 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 		QComboBox* selector = static_cast<QComboBox*>(sender());
 		static_cast<ModifierListModel*>(selector->model())->insertModifierByIndex(index);
 		selector->setCurrentIndex(0);
-	});
-	connect(_pipelineListModel, &PipelineListModel::selectedItemChanged, this, [&]() { 
-		_modifierSelector->setEnabled(_pipelineListModel->selectedItem() != nullptr); 
 	});
 
 	class PipelineListView : public QListView {
@@ -134,7 +133,25 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 	_pipelineWidget->setSelectionModel(_pipelineListModel->selectionModel());
 	_pipelineWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 	_pipelineWidget->setIconSize(_pipelineListModel->iconSize());
+	_pipelineWidget->setItemDelegate(new ExtendedListItemDelegate(_pipelineWidget, PipelineListModel::StatusInfoRole));
 	subLayout->addWidget(_pipelineWidget);
+
+	// Set up context menu.
+	_pipelineWidget->addAction(_actionManager->getAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP));
+	QAction* separator = new QAction(_pipelineWidget);
+	separator->setSeparator(true);
+	_pipelineWidget->addAction(separator);
+	_pipelineWidget->addAction(_actionManager->getAction(ACTION_PIPELINE_RENAME_ITEM));
+	separator = new QAction(_pipelineWidget);
+	separator->setSeparator(true);
+	_pipelineWidget->addAction(separator);
+	_pipelineWidget->addAction(_actionManager->getAction(ACTION_PIPELINE_COPY_ITEM));
+	_pipelineWidget->addAction(_actionManager->getAction(ACTION_PIPELINE_MAKE_INDEPENDENT));
+	separator = new QAction(_pipelineWidget);
+	separator->setSeparator(true);
+	_pipelineWidget->addAction(separator);
+	_pipelineWidget->addAction(_actionManager->getAction(ACTION_MODIFIER_DELETE));
+	_pipelineWidget->setContextMenuPolicy(Qt::ActionsContextMenu);
 
 	// Listen to selection changes in the pipeline editor list widget.
 	connect(_pipelineListModel, &PipelineListModel::selectedItemChanged, this, &ModifyCommandPage::onSelectedItemChanged);
@@ -156,7 +173,6 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 	editToolbar->addAction(_actionManager->getAction(ACTION_MODIFIER_MOVE_DOWN));
 	editToolbar->addSeparator();
 	editToolbar->addAction(_actionManager->getAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP));
-	editToolbar->addAction(_actionManager->getAction(ACTION_PIPELINE_MAKE_INDEPENDENT));
 
 	QAction* manageModifierTemplatesAction = _actionManager->createCommandAction(ACTION_MODIFIER_MANAGE_TEMPLATES, tr("Manage Modifier Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved modifier templates."));
 	connect(manageModifierTemplatesAction, &QAction::triggered, [&mainWindow]() {
@@ -164,6 +180,31 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 		dlg.exec();
 	});
 	editToolbar->addAction(manageModifierTemplatesAction);
+
+	connect(_actionManager->getAction(ACTION_PIPELINE_RENAME_ITEM), &QAction::triggered, this, [this]() {
+		_pipelineWidget->edit(_pipelineWidget->currentIndex());
+	});
+
+	connect(_actionManager->getAction(ACTION_PIPELINE_COPY_ITEM), &QAction::triggered, [&]() {
+		// Collect all currently selected pipeline objects.
+		QVector<OORef<PipelineObject>> objects;
+		for(RefTarget* obj : _pipelineListModel->selectedObjects()) {
+			if(PipelineObject* pobj = dynamic_object_cast<PipelineObject>(obj)) {
+				if(!objects.contains(pobj))
+					objects.push_back(pobj);
+			}
+			else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(obj)) {
+				for(ModifierApplication* modApp : group->modifierApplications()) {
+					if(!objects.contains(modApp))
+						objects.push_back(modApp);
+				}
+			}
+		}
+		if(!objects.empty()) {
+			CopyPipelineItemDialog dlg(&mainWindow, _pipelineListModel->selectedPipeline(), std::move(objects));
+			dlg.exec();
+		}
+	});
 
 	layout->addWidget(_splitter, 2, 0, 1, 2);
 	layout->setRowStretch(2, 1);
@@ -207,7 +248,7 @@ void ModifyCommandPage::saveLayout()
 ******************************************************************************/
 void ModifyCommandPage::onSelectionChangeComplete(SelectionSet* newSelection)
 {
-	_pipelineListModel->refreshList();
+	_pipelineListModel->refreshListLater();
 }
 
 /******************************************************************************
@@ -216,17 +257,12 @@ void ModifyCommandPage::onSelectionChangeComplete(SelectionSet* newSelection)
 ******************************************************************************/
 void ModifyCommandPage::onSelectedItemChanged()
 {
-	PipelineListItem* currentItem = pipelineListModel()->selectedItem();
-	RefTarget* editObject = nullptr;
+	RefTarget* selectedObject = pipelineListModel()->selectedObject();
 
-	if(currentItem != nullptr) {
-		editObject = currentItem->object();
-		if(currentItem->isSubObject())
-			pipelineListModel()->setNextSubObjectToSelectByTitle(currentItem->title());
-	}
+	_modifierSelector->setEnabled(selectedObject != nullptr); 
 
-	if(editObject != _propertiesPanel->editObject()) {
-		_propertiesPanel->setEditObject(editObject);
+	if(selectedObject != _propertiesPanel->editObject()) {
+		_propertiesPanel->setEditObject(selectedObject);
 
 		// Request a viewport update whenever a new item in the pipeline editor is selected, 
 		// because the currently selected modifier may be rendering gizmos in the viewports. 
@@ -234,8 +270,8 @@ void ModifyCommandPage::onSelectedItemChanged()
 			_datasetContainer.currentSet()->viewportConfig()->updateViewports();
 	}
 
-	// Whenever no object is selected, show the About Panel containing information about the program.
-	if(currentItem == nullptr && pipelineListModel()->selectedIndex() == -1)
+	// Whenever no object is selected, show information about the program.
+	if(pipelineListModel()->selectedItems().empty())
 		_aboutRollout->show();
 	else
 		_aboutRollout->hide();

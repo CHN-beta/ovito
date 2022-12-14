@@ -531,7 +531,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 
 	// Set up a particle neighbor finder to speed up density field computation.
 	CutoffNeighborFinder neighFinder;
-	if(!neighFinder.prepare(cutoffSize, positions(), mesh()->domain(), selection(), this))
+	if(!neighFinder.prepare(cutoffSize, positions(), mesh()->domain(), selection()))
 		return;
 
 	nextProgressSubStep();

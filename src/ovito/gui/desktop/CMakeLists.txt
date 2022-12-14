@@ -51,6 +51,7 @@ OVITO_STANDARD_PLUGIN(Gui
 		dialogs/RemoteAuthenticationDialog.cpp
 		dialogs/FileExporterSettingsDialog.cpp
 		dialogs/ClonePipelineDialog.cpp
+		dialogs/CopyPipelineItemDialog.cpp
 		dialogs/FontSelectionDialog.cpp
 		dialogs/ModalPropertiesEditorDialog.cpp
 		actions/WidgetActionManager.cpp

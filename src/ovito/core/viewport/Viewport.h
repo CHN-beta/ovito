@@ -78,7 +78,7 @@ public:
 	/// \param aspectRatio Specifies the desired aspect ratio (height/width) of the output image.
 	/// \param sceneBoundingBox The bounding box of the scene in world coordinates. This is used to calculate the near and far z-clipping planes.
 	/// \return The returned structure describes the projection used to render the contents of the viewport.
-	ViewProjectionParameters computeProjectionParameters(TimePoint time, FloatType aspectRatio, const Box3& sceneBoundingBox = Box3());
+	ViewProjectionParameters computeProjectionParameters(TimePoint time, FloatType aspectRatio, bool asynchronousEvaluation, const Box3& sceneBoundingBox = Box3());
 
     /// \brief Puts an update request event for this viewport on the event loop.
     ///

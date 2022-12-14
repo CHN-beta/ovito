@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,13 +42,6 @@ public:
 	};
 	Q_ENUMS(ShadingMode);
 
-	enum RenderingQuality {
-		LowQuality,
-		MediumQuality,
-		HighQuality
-	};
-	Q_ENUMS(RenderingQuality);
-
 	enum Shape {
 		CylinderShape,
 		ArrowShape,
@@ -62,12 +55,6 @@ public:
 
 	/// \brief Changes the shading mode for elements.
 	void setShadingMode(ShadingMode mode) { _shadingMode = mode; }
-
-	/// \brief Returns the rendering quality of elements.
-	RenderingQuality renderingQuality() const { return _renderingQuality; }
-
-	/// \brief Changes the rendering quality of elements.
-	void setRenderingQuality(RenderingQuality quality) { _renderingQuality = quality; }
 
 	/// \brief Returns the selected element shape.
 	Shape shape() const { return _shape; }
@@ -153,9 +140,6 @@ private:
 	/// Controls the shading.
 	ShadingMode _shadingMode = NormalShading;
 
-	/// Controls the rendering quality.
-	RenderingQuality _renderingQuality = MediumQuality;
-
 	/// The shape of the elements.
 	Shape _shape = CylinderShape;
 
@@ -190,8 +174,6 @@ private:
 }	// End of namespace
 
 Q_DECLARE_METATYPE(Ovito::CylinderPrimitive::ShadingMode);
-Q_DECLARE_METATYPE(Ovito::CylinderPrimitive::RenderingQuality);
 Q_DECLARE_METATYPE(Ovito::CylinderPrimitive::Shape);
 Q_DECLARE_TYPEINFO(Ovito::CylinderPrimitive::ShadingMode, Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(Ovito::CylinderPrimitive::RenderingQuality, Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::CylinderPrimitive::Shape, Q_PRIMITIVE_TYPE);

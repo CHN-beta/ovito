@@ -63,6 +63,7 @@ Column-to-property mapping
 
 The data columns of a dump file get mapped to corresponding :ref:`particle properties <usage.particle_properties>` within OVITO during file import.
 This happens automatically according to the following rules, but you can may manually override the mapping if necessary.
+For certain dump file columns, the file parser may perform an automatic conversion as described in the third table column.
 
 ========================== ========================== =========================
 LAMMPS column name         OVITO particle property    Comments
@@ -88,12 +89,14 @@ omegax, omegay, omegaz     ``Angular Velocity``
 angmomx, angmomy, angmomz  ``Angular Momentum``
 tqx, tqy, tqz              ``Torque``
 spin                       ``Spin``
+quati, quatj, quatk, quatw ``Orientation``            Quaternion components X, Y, Z, W (see :ref:`here <howto.aspherical_particles.orientation>`)
 c_epot                     ``Potential Energy``
 c_kpot                     ``Kinetic Energy``
 c_stress[1..6]             ``Stress Tensor``          Symmetric tensor components XX, YY, ZZ, XY, XZ, YZ
 c_orient[1..4]             ``Orientation``            Quaternion components X, Y, Z, W (see :ref:`here <howto.aspherical_particles.orientation>`)
 c_shape[1..3]              ``Aspherical Shape``       Principal semi-axes (see :ref:`here <howto.aspherical_particles.ellipsoids>`)
 c_diameter[1..3]           ``Aspherical Shape``       Same as above but with automatic division by 2 (see :ref:`example <howto.aspherical_particles.orientation>`)
+shapex, shapey, shapez     ``Aspherical Shape``       Same as above but with automatic division by 2 (see :ref:`example <howto.aspherical_particles.orientation>`)
 c_cna                      ``Structure Type``
 pattern                    ``Structure Type``
 selection                  ``Selection``

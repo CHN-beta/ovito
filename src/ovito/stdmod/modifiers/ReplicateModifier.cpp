@@ -72,6 +72,19 @@ bool ReplicateModifier::OOMetaClass::isApplicableTo(const DataCollection& input)
 }
 
 /******************************************************************************
+* Is called when the value of a property of this object has changed.
+******************************************************************************/
+void ReplicateModifier::propertyChanged(const PropertyFieldDescriptor* field)
+{
+	if((field == PROPERTY_FIELD(ReplicateModifier::numImagesX) || field == PROPERTY_FIELD(ReplicateModifier::numImagesY) || field == PROPERTY_FIELD(ReplicateModifier::numImagesZ)) && !isBeingLoaded()) {
+		// Changes of some modifier parameters affect the result of ReplicateModifier::getPipelineEditorShortInfo().
+		notifyDependents(ReferenceEvent::ObjectStatusChanged);
+	}
+
+	MultiDelegatingModifier::propertyChanged(field);
+}
+
+/******************************************************************************
 * Helper function that returns the range of replicated boxes.
 ******************************************************************************/
 Box3I ReplicateModifier::replicaRange() const

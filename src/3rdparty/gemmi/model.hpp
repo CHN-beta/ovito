@@ -73,10 +73,13 @@ template<typename T, typename M> std::vector<T> model_subchains(M* model) {
 } // namespace impl
 
 
-// File format with macromolecular model.
-// Unknown = unknown coordinate format (not ChemComp)
-// UnknownAny = any format (coordinate file for a monomer/ligand/chemcomp)
-enum class CoorFormat { Unknown, UnknownAny, Pdb, Mmcif, Mmjson, ChemComp };
+// File format of a macromolecular model. When passed to read_structure():
+// Unknown = guess format from the extension,
+// Detect = guess format from the content.
+enum class CoorFormat { Unknown, Detect, Pdb, Mmcif, Mmjson, ChemComp };
+
+// corresponds to _atom_site.calc_flag in mmCIF
+enum class CalcFlag : signed char { NotSet=0, Determined, Calculated, Dummy };
 
 // options affecting how pdb file is read
 struct PdbReadOptions {
@@ -84,62 +87,11 @@ struct PdbReadOptions {
   bool split_chain_on_ter = false;
 };
 
-enum class EntityType : unsigned char {
-  Unknown,
-  Polymer,
-  NonPolymer,
-  // _entity.type macrolide is in PDBx/mmCIF, but no PDB entry uses it
-  //Macrolide,
-  Water
-};
-
-// values corresponding to mmCIF _entity_poly.type
-enum class PolymerType : unsigned char {
-  Unknown,       // unknown or not applicable
-  PeptideL,      // polypeptide(L) in mmCIF (168923 values in the PDB in 2017)
-  PeptideD,      // polypeptide(D) (57 values)
-  Dna,           // polydeoxyribonucleotide (9905)
-  Rna,           // polyribonucleotide (4559)
-  DnaRnaHybrid,  // polydeoxyribonucleotide/polyribonucleotide hybrid (156)
-  SaccharideD,   // polysaccharide(D) (18)
-  SaccharideL,   // polysaccharide(L) (0)
-  Pna,           // peptide nucleic acid (2)
-  CyclicPseudoPeptide,  // cyclic-pseudo-peptide (1)
-  Other,         // other (4)
-};
-
-inline bool is_polypeptide(PolymerType pt) {
-  return pt == PolymerType::PeptideL || pt == PolymerType::PeptideD;
+// remove empty residues from chain, empty chains from model, etc
+template<class T> void remove_empty_children(T& obj) {
+  using Item = typename T::child_type;
+  vector_remove_if(obj.children(), [](const Item& x) { return x.children().empty(); });
 }
-
-inline bool is_polynucleotide(PolymerType pt) {
-  return pt == PolymerType::Dna || pt == PolymerType::Rna ||
-         pt == PolymerType::DnaRnaHybrid;
-}
-
-struct Entity {
-  struct DbRef {
-    std::string db_name;
-    std::string accession_code;
-    std::string id_code;
-    std::string isoform;  // pdbx_db_isoform
-    SeqId seq_begin, seq_end;
-    SeqId db_begin, db_end;
-    SeqId::OptionalNum label_seq_begin, label_seq_end;
-  };
-  std::string name;
-  std::vector<std::string> subchains;
-  EntityType entity_type = EntityType::Unknown;
-  PolymerType polymer_type = PolymerType::Unknown;
-  std::vector<DbRef> dbrefs;
-  // SEQRES or entity_poly_seq with microheterogeneity as comma-separated names
-  std::vector<std::string> full_sequence;
-
-  explicit Entity(std::string name_) noexcept : name(name_) {}
-  static std::string first_mon(const std::string& mon_list) {
-    return mon_list.substr(0, mon_list.find(','));
-  }
-};
 
 inline bool is_same_conformer(char altloc1, char altloc2) {
   return altloc1 == '\0' || altloc2 == '\0' || altloc1 == altloc2;
@@ -151,8 +103,10 @@ struct Atom {
   char altloc = '\0'; // 0 if not set
   signed char charge = 0;  // [-8, +8]
   Element element = El::X;
-  char flag = '\0'; // custom flag
+  CalcFlag calc_flag = CalcFlag::NotSet;  // mmCIF _atom_site.calc_flag
+  char flag = '\0';  // a custom flag
   int serial = 0;
+  short tls_group_id = -1;
   Position pos;
   float occ = 1.0f;
   // ADP - in MX it's usual to give isotropic ADP as B and anisotropic as U
@@ -163,13 +117,26 @@ struct Atom {
   bool same_conformer(const Atom& other) const {
     return is_same_conformer(altloc, other.altloc);
   }
+  bool altloc_matches(char request) const {
+    return request == '*' || altloc == '\0' || altloc == request;
+  }
   // group_key() is used in UniqIter and similar tools
   const std::string& group_key() const { return name; }
   bool has_altloc() const { return altloc != '\0'; }
-  double b_eq() const {
-    return 8 * pi() * pi() / 3. * aniso.trace();
-  }
+  double b_eq() const { return u_to_b() / 3. * aniso.trace(); }
   bool is_hydrogen() const { return gemmi::is_hydrogen(element); }
+
+  // Name as a string left-padded like in the PDB format:
+  // the first two characters make the element name.
+  std::string padded_name() const {
+    std::string s;
+    const char* el = element.uname();
+    if (el[1] == '\0' && el[0] == alpha_up(name[0]) && name.size() < 4)
+      s += ' ';
+    s += name;
+    return s;
+  }
+
   // a method present in Atom, Residue, ... Structure - used in templates
   Atom empty_copy() const { return Atom(*this); }
 };
@@ -191,26 +158,12 @@ struct AtomGroup_ : ItemGroup<AtomType> {
 using AtomGroup = AtomGroup_<Atom>;
 using ConstAtomGroup = AtomGroup_<const Atom>;
 
-// Sequence ID (sequence number + insertion code) + residue name + segment ID
-struct ResidueId {
-  SeqId seqid;
-  std::string segment; // segid - up to 4 characters in the PDB file
-  std::string name;
-
-  // used for first_conformation iterators, etc.
-  SeqId group_key() const { return seqid; }
-
-  bool matches(const ResidueId& o) const {
-    return seqid == o.seqid && segment == o.segment && name == o.name;
-  }
-  std::string str() const { return seqid.str() + "(" + name + ")"; }
-};
-
 struct Residue : public ResidueId {
   using OptionalNum = SeqId::OptionalNum;
   static const char* what() { return "Residue"; }
 
   std::string subchain;   // mmCIF _atom_site.label_asym_id
+  std::string entity_id;  // mmCIF _atom_site.label_entity_id
   OptionalNum label_seq;  // mmCIF _atom_site.label_seq_id
   EntityType entity_type = EntityType::Unknown;
   char het_flag = '\0';   // 'A' = ATOM, 'H' = HETATM, 0 = unspecified
@@ -232,6 +185,7 @@ struct Residue : public ResidueId {
     res.flag = flag;
     return res;
   }
+  using child_type = Atom;
   std::vector<Atom>& children() { return atoms; }
   const std::vector<Atom>& children() const { return atoms; }
 
@@ -246,8 +200,7 @@ struct Residue : public ResidueId {
   const Atom* find_atom(const std::string& atom_name, char altloc,
                         El el=El::X) const {
     for (const Atom& a : atoms)
-      if (a.name == atom_name
-          && (altloc == '*' || a.altloc == '\0' || a.altloc == altloc)
+      if (a.name == atom_name && a.altloc_matches(altloc)
           && (el == El::X || a.element == el))
         return &a;
     return nullptr;
@@ -308,12 +261,6 @@ struct Residue : public ResidueId {
            other.find_atom(other.atoms[0].name, atoms[0].altloc) != nullptr;
   }
 
-  bool has_peptide_bond_to(const Residue& next) const {
-    const Atom* a1 = get_c();
-    const Atom* a2 = next.get_n();
-    return a1 && a2 && a1->pos.dist_sq(a2->pos) < 2.0 * 2.0;
-  }
-
   // convenience function that duplicates functionality from resinfo.hpp
   bool is_water() const {
     if (name.length() != 3)
@@ -364,11 +311,19 @@ struct ConstResidueSpan : Span<const Residue> {
     if (this->empty())
       throw std::out_of_range("subchain_id(): empty span");
     if (this->size() > 1 && this->front().subchain != this->back().subchain)
-      fail("subchain id varies");
+      fail("subchain id varies in a residue span: ", this->front().subchain,
+           " vs ", this->back().subchain);
     return this->begin()->subchain;
   }
 
   ConstResidueGroup find_residue_group(SeqId id) const;
+
+  std::vector<std::string> extract_sequence() const {
+    std::vector<std::string> seq;
+    for (const Residue& res : first_conformer())
+      seq.push_back(res.name);
+    return seq;
+  }
 
   // We assume residues are ordered. It works (approximately) also with
   // missing numbers which can be present in DBREF.
@@ -494,13 +449,13 @@ inline ResidueSpan::GroupingProxy ResidueSpan::residue_groups() {
 namespace impl {
 template<typename T, typename Ch> std::vector<T> chain_subchains(Ch* ch) {
   std::vector<T> v;
-  auto span_start = ch->residues.begin();
-  for (auto i = span_start; i != ch->residues.end(); ++i)
-    if (i->subchain != span_start->subchain) {
-      v.push_back(ch->whole().sub(span_start, i));
-      span_start = i;
-    }
-  v.push_back(ch->whole().sub(span_start, ch->residues.end()));
+  for (auto start = ch->residues.begin(); start != ch->residues.end(); ) {
+    auto end = start + 1;
+    while (end != ch->residues.end() && end->subchain == start->subchain)
+      ++end;
+    v.push_back(ch->whole().sub(start, end));
+    start = end;
+  }
   return v;
 }
 } // namespace impl
@@ -513,11 +468,11 @@ struct Chain {
   explicit Chain(std::string cname) noexcept : name(cname) {}
 
   ResidueSpan whole() {
-    auto begin = residues.empty() ? nullptr : &residues.at(0);
+    Residue* begin = residues.empty() ? nullptr : &residues[0];
     return ResidueSpan(residues, begin, residues.size());
   }
   ConstResidueSpan whole() const {
-    auto begin = residues.empty() ? nullptr : &residues.at(0);
+    const Residue* begin = residues.empty() ? nullptr : &residues[0];
     return ConstResidueSpan(begin, residues.size());
   }
 
@@ -529,9 +484,14 @@ struct Chain {
   }
 
   ResidueSpan get_polymer() {
-    return get_residue_span([](const Residue& r) {
-        return r.entity_type == EntityType::Polymer;
-    });
+    auto begin = residues.begin();
+    while (begin != residues.end() && begin->entity_type != EntityType::Polymer)
+      ++begin;
+    auto end = begin;
+    while (end != residues.end() && end->entity_type == EntityType::Polymer
+                                 && end->subchain == begin->subchain)
+      ++end;
+    return ResidueSpan(residues, &*begin, end - begin);
   }
   ConstResidueSpan get_polymer() const {
     return const_cast<Chain*>(this)->get_polymer();
@@ -539,7 +499,8 @@ struct Chain {
 
   ResidueSpan get_ligands() {
     return get_residue_span([](const Residue& r) {
-        return r.entity_type == EntityType::NonPolymer;
+        return r.entity_type == EntityType::NonPolymer ||
+               r.entity_type == EntityType::Branched;
     });
   }
   ConstResidueSpan get_ligands() const {
@@ -586,6 +547,7 @@ struct Chain {
 
   // methods present in Structure, Model, ... - used in templates
   Chain empty_copy() const { return Chain(name); }
+  using child_type = Residue;
   std::vector<Residue>& children() { return residues; }
   const std::vector<Residue>& children() const { return residues; }
 
@@ -598,8 +560,8 @@ struct Chain {
   // Got complicated by handling of multi-conformations / microheterogeneity.
   const Residue* previous_residue(const Residue& res) const {
     const Residue* start = residues.data();
-    for (const Residue* p = &res; p != start; )
-      if (res.group_key() != (--p)->group_key()) {
+    for (const Residue* p = &res; p-- != start; )
+      if (res.group_key() != p->group_key()) {
         while (p != start && p->group_key() == (p-1)->group_key() &&
                (res.atoms.at(0).altloc == '\0' || !res.same_conformer(*p)))
           --p;
@@ -621,72 +583,17 @@ struct Chain {
     return nullptr;
   }
 
-  const Residue* previous_bonded_aa(const Residue& res) const {
-    if (const Residue* prev = previous_residue(res))
-      if (prev->has_peptide_bond_to(res))
-        return prev;
-    return nullptr;
-  }
-
-  const Residue* next_bonded_aa(const Residue& res) const {
-    if (const Residue* next = next_residue(res))
-      if (res.has_peptide_bond_to(*next))
-        return next;
-    return nullptr;
-  }
-
   // Iterators that in case of multiple conformations (microheterogeneity)
   // skip all but the first conformation.
   UniqProxy<Residue> first_conformer() { return {residues}; }
   ConstUniqProxy<Residue> first_conformer() const { return {residues}; }
 };
 
-inline std::string atom_str(const std::string& chain_name,
-                            const ResidueId& res_id,
-                            const std::string& atom_name,
-                            char altloc) {
-  std::string r = chain_name;
-  r += '/';
-  r += res_id.name;
-  r += ' ';
-  r += res_id.seqid.str();
-  r += '/';
-  r += atom_name;
-  if (altloc) {
-    r += '.';
-    r += altloc;
-  }
-  return r;
-}
-
 inline std::string atom_str(const Chain& chain,
                             const ResidueId& res_id,
                             const Atom& atom) {
   return atom_str(chain.name, res_id, atom.name, atom.altloc);
 }
-
-struct AtomAddress {
-  std::string chain_name;
-  ResidueId res_id;
-  std::string atom_name;
-  char altloc = '\0';
-
-  AtomAddress() = default;
-  AtomAddress(const std::string& ch, const SeqId& seqid, const std::string& res,
-              const std::string& atom, char alt='\0')
-    : chain_name(ch), res_id({seqid, "", res}), atom_name(atom), altloc(alt) {}
-  AtomAddress(const Chain& ch, const Residue& res, const Atom& at)
-    : chain_name(ch.name), res_id(res), atom_name(at.name), altloc(at.altloc) {}
-
-  bool operator==(const AtomAddress& o) const {
-    return chain_name == o.chain_name && res_id.matches(o.res_id) &&
-           atom_name == o.atom_name && altloc == o.altloc;
-  }
-
-  std::string str() const {
-    return atom_str(chain_name, res_id, atom_name, altloc);
-  }
-};
 
 struct const_CRA {
   const Chain* chain;
@@ -716,100 +623,50 @@ inline bool atom_matches(const const_CRA& cra, const AtomAddress& addr) {
          cra.atom->altloc == addr.altloc;
 }
 
-// A connection. Corresponds to _struct_conn.
-// Symmetry operators are not trusted and not stored.
-// We assume that the nearest symmetry mate is connected.
-struct Connection {
-  enum Type { Covale, Disulf, Hydrog, MetalC, Unknown };
-  std::string name;
-  std::string link_id;  // _struct_conn.ccp4_link_id (== _chem_link.id)
-  Type type = Unknown;
-  Asu asu = Asu::Any;
-  AtomAddress partner1, partner2;
-  double reported_distance = 0.0;
-};
-
-inline const char* get_mmcif_connection_type_id(Connection::Type t) {
-  static constexpr const char* type_ids[] = {
-    "covale", "disulf", "hydrog", "metalc", "." };
-  return type_ids[t];
+inline AtomAddress make_address(const Chain& ch, const Residue& res, const Atom& at) {
+  return AtomAddress(ch.name, res, at.name, at.altloc);
 }
-
-// Secondary structure. PDBx/mmCIF stores helices and sheets separately.
-
-// mmCIF spec defines 32 possible values for _struct_conf.conf_type_id -
-// "the type of the conformation of the backbone of the polymer (whether
-// protein or nucleic acid)". But as of 2019 only HELX_P is used (not counting
-// TURN_P that occurs in only 6 entries). The actual helix type is given
-// by numeric value of _struct_conf.pdbx_PDB_helix_class, which corresponds
-// to helixClass from the PDB HELIX record. These values are in the range 1-10.
-// As of 2019 it's almost only type 1 and 5:
-// 3116566 of  1 - right-handed alpha
-//      16 of  2 - right-handed omega
-//      84 of  3 - right-handed pi
-//      79 of  4 - right-handed gamma
-// 1063337 of  5 - right-handed 3-10
-//      27 of  6 - left-handed alpha
-//       5 of  7 - left-handed omega
-//       2 of  8 - left-handed gamma
-//       8 of  9 - 2-7 ribbon/helix
-//      46 of 10 - polyproline
-struct Helix {
-  enum HelixClass {
-    UnknownHelix, RAlpha, ROmega, RPi, RGamma, R310,
-    LAlpha, LOmega, LGamma, Helix27, HelixPolyProlineNone
-  };
-  AtomAddress start, end;
-  HelixClass pdb_helix_class = UnknownHelix;
-  int length = -1;
-  void set_helix_class_as_int(int n) {
-    if (n >= 1 && n <= 10)
-      pdb_helix_class = static_cast<HelixClass>(n);
-  }
-};
-
-struct Sheet {
-  struct Strand {
-    AtomAddress start, end;
-    AtomAddress hbond_atom2, hbond_atom1;
-    int sense;  // 0 = first strand, 1 = parallel, -1 = anti-parallel.
-    std::string name; // optional, _struct_sheet_range.id if from mmCIF
-  };
-  std::string name;
-  std::vector<Strand> strands;
-  explicit Sheet(std::string sheet_id) noexcept : name(sheet_id) {}
-};
 
 
 template<typename CraT>
 class CraIterPolicy {
 public:
-  typedef CraT value_type;
+  using value_type = CraT;
+  using reference = const CraT;
   CraIterPolicy() : chains_end(nullptr), cra{nullptr, nullptr, nullptr} {}
   CraIterPolicy(const Chain* end, CraT cra_) : chains_end(end), cra(cra_) {}
   void increment() {
-    if (cra.atom)
-      if (++cra.atom == vector_end_ptr(cra.residue->atoms)) {
+    if (cra.atom == nullptr)
+      return;
+    if (++cra.atom == vector_end_ptr(cra.residue->atoms)) {
+      do {
         if (++cra.residue == vector_end_ptr(cra.chain->residues)) {
-          if (++cra.chain == chains_end) {
-            cra.atom = nullptr;
-            return;
-          }
-          cra.residue = &cra.chain->residues.at(0);
+          do {
+            if (++cra.chain == chains_end) {
+              cra.atom = nullptr;
+              return;
+            }
+          } while (cra.chain->residues.empty());
+          cra.residue = &cra.chain->residues[0];
         }
-        cra.atom = &cra.residue->atoms.at(0);
-      }
+      } while (cra.residue->atoms.empty());
+      cra.atom = &cra.residue->atoms[0];
+    }
   }
   void decrement() {
-    if (cra.atom)
-      if (cra.atom-- == cra.residue->atoms.data()) {
-        if (cra.residue-- == cra.chain->residues.data())
-          cra.residue = &(--cra.chain)->residues.back();
-        cra.atom = &cra.residue->atoms.back();
+    while (cra.atom == nullptr || cra.atom == cra.residue->atoms.data()) {
+      while (cra.residue == nullptr || cra.residue == cra.chain->residues.data()) {
+        // iterating backward beyond begin() will have undefined effects
+        while ((--cra.chain)->residues.empty()) {}
+        cra.residue = vector_end_ptr(cra.chain->residues);
       }
+      --cra.residue;
+      cra.atom = vector_end_ptr(cra.residue->atoms);
+    }
+    --cra.atom;
   }
   bool equal(const CraIterPolicy& o) const { return cra.atom == o.cra.atom; }
-  CraT& dereference() { return cra; }
+  CraT dereference() { return cra; }  // make copy b/c increment() modifies cra
   using const_policy = CraIterPolicy<const_CRA>;
   operator const_policy() const { return const_policy(chains_end, cra); }
 private:
@@ -822,13 +679,16 @@ struct CraProxy_ {
   ChainsRefT chains;
   using iterator = BidirIterator<CraIterPolicy<CraT>>;
   iterator begin() {
-    CraT cra;
-    cra.chain = &chains.at(0);
-    cra.residue = &cra.chain->residues.at(0);
-    cra.atom = &cra.residue->atoms.at(0);
-    return CraIterPolicy<CraT>{vector_end_ptr(chains), cra};
+    for (auto& chain : chains)
+      for (auto& residue : chain.residues)
+        for (auto& atom : residue.atoms)
+          return CraIterPolicy<CraT>{vector_end_ptr(chains), CraT{&chain, &residue, &atom}};
+    return {};
   }
-  iterator end() { return {}; }
+  iterator end() {
+    auto* chains_end = vector_end_ptr(chains);
+    return CraIterPolicy<CraT>{chains_end, CraT{chains_end, nullptr, nullptr}};
+  }
 };
 
 using CraProxy = CraProxy_<CRA, std::vector<Chain>&>;
@@ -907,6 +767,10 @@ struct Model {
           return residue;
     return nullptr;
   }
+  const Residue* find_residue(const std::string& chain_name, const ResidueId& rid) const {
+    return const_cast<Model*>(this)->find_residue(chain_name, rid);
+  }
+
 
   ResidueGroup find_residue_group(const std::string& chain_name, SeqId seqid) {
     for (Chain& chain : chains)
@@ -932,20 +796,23 @@ struct Model {
     return names;
   }
 
-  CRA find_cra(const AtomAddress& address) {
+  CRA find_cra(const AtomAddress& address, bool ignore_segment=false) {
     for (Chain& chain : chains)
-      if (chain.name == address.chain_name)
-        if (Residue* res = chain.find_residue(address.res_id)) {
-          Atom *at = nullptr;
-          if (!address.atom_name.empty())
-            at = res->find_atom(address.atom_name, address.altloc);
-          return {&chain, res, at};
-        }
+      if (chain.name == address.chain_name) {
+        for (Residue& res : chain.residues)
+          if (address.res_id.matches_noseg(res) &&
+              (ignore_segment || address.res_id.segment == res.segment)) {
+            Atom *at = nullptr;
+            if (!address.atom_name.empty())
+              at = res.find_atom(address.atom_name, address.altloc);
+            return {&chain, &res, at};
+          }
+      }
     return {nullptr, nullptr, nullptr};
   }
 
-  const_CRA find_cra(const AtomAddress& address) const {
-    return const_cast<Model*>(this)->find_cra(address);
+  const_CRA find_cra(const AtomAddress& address, bool ignore_segment=false) const {
+    return const_cast<Model*>(this)->find_cra(address, ignore_segment);
   }
 
   CraProxy all() { return {chains}; }
@@ -971,63 +838,28 @@ struct Model {
 
   // methods present in Structure, Model, ... - used in templates
   Model empty_copy() const { return Model(name); }
+  using child_type = Chain;
   std::vector<Chain>& children() { return chains; }
   const std::vector<Chain>& children() const { return chains; }
 };
 
-struct NcsOp {
-  std::string id;
-  bool given;
-  Transform tr;
-  Position apply(const Position& p) const { return Position(tr.apply(p)); }
-};
-
-// bioassembly / biomolecule
-struct Assembly {
-  struct Oper {
-    std::string name; // optional
-    std::string type; // optional (from mmCIF only)
-    Transform transform;
-  };
-  struct Gen {
-    std::vector<std::string> chains;
-    std::vector<std::string> subchains;
-    std::vector<Oper> opers;
-  };
-  enum class SpecialKind {
-    NA, CompleteIcosahedral, RepresentativeHelical, CompletePoint
-  };
-  std::string name;
-  bool author_determined = false;
-  bool software_determined = false;
-  SpecialKind special_kind = SpecialKind::NA;
-  int oligomeric_count = 0;
-  std::string oligomeric_details;
-  std::string software_name;
-  double absa = NAN; // TOTAL BURIED SURFACE AREA: ... ANGSTROM**2
-  double ssa = NAN;  // SURFACE AREA OF THE COMPLEX: ... ANGSTROM**2
-  double more = NAN; // CHANGE IN SOLVENT FREE ENERGY: ... KCAL/MOL
-  std::vector<Gen> generators;
-  Assembly(const std::string& name_) : name(name_) {}
-};
-
-inline Entity* find_entity(const std::string& subchain_id,
-                           std::vector<Entity>& entities) {
+inline Entity* find_entity_of_subchain(const std::string& subchain_id,
+                                       std::vector<Entity>& entities) {
   if (!subchain_id.empty())
     for (Entity& ent : entities)
       if (in_vector(subchain_id, ent.subchains))
         return &ent;
   return nullptr;
 }
-inline const Entity* find_entity(const std::string& subchain_id,
-                                 const std::vector<Entity>& entities) {
-  return find_entity(subchain_id, const_cast<std::vector<Entity>&>(entities));
+inline const Entity* find_entity_of_subchain(const std::string& subchain_id,
+                                             const std::vector<Entity>& entities) {
+  return find_entity_of_subchain(subchain_id, const_cast<std::vector<Entity>&>(entities));
 }
 
 struct Structure {
   std::string name;
   UnitCell cell;
-  std::string spacegroup_hm;
+  std::string spacegroup_hm;  // usually pdb symbol, cf. SpaceGroup::pdb_name()
   std::vector<Model> models;
   std::vector<NcsOp> ncs;
   std::vector<Entity> entities;
@@ -1093,7 +925,7 @@ struct Structure {
   }
 
   Entity* get_entity_of(const ConstResidueSpan& sub) {
-    return sub ? find_entity(sub.subchain_id(), entities) : nullptr;
+    return sub ? find_entity_of_subchain(sub.subchain_id(), entities) : nullptr;
   }
   const Entity* get_entity_of(const ConstResidueSpan& sub) const {
     return const_cast<Structure*>(this)->get_entity_of(sub);
@@ -1124,15 +956,24 @@ struct Structure {
     return nullptr;
   }
 
+  size_t ncs_given_count() const {
+    return std::count_if(ncs.begin(), ncs.end(), [](const NcsOp& o) { return o.given; });
+  }
   double get_ncs_multiplier() const {
-    size_t given = std::count_if(ncs.begin(), ncs.end(),
-                                 [](const NcsOp& o) { return o.given; });
-    return (ncs.size() + 1.0) / (given + 1.0);  // +1 b/c identity not included
+    return (ncs.size() + 1.0) / (ncs_given_count() + 1.0);  // +1 b/c identity not included
+  }
+  bool ncs_not_expanded() const {
+    return std::any_of(ncs.begin(), ncs.end(), [](const NcsOp& o) { return !o.given; });
   }
 
   void merge_chain_parts(int min_sep=0) {
     for (Model& model : models)
       model.merge_chain_parts(min_sep);
+  }
+
+  void remove_empty_chains() {
+    for (Model& model : models)
+      remove_empty_children(model);
   }
 
   // copy all but models (in general, empty_copy copies all but children)
@@ -1156,6 +997,7 @@ struct Structure {
     st.input_format = input_format;
     return st;
   }
+  using child_type = Model;
   std::vector<Model>& children() { return models; }
   const std::vector<Model>& children() const { return models; }
 
@@ -1198,17 +1040,7 @@ inline void Chain::append_residues(std::vector<Residue> new_resi, int min_sep) {
 inline void Structure::setup_cell_images() {
   const SpaceGroup* sg = find_spacegroup();
   cell.set_cell_images_from_spacegroup(sg);
-
-  // Strict NCS from MTRIXn.
-  size_t n = cell.images.size();
-  for (const NcsOp& op : ncs)
-    if (!op.given) {
-      // We need it to operates on fractional, not orthogonal coordinates.
-      FTransform f = cell.frac.combine(op.tr.combine(cell.orth));
-      cell.images.emplace_back(f);
-      for (size_t i = 0; i < n; ++i)
-        cell.images.emplace_back(cell.images[i].combine(f));
-    }
+  cell.add_ncs_images_to_cs_images(ncs);
 }
 
 } // namespace gemmi

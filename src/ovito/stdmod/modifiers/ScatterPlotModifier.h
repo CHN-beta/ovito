@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -60,6 +60,9 @@ public:
 
 	/// Set start and end value of the y-axis.
 	void setYAxisRange(FloatType start, FloatType end) { setYAxisRangeStart(start); setYAxisRangeEnd(end); }
+
+	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+	virtual QVariant getPipelineEditorShortInfo(ModifierApplication* modApp) const override { return tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()); }
 
 protected:
 

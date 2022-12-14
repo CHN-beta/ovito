@@ -68,6 +68,9 @@ public:
 
 	/// \brief Constructor.
 	Q_INVOKABLE SurfaceMeshVertices(ObjectCreationParams params);
+
+	/// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
+	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state) const override;
 };
 
 }	// End of namespace

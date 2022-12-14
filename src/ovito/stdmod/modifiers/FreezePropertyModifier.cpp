@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -88,6 +88,11 @@ void FreezePropertyModifier::propertyChanged(const PropertyFieldDescriptor* fiel
 		setSourceProperty(sourceProperty().convertToContainerClass(subject().dataClass()));
 		setDestinationProperty(destinationProperty().convertToContainerClass(subject().dataClass()));
 	}
+	else if(field == PROPERTY_FIELD(FreezePropertyModifier::sourceProperty) && !isBeingLoaded()) {
+		// Changes of some the modifier's parameters affect the result of FreezePropertyModifier::getPipelineEditorShortInfo().
+		notifyDependents(ReferenceEvent::ObjectStatusChanged);
+	}
+
 	GenericPropertyModifier::propertyChanged(field);
 }
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -112,11 +112,16 @@ void ScatterPlotModifier::initializeModifier(const ModifierInitializationRequest
 ******************************************************************************/
 void ScatterPlotModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	// Whenever the selected property class of this modifier is changed, update the source property references.
 	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !dataset()->undoStack().isUndoingOrRedoing()) {
+		// Whenever the selected property class of this modifier is changed, update the source property references.
 		setXAxisProperty(xAxisProperty().convertToContainerClass(subject().dataClass()));
 		setYAxisProperty(yAxisProperty().convertToContainerClass(subject().dataClass()));
 	}
+	else if((field == PROPERTY_FIELD(ScatterPlotModifier::xAxisProperty) || field == PROPERTY_FIELD(ScatterPlotModifier::yAxisProperty)) && !isBeingLoaded()) {
+		// Changes of some the modifier's parameters affect the result of ScatterPlotModifier::getPipelineEditorShortInfo().
+		notifyDependents(ReferenceEvent::ObjectStatusChanged);
+	}
+
 	GenericPropertyModifier::propertyChanged(field);
 }
 
@@ -234,7 +239,7 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
 				.arg((FloatType)numSelected * 100 / std::max((size_t)1,outputSelection.size()), 0, 'f', 1);
 	}
 
-	state.setStatus(PipelineStatus(PipelineStatus::Success, std::move(statusMessage)));
+	state.setStatus(PipelineStatus(std::move(statusMessage)));
 }
 
 }	// End of namespace

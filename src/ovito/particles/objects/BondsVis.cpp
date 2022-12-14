@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,12 +39,10 @@ IMPLEMENT_OVITO_CLASS(BondPickInfo);
 DEFINE_PROPERTY_FIELD(BondsVis, bondWidth);
 DEFINE_PROPERTY_FIELD(BondsVis, bondColor);
 DEFINE_PROPERTY_FIELD(BondsVis, shadingMode);
-DEFINE_PROPERTY_FIELD(BondsVis, renderingQuality);
 DEFINE_PROPERTY_FIELD(BondsVis, coloringMode);
 SET_PROPERTY_FIELD_LABEL(BondsVis, bondWidth, "Bond width");
 SET_PROPERTY_FIELD_LABEL(BondsVis, bondColor, "Uniform bond color");
 SET_PROPERTY_FIELD_LABEL(BondsVis, shadingMode, "Shading mode");
-SET_PROPERTY_FIELD_LABEL(BondsVis, renderingQuality, "Rendering quality");
 SET_PROPERTY_FIELD_LABEL(BondsVis, coloringMode, "Coloring mode");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondsVis, bondWidth, WorldParameterUnit, 0);
 
@@ -55,7 +53,6 @@ BondsVis::BondsVis(ObjectCreationParams params) : DataVis(params),
 	_bondWidth(0.4),
 	_bondColor(0.6, 0.6, 0.6),
 	_shadingMode(NormalShading),
-	_renderingQuality(CylinderPrimitive::HighQuality),
 	_coloringMode(ParticleBasedColoring)
 {
 }
@@ -65,9 +62,8 @@ BondsVis::BondsVis(ObjectCreationParams params) : DataVis(params),
 ******************************************************************************/
 Box3 BondsVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	if(path.size() < 2) return {};
-	const BondsObject* bonds = dynamic_object_cast<BondsObject>(path.back());
-	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(path[path.size()-2]);
+	const BondsObject* bonds = path.lastAs<BondsObject>(0);
+	const ParticlesObject* particles = path.lastAs<ParticlesObject>(1);
 	if(!bonds || !particles) return {};
 	particles->verifyIntegrity();
 	bonds->verifyIntegrity();
@@ -155,9 +151,8 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 		return {};
 	}
 
-	if(path.size() < 2) return {};
-	const BondsObject* bonds = dynamic_object_cast<BondsObject>(path.back());
-	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(path[path.size()-2]);
+	const BondsObject* bonds = path.lastAs<BondsObject>(0);
+	const ParticlesObject* particles = path.lastAs<ParticlesObject>(1);
 	if(!bonds || !particles) return {};
 	particles->verifyIntegrity();
 	bonds->verifyIntegrity();
@@ -204,8 +199,7 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 		FloatType,				// Bond width
 		Color,					// Bond uniform color
 		ColoringMode,			// Bond coloring mode
-		ShadingMode,			// Bond shading mode
-		CylinderPrimitive::RenderingQuality // Bond rendering quality
+		ShadingMode				// Bond shading mode
 	>;
 
 	// The data structure stored in the vis cache.
@@ -231,8 +225,7 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 			bondWidth(),
 			bondColor(),
 			coloringMode(),
-			shadingMode(),
-			renderingQuality()));
+			shadingMode()));
 
 	// Make sure the primitive for the nodal vertices gets created if particles display is turned off or if particles are semi-transparent.
 	bool renderNodalVertices = !transparencyProperty && !bondWidthProperty && (!particleVis || particleVis->isEnabled() == false || particleTransparencyProperty != nullptr);
@@ -352,7 +345,6 @@ PipelineStatus BondsVis::render(TimePoint time, const ConstDataObjectPath& path,
 
 			visCache.cylinders.setShape(CylinderPrimitive::CylinderShape);
 			visCache.cylinders.setShadingMode(static_cast<CylinderPrimitive::ShadingMode>(shadingMode()));
-			visCache.cylinders.setRenderingQuality(renderingQuality());
 			visCache.cylinders.setRenderSingleCylinderCap(transparencyProperty != nullptr);
 			visCache.cylinders.setUniformWidth(bondDiameter);
 			visCache.cylinders.setWidths(bondWidths.take());
@@ -545,47 +537,9 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
 				str += QString("<key>Length:</key> <val>%1</val><sep><key>Delta:</key> <val>%2, %3, %4</val>").arg(delta.length()).arg(delta.x()).arg(delta.y()).arg(delta.z());
 			}
 
-			// Bond properties
-			for(const PropertyObject* property : particles()->bonds()->properties()) {
-				if(property->size() <= bondIndex) continue;
-				if(property->type() == BondsObject::SelectionProperty) continue;
-				if(property->type() == BondsObject::ColorProperty) continue;
-				if(!str.isEmpty()) str += QStringLiteral("<sep>");
-				str += QStringLiteral("<key>");
-				str += property->name().toHtmlEscaped();
-				str += QStringLiteral(":</key> <val>");
-				if(property->dataType() == PropertyObject::Int) {
-					ConstPropertyAccess<int, true> data(property);
-					for(size_t component = 0; component < data.componentCount(); component++) {
-						if(component != 0) str += QStringLiteral(", ");
-						str += QString::number(data.get(bondIndex, component));
-						if(property->elementTypes().empty() == false) {
-							if(const ElementType* ptype = property->elementType(data.get(bondIndex, component))) {
-								if(!ptype->name().isEmpty())
-									str += QString(" (%1)").arg(ptype->name().toHtmlEscaped());
-							}
-						}
-					}
-				}
-				else if(property->dataType() == PropertyObject::Int64) {
-					ConstPropertyAccess<qlonglong, true> data(property);
-					for(size_t component = 0; component < property->componentCount(); component++) {
-						if(component != 0) str += QStringLiteral(", ");
-						str += QString::number(data.get(bondIndex, component));
-					}
-				}
-				else if(property->dataType() == PropertyObject::Float) {
-					ConstPropertyAccess<FloatType, true> data(property);
-					for(size_t component = 0; component < property->componentCount(); component++) {
-						if(component != 0) str += QStringLiteral(", ");
-						str += QString::number(data.get(bondIndex, component));
-					}
-				}
-				else {
-					str += QStringLiteral("<%1>").arg(getQtTypeNameFromId(property->dataType()) ? getQtTypeNameFromId(property->dataType()) : "unknown");
-				}
-				str += QStringLiteral("</val>");
-			}
+			// Bond properties.
+			str += QStringLiteral("<sep>");
+			str += particles()->bonds()->elementInfoString(bondIndex);
 
 			// Pair type info.
 			const PropertyObject* typeProperty = particles()->getProperty(ParticlesObject::TypeProperty);

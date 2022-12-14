@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -101,12 +101,12 @@ void ProcessChannel::closeChannel()
 
         if(channel()) {
 #if LIBSSH_VERSION_INT >= SSH_VERSION_INT(7,0,0)
-            ::ssh_remove_channel_callbacks(channel(), &_channelCallbacks);
+            LibsshWrapper::ssh_remove_channel_callbacks()(channel(), &_channelCallbacks);
 #endif
-            if(::ssh_channel_close(channel()) != SSH_OK) {
+            if(LibsshWrapper::ssh_channel_close()(channel()) != SSH_OK) {
                 qWarning() << "Failed to close SSH channel:" << errorMessage();
             }
-            ::ssh_channel_free(channel());
+            LibsshWrapper::ssh_channel_free()(channel());
             _channel = nullptr;
             connection()->_timeSinceLastChannelClosed.start();
         }
@@ -191,7 +191,7 @@ void ProcessChannel::processState()
 
     case StateOpening:
         if(!_channel) {
-            _channel = ::ssh_channel_new(connection()->_session);
+            _channel = LibsshWrapper::ssh_channel_new()(connection()->_session);
             if(!_channel) {
                 qCritical() << "Failed to create SSH channel.";
                 setErrorString(tr("Failed to create SSH channel: %1").arg(errorMessage()));
@@ -203,7 +203,7 @@ void ProcessChannel::processState()
             stderrChannel()->_channel = channel();
         }
         OVITO_ASSERT(connection()->isConnected());
-        if(!::ssh_is_connected(connection()->_session)) {
+        if(!LibsshWrapper::ssh_is_connected()(connection()->_session)) {
             setErrorString(tr("Failed to create SSH channel: SSH connection lost"));
             setState(StateError, false);
             // If creating a channel doesn't work anymore, close the entire SSH connection.
@@ -211,7 +211,7 @@ void ProcessChannel::processState()
             return;
         }
 
-        switch(auto rc = ::ssh_channel_open_session(channel())) {
+        switch(auto rc = LibsshWrapper::ssh_channel_open_session()(channel())) {
         case SSH_AGAIN:
             connection()->enableWritableSocketNotifier();
             return;
@@ -221,8 +221,8 @@ void ProcessChannel::processState()
             return;
 
         case SSH_OK:
-            OVITO_ASSERT(::ssh_is_connected(connection()->_session));
-            if(!::ssh_channel_is_open(channel())) {
+            OVITO_ASSERT(LibsshWrapper::ssh_is_connected()(connection()->_session));
+            if(!LibsshWrapper::ssh_channel_is_open()(channel())) {
                 setErrorString(tr("Failed to open SSH channel: %1").arg(errorMessage()));
                 setState(StateError, false);
                 // If opening a channel doesn't work anymore, close the entire SSH connection.
@@ -237,7 +237,7 @@ void ProcessChannel::processState()
             _channelCallbacks.userdata = this;
             _channelCallbacks.channel_data_function = &ProcessChannel::channelDataCallback;
             ssh_callbacks_init(&_channelCallbacks);
-            ::ssh_set_channel_callbacks(channel(), &_channelCallbacks);
+            LibsshWrapper::ssh_set_channel_callbacks()(channel(), &_channelCallbacks);
 #endif
 
             // Additionally, to be safe, start a timer to periodically check for incoming data.
@@ -253,8 +253,8 @@ void ProcessChannel::processState()
         }
 
     case StateExec: {
-        OVITO_ASSERT(::ssh_channel_is_open(channel()));
-        switch(auto rc = ::ssh_channel_request_exec(channel(), qPrintable(_command))) {
+        OVITO_ASSERT(LibsshWrapper::ssh_channel_is_open()(channel()));
+        switch(auto rc = LibsshWrapper::ssh_channel_request_exec()(channel(), qPrintable(_command))) {
         case SSH_AGAIN:
             connection()->enableWritableSocketNotifier();
             return;
@@ -282,7 +282,7 @@ void ProcessChannel::processState()
         if(state() == StateOpen)
             stderrChannel()->checkIO();
         // Check if end of transmission from remote side has been reached.
-        if(state() == StateOpen && ::ssh_channel_poll(channel(), false) == SSH_EOF && ::ssh_channel_poll(channel(), true) == SSH_EOF) {
+        if(state() == StateOpen && LibsshWrapper::ssh_channel_poll()(channel(), false) == SSH_EOF && LibsshWrapper::ssh_channel_poll()(channel(), true) == SSH_EOF) {
             // EOF state affects atEnd() and canReadLine() behavior,
             // so emit readyRead signal so that users can do something about it.
             if(!_readBuffer.isEmpty()) {
@@ -291,7 +291,7 @@ void ProcessChannel::processState()
             if(!stderrChannel()->_readBuffer.isEmpty()) {
                 Q_EMIT stderrChannel()->readyRead();
             }
-            _exitCode = ::ssh_channel_get_exit_status(channel());
+            _exitCode = LibsshWrapper::ssh_channel_get_exit_status()(channel());
             Q_EMIT finished(_exitCode);
             closeChannel();
         }

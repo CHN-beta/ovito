@@ -82,8 +82,8 @@ bool GuiApplication::processCommandLineParameters()
 		// Activate console mode.
 		_consoleMode = true;
 #if defined(Q_OS_LINUX)
-		// On Unix/Linux, console mode means headless mode if no X server is available.
-		if(!qEnvironmentVariableIsEmpty("DISPLAY")) {
+		// On Linux, run in headless mode by default - unless explicitly requested otherwise (in which case an X server is required).
+		if(qEnvironmentVariableIsSet("OVITO_GUI_MODE") && qgetenv("OVITO_GUI_MODE") != "0") {
 			_headlessMode = false;
 		}
 #elif defined(Q_OS_MACOS)
@@ -91,7 +91,7 @@ bool GuiApplication::processCommandLineParameters()
 		::setenv("QT_MAC_DISABLE_FOREGROUND_APPLICATION_TRANSFORM", "1", 1);
 		_headlessMode = false;
 #elif defined(Q_OS_WIN)
-		// On Windows, there is always an OpenGL implementation available for background rendering.
+		// On Windows, there is always an OpenGL implementation available for offscreen rendering.
 		_headlessMode = false;
 #endif
 	}
@@ -190,11 +190,11 @@ MainThreadOperation GuiApplication::startupApplication()
 			return nullptr;
 		}
 #endif
-		return MainThreadOperation::create(*mainWin, ExecutionContext::Interactive);
+		return MainThreadOperation::create(*mainWin);
 	}
 	else {
 		// Use this application's command line user interface.
-		return MainThreadOperation::create(*this, ExecutionContext::Scripting);
+		return MainThreadOperation::create(*this);
 	}
 }
 
@@ -283,7 +283,23 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
 	if(event->type() == QEvent::FileOpen) {
 		QFileOpenEvent* openEvent = static_cast<QFileOpenEvent*>(event);
 		try {
-			if(MainWindow* mainWindow = qobject_cast<MainWindow*>(QApplication::activeWindow())) {
+			MainWindow* mainWindow = qobject_cast<MainWindow*>(QApplication::activeWindow());
+
+			// If the main window is not the active window, look up it up among the list of all top-level windows
+			// Only use it for opening the imported file if there currently is only a single MainWindow instance.
+			if(!mainWindow) {
+				for(QWidget* widget : QApplication::topLevelWidgets()) {
+					if(MainWindow* mw = qobject_cast<MainWindow*>(widget)) {
+						if(!mainWindow) mainWindow = mw;
+						else {
+							mainWindow = nullptr;
+							break;
+						}
+					}
+				}
+			}
+
+			if(mainWindow) {
 				if(openEvent->file().endsWith(".ovito", Qt::CaseInsensitive)) {
 					mainWindow->datasetContainer().loadDataset(openEvent->file(), MainThreadOperation::create(*mainWindow, true));
 				}

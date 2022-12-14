@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -245,6 +245,30 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, Ti
             [&](size_t i) { return (transformation * velocityProperty[i]).toDataType<float>(); });
         _gsdFile->writeChunk<float>("particles/velocity", velocityBuffer.size(), 3, velocityBuffer.data());
         if(operation.isCanceled()) return false;
+    }
+
+    // Output particle angular momenta. Note: The GSDImporter currently stores these values in the user-defined particle property "angmom".
+    if(ConstPropertyAccess<Quaternion> angularMomentumProperty = particles->getProperty("angmom")) {
+        if(angularMomentumProperty.dataType() == PropertyObject::Float && angularMomentumProperty.componentCount() == 4) {
+            // Apply particle index mapping and data type conversion:
+            std::vector<QuaternionT<float>> angMomBuffer(angularMomentumProperty.size());
+            boost::transform(ordering, angMomBuffer.begin(),
+                [&](size_t i) { return angularMomentumProperty[i].toDataType<float>(); });
+            _gsdFile->writeChunk<float>("particles/angmom", angMomBuffer.size(), 4, angMomBuffer.data());
+            if(operation.isCanceled()) return false;
+        }
+    }
+
+    // Output particle body property. Note: The GSDImporter currently stores the values in the user-defined particle property "body".
+    if(ConstPropertyAccess<int> bodyProperty = particles->getProperty("body")) {
+        if(bodyProperty.dataType() == PropertyObject::Int && bodyProperty.componentCount() == 1) {
+            // Apply particle index mapping:
+            std::vector<int> bodyBuffer(bodyProperty.size());
+            boost::transform(ordering, bodyBuffer.begin(), 
+                [&](size_t i) { return bodyProperty[i]; });
+            _gsdFile->writeChunk<int>("particles/body", bodyBuffer.size(), 1, bodyBuffer.data());
+            if(operation.isCanceled()) return false;
+        }
     }
 
     std::vector<size_t> reverseOrdering;

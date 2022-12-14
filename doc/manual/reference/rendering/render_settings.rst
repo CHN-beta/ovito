@@ -17,7 +17,7 @@ active viewport, which is indicated by a yellow border. Right-click in a viewpor
 
 By default, rendered images are displayed in the so-called frame buffer window after rendering is complete, but they are not automatically saved to disk. 
 That means they will be lost as soon as you close the frame buffer window or quit OVITO. To save rendered images, you can either use the :guilabel:`Save to file` function
-found in the toolbar of the frame buffer window after rendering is complete, or activate the :guilabel:`Save to file` option in advance in the
+found in the toolbar of the frame buffer window after rendering is complete or activate the :guilabel:`Save to file` option in advance in the
 *Render settings* panel, which is described below.
 
 When rendering a movie note that the total length of the animation and the playback speed (frames per second) are set in 
@@ -31,7 +31,7 @@ Rendering range
   Selects which animation frame(s) to render. 
   If you decide to render an animation, i.e. a range of frames, 
   make sure you also check the :guilabel:`Save to file` option and set an output filename below. 
-  Otherwise the rendered animation will not get permanently saved to disk.
+  Otherwise, the rendered animation will not get permanently saved to disk.
 
 Every Nth frame
   This value determines which fraction of animation frames is actually rendered. 
@@ -39,7 +39,7 @@ Every Nth frame
   Thus, you can use this to reduce the number of generated video frames in case of extremely long simulation sequences.
 
 File number base
-  When saving the frames of an animation as a series of image files (rather than a single movie file), 
+  When saving the frames of the animation as a series of image files (rather than a single movie file), 
   OVITO automatically appends the frame number to the output filename. This setting lets you specify another base file number, 
   i.e. an offset. This can be useful if you want to collect the video frames from several animation sequences
   in one directory and later combine them into one contiguous movie using an external video encoding software.
@@ -80,5 +80,5 @@ Switch renderer
   Use this button to select a different rendering engine. OVITO Pro offers
   several rendering engines, which differ in terms of visual quality and rendering speed. 
   See the :ref:`Rendering <rendering>` page for a list of options.
-  Each render engine has specific parameters and settings, which are displayed in the separate 
+  Each rendering engine has specific parameters and settings, which are displayed in the separate 
   panel below the *Render settings* panel.

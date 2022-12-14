@@ -119,14 +119,14 @@ QVector<DataObjectReference> SimulationCellAffineTransformationModifierDelegate:
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
-PipelineStatus SimulationCellAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+PipelineStatus SimulationCellAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
 	const AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
 
 	// Transform the SimulationCellObject.
 	if(const SimulationCellObject* inputCell = state.getObject<SimulationCellObject>()) {
 		SimulationCellObject* outputCell = state.makeMutable(inputCell);
-		outputCell->setCellMatrix(mod->relativeMode() ? (mod->effectiveAffineTransformation(state) * inputCell->cellMatrix()) : mod->targetCell());
+		outputCell->setCellMatrix(mod->relativeMode() ? (mod->effectiveAffineTransformation(inputState) * inputCell->cellMatrix()) : mod->targetCell());
 	}
 
 	if(mod->selectionOnly())
@@ -137,7 +137,7 @@ PipelineStatus SimulationCellAffineTransformationModifierDelegate::apply(const M
 		if(const PeriodicDomainDataObject* existingObject = dynamic_object_cast<PeriodicDomainDataObject>(obj)) {
 			if(existingObject->domain()) {
 				PeriodicDomainDataObject* newObject = state.makeMutable(existingObject);
-				newObject->mutableDomain()->setCellMatrix(mod->effectiveAffineTransformation(state) * existingObject->domain()->cellMatrix());
+				newObject->mutableDomain()->setCellMatrix(mod->effectiveAffineTransformation(inputState) * existingObject->domain()->cellMatrix());
 			}
 		}
 	}

@@ -90,13 +90,13 @@ control over the positioning and orientation of the viewport camera.
 :guilabel:`Create Camera` inserts a movable camera object into the three-dimensional
 scene. This camera object is linked to the viewport, and moving the camera updates the view
 accordingly and vice versa. Since you can animate the position of the camera object, you can 
-create fly-by animations based on a :ref:'camera motion path <usage.animation.camera>`.
+create fly-by animations based on a :ref:`camera motion path <usage.animation.camera>`.
 
 The :guilabel:`Window Layout` submenu provides several functions for manipulating the current viewport layout.
 OVITO creates 4 standard viewport windows by default, which are arranged in a 2-by-2 grid. You can add 
 and remove viewports as needed, and adjust their relative positioning by dragging the separator 
 lines between them with the mouse. OVITO Pro provides the option to render images and animations showing 
-multiple views side by side, see the :ref:`Render all viewports <core.render_settings>` option.
+multiple views side by side, see the option :ref:`Render all viewports <core.render_settings>`.
 
 The :guilabel:`Pipeline Visibility` submenu lists all :ref:`data pipelines <usage.modification_pipeline>` currently shown in the viewport. 
 By default, all pipelines that are part of the three-dimensional scene are shown in every viewport window, but here you have the option to turn off the 

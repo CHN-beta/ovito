@@ -15,7 +15,7 @@ Non-spherical particle shapes
 
    User-defined particle shapes
 
-OVITO has built-in support for a range of different particles shapes aside from the standard spherical shape.
+OVITO has built-in support for a range of different particle shapes aside from the standard spherical shape.
 Furthermore, it supports user-defined particle shapes, which are specified in terms of polyhedral meshes:
 
  - spheres
@@ -46,7 +46,7 @@ each particle individually:
 
 The property assignment can happen directly during import of your data file into OVITO by mapping values from corresponding
 file columns to the right target properties in OVITO. Furthermore, you can subsequently assign values to these properties as needed by inserting
-the :ref:`particles.modifiers.compute_property` modifier into the a data pipeline.
+the :ref:`particles.modifiers.compute_property` modifier into the data pipeline.
 
 The orientation of non-spherical particles is controlled by the ``Orientation`` particle property,
 which consists of four components :math:`\mathrm{q} = (x, y, z, w)` forming a `quaternion <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`__. 
@@ -63,22 +63,30 @@ allows you to output this per-particle information to a dump file using the foll
 
 :: 
 
-  compute orient all property/atom quati quatj quatk quatw
+  compute orient all property/atom quatw quati quatj quatk
   compute diameter all property/atom shapex shapey shapez
   dump 1 all custom 100 ellipsoid.dump id type x y z &
-                                       c_orient[1] c_orient[2] c_orient[3] c_orient[4] &
+                                       c_q[1] c_q[2] c_q[3] c_q[4] &
                                        c_diameter[1] c_diameter[2] c_diameter[3]
 
-You should map the ``quati``, ``quatj``, ``quatj``, and ``quatw`` atom properties of LAMMPS  
-to the ``Orientation.X``, ``Orientation.Y``, ``Orientation.Z``, and ``Orientation.W`` properties of OVITO 
-during import of the dump file. 
+During import of the dump file in OVITO, you should map the ``quati``, ``quatj``, ``quatj``, and ``quatw`` atom attributes from LAMMPS  
+to the ``Orientation.X``, ``Orientation.Y``, ``Orientation.Z``, and ``Orientation.W`` particle properties in OVITO (in this exact order). 
+This mapping will be established automatically if you `assign the right names to the columns <https://docs.lammps.org/dump_modify.html>`__ 
+when writing the dump file: 
 
-Similarly, the ``shapex``, ``shapey``, and ``shapez`` columns should be mapped to the properties ``Aspherical Shape.X``, ``Aspherical Shape.Y``, and ``Aspherical Shape.Z``
-within OVITO. This property plays a role for some of the particle display shapes described below. 
+:: 
 
-When importing a dump file, the correct mapping :ref:`is set up automatically <file_formats.input.lammps_dump.property_mapping>` if you name your computes in LAMMPS as in the above example. 
-Otherwise, you may have to adjust the mapping by hand in the :guilabel:`Edit column mapping` dialog, which is accessible from the :ref:`file import panel <scene_objects.file_source>` 
-after opening the dump or xyz file.
+  dump_modify 1 colname c_q[1] quatw colname c_q[2] quati colname c_q[3] quatj colname c_q[4] quatk
+  dump_modify 1 colname c_diameter[1] shapex colname c_diameter[2] shapey colname c_diameter[3] shapez
+
+Similarly, the ``shapex``, ``shapey``, and ``shapez`` columns will be mapped to the properties ``Aspherical Shape.X``, ``Aspherical Shape.Y``, and ``Aspherical Shape.Z``
+within OVITO, which controls the principal semi-axes of non-spherical particles as described below. 
+
+.. note::
+
+   The correct mapping can be set up automatically by OVITO only if you name the dump file columns as specified 
+   :ref:`here <file_formats.input.lammps_dump.property_mapping>`. Otherwise, you may have to adjust the mapping by hand in the :guilabel:`Edit column mapping` dialog, 
+   which is accessible from the :ref:`file import panel <file_formats.input.lammps_dump>` after opening the dump or xyz file.
 
 .. _howto.aspherical_particles.spheres:
 
@@ -164,16 +172,15 @@ Spherocylinders (capsules)
    :width: 25%
    :align: right
 
-The size of spherocylindrical particles is controlled in the same way as cylindrical particles. OVITO additionally render two hemispheres at each end of the cylinder,
-which extend the height of the cylinder.
+The size of spherocylindrical particles is controlled in the same way as cylindrical particles. OVITO additionally renders two hemispheres at each end of the cylinder extending its height.
 
 .. _howto.aspherical_particles.circles_and_squares:
 
 Circles and squares
 """""""""""""""""""
 
-Circle and square are two-dimensional (i.e. flat) shapes, whose size is controlled by the ``Radius`` particle property. The orientation
-of each particle in three-dimensional space is determined automatically such that it exactly faces the viewer. Thus, their orientations are view-dependent 
+Circles and squares are two-dimensional, i.e. flat, shapes, whose size is controlled by the ``Radius`` particle property. The orientation
+of each particle in three-dimensional space is determined automatically such that it exactly faces the viewer. Thus, their orientations are view-dependent, 
 and the ``Orientation`` particle property, if present, is ignored. In other words, you don't have the possibility to control their orientations explicitly
 (use a mesh-based shape instead if you need control).
 
@@ -191,7 +198,7 @@ User-defined shapes
    :width: 25%
    :align: right
 
-On the level of individual particle types you can assign custom particle shapes imported from external geometry files.
+On the level of individual particle types, you can assign custom particle shapes imported from external geometry files.
 OVITO supports loading general polyhedral meshes, which can serve as user-defined particle shapes, from various :ref:`file input formats <file_formats.input>`
 such as STL, OBJ, or VTK/VTP.
 
@@ -201,5 +208,5 @@ Set the particle type's :guilabel:`Shape` to `Mesh/User-defined` and import the 
 
 The vertex coordinates of the loaded polyhedral mesh get scaled by the value of the ``Radius`` property of each particle (if present)
 and rotated by the quaternion stored in the ``Orientation`` property (if present). Alternatively, you can set the 
-:guilabel:`Display radius` parameter of the type to scale all particles of that type, or adjust the :guilabel:`Radius scaling factor`
+:guilabel:`Display radius` parameter of the type to scale all particles of that type or adjust the :guilabel:`Radius scaling factor`
 in the :ref:`Particles <visual_elements.particles>` visual element to scale all particles uniformly.

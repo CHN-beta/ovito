@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -383,18 +383,11 @@ void MainWindow::createMainToolbar()
 
 	_mainToolbar->addAction(actionManager()->getAction(ACTION_COMMAND_QUICKSEARCH));
 
-#if 0
-	QLabel* pipelinesLabel = new QLabel(tr("Pipelines: "));
-	pipelinesLabel->setIndent(36);
-	_mainToolbar->addWidget(pipelinesLabel);
-	_mainToolbar->addWidget(new SceneNodeSelectionBox(_datasetContainer, actionManager()));
-#else
 	QLabel* pipelinesLabel = new QLabel(tr("  Pipelines: "));
 	pipelinesLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 	pipelinesLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 	_mainToolbar->addWidget(pipelinesLabel);
 	_mainToolbar->addWidget(new SceneNodeSelectionBox(_datasetContainer, actionManager()));
-#endif
 }
 
 /******************************************************************************
@@ -459,10 +452,11 @@ void MainWindow::exitWithFatalError(const Exception& ex)
 { 
 	if(viewportsPanel()->viewportConfiguration())
 		viewportsPanel()->viewportConfiguration()->suspendViewportUpdates();
-	QCoreApplication::removePostedEvents(nullptr, 0);
-	QMainWindow::close(); 
 	ex.reportError(true);
-	QCoreApplication::exit(1);
+	QTimer::singleShot(0, this, [this]() {
+		QMainWindow::close(); 
+		QCoreApplication::exit(1);
+	});
 }
 
 /******************************************************************************
@@ -573,7 +567,9 @@ void MainWindow::showStatusBarMessage(const QString& message, int timeout)
 ******************************************************************************/
 void MainWindow::clearStatusBarMessage() 
 {
-	_statusBar->clearMessage();
+	// Conditional call to clearMessage() because clearMessage() always repaints the status bar, even it is not showing any message (as of Qt 6.3.2).
+	if(!_statusBar->currentMessage().isEmpty())
+		_statusBar->clearMessage();
 }
 
 /******************************************************************************

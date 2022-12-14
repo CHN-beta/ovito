@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -106,10 +106,16 @@ public:
 	/// Moves the plane along its current normal vector to position in the center of the simulation cell. 
 	Q_INVOKABLE void centerPlaneInSimulationCell(ModifierApplication* modApp);
 
+	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+	virtual QVariant getPipelineEditorShortInfo(ModifierApplication* modApp) const override;
+
 protected:
 
 	/// This method is called by the system when the modifier has been inserted into a data pipeline.
 	virtual void initializeModifier(const ModifierInitializationRequest& request) override;
+
+	/// Is called when a RefTarget referenced by this object has generated an event.
+	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 	/// Renders the modifier's visual representation and computes its bounding box.
 	void renderVisual(TimePoint time, PipelineSceneNode* contextNode, SceneRenderer* renderer, const PipelineFlowState& state);
@@ -119,6 +125,8 @@ protected:
 
 	/// Computes the intersection lines of a plane and a quad.
 	void planeQuadIntersection(const Point3 corners[8], const std::array<int,4>& quadVerts, const Plane3& plane, std::vector<Point3>& vertices) const;
+
+private:
 
 	/// This controller stores the normal of the slicing plane.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, normalController, setNormalController);

@@ -230,7 +230,7 @@ void ParticlesComputePropertyModifierDelegate::Engine::perform()
 	CutoffNeighborFinder neighborFinder;
 	if(neighborMode()) {
 		// Prepare the neighbor list.
-		if(!neighborFinder.prepare(_cutoff, positions(), _neighborEvaluator->simCell(), {}, this))
+		if(!neighborFinder.prepare(_cutoff, positions(), _neighborEvaluator->simCell(), {}))
 			return;
 	}
 

@@ -253,7 +253,7 @@ void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
 	PropertyAccess<Vector3I> bondPeriodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty);
 
 	if(!hasSimulationCell() || !simulationCell()->hasPbcCorrected()) {
-		bondPeriodicImageProperty.take()->fill(Vector3I::Zero());
+		bondPeriodicImageProperty.take()->fill<Vector3I>(Vector3I::Zero());
 	}
 	else {
 		const AffineTransformation inverseCellMatrix = simulationCell()->inverseMatrix();
@@ -316,7 +316,7 @@ void ParticleImporter::FrameLoader::generateBonds()
 	
 	// Prepare the neighbor list.
 	CutoffNeighborFinder neighborFinder;
-	if(!neighborFinder.prepare(maxCutoff, positionProperty, state().getObject<SimulationCellObject>(), {}, this))
+	if(!neighborFinder.prepare(maxCutoff, positionProperty, state().getObject<SimulationCellObject>(), {}))
 		return;	
 
 	ConstPropertyAccess<int> particleTypesArray(typeProperty);

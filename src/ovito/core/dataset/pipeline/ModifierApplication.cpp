@@ -102,9 +102,9 @@ bool ModifierApplication::referenceEvent(RefTarget* source, const ReferenceEvent
 			if(!modifierAndGroupEnabled()) {
 				// Ignore modifier's status if it is currently disabled.
 				if(!modifierGroup() || modifierGroup()->isEnabled())
-					setStatus(PipelineStatus(PipelineStatus::Success, tr("Modifier is currently turned off.")));
+					setStatus(PipelineStatus(tr("Modifier is currently turned off.")));
 				else
-					setStatus(PipelineStatus(PipelineStatus::Success, tr("Modifier group is currently turned off.")));
+					setStatus(PipelineStatus(tr("Modifier group is currently turned off.")));
 				// Also clear pipeline cache in order to reduce memory footprint when modifier is disabled.
 				pipelineCache().invalidate(TimeInterval::empty(), true);
 			}
@@ -125,6 +125,11 @@ bool ModifierApplication::referenceEvent(RefTarget* source, const ReferenceEvent
 		}
 	}
 	else if(event.type() == ReferenceEvent::TitleChanged && source == modifier()) {
+		return true;
+	}
+	else if(event.type() == ReferenceEvent::ObjectStatusChanged && source == modifier()) {
+		// Propagate ObjectStatusChanged events from the modifier to update the pipeline editor UI in case 
+		// the return value of Modifier::getPipelineEditorShortInfo() changes.
 		return true;
 	}
 	else if(event.type() == ReferenceEvent::PipelineChanged && source == input()) {
@@ -464,6 +469,18 @@ QMap<int, QString> ModifierApplication::animationFrameLabels() const
 	if(modifierAndGroupEnabled())
 		return modifier()->animationFrameLabels(std::move(labels));
 	return labels;
+}
+
+/******************************************************************************
+* Returns a short piece information (typically a string or color) to be 
+* displayed next to the object's title in the pipeline editor.
+******************************************************************************/
+QVariant ModifierApplication::getPipelineEditorShortInfo() const 
+{
+	QVariant info = ActiveObject::getPipelineEditorShortInfo();
+	if(!info.isValid() && modifier())
+		info.setValue(modifier()->getPipelineEditorShortInfo(const_cast<ModifierApplication*>(this)));
+	return info;
 }
 
 /******************************************************************************

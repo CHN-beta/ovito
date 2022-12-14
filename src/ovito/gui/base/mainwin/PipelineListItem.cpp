@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -58,14 +58,14 @@ bool PipelineListItem::referenceEvent(RefTarget* source, const ReferenceEvent& e
 	// from a PipelineObject, or if a data object has been added/removed from the data source.
 	if((event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved || event.type() == ReferenceEvent::ReferenceChanged) && dynamic_object_cast<PipelineObject>(object())) {
 		if(event.type() == ReferenceEvent::ReferenceChanged && static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(ModifierApplication::modifierGroup)) {
-			emitItemChangedLater();
+			Q_EMIT itemChanged(this);
 		}
 		Q_EMIT subitemsChanged(this);
 	}
 	// Update item if it has been enabled/disabled, its status has changed, or its title has changed.
 	else if(event.type() == ReferenceEvent::TargetEnabledOrDisabled || event.type() == ReferenceEvent::ObjectStatusChanged || event.type() == ReferenceEvent::TitleChanged) {
 		updateTitle();
-		emitItemChangedLater();
+		Q_EMIT itemChanged(this);
 	}
 	// Update item (and the entire list) if a group is being collapsed or uncollapsed.
 	else if(event.type() == ReferenceEvent::TargetChanged && static_cast<const PropertyFieldEvent&>(event).field() == PROPERTY_FIELD(ModifierGroup::isCollapsed)) {
@@ -110,6 +110,17 @@ const PipelineStatus& PipelineListItem::status() const
 		static const PipelineStatus defaultStatus;
 		return defaultStatus;
 	}
+}
+
+/******************************************************************************
+* Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
+******************************************************************************/
+QVariant PipelineListItem::shortInfo() const
+{
+	if(ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(object())) {
+		return activeObject->getPipelineEditorShortInfo();
+	}
+	return {};
 }
 
 /******************************************************************************

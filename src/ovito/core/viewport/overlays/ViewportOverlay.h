@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -52,6 +52,9 @@ public:
 	/// Layer implementations should override this method if they support positioning.
 	/// The default method implementation does nothing.
 	virtual void moveLayerInViewport(const Vector2& delta) {}
+
+	/// Helper method that checks whether the given Qt alignment value contains exactly one horizontal and one vertical alignment flag.
+	void checkAlignmentParameterValue(int alignment) const;
 
 private:
 

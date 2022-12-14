@@ -18,7 +18,7 @@ dataset in exactly the way you need it.
 
 A key advantage of this approach is that the data pipeline lets you retroactively change, delete or amend the
 applied operations if needed. No modifications you make to the dataset are permanent. You always have the possibility to
-adjust individual operations later on, remove them again from the pipeline, or insert additional operations at any point.
+subsequently adjust individual operations, remove them again from the pipeline, or insert additional operations.
 
 The program keeps around an unmodified copy of the pipeline's input data in memory, and whenever you
 change the pipeline in some way, OVITO recomputes the output of the pipeline and updates the display to reflect
@@ -27,8 +27,8 @@ your changes. This happens automatically and almost in real-time.
 Similar types of "non-destructive" workflow concepts can be found in modern photo editing and 3D modeling programs, for example.
 In OVITO this approach provides you with a great deal of flexibility while designing and exploring new data analysis and
 visualization setups. And the pipeline architecture offers another important advantage: Once you have figured out the right 
-modification steps to solve your specific analysis problem, you can apply the same processing pipeline to as many other input 
-datasets as you like and batch-process a whole set of simulation trajectories.
+modification steps to solve your specific analysis problem, you can apply the same processing pipeline to any number of other input 
+datasets and batch-process a whole range of simulation trajectories.
 
 .. _usage.modification_pipeline.pipeline_listbox:
 
@@ -67,15 +67,15 @@ You can temporarily disable modifiers in the pipeline by unchecking the box next
 To permanently remove a modifier from the pipeline, use the *Delete Modifier* button found in
 the toolbar on the right. And since the order in which actions are performed sometimes matters, 
 you can rearrange the modifiers within the pipeline using drag-and-drop operations or the
-the up/down arrow buttons in the toolbar.
+up/down arrow buttons in the toolbar.
 
 .. _usage.modification_pipeline.display: 
 
 Visual elements
 ---------------
  
-The dataset fed into the pipeline by the data source is typically a collection of several different
-data fragments, for instance the particle positions, bond topology and the simulation cell geometry. Modifiers in the pipeline
+The dataset fed into the pipeline is usually a collection of several different
+data fragments, for instance, the particle positions, bond topology, and simulation cell geometry. Modifiers in the pipeline
 may dynamically add further pieces of information to that, e.g. displacement vectors calculated from
 the trajectories of particles. From all these different kinds of data leaving the pipeline, a visual representation
 must be produced in the viewports. This is the responsibility of so-called *visual elements*.
@@ -105,8 +105,8 @@ This system allows you to apply different operations to different groups of part
 you could use a :ref:`particles.modifiers.select_particle_type` modifier to first select particles
 of one chemical or structural type and then apply an :ref:`particles.modifiers.assign_color` modifier
 to give them a particular color. Next, you could insert another instance of the :ref:`particles.modifiers.select_particle_type` modifier to 
-select a second group of particle and subsequently assign them a different color using another :ref:`particles.modifiers.assign_color` modifier instance.
+select another group of particles and subsequently assign them a different color using another :ref:`particles.modifiers.assign_color` modifier instance.
 
 Note that data visualization always happens only for the final results leaving the pipeline. That means in the viewports you will only observe the final
-selection state of the particles (OVITO highlights them with a red color). If you would like to inspect a transient state of the data at some intermediate point along the pipeline,
+selection state of the particles (OVITO highlights them with red color). If you would like to inspect a transient state of the data at some intermediate point along the pipeline,
 you have to temporarily disable the subsequent modifiers in the pipeline editor.

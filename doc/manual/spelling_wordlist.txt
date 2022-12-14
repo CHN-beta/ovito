@@ -23,6 +23,7 @@ booleans
 Bravais
 centrosymmetric
 centrosymmetry
+circular
 CMake
 cna
 CNA
@@ -47,6 +48,7 @@ Edelsbrunner
 epot
 equisized
 equispaced
+eV
 exemplarily
 exyz
 Falk
@@ -60,12 +62,15 @@ fy
 fz
 Gaussians
 getter
+getters
 glyphs
 GmbH
 graphene
 Gromacs
 gz
 gzipped
+halfedge
+halfedges
 Hann
 hardcoded
 HDF5
@@ -167,6 +172,7 @@ raytracing
 realtime
 recomputation
 reflectance
+reimplemented
 renderable
 renderer
 repositioned
@@ -255,5 +261,3 @@ zlib
 zs
 zsu
 zu
-reimplemented
-eV

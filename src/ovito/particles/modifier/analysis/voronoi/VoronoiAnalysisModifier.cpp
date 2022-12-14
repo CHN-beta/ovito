@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,6 +55,41 @@ SET_PROPERTY_FIELD_LABEL(VoronoiAnalysisModifier, relativeFaceThreshold, "Relati
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(VoronoiAnalysisModifier, edgeThreshold, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(VoronoiAnalysisModifier, faceThreshold, FloatParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(VoronoiAnalysisModifier, relativeFaceThreshold, PercentParameterUnit, 0, 1);
+
+#if 0
+/**
+ * A custom "wall" implementation that restricts voronoi cells to a regular polyhedron.
+ * See https://math.lbl.gov/voro++/examples/irregular/
+ */
+class FiniteSizeParticleWall : public voro::wall
+{
+public:
+	FiniteSizeParticleWall(FloatType radius) { 
+		radius *= 2;
+		v.init(-radius, radius, -radius, radius, -radius, radius);
+		// Create an approximate sphere by making plane cuts in directions computed using the "Fibonacci sphere algorithm".
+		int faceCount = 64;
+		FloatType phi = FLOATTYPE_PI * (FloatType(3) - sqrt(FloatType(5)));  // golden angle in radians
+		for(int i = 0; i < faceCount; i++) {
+			FloatType y = FloatType(1) - (i / FloatType(faceCount - 1)) * 2; // y goes from 1 to -1
+			FloatType r = sqrt(FloatType(1) - y * y); // radius at y
+			FloatType theta = phi * i; // golden angle increment
+			Vector3 normal = Vector3(cos(theta)*r, y, sin(theta)*r).resized(radius);
+			v.nplane(normal.x(), normal.y(), normal.z(), -1); 
+		}
+	}
+	virtual bool point_inside(double x, double y, double z) override { return true; }
+	virtual bool cut_cell(voro::voronoicell& c, double x, double y, double z) override { 
+		return true;
+	}
+	virtual bool cut_cell(voro::voronoicell_neighbor& c, double x, double y, double z) override {
+		c=v;
+		return true;
+	}
+private:
+	voro::voronoicell_neighbor v;
+};
+#endif
 
 /******************************************************************************
 * Constructs the modifier object.
@@ -164,6 +199,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
 	// Output mesh face property storing the index of the neighboring Voronoi cell for each face.
 	PropertyObject* adjacentCellProperty = nullptr;
+	// Output mesh face property storing the bond index corresponding to each Voronoi face.
+	PropertyObject* faceBondIndexProperty = nullptr;
 	/// Output mesh region property storing the volume of each Voronoi cell. 
 	PropertyObject* cellVolumeProperty = nullptr;
 	/// Output mesh region property storing the number of faces of each Voronoi cell. 
@@ -177,6 +214,12 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
 		// Create the "Adjacent Cell" face property, which stores the index of the neighboring Voronoi cell.
 		adjacentCellProperty = polyhedraMesh.createFaceProperty(QStringLiteral("Adjacent Cell"), PropertyObject::Int);
+
+		// Create the "Bond Index" face property, which stores the which bond belongs to which Voronoi face.
+		if(_computeBonds) {
+			faceBondIndexProperty = polyhedraMesh.createFaceProperty(QStringLiteral("Bond Index"), PropertyObject::Int64);
+			faceBondIndexProperty->fill<qlonglong>(-1);
+		}
 
 		// Create as many mesh regions as there are input particles.
 		polyhedraMesh.createRegions(_positions->size());
@@ -221,6 +264,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
 	// Prepare output data arrays.
 	PropertyAccess<FloatType> atomicVolumesArray(atomicVolumes());
+	PropertyAccess<FloatType> cavityRadiiArray(cavityRadii());
 	PropertyAccess<int> coordinationNumbersArray(coordinationNumbers());
 	PropertyAccess<int> maxFaceOrdersArray(maxFaceOrders());
 
@@ -234,6 +278,10 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 		// Compute cell volume.
 		double vol = v.volume();
 		atomicVolumesArray[index] = (FloatType)vol;
+
+		// Compute cell max radius.
+		double maxRad = std::sqrt(v.max_radius_squared());
+		cavityRadiiArray[index] = (FloatType)maxRad;
 
 		// Accumulate total volume of Voronoi cells.
 		// Loop is for lock-free write access to shared max counter.
@@ -263,7 +311,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 			for(int i = 0; i < v.p; i++, ptsp += 3) {
 				polyhedraMesh.createVertex(Point3(center.x() + 0.5*ptsp[0], center.y() + 0.5*ptsp[1], center.z() + 0.5*ptsp[2]));
 			}
-			// Store the base vertex index and the vertex count in the look-up map.
+			// Store the base vertex index and the vertex count in the lookup map.
 			polyhedraVertices[meshRegionIndex].first = meshVertexBaseIndex;
 			polyhedraVertices[meshRegionIndex].second = v.p;
 		}
@@ -338,12 +386,18 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 							for(size_t dim = 0; dim < 3; dim++) {
 								if(_simCell->hasPbc(dim)) {
 									pbcShift[dim] = (int)std::round(_simCell->inverseMatrix().prodrow(diff, dim));
-									OVITO_ASSERT(std::abs((FloatType)pbcShift[dim] - _simCell->inverseMatrix().prodrow(diff, dim)) <= 1e-9);
 								}
 							}
+#ifdef OVITO_DEBUG
+							// Verify the computed pbc shift vector. The corrected neighbor vector should now align with the face normal vector.
+							delta -= _simCell->reducedToAbsolute(pbcShift.toDataType<FloatType>());
+							OVITO_ASSERT(std::abs(delta.dot(normal) / delta.length() / normal.length()) > 1.0 - FLOATTYPE_EPSILON);
+#endif
 							Bond bond = { index, (size_t)neighbor_id, pbcShift };
 							if(!bond.isOdd()) {
 								QMutexLocker locker(bondMutex);
+								if(_polyhedraMesh)
+									PropertyAccess<qlonglong>{faceBondIndexProperty}[meshFace] = bonds().size();
 								bonds().push_back(bond);
 							}
 						}
@@ -474,7 +528,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
 		// Prepare the nearest neighbor list generator.
 		NearestNeighborFinder nearestNeighborFinder;
-		if(!nearestNeighborFinder.prepare(positions(), _simCell, selection(), this))
+		if(!nearestNeighborFinder.prepare(positions(), _simCell, selection()))
 			return;
 
 		// This is the size we use to initialize Voronoi cells. Must be larger than the simulation box.
@@ -709,6 +763,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 		nextProgressSubStep();
 		setProgressMaximum(polyhedraMesh.faceCount());
 
+		PropertyAccess<qlonglong> faceBondIndices(faceBondIndexProperty);
+
 		// Connect pairs of internal Voronoi faces.
 		for(SurfaceMeshAccess::face_index face = 0; face < polyhedraMesh.faceCount(); face++) {
 			if(polyhedraMesh.hasOppositeFace(face)) continue;
@@ -718,7 +774,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 			SurfaceMeshAccess::region_index adjacentRegion = adjacentCellArray[face];
 			// Skip faces that belong to the outer surface.
 			if(adjacentRegion < 0) continue;
-			// Periodic polyhedra pose a problem.	
+			// Periodic polyhedra pose a problem.
 			if(adjacentRegion == polyhedraMesh.faceRegion(face)) {
 				throw Exception(tr("Cannot generate polyhedron mesh for this input, because at least one Voronoi cell is touching a periodic image of itself. To avoid this error you can try to use the Replicate modifier or turn off periodic boundary conditions for the simulation cell."));
 			}
@@ -731,10 +787,15 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 			for(SurfaceMeshAccess::edge_index edge = polyhedraMesh.firstVertexEdge(vertex1); edge != SurfaceMeshAccess::InvalidIndex; edge = polyhedraMesh.nextVertexEdge(edge)) {
 				SurfaceMeshAccess::face_index adjacentFace = polyhedraMesh.adjacentFace(edge);
 				if(polyhedraMesh.faceRegion(adjacentFace) != adjacentRegion) continue;
-				SurfaceMeshAccess::edge_index oppositeEdge = polyhedraMesh.findEdge(adjacentFace, vertex2, vertex1);
-				if(oppositeEdge != SurfaceMeshAccess::InvalidIndex) {
+				if(polyhedraMesh.areOppositeFaces(face, adjacentFace)) {
 					OVITO_ASSERT(!polyhedraMesh.hasOppositeFace(adjacentFace));
 					polyhedraMesh.linkOppositeFaces(face, adjacentFace);
+					if(faceBondIndices) {
+						if(faceBondIndices[face] != -1)
+							faceBondIndices[adjacentFace] = faceBondIndices[face];
+						else
+							faceBondIndices[face] = faceBondIndices[adjacentFace];
+					}
 					break;
 				}
 			}
@@ -770,6 +831,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::applyResults(const Modifier
 
 	particles->createProperty(coordinationNumbers());
 	particles->createProperty(atomicVolumes());
+	particles->createProperty(cavityRadii());
 
 	if(modifier->computeIndices()) {
 		if(voronoiIndices())

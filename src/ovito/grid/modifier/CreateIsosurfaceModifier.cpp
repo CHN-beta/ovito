@@ -72,6 +72,32 @@ TimeInterval CreateIsosurfaceModifier::validityInterval(const ModifierEvaluation
 }
 
 /******************************************************************************
+* Is called when the value of a property of this object has changed.
+******************************************************************************/
+void CreateIsosurfaceModifier::propertyChanged(const PropertyFieldDescriptor* field)
+{
+	if(field == PROPERTY_FIELD(CreateIsosurfaceModifier::sourceProperty) && !isBeingLoaded()) {
+		// Changes of some the modifier's parameters affect the result of CreateIsosurfaceModifier::getPipelineEditorShortInfo().
+		notifyDependents(ReferenceEvent::ObjectStatusChanged);
+	}
+
+	AsynchronousModifier::propertyChanged(field);
+}
+
+/******************************************************************************
+* Is called when a RefTarget referenced by this object has generated an event.
+******************************************************************************/
+bool CreateIsosurfaceModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+{
+	if(event.type() == ReferenceEvent::TargetChanged && source == isolevelController()) {
+		// Changes of some the modifier's parameters affect the result of CreateIsosurfaceModifier::getPipelineEditorShortInfo().
+		notifyDependents(ReferenceEvent::ObjectStatusChanged);
+	}
+
+	return AsynchronousModifier::referenceEvent(source, event);
+}
+
+/******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.
 ******************************************************************************/
 bool CreateIsosurfaceModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
@@ -279,7 +305,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::applyResults(const Modif
 {
 	state.addObjectWithUniqueId<SurfaceMesh>(_mesh);
 	state.addObjectWithUniqueId<DataTable>(_histogram);
-	state.setStatus(PipelineStatus(PipelineStatus::Success, tr("Field value range: [%1, %2]")
+	state.setStatus(PipelineStatus(tr("Field value range: [%1, %2]")
 		.arg(_histogram->intervalStart())
 		.arg(_histogram->intervalEnd())));
 }

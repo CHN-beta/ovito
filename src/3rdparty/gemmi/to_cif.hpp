@@ -1,5 +1,7 @@
 // Copyright 2017 Global Phasing Ltd.
 
+// Writing cif::Document or its parts to std::ostream.
+
 #ifndef GEMMI_TO_CIF_HPP_
 #define GEMMI_TO_CIF_HPP_
 
@@ -15,6 +17,7 @@ enum class Style {
   PreferPairs,  // write single-row loops as pairs
   Pdbx,         // PreferPairs + put '#' (empty comments) between categories
   Indent35,     // start values in pairs from 35th column
+  Aligned,      // columns in tables are left-aligned
 };
 
 // CIF files are read in binary mode. It makes difference only for text fields.
@@ -38,7 +41,7 @@ inline void write_out_pair(std::ostream& os, const std::string& name,
   } else {
     if (name.size() + value.size() > 120)
       os.put('\n');
-    else if (style == Style::Indent35 && name.size() < 34)
+    else if ((style == Style::Indent35 || style == Style::Aligned) && name.size() < 34)
       os.write("                                  ", 34 - name.size());
     else
       os.put(' ');
@@ -48,6 +51,7 @@ inline void write_out_pair(std::ostream& os, const std::string& name,
 }
 
 inline void write_out_loop(std::ostream& os, const Loop& loop, Style style) {
+  constexpr size_t max_padding = 30;  // if increased, adjust os.write() below
   if (loop.values.empty())
     return;
   if ((style == Style::PreferPairs || style == Style::Pdbx) &&
@@ -56,20 +60,41 @@ inline void write_out_loop(std::ostream& os, const Loop& loop, Style style) {
       write_out_pair(os, loop.tags[i], loop.values[i], style);
     return;
   }
+  // tags
   os << "loop_";
   for (const std::string& tag : loop.tags)
     os << '\n' << tag;
+  // values
   size_t ncol = loop.tags.size();
+
+  std::vector<size_t> col_width;
+  if (style == Style::Aligned) {
+    col_width.resize(ncol, 1);
+    size_t col = 0;
+    for (const std::string& val : loop.values) {
+      col_width[col] = std::max(col_width[col], val.size());
+      if (++col == ncol)
+        col = 0;
+    }
+    for (size_t& w : col_width)
+      w = std::min(w, max_padding);
+  }
+
   size_t col = 0;
   for (const std::string& val : loop.values) {
     bool text_field = is_text_field(val);
-    os.put(col++ == 0 || text_field ? '\n' : ' ');
+    os.put(col == 0 || text_field ? '\n' : ' ');
     if (text_field)
       write_text_field(os, val);
     else
       os << val;
-    if (col == ncol)
+    if (col != ncol - 1) {
+      if (!col_width.empty() && val.size() < col_width[col])
+        os.write("                                  ", col_width[col] - val.size());
+      ++col;
+    } else {
       col = 0;
+    }
   }
   os.put('\n');
 }
@@ -96,7 +121,7 @@ inline void write_out_item(std::ostream& os, const Item& item, Style style) {
   }
 }
 
-inline bool should_be_separted_(const Item& a, const Item& b) {
+inline bool should_be_separated_(const Item& a, const Item& b) {
   if (a.type == ItemType::Comment || b.type == ItemType::Comment)
     return false;
   if (a.type != ItemType::Pair || b.type != ItemType::Pair)
@@ -109,27 +134,32 @@ inline bool should_be_separted_(const Item& a, const Item& b) {
   return adot != bdot || a.pair[0].compare(0, adot, b.pair[0], 0, adot) != 0;
 }
 
+inline void write_cif_block_to_stream(std::ostream& os, const Block& block,
+                                      Style style=Style::Simple) {
+  os << "data_" << block.name << '\n';
+  if (style == Style::Pdbx)
+    os << "#\n";
+  const Item* prev = nullptr;
+  for (const Item& item : block.items)
+    if (item.type != ItemType::Erased) {
+      if (prev && style != Style::NoBlankLines &&
+          should_be_separated_(*prev, item))
+        os << (style == Style::Pdbx ? "#\n" : "\n");
+      write_out_item(os, item, style);
+      prev = &item;
+    }
+  if (style == Style::Pdbx)
+    os << "#\n";
+}
+
 inline void write_cif_to_stream(std::ostream& os, const Document& doc,
-                                Style s=Style::Simple) {
+                                Style style=Style::Simple) {
   bool first = true;
   for (const Block& block : doc.blocks) {
     if (!first)
       os.put('\n'); // extra blank line for readability
-    os << "data_" << block.name << '\n';
-    if (s == Style::Pdbx)
-      os << "#\n";
-    const Item* prev = nullptr;
-    for (const Item& item : block.items)
-      if (item.type != ItemType::Erased) {
-        if (prev && s != Style::NoBlankLines &&
-            should_be_separted_(*prev, item))
-          os << (s == Style::Pdbx ? "#\n" : "\n");
-        write_out_item(os, item, s);
-        prev = &item;
-      }
+    write_cif_block_to_stream(os, block, style);
     first = false;
-    if (s == Style::Pdbx)
-      os << "#\n";
   }
 }
 

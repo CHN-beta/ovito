@@ -126,6 +126,8 @@ if os.getenv("OVITO_PYDOC_INTERSPHINX_LOCATION"):
 else:
     intersphinx_mapping = { 'pydoc': ('https://ovito.org/docs/current/python/', None) }
 
+intersphinx_mapping['scipy'] = ('https://docs.scipy.org/doc/scipy/', None)
+
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for

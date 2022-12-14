@@ -8,7 +8,7 @@ External file
   :align: right 
 
 The "External file" panel lets you configure the parameters of the data source, in particular from which external file(s) the input data for the current data pipeline should be read. 
-The panel is automatically displayed after you :ref:`imported a data file <usage.import>`.
+The panel is automatically displayed after you :ref:`import a data file <usage.import>`.
 via OVITO's :menuselection:`Load File` or :menuselection:`Load Remote File` menu functions.
 You can return to the panel at any time by selecting the topmost entry under the "Data source" section of the
 :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>`.
@@ -20,7 +20,7 @@ Supported file formats
 
 The *external file* data source can read various file formats containing different kinds of :ref:`data objects <scene_objects>`.
 Furthermore, the :ref:`file export function <usage.export>` of OVITO allows you to write the results of the data pipeline to
-disk in various output format:
+disk in various output formats:
 
 .. toctree::
   :maxdepth: 1
@@ -36,7 +36,7 @@ Toolbar functions
 
 Pick new file
   Selects a different data file on disk, which will subsequently serve as new input for the current
-  data pipeline. All modifiers in the pipeline are preserved but the input data they operate on gets replaced.
+  data pipeline. All modifiers in the pipeline are preserved, but the input data they operate on gets replaced.
 
   Note that OVITO is *not* going to detect whether the new file you've picked is part of a numbered file sequence in the same directory. 
   You should manually check the :guilabel:`auto-generate` box if you want to load a numbered file sequence.
@@ -46,7 +46,7 @@ Pick new remote file
        
 Reload file   
   Refreshes the data for the current animation frame from the external file. This function is useful
-  if the file contents have been updated or replaced, for example after re-running a simulation or editing the file in an external program.
+  if the file contents have been updated or replaced, for example, after re-running a simulation or editing the file in an external program.
    
 Update trajectory frames   
   Refreshes the sequence of animation frames. OVITO will search the directory to find new files matching the filename pattern and/or 
@@ -69,16 +69,16 @@ will be combined into one long trajectory, showing the contained simulation fram
 See also :ref:`this section <usage.import.sequence>` on how to import simulation trajectories.
 
 OVITO automatically generates a default search pattern for you when importing 
-a file with a number it its name. You can turn this behavior permanently off 
+a file with a number in its name. You can turn this behavior permanently off 
 by unchecking the "auto-generate" option.
 
 Trajectory - Playback ratio
 """""""""""""""""""""""""""
 
 After importing a new trajectory consisting of *N* simulation snapshots,
-OVITO will adjust the animation interval (which is shown as timeline below the viewports) 
+OVITO will adjust the animation interval (which is shown as a timeline below the viewports) 
 to the same length and show one trajectory frame per animation frame.
-Thus, there will be a one-to-one relationship between imported trajectory frame and 
+Thus, there will be a one-to-one relationship between imported trajectory frames and 
 rendered animation frames.  
 
 If desired, this standard 1/1 frame ratio can be changed by pressing the :guilabel:`Change`
@@ -96,7 +96,7 @@ Configure trajectory playback
 This dialog lets you control how the series of snapshots from the loaded simulation trajectory 
 is mapped to OVITO's animation timeline. You can change the default 1:1 mapping to 
 either a 1:n mapping, in which case each trajectory frame is replicated and rendered *n*
-times, or to a n:1 mapping, in which case only every n-th trajectory frame will be rendered.
+times, or to an n:1 mapping, where only every n-th trajectory frame will be rendered.
  
 A 1:n mapping is useful for stretching a simulation trajectory consisting of relatively few
 snapshots and rendering a longer movie. OVITO provides the :ref:`particles.modifiers.smooth_trajectory` modifier,
@@ -110,7 +110,7 @@ The option :guilabel:`Extract one static frame` lets you take a single snapshot 
 imported simulation trajectory and work with it in isolation in OVITO. This is useful for rendering a camera animation 
 depicting an otherwise static model as shown in :ref:`this tutorial <tutorials.turntable_animation>`.
 
-See the :ref:`advanced animations <usage.animation>` section to learn more on
+See the :ref:`advanced animations <usage.animation>` section to learn more about
 the difference between simulation and animation frames in OVITO.
 
 .. seealso::

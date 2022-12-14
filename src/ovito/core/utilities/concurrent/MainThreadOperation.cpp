@@ -47,7 +47,7 @@ MainThreadOperation::MainThreadOperation(TaskPtr p, UserInterface& userInterface
 
 	// Register the container MainThreadOperation with the TaskManager to display its progress in the UI.
 	if(visibleInUserInterface)
-		userInterface.taskManager().registerTask(this->task());
+		userInterface.taskManager().registerTask(task());
 }
 
 /******************************************************************************
@@ -73,7 +73,9 @@ void MainThreadOperation::processUIEvents() const
 	OVITO_ASSERT(Task::currentTask() == task().get());
 
 	Task::setCurrentTask(nullptr);
-	QCoreApplication::processEvents(); 
+	if(userInterface().processEvents()) {
+		cancel();
+	}
 
 	OVITO_ASSERT(Task::currentTask() == nullptr);
 	Task::setCurrentTask(task().get());
@@ -94,6 +96,13 @@ MainThreadOperation MainThreadOperation::createSubTask(bool visibleInUserInterfa
 		MainThreadSubTask(const TaskPtr& parentTask) noexcept : ProgressingTask(Task::Started) {
 			// Register a callback function to get notified when the parent task gets canceled.
 			registerCallback(parentTask.get(), true);
+
+			// When this sub-task gets canceled, we cancel the parent task too.
+			this->registerContinuation([](Task& thisTask) noexcept {
+				MainThreadSubTask& self = static_cast<MainThreadSubTask&>(thisTask);
+				if(self.isCanceled() && self.callbackTask() && !self.callbackTask()->isCanceled())
+					self.callbackTask()->cancel();
+			});
 		}
 
 		/// Callback function, which is invoked whenever the state of the parent task changes.
@@ -111,6 +120,17 @@ MainThreadOperation MainThreadOperation::createSubTask(bool visibleInUserInterfa
 	};
 
 	return MainThreadOperation(std::make_shared<MainThreadSubTask>(task()), userInterface(), visibleInUserInterface);
+}
+
+/******************************************************************************
+* Puts the task object back into the started state. 
+******************************************************************************/
+void MainThreadOperation::restart()
+{
+	// Usage of MainThreadOperation is only permitted in the main thread.
+	OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "MainThreadOperation::restart()", "MainThreadOperation may only be created in the main thread.");
+
+	task()->restart();
 }
 
 }	// End of namespace

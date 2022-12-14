@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -74,6 +74,9 @@ public:
 		// Assign the default data object identifier.
 		setIdentifier(OOClass().pythonName());
 	}
+
+	/// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
+	virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state) const override;
 };
 
 }	// End of namespace

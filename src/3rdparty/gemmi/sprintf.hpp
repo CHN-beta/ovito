@@ -1,6 +1,6 @@
 // Copyright 2017 Global Phasing Ltd.
 //
-// to_str(float|double), handling -D USE_STD_SNPRINTF
+// to_str(float|double), gf_snprintf - wrappers around stb_sprintf.
 
 #ifndef GEMMI_SPRINTF_HPP_
 #define GEMMI_SPRINTF_HPP_
@@ -12,9 +12,22 @@
 #else
 # ifdef GEMMI_WRITE_IMPLEMENTATION
 #  define STB_SPRINTF_IMPLEMENTATION
+#  define STB_SPRINTF_NOUNALIGNED 1
 # endif
 # define STB_SPRINTF_DECORATE(name) gstb_##name
-# include "third_party/stb_sprintf.h"
+// To use system stb_sprintf.h (not recommended, but some Linux distros
+// don't like bundled libraries) just remove third_party/stb_sprintf.h.
+# if defined(__has_include)
+#  if !__has_include("third_party/stb_sprintf.h")
+#   define GEMMI_USE_SYSTEM_STB 1
+#  endif
+# endif
+# ifdef GEMMI_USE_SYSTEM_STB
+#  warning "Using system stb_sprintf.h, not the bundled one. It may not work."
+#  include <stb/stb_sprintf.h>
+# else
+#  include "third_party/stb_sprintf.h"
+# endif
 #endif
 #include <string>
 
@@ -41,6 +54,14 @@ std::string to_str_prec(double d) {
   return std::string(buf, len > 0 ? len : 0);
 }
 
+#ifdef USE_STD_SNPRINTF
+# ifdef _MSC_VER // VS2015/17 doesn't like std::snprintf
+#  define gf_snprintf snprintf
+# else
+#  define gf_snprintf std::snprintf
+# endif
+#else
+
 // this is equivalent of stbsp_snprintf, but with __attribute__(format)
 #if (defined(__GNUC__) && !defined(__MINGW32__)) || defined(__clang)
 __attribute__((format(printf, 3, 4)))
@@ -54,6 +75,7 @@ inline int gf_snprintf(char *buf, int count, char const *fmt, ...) {
    return result;
 }
 
+#endif
 
 } // namespace gemmi
 #endif

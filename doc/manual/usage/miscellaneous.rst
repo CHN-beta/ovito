@@ -59,8 +59,8 @@ Modifier templates
 ------------------
 
 When working with OVITO on a regular basis, you may find yourself using the same modifiers again and again.
-Some modifiers are often used in the same combination to accomplish specific analysis, filter or visualization
-tasks. To make your life easier and to safe you from repetitive work, OVITO allows you to define so-called *modifier
+Some modifiers are often used in the same combination to accomplish specific analysis, filter, or visualization
+tasks. To make your life easier and save you from repetitive work, OVITO allows you to define so-called *modifier
 templates*. These are preconfigured modifiers or combinations of modifiers that can be inserted into
 the data pipeline with just a single click. See :ref:`this section <modifier_templates>` to learn
 more about this program feature.
@@ -87,5 +87,5 @@ For example, the :ref:`Python script modifier <particles.modifiers.python_script
 provides a mechanism for you to write your own data manipulation function and integrate it into
 OVITO's modification pipeline system. Furthermore, the :ref:`Python script overlay <viewport_layers.python_script>`
 lets you write your own Python function to add arbitrary 2D graphics
-to rendered images or movies, for example to enrich the visualization with additional information
+to rendered images or movies and enrich the visualization with additional information
 like a :ref:`scale bar <howto.scale_bar>`.

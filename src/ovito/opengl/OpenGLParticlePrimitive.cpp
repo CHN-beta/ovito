@@ -206,6 +206,14 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     // The effective number of particles being rendered:
 	shader.setInstanceCount(primitive.indices() ? primitive.indices()->size() : primitive.positions()->size());
 
+    // Check size limits.
+    int bytesPerVertex = (primitive.particleShape() == ParticlePrimitive::BoxShape || primitive.particleShape() == ParticlePrimitive::EllipsoidShape || primitive.particleShape() == ParticlePrimitive::SuperquadricShape) 
+        ? sizeof(Matrix_4<float>) : sizeof(Vector_4<float>);
+    if(shader.instanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / bytesPerVertex) {
+        qWarning() << "WARNING: OpenGL renderer - Trying to render too many particles at once, exceeding device limits.";
+        return;
+    }
+
     // Are we rendering semi-transparent particles?
     bool useBlending = !isPicking() && (primitive.transparencies() != nullptr) && !orderIndependentTransparency();
 	if(useBlending) shader.enableBlending();
@@ -385,7 +393,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
                         ++radius;
 
                     if(orientation) {
-                        QuaternionT<float> quat = QuaternionT<float>(*orientation++);
+                        QuaternionT<float> quat = (orientation++)->toDataType<float>();
                         float c = sqrt(quat.dot(quat));
                         if(c <= (float)FLOATTYPE_EPSILON)
                             quat.setIdentity();
@@ -418,7 +426,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
                     }
 
                     if(orientationArray) {
-                        QuaternionT<float> quat = QuaternionT<float>(orientationArray[index]);
+                        QuaternionT<float> quat = orientationArray[index].toDataType<float>();
                         float c = sqrt(quat.dot(quat));
                         if(c <= (float)FLOATTYPE_EPSILON)
                             quat.setIdentity();

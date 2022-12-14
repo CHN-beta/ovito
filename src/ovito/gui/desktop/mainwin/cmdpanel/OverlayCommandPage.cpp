@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,6 +30,7 @@
 #include <ovito/gui/base/mainwin/OverlayListModel.h>
 #include <ovito/gui/base/mainwin/OverlayListItem.h>
 #include <ovito/gui/base/mainwin/OverlayTypesModel.h>
+#include "CommandPanel.h"
 #include "OverlayCommandPage.h"
 
 namespace Ovito {
@@ -65,7 +66,7 @@ OverlayCommandPage::OverlayCommandPage(MainWindow& mainWindow, QWidget* parent) 
 
 	class OverlayListWidget : public QListView {
 	public:
-		OverlayListWidget(QWidget* parent) : QListView(parent) {}
+		OverlayListWidget(QWidget* parent, OverlayCommandPage* commandPanelPage) : QListView(parent), _commandPanelPage(commandPanelPage) {}
 		virtual QSize sizeHint() const override { return QSize(256, 120); }
 	protected:
 		virtual bool edit(const QModelIndex& index, QAbstractItemView::EditTrigger trigger, QEvent* event) override {
@@ -77,6 +78,19 @@ OverlayCommandPage::OverlayCommandPage(MainWindow& mainWindow, QWidget* parent) 
 			}
 			return QListView::edit(index, trigger, event);
 		}
+		virtual void contextMenuEvent(QContextMenuEvent* event) override {
+			QMenu menu;
+			if(OverlayListItem* currentItem = _commandPanelPage->overlayListModel()->selectedItem()) {
+				menu.addAction(_commandPanelPage->_actionManager->getAction(ACTION_VIEWPORT_LAYER_RENAME));
+				menu.addSeparator();
+			}
+			if(QAction* deleteAction = _commandPanelPage->_actionManager->getAction(ACTION_VIEWPORT_LAYER_DELETE)) {
+				menu.addAction(deleteAction);
+			}
+			menu.exec(event->globalPos());
+		}
+	private:
+		OverlayCommandPage* _commandPanelPage;
 	};
 
 	QWidget* upperContainer = new QWidget();
@@ -85,10 +99,11 @@ OverlayCommandPage::OverlayCommandPage(MainWindow& mainWindow, QWidget* parent) 
 	subLayout->setContentsMargins(0,0,0,0);
 	subLayout->setSpacing(2);
 
-	_overlayListWidget = new OverlayListWidget(upperContainer);
+	_overlayListWidget = new OverlayListWidget(upperContainer, this);
 	_overlayListWidget->setEditTriggers(QAbstractItemView::SelectedClicked);
 	_overlayListWidget->setModel(_overlayListModel);
 	_overlayListWidget->setSelectionModel(_overlayListModel->selectionModel());
+	_overlayListWidget->setItemDelegate(new ExtendedListItemDelegate(_overlayListWidget, OverlayListModel::StatusInfoRole));
 	subLayout->addWidget(_overlayListWidget);
 	connect(_overlayListWidget, &OverlayListWidget::doubleClicked, this, &OverlayCommandPage::onLayerDoubleClicked);
 
@@ -99,19 +114,24 @@ OverlayCommandPage::OverlayCommandPage(MainWindow& mainWindow, QWidget* parent) 
 #endif
 	subLayout->addWidget(editToolbar);
 
-	_deleteLayerAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_DELETE, tr("Delete Viewport Layer"), "modify_delete_modifier", tr("Remove the selected viewport layer from the stack."));
+	_deleteLayerAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_DELETE, tr("Delete Layer"), "modify_delete_modifier", tr("Remove the selected viewport layer from the stack."));
 	_deleteLayerAction->setEnabled(false);
 	connect(_deleteLayerAction, &QAction::triggered, this, &OverlayCommandPage::onDeleteLayer);
 	editToolbar->addAction(_deleteLayerAction);
 
 	editToolbar->addSeparator();
 
-	_moveLayerUpAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_MOVE_UP, tr("Move Viewport Layer Up"), "overlay_move_up", tr("Move the selected viewport layer up in the stack."));
+	_moveLayerUpAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_MOVE_UP, tr("Move Layer Up"), "overlay_move_up", tr("Move the selected viewport layer up in the stack."));
 	connect(_moveLayerUpAction, &QAction::triggered, this, &OverlayCommandPage::onLayerMoveUp);
 	editToolbar->addAction(_moveLayerUpAction);
-	_moveLayerDownAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_MOVE_DOWN, tr("Move Viewport Layer Down"), "overlay_move_down", tr("Move the selected viewport layer down in the stack."));
+	_moveLayerDownAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_MOVE_DOWN, tr("Move Layer Down"), "overlay_move_down", tr("Move the selected viewport layer down in the stack."));
 	connect(_moveLayerDownAction, &QAction::triggered, this, &OverlayCommandPage::onLayerMoveDown);
 	editToolbar->addAction(_moveLayerDownAction);
+
+	QAction* renameLayerAction = _actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_RENAME, tr("Rename..."), "edit_rename_pipeline_item", tr("Give the selected viewport layer a different name."));
+	connect(renameLayerAction, &QAction::triggered, this, [this]() {
+		_overlayListWidget->edit(_overlayListWidget->currentIndex());
+	});
 
 	layout->addWidget(_splitter, 1);
 

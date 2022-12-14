@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2022 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -31,7 +31,7 @@ IF(NOT EMSCRIPTEN)
 ENDIF()
 
 # Locate the libssh library, needed for the built-in SSH client.
-IF(NOT OVITO_BUILD_CONDA AND NOT EMSCRIPTEN)
+IF(OVITO_BUILD_SSH_CLIENT AND NOT EMSCRIPTEN)
 	FIND_PACKAGE(Libssh)
 ENDIF()
 
@@ -147,16 +147,19 @@ ELSE()
 ENDIF()
 
 # Include optional SSH client code.
-IF(Libssh_FOUND)
-	LIST(APPEND SourceFiles
-		utilities/io/ssh/SshConnection.cpp
-		utilities/io/ssh/SshChannel.cpp
-		utilities/io/ssh/ProcessChannel.cpp
-		utilities/io/ssh/ScpChannel.cpp
-		utilities/io/ssh/LsChannel.cpp
-	)
-ELSE()
-	MESSAGE("Libssh library not found. OVITO will be built without built-in SSH client.")
+IF(OVITO_BUILD_SSH_CLIENT)
+	IF(Libssh_FOUND)
+		LIST(APPEND SourceFiles
+			utilities/io/ssh/SshConnection.cpp
+			utilities/io/ssh/SshChannel.cpp
+			utilities/io/ssh/ProcessChannel.cpp
+			utilities/io/ssh/ScpChannel.cpp
+			utilities/io/ssh/LsChannel.cpp
+			utilities/io/ssh/LibsshWrapper.cpp
+		)
+	ELSE()
+		MESSAGE("Libssh library not found. OVITO will be built without built-in SSH client.")
+	ENDIF()
 ENDIF()
 
 # Make use of the zlib library provided by Emscripten.
@@ -201,9 +204,16 @@ IF(ZLIB_FOUND)
 ENDIF()
 
 # Link to Libssh.
-IF(Libssh_FOUND)
+IF(OVITO_BUILD_SSH_CLIENT AND Libssh_FOUND)
 	TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_SSH_CLIENT)
-	TARGET_LINK_LIBRARIES(Core PRIVATE Libssh::Libssh)
+	IF(OVITO_LIBSSH_RUNTIME_LINKING)
+		TARGET_COMPILE_DEFINITIONS(Core PRIVATE OVITO_LIBSSH_RUNTIME_LINKING)
+		TARGET_INCLUDE_DIRECTORIES(Core PRIVATE "${LIBSSH_INCLUDE_DIR}")
+		FILE(RELATIVE_PATH OVITO_LIBSSH_RELATIVE_PATH "${OVITO_BINARY_DIRECTORY}" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}")
+		TARGET_COMPILE_DEFINITIONS(Core PRIVATE "OVITO_LIBSSH_RELATIVE_PATH=\"${OVITO_LIBSSH_RELATIVE_PATH}\"")
+		ELSE()
+		TARGET_LINK_LIBRARIES(Core PRIVATE Libssh::Libssh)
+	ENDIF()
 ENDIF()
 
 # Link to video encoding lib.
@@ -220,6 +230,11 @@ TARGET_COMPILE_DEFINITIONS(Core PUBLIC "$<$<CONFIG:Debug>:OVITO_DEBUG>")
 # Turn off Clang compiler warnings regarding undefined instantiation of static variable of class templates.
 IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	TARGET_COMPILE_OPTIONS(Core PUBLIC "-Wno-undefined-var-template")
+ENDIF()
+
+IF(MSVC AND OVITO_BUILD_CONDA)
+	# Silence deprecation warnings in conda-forge's 'qt-main' package (qpdfwriter.h and qpagedpaintdevice.h).
+	TARGET_COMPILE_OPTIONS(Core PUBLIC "/wd4996")
 ENDIF()
 
 # Compute the relative path where the plugin libraries get installed relative to the executable. 
@@ -292,12 +307,12 @@ IF(FFMPEG_FOUND AND NOT EMSCRIPTEN)
 				MESSAGE(FATAL_ERROR "Could not find corresponding DLL for ffmpeg library '${lib}' in same directory.")
 			ENDIF()
 			FOREACH(dll ${lib_dll})
-				OVITO_INSTALL_SHARED_LIB("${dll}" ".")
+				OVITO_INSTALL_SHARED_LIB("${dll}")
 			ENDFOREACH()
 		ELSEIF(UNIX AND NOT APPLE AND (OVITO_REDISTRIBUTABLE_PACKAGE OR OVITO_BUILD_PYPI))
 			FILE(GLOB lib_versions "${lib}*")
 			FOREACH(lib_version ${lib_versions})
-				OVITO_INSTALL_SHARED_LIB("${lib_version}" ".")
+				OVITO_INSTALL_SHARED_LIB("${lib_version}")
 			ENDFOREACH()
 		ENDIF()
 	ENDFOREACH()
@@ -308,47 +323,56 @@ IF(ZLIB_FOUND AND NOT EMSCRIPTEN)
 		# Deploy the zlib DLL.
 		GET_TARGET_PROPERTY(ZLIB_LIBRARY_LOCATION ZLIB::ZLIB LOCATION)
 		GET_FILENAME_COMPONENT(ZLIB_LIBRARY_PATH "${ZLIB_LIBRARY_LOCATION}" PATH)
-		OVITO_INSTALL_SHARED_LIB("${ZLIB_LIBRARY_PATH}/../bin/zlib.dll" ".")
+		OVITO_INSTALL_SHARED_LIB("${ZLIB_LIBRARY_PATH}/../bin/zlib.dll")
 	ENDIF()
 ENDIF()
 
 # Deploy the libssh library and its dependencies.
-IF(Libssh_FOUND AND NOT EMSCRIPTEN)
-	IF(WIN32 AND NOT OVITO_BUILD_CONDA)
+IF(OVITO_BUILD_SSH_CLIENT AND Libssh_FOUND AND NOT EMSCRIPTEN AND NOT OVITO_BUILD_CONDA)
+	IF(WIN32)
 		LIST(GET LIBSSH_LIBRARIES 0 LIBSSH_FIRST_LIBRARY)
 		GET_FILENAME_COMPONENT(LIBSSH_LIBRARY_DIR "${LIBSSH_FIRST_LIBRARY}" PATH)
 		GET_FILENAME_COMPONENT(LIBSSH_LIBRARY_NAME "${LIBSSH_FIRST_LIBRARY}" NAME_WE)
-		OVITO_INSTALL_SHARED_LIB("${LIBSSH_LIBRARY_DIR}/../bin/${LIBSSH_LIBRARY_NAME}.dll" ".")
+		OVITO_INSTALL_SHARED_LIB("${LIBSSH_LIBRARY_DIR}/../bin/${LIBSSH_LIBRARY_NAME}.dll")
 
 		# Also install the OpenSSL DLLs needed by libssh.
 		SET(OPENSSL_ROOT_DIR "" CACHE PATH "Location of the OpenSSL library installation")
 		IF(NOT OPENSSL_ROOT_DIR)
 			MESSAGE(FATAL_ERROR "Please specify the location of the OpenSSL library by setting the OPENSSL_ROOT_DIR variable.")
 		ENDIF()
-		FILE(GLOB openssl_dlls "${OPENSSL_ROOT_DIR}/bin/*.dll")
+		STRING(REPLACE "\\" "/" _OPENSSL_ROOT_DIR "${OPENSSL_ROOT_DIR}") 
+		FILE(GLOB openssl_dlls "${_OPENSSL_ROOT_DIR}/bin/*.dll")
 		IF(NOT openssl_dlls)
-			MESSAGE(FATAL_ERROR "Could not find any OpenSSL DLLs in \"${OPENSSL_ROOT_DIR}/bin/\". Please check value of OPENSSL_ROOT_DIR path variable.")
+			MESSAGE(FATAL_ERROR "Could not find any OpenSSL DLLs in \"${_OPENSSL_ROOT_DIR}/bin/\". Please check value of OPENSSL_ROOT_DIR path variable.")
 		ENDIF()
 		FOREACH(openssl_dll ${openssl_dlls})
-			OVITO_INSTALL_SHARED_LIB("${openssl_dll}" ".")
+			OVITO_INSTALL_SHARED_LIB("${openssl_dll}")
 		ENDFOREACH()
 
-	ELSEIF(UNIX AND NOT APPLE AND (OVITO_REDISTRIBUTABLE_PACKAGE OR OVITO_BUILD_PYPI))
+	ELSEIF(APPLE)
+
+		IF(OVITO_LIBSSH_RUNTIME_LINKING)
+			# Create a symlink to libssh in the build directory to make it available at runtime.
+			FILE(MAKE_DIRECTORY "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}")
+			EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${LIBSSH_LIBRARY}" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/libssh.dylib")
+			# Install libssh in the installation directory to ship it with OVITO.
+			INSTALL(FILES "${LIBSSH_LIBRARY}" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/")
+		ENDIF()
+
+	ELSEIF(UNIX AND OVITO_REDISTRIBUTABLE_PACKAGE)
 
 		FOREACH(lib ${LIBSSH_LIBRARIES})
-			OVITO_INSTALL_SHARED_LIB("${lib}" ".")
+			OVITO_INSTALL_SHARED_LIB("${lib}")
 		ENDFOREACH()
 
-		# Install OpenSSL (libcrypto) needed by libssh.
-		#
-		# NOTE: This was changed in OVITO 3.6.0. We no longer ship OpenSSL with OVITO for Linux, because it leads to conflicts
-		# on some Linux distributions. Rather fall back to using the system version of OpenSSL, which should exist on most machines.
-		#
-		# FIND_LIBRARY(LIB_CRYPTO_LOCATION NAMES libcrypto.so PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu NO_DEFAULT_PATH)
-		# IF(NOT LIB_CRYPTO_LOCATION)
-		#	MESSAGE(FATAL_ERROR "Could not find shared library libcrypto.so, which is required by libssh, in system path.")
-		#ENDIF()
-		#OVITO_INSTALL_SHARED_LIB("${LIB_CRYPTO_LOCATION}" ".")
-
+		# Install OpenSSL (libcrypto.so and libssl.so) needed by libssh.
+		FOREACH(lib libcrypto.so libssl.so)
+			FIND_LIBRARY(openssl_lib_location NAMES ${lib} PATHS /usr/lib /usr/lib64 /usr/local/lib /usr/lib/x86_64-linux-gnu NO_DEFAULT_PATH NO_CACHE)
+			IF(NOT openssl_lib_location)
+				MESSAGE(FATAL_ERROR "Could not find shared library ${lib} in system path, which is required by libssh.")
+			ENDIF()
+			OVITO_INSTALL_SHARED_LIB("${openssl_lib_location}")
+			UNSET(openssl_lib_location)
+		ENDFOREACH()
 	ENDIF()
 ENDIF()

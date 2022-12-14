@@ -341,7 +341,7 @@ void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vec
 {
 	// Prepare the neighbor finder.
 	CutoffNeighborFinder neighborFinder;
-	if(!neighborFinder.prepare(cutoff(), positions(), cell(), selection(), this))
+	if(!neighborFinder.prepare(cutoff(), positions(), cell(), selection()))
 		return;
 
 	size_t particleCount = positions()->size();
@@ -407,8 +407,10 @@ void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vec
 			totalWeight += weight;
 			if(totalWeight > 0)
 				centersOfMass.push_back(Point3::Origin() + (centerOfMass / totalWeight));
-			else
+			else {
 				centersOfMass.push_back(Point3::Origin());
+				_hasZeroWeightCluster = true;
+			}
 		}
 	}
 }
@@ -498,8 +500,10 @@ void ClusterAnalysisModifier::BondClusterAnalysisEngine::doClustering(std::vecto
 			totalWeight += weight;
 			if(totalWeight > 0)
 				centersOfMass.push_back(Point3::Origin() + (centerOfMass / totalWeight));
-			else
+			else {
 				centersOfMass.push_back(Point3::Origin());
+				_hasZeroWeightCluster = true;
+			}
 		}
 	}
 }
@@ -565,7 +569,16 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(const Modifier
 	if(modifier->computeRadiusOfGyration() && _gyrationTensors)
 		table->createProperty(_gyrationTensors);
 
-	state.setStatus(PipelineStatus(PipelineStatus::Success, tr("Found %n cluster(s).", "", numClusters())));
+	PipelineStatus status(
+		tr("Found %n cluster(s).", "", numClusters()),
+		numClusters() == 1 ? tr("1 cluster") : tr("%n clusters", "", numClusters()));
+
+	if(_hasZeroWeightCluster) {
+		status.setType(PipelineStatus::Warning);
+		status.setText(status.text() + tr("\nCould not compute center of mass or radius of gyration of some clusters, because their total mass is zero. "
+			"Please make sure particles or particle types have valid masses assigned."));
+	}
+	state.setStatus(std::move(status));
 }
 
 }	// End of namespace

@@ -334,7 +334,7 @@ void SceneNode::removeChildNode(int index)
 {
 	OVITO_ASSERT(index >= 0 && index < children().size());
 
-	SceneNode* child = children()[index];
+	OORef<SceneNode> child = children()[index];
 	OVITO_ASSERT_MSG(child->parentNode() == this, "SceneNode::removeChildNode()", "The node to be removed is not a child of this parent node.");
 
 	// Remove child node from array.

@@ -372,7 +372,7 @@ void PipelineSceneNode::setPipelineSource(PipelineObject* sourceObject)
 		}
 		modApp->setInput(sourceObject);
 	}
-	OVITO_ASSERT(this->pipelineSource() == sourceObject);
+	OVITO_ASSERT(ModifierApplication::OOClass().isMember(sourceObject) || this->pipelineSource() == sourceObject);
 }
 
 /******************************************************************************

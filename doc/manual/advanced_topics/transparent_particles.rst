@@ -10,7 +10,7 @@ Semi-transparent particles
 Particles can be made semi-transparent by setting their ``Transparency`` :ref:`particle property <usage.particle_properties.special>`.
 A value of 0.0 lets a particle appear fully opaque (the default), while values in the range 0.0 -- 1.0 render a particle translucent.
 
-The easiest way to set the ``Transparency`` property to a value is inserting the :ref:`particles.modifiers.compute_property` modifier into the data pipeline.
+The easiest way to set the ``Transparency`` property to some value is by inserting the :ref:`particles.modifiers.compute_property` modifier into the data pipeline.
 Simply enter the desired transparency value into the expression field and the :ref:`particles.modifiers.compute_property` 
 modifier will assign that value to all particles.
 

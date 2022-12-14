@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,13 +28,6 @@
 
 namespace Ovito {
 
-// Stores data of a single vertex passed to the shader.
-struct ColoredVertexWithNormal {
-    Point_3<float> position;
-    Vector_3<float> normal;
-    ColorAT<float> color;
-};
-
 /******************************************************************************
 * Creates the Vulkan pipelines for the mesh rendering primitive.
 ******************************************************************************/
@@ -56,7 +49,7 @@ VulkanPipeline& VulkanSceneRenderer::createMeshPrimitivePipeline(VulkanPipeline&
 
     VkVertexInputBindingDescription vertexBindingDesc[3];
     vertexBindingDesc[0].binding = 0;
-    vertexBindingDesc[0].stride = sizeof(ColoredVertexWithNormal);
+    vertexBindingDesc[0].stride = sizeof(MeshPrimitive::RenderVertex);
     vertexBindingDesc[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
     vertexBindingDesc[1].binding = 1;
     vertexBindingDesc[1].stride = 3 * sizeof(Vector_4<float>);
@@ -70,19 +63,19 @@ VulkanPipeline& VulkanSceneRenderer::createMeshPrimitivePipeline(VulkanPipeline&
             0, // location
             0, // binding
             VK_FORMAT_R32G32B32_SFLOAT,
-            offsetof(ColoredVertexWithNormal, position) // offset
+            offsetof(MeshPrimitive::RenderVertex, position) // offset
         },
         { // normal:
             1, // location
             0, // binding
             VK_FORMAT_R32G32B32_SFLOAT,
-            offsetof(ColoredVertexWithNormal, normal) // offset
+            offsetof(MeshPrimitive::RenderVertex, normal) // offset
         },
         { // color:
             2, // location
             0, // binding
             VK_FORMAT_R32G32B32A32_SFLOAT,
-            offsetof(ColoredVertexWithNormal, color) // offset
+            offsetof(MeshPrimitive::RenderVertex, color) // offset
         },
         { // instance transformation (row 1):
             3, // location
@@ -194,7 +187,7 @@ VulkanPipeline& VulkanSceneRenderer::createMeshPrimitivePipeline(VulkanPipeline&
                 0, // location
                 0, // binding
                 VK_FORMAT_R32G32B32_SFLOAT,
-                offsetof(ColoredVertexWithNormal, position) // offset
+                offsetof(MeshPrimitive::RenderVertex, position) // offset
             },
             { // instance transformation (row 1):
                 1, // location
@@ -293,7 +286,7 @@ VulkanPipeline& VulkanSceneRenderer::createMeshPrimitivePipeline(VulkanPipeline&
                 0, // location
                 0, // binding
                 VK_FORMAT_R32G32B32_SFLOAT,
-                offsetof(ColoredVertexWithNormal, position) // offset
+                offsetof(MeshPrimitive::RenderVertex, position) // offset
             },
             { // instance transformation (row 1):
                 1, // location
@@ -361,6 +354,12 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         return;
 
     const TriMeshObject& mesh = *primitive.mesh();
+
+    // Check size limits of the mesh.
+    if(mesh.faceCount() * 3 > std::numeric_limits<VkDeviceSize>::max() / sizeof(MeshPrimitive::RenderVertex)) {
+        qWarning() << "WARNING: Vulkan renderer - mesh to be rendered has too many faces, exceeding Vulkan device limits.";
+        return;
+    }
 
     // Compute full view-projection matrix including correction for OpenGL/Vulkan convention difference.
     QMatrix4x4 mvp = clipCorrection() * projParams().projectionMatrix * modelViewTM();
@@ -450,7 +449,7 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     VkDescriptorSet globalUniformsSet = getGlobalUniformsDescriptorSet();
     deviceFunctions()->vkCmdBindDescriptorSets(currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &globalUniformsSet, 0, nullptr);
 
-    // The look-up key for the Vulkan buffer cache.
+    // The lookup key for the Vulkan buffer cache.
     RendererResourceKey<struct VulkanMeshPrimitiveCache, DataOORef<const TriMeshObject>, std::vector<ColorA>, ColorA, Color> meshCacheKey{
         primitive.mesh(),
         primitive.materialColors(),
@@ -459,154 +458,9 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     };
 
     // Upload vertex buffer to GPU memory.
-    VkBuffer meshBuffer = context()->createCachedBuffer(meshCacheKey, mesh.faceCount() * 3 * sizeof(ColoredVertexWithNormal), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
-        ColoredVertexWithNormal* renderVertices = reinterpret_cast<ColoredVertexWithNormal*>(buffer);
-        if(!mesh.hasNormals()) {
-            quint32 allMask = 0;
-
-            // Compute face normals.
-            std::vector<Vector_3<float>> faceNormals(mesh.faceCount());
-            auto faceNormal = faceNormals.begin();
-            for(auto face = mesh.faces().constBegin(); face != mesh.faces().constEnd(); ++face, ++faceNormal) {
-                const Point3& p0 = mesh.vertex(face->vertex(0));
-                Vector3 d1 = mesh.vertex(face->vertex(1)) - p0;
-                Vector3 d2 = mesh.vertex(face->vertex(2)) - p0;
-                *faceNormal = d1.cross(d2).toDataType<float>();
-                if(*faceNormal != Vector_3<float>::Zero()) {
-                    allMask |= face->smoothingGroups();
-                }
-            }
-
-            // Initialize render vertices.
-            ColoredVertexWithNormal* rv = renderVertices;
-            faceNormal = faceNormals.begin();
-            ColorAT<float> defaultVertexColor = static_cast<ColorAT<float>>(primitive.uniformColor());
-            for(auto face = mesh.faces().constBegin(); face != mesh.faces().constEnd(); ++face, ++faceNormal) {
-
-                // Initialize render vertices for this face.
-                for(size_t v = 0; v < 3; v++, rv++) {
-                    if(face->smoothingGroups())
-                        rv->normal = Vector_3<float>::Zero();
-                    else
-                        rv->normal = *faceNormal;
-                    rv->position = mesh.vertex(face->vertex(v)).toDataType<float>();
-                    if(mesh.hasVertexColors()) {
-                        rv->color = mesh.vertexColor(face->vertex(v)).toDataType<float>();
-                        if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
-                    }
-                    else if(renderWithPseudoColorMapping && mesh.hasVertexPseudoColors()) {
-                        rv->color.r() = mesh.vertexPseudoColor(face->vertex(v));
-                        rv->color.g() = 0;
-                        rv->color.b() = 0;
-                        rv->color.a() = defaultVertexColor.a();
-                    }
-                    else if(mesh.hasFaceColors()) {
-                        rv->color = mesh.faceColor(face - mesh.faces().constBegin()).toDataType<float>();
-                        if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
-                    }
-                    else if(renderWithPseudoColorMapping && mesh.hasFacePseudoColors()) {
-                        rv->color.r() = mesh.facePseudoColor(face - mesh.faces().constBegin());
-                        rv->color.g() = 0;
-                        rv->color.b() = 0;
-                        rv->color.a() = defaultVertexColor.a();
-                    }
-                    else if(face->materialIndex() < primitive.materialColors().size() && face->materialIndex() >= 0) {
-                        rv->color = primitive.materialColors()[face->materialIndex()].toDataType<float>();
-                    }
-                    else {
-                        rv->color = defaultVertexColor;
-                    }
-
-                    // Override color of faces that are selected.
-                    if(face->isSelected() && isInteractive()) {
-                        if(!renderWithPseudoColorMapping)
-                            rv->color = ColorAT<float>(primitive.faceSelectionColor());
-                        else
-                            rv->color.g() = 1.0f;
-                    }
-                }
-            }
-
-            if(allMask) {
-                std::vector<Vector_3<float>> groupVertexNormals(mesh.vertexCount());
-                for(int group = 0; group < OVITO_MAX_NUM_SMOOTHING_GROUPS; group++) {
-                    quint32 groupMask = quint32(1) << group;
-                    if((allMask & groupMask) == 0)
-                        continue;	// Group is not used.
-
-                    // Reset work arrays.
-                    std::fill(groupVertexNormals.begin(), groupVertexNormals.end(), Vector_3<float>::Zero());
-
-                    // Compute vertex normals at original vertices for current smoothing group.
-                    faceNormal = faceNormals.begin();
-                    for(auto face = mesh.faces().constBegin(); face != mesh.faces().constEnd(); ++face, ++faceNormal) {
-                        // Skip faces that do not belong to the current smoothing group.
-                        if((face->smoothingGroups() & groupMask) == 0) continue;
-
-                        // Add face's normal to vertex normals.
-                        for(size_t fv = 0; fv < 3; fv++)
-                            groupVertexNormals[face->vertex(fv)] += *faceNormal;
-                    }
-
-                    // Transfer vertex normals from original vertices to render vertices.
-                    rv = renderVertices;
-                    for(const auto& face : mesh.faces()) {
-                        if(face.smoothingGroups() & groupMask) {
-                            for(size_t fv = 0; fv < 3; fv++, ++rv)
-                                rv->normal += groupVertexNormals[face.vertex(fv)];
-                        }
-                        else rv += 3;
-                    }
-                }
-            }
-        }
-        else {
-            // Use normals stored in the mesh.
-            ColoredVertexWithNormal* rv = renderVertices;
-            const Vector3* faceNormal = mesh.normals().begin();
-            ColorAT<float> defaultVertexColor = static_cast<ColorAT<float>>(primitive.uniformColor());
-            for(auto face = mesh.faces().constBegin(); face != mesh.faces().constEnd(); ++face) {
-                // Initialize render vertices for this face.
-                for(size_t v = 0; v < 3; v++, rv++) {
-                    rv->normal = (*faceNormal++).toDataType<float>();
-                    rv->position = mesh.vertex(face->vertex(v)).toDataType<float>();
-                    if(mesh.hasVertexColors()) {
-                        rv->color = mesh.vertexColor(face->vertex(v)).toDataType<float>();
-                        if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
-                    }
-                    else if(renderWithPseudoColorMapping && mesh.hasVertexPseudoColors()) {
-                        rv->color.r() = mesh.vertexPseudoColor(face->vertex(v));
-                        rv->color.g() = 0;
-                        rv->color.b() = 0;
-                        rv->color.a() = defaultVertexColor.a();
-                    }
-                    else if(mesh.hasFaceColors()) {
-                        rv->color = mesh.faceColor(face - mesh.faces().constBegin()).toDataType<float>();
-                        if(defaultVertexColor.a() != 1) rv->color.a() = defaultVertexColor.a();
-                    }
-                    else if(renderWithPseudoColorMapping && mesh.hasFacePseudoColors()) {
-                        rv->color.r() = mesh.facePseudoColor(face - mesh.faces().constBegin());
-                        rv->color.g() = 0;
-                        rv->color.b() = 0;
-                        rv->color.a() = defaultVertexColor.a();
-                    }
-                    else if(face->materialIndex() >= 0 && face->materialIndex() < primitive.materialColors().size()) {
-                        rv->color = primitive.materialColors()[face->materialIndex()].toDataType<float>();
-                    }
-                    else {
-                        rv->color = defaultVertexColor;
-                    }
-
-                    // Override color of faces that are selected.
-                    if(face->isSelected() && isInteractive()) {
-                        if(!renderWithPseudoColorMapping)
-                            rv->color = ColorAT<float>(primitive.faceSelectionColor());
-                        else
-                            rv->color.g() = 1.0f;
-                    }
-                }
-            }
-        }
+    VkBuffer meshBuffer = context()->createCachedBuffer(meshCacheKey, mesh.faceCount() * 3 * sizeof(MeshPrimitive::RenderVertex), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
+        bool highlightSelectedFaces = isInteractive() && !isPicking();
+    	primitive.generateRenderableVertices(reinterpret_cast<MeshPrimitive::RenderVertex*>(buffer), highlightSelectedFaces, renderWithPseudoColorMapping);
     });
 
     // Bind vertex buffer.
@@ -636,6 +490,8 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 
         // Upload the per-instance TMs to GPU memory.
         VkBuffer instanceTMBuffer = getMeshInstanceTMBuffer(primitive);
+        if(!instanceTMBuffer)
+            return;
 
         // Bind buffer with the instance matrices to the second binding of the shader.
         VkDeviceSize offset = 0;
@@ -781,7 +637,13 @@ VkBuffer VulkanSceneRenderer::getMeshInstanceTMBuffer(const MeshPrimitive& primi
 {
     OVITO_ASSERT(primitive.useInstancedRendering() && primitive.perInstanceTMs());
 
-    // The look-up key for storing the per-instance TMs in the Vulkan buffer cache.
+    // Check size limit.
+    if(primitive.perInstanceTMs()->size() > std::numeric_limits<VkDeviceSize>::max() / (3 * sizeof(Vector_4<float>))) {
+        qWarning() << "WARNING: Vulkan renderer - Number of mesh instances to be rendered exceeds device limits";
+        return {};
+    }
+
+    // The lookup key for storing the per-instance TMs in the Vulkan buffer cache.
     RendererResourceKey<struct VulkanMeshPrimitiveInstanceTMCache, ConstDataBufferPtr> instanceTMsKey{ primitive.perInstanceTMs() };
 
     // Upload the per-instance TMs to GPU memory.
@@ -809,31 +671,7 @@ ConstDataBufferPtr VulkanSceneRenderer::generateMeshWireframeLines(const MeshPri
     ConstDataBufferPtr& wireframeLines = context()->lookup<ConstDataBufferPtr>(std::move(cacheKey), currentResourceFrame());
 
     if(!wireframeLines) {
-        const TriMeshObject& mesh = *primitive.mesh();
-
-		// Count how many polygon edge are in the mesh.
-		size_t numVisibleEdges = 0;
-		for(const TriMeshFace& face : mesh.faces()) {
-			for(size_t e = 0; e < 3; e++)
-				if(face.edgeVisible(e)) numVisibleEdges++;
-		}
-
-		// Allocate storage buffer for line elements.
-        DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(dataset(), numVisibleEdges * 2, DataBuffer::Float, 3);
-
-		// Generate line elements.
-        Point3* outVert = lines.begin();
-		for(const TriMeshFace& face : mesh.faces()) {
-			for(size_t e = 0; e < 3; e++) {
-				if(face.edgeVisible(e)) {
-					*outVert++ = mesh.vertex(face.vertex(e));
-					*outVert++ = mesh.vertex(face.vertex((e+1)%3));
-				}
-			}
-		}
-        OVITO_ASSERT(outVert == lines.end());
-
-        wireframeLines = lines.take();
+        wireframeLines = primitive.generateWireframeLines();
     }
 
     return wireframeLines;
@@ -873,6 +711,7 @@ void VulkanSceneRenderer::renderMeshWireframeImplementation(const MeshPrimitive&
     // Bind vertex buffer for instance TMs.
     if(primitive.useInstancedRendering()) {
         VkBuffer buffer = getMeshInstanceTMBuffer(primitive);
+        if(!buffer) return;
         deviceFunctions()->vkCmdBindVertexBuffers(currentCommandBuffer(), 1, 1, &buffer, &offset);
     }
 

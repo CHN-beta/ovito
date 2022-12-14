@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -69,9 +69,12 @@ bool AmbientOcclusionModifier::OOMetaClass::isApplicableTo(const DataCollection&
 ******************************************************************************/
 Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
-	if(Application::instance()->headlessMode())
-		throwException(tr("The ambient occlusion modifier requires OpenGL support and cannot be used when program is running in headless mode. "
-						  "Please run program in an environment where access to graphics hardware is available. On Linux this requires a local X server."));
+	if(Application::instance()->headlessMode()) {
+		throwException(tr(
+				"OVITO's ambient occlusion modifier requires OpenGL support and cannot be used in headless mode, that is if the application is running without access to a graphics environment. "
+				"Please see https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer for instructions "
+				"on how to enable OpenGL support in Python script environments."));
+	}
 
 	// Get modifier input.
 	const ParticlesObject* particles = input.expectObject<ParticlesObject>();
@@ -151,10 +154,13 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 				if(!setProgressValue(sample))
 					break;
 
-				// Generate lighting direction on unit sphere.
-				FloatType y = (FloatType)sample * 2 / _samplingCount - FloatType(1) + FloatType(1) / _samplingCount;
+				// Generate lighting direction on unit sphere using "Fibonacci sphere algorithm".
+				// https://stackoverflow.com/a/26127012
+				FloatType y = FloatType(1) - (sample / FloatType(_samplingCount - 1)) * 2; // y goes from 1 to -1
+				FloatType r = std::sqrt(FloatType(1) - y * y); // radius at y
 				FloatType phi = (FloatType)sample * FLOATTYPE_PI * (FloatType(3) - sqrt(FloatType(5)));
-				Vector3 dir(cos(phi), y, sin(phi));
+				Vector3 dir(std::cos(phi)*r, y, std::sin(phi)*r);
+				OVITO_ASSERT(std::abs(dir.length() - 1.0) < FLOATTYPE_EPSILON);
 
 				// Set up view projection.
 				ViewProjectionParameters projParams;

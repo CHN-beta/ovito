@@ -197,7 +197,7 @@ Box3 SurfaceMeshVis::boundingBox(TimePoint time, const ConstDataObjectPath& path
 
 	// Compute mesh bounding box.
 	// Requires that the periodic SurfaceMesh has already been transformed into a non-periodic RenderableSurfaceMesh.
-	if(const RenderableSurfaceMesh* meshObj = dynamic_object_cast<RenderableSurfaceMesh>(path.back())) {
+	if(const RenderableSurfaceMesh* meshObj = path.lastAs<RenderableSurfaceMesh>()) {
 		if(meshObj->surfaceMesh()) bb.addBox(meshObj->surfaceMesh()->boundingBox());
 		if(meshObj->capPolygonsMesh()) bb.addBox(meshObj->capPolygonsMesh()->boundingBox());
 	}
@@ -211,7 +211,7 @@ PipelineStatus SurfaceMeshVis::render(TimePoint time, const ConstDataObjectPath&
 {
 	// Ignore render calls for the original SurfaceMesh.
 	// We are only interested in the RenderableSurfaceMesh.
-	if(dynamic_object_cast<SurfaceMesh>(path.back()) != nullptr)
+	if(path.lastAs<SurfaceMesh>())
 		return {};
 
 	if(renderer->isBoundingBoxPass()) {
@@ -247,7 +247,7 @@ PipelineStatus SurfaceMeshVis::render(TimePoint time, const ConstDataObjectPath&
     };
 
     // Get the renderable mesh.
-    const RenderableSurfaceMesh* renderableMesh = dynamic_object_cast<RenderableSurfaceMesh>(path.back());
+    const RenderableSurfaceMesh* renderableMesh = path.lastAs<RenderableSurfaceMesh>();
     if(!renderableMesh) return {};
 
 	// Lookup the rendering primitive in the vis cache.
@@ -433,7 +433,8 @@ std::shared_ptr<SurfaceMeshVis::PrepareSurfaceEngine> SurfaceMeshVis::createSurf
 void SurfaceMeshVis::PrepareSurfaceEngine::perform()
 {
 	setProgressText(tr("Preparing mesh for display"));
-	if(_generateCapPolygons)
+	bool generateCapPolygons = (_generateCapPolygons && cell() && cell()->volume3D() > FLOATTYPE_EPSILON && inputMesh()->topology()->isClosed());
+	if(generateCapPolygons)
 		beginProgressSubStepsWithWeights({1,1,12,1,8});
 	else
 		beginProgressSubStepsWithWeights({1,1,12,1});
@@ -470,10 +471,9 @@ void SurfaceMeshVis::PrepareSurfaceEngine::perform()
 	determineFaceColors();
 	if(isCanceled()) return;
 
-	if(_generateCapPolygons) {
+	if(generateCapPolygons) {
 		nextProgressSubStep();
-		if(cell() && cell()->volume3D() > FLOATTYPE_EPSILON)
-			buildCapTriangleMesh();
+		buildCapTriangleMesh();
 	}
 
 	setResult(

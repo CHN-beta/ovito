@@ -18,7 +18,7 @@ and then run using the :ref:`embedded Python script interpreter <ovitos_interpre
 
 The Python code generator is invoked by selecting :menuselection:`File --> Generate Python script` from the
 menu. The code generator window displays the dynamically generated 
-source code, which gets updated in realtime while you make changes to the data pipeline or a modifier's settings.
+source code, which gets updated in real-time while you make changes to the data pipeline or a modifier's settings.
 
 You can activate the option :guilabel:`Include visualization code` to let OVITO additionally generate code statements that
 set up the virtual camera, render settings, and the visual appearance of the dataset exactly as you prescribed it

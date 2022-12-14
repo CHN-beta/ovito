@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -88,19 +88,36 @@ void TextLabelOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 		setOffsetX(0);
 		setOffsetY(0);
 	}
+	else if(field == PROPERTY_FIELD(TextLabelOverlay::labelText) && !isBeingLoaded()) {
+		// Changes of some the overlay's parameters affect the result of TextLabelOverlay::getPipelineEditorShortInfo().
+		notifyDependents(ReferenceEvent::ObjectStatusChanged);
+	}
+
 	ViewportOverlay::propertyChanged(field);
+}
+
+/******************************************************************************
+* Returns a short piece information (typically a string or color) to be 
+* displayed next to the modifier's title in the pipeline editor list.
+******************************************************************************/
+QVariant TextLabelOverlay::getPipelineEditorShortInfo() const
+{
+	return labelText();
 }
 
 /******************************************************************************
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
 void TextLabelOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
-{
+{	
 	if(renderer->isInteractive()) {
 		const PipelineFlowState& flowState = sourceNode() ? sourceNode()->evaluatePipelineSynchronous(true) : PipelineFlowState();
 		renderImplementation(renderer, physicalViewportRect, flowState);
 	}
 	else {
+		// Check alignment parameter.
+		checkAlignmentParameterValue(alignment());
+
 		if(sourceNode()) {
 			PipelineEvaluationFuture pipelineEvaluation = sourceNode()->evaluatePipeline(PipelineEvaluationRequest(renderer->time()));
 			if(!pipelineEvaluation.waitForFinished())

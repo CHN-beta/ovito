@@ -122,7 +122,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 
 	// Prepare the neighbor list.
 	CutoffNeighborFinder neighborListBuilder;
-	if(!neighborListBuilder.prepare(cutoff(), positions(), cell(), selection(), this))
+	if(!neighborListBuilder.prepare(cutoff(), positions(), cell(), selection()))
 		return;
 
 	size_t particleCount = positions()->size();

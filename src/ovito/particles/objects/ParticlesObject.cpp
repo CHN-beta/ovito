@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -698,6 +698,15 @@ PropertyPtr ParticlesObject::OOMetaClass::createStandardPropertyInternal(DataSet
 	else if(type == ParticlesObject::ForceProperty) {
 		OORef<VectorVis> vis = OORef<VectorVis>::create(dataset);
 		vis->setObjectTitle(tr("Forces"));
+		vis->setEnabled(false);
+		vis->setReverseArrowDirection(false);
+		vis->setArrowPosition(VectorVis::Base);
+		vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::title), SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled), SHADOW_PROPERTY_FIELD(VectorVis::reverseArrowDirection), SHADOW_PROPERTY_FIELD(VectorVis::arrowPosition)});
+		property->addVisElement(std::move(vis));
+	}
+	else if(type == ParticlesObject::VelocityProperty) {
+		OORef<VectorVis> vis = OORef<VectorVis>::create(dataset);
+		vis->setObjectTitle(tr("Velocities"));
 		vis->setEnabled(false);
 		vis->setReverseArrowDirection(false);
 		vis->setArrowPosition(VectorVis::Base);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -181,7 +181,8 @@ std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMesh
 					edge1v.normalizeSafely();
 					do {
 						visitedEdges.push_back(edge);
-						OVITO_ASSERT(hasOppositeEdge(edge)); // Make sure the mesh is closed.
+						if(!hasOppositeEdge(edge))
+							throw Exception("Point location query requires a surface mesh that is closed.");
 						edge_index nextEdge = nextFaceEdge(oppositeEdge(edge));
 						OVITO_ASSERT(vertex1(nextEdge) == vindex);
 						Vector3 edge2v = wrapVector(vertexPosition(vertex2(nextEdge)) - vertexPos);
@@ -223,7 +224,8 @@ std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMesh
 	size_type edgeCount = this->edgeCount();
 	for(edge_index edge = 0; edge < edgeCount; edge++) {
 		if(!faceSubset.empty() && !faceSubset[adjacentFace(edge)]) continue;
-		OVITO_ASSERT_MSG(hasOppositeEdge(edge), "SurfaceMeshAccess::locatePoint()", "Surface mesh is not fully closed. This should not happen.");
+		if(!hasOppositeEdge(edge))
+			throw Exception("Point location query requires a surface mesh that is closed.");
 		const Point3& p1 = vertexPosition(vertex1(edge));
 		const Point3& p2 = vertexPosition(vertex2(edge));
 		Vector3 edgeDir = wrapVector(p2 - p1);
@@ -244,7 +246,7 @@ std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMesh
 			Vector3 e2 = wrapVector(p1b - p1);
 			Vector3 pseudoNormal = edgeDir.cross(e1).safelyNormalized() + e2.cross(edgeDir).safelyNormalized();
 
-			// In case the manifold is two-sided, skip edge if pseudo-normal is facing toward the the query point.
+			// In case the manifold is two-sided, skip edge if pseudo-normal is facing toward the query point.
 			if(pseudoNormal.dot(c) > -epsilon || !hasOppositeFace(adjacentFace(edge))) {
 				closestDistanceSq = distSq;
 				closestVertex = InvalidIndex;
@@ -259,46 +261,51 @@ std::optional<std::pair<SurfaceMeshAccess::region_index, FloatType>> SurfaceMesh
 	size_type faceCount = this->faceCount();
 	for(face_index face = 0; face < faceCount; face++) {
 		if(!faceSubset.empty() && !faceSubset[face]) continue;
-		edge_index edge1 = firstFaceEdge(face);
-		edge_index edge2 = nextFaceEdge(edge1);
-		const Point3& p1 = vertexPosition(vertex1(edge1));
-		const Point3& p2 = vertexPosition(vertex2(edge1));
-		const Point3& p3 = vertexPosition(vertex2(edge2));
-		Vector3 edgeVectors[3];
-		edgeVectors[0] = wrapVector(p2 - p1);
-		edgeVectors[1] = wrapVector(p3 - p2);
+		edge_index firstEdge = firstFaceEdge(face);
+		vertex_index firstVertex = vertex1(firstEdge);
+		const Point3& p1 = vertexPosition(firstVertex);
 		Vector3 r = wrapVector(p1 - location);
-		edgeVectors[2] = -edgeVectors[1] - edgeVectors[0];
+		edge_index edge2 = nextFaceEdge(firstEdge);
+		while(vertex2(edge2) != firstVertex) {
+			const Point3& p2 = vertexPosition(vertex1(edge2));
+			const Point3& p3 = vertexPosition(vertex2(edge2));
+			Vector3 edgeVectors[3];
+			edgeVectors[0] = wrapVector(p2 - p1);
+			edgeVectors[1] = wrapVector(p3 - p2);
+			edgeVectors[2] = -edgeVectors[1] - edgeVectors[0];
 
-		// Compute face normal.
-		Vector3 normal = edgeVectors[0].cross(edgeVectors[1]);
+			// Compute face normal.
+			Vector3 normal = edgeVectors[0].cross(edgeVectors[1]);
 
-		// Determine whether the projection of the query point is inside the face's boundaries.
-		bool isInsideTriangle = true;
-		Vector3 vertexVector = r;
-		for(size_t v = 0; v < 3; v++) {
-			if(vertexVector.dot(normal.cross(edgeVectors[v])) >= 0.0) {
-				isInsideTriangle = false;
-				break;
+			// Determine whether the projection of the query point is inside the face's boundaries.
+			bool isInsideTriangle = true;
+			Vector3 vertexVector = r;
+			for(size_t v = 0; v < 3; v++) {
+				if(vertexVector.dot(normal.cross(edgeVectors[v])) >= 0.0) {
+					isInsideTriangle = false;
+					break;
+				}
+				vertexVector += edgeVectors[v];
 			}
-			vertexVector += edgeVectors[v];
-		}
 
-		if(isInsideTriangle) {
-			FloatType normalLengthSq = normal.squaredLength();
-			if(std::abs(normalLengthSq) <= FLOATTYPE_EPSILON) continue;
-			normal /= sqrt(normalLengthSq);
-			FloatType planeDist = normal.dot(r);
-			// In case the manifold is two-sided, skip face if it is facing toward the query point.
-			if(planeDist > -epsilon || !hasOppositeFace(face)) {
-				if(planeDist * planeDist < closestDistanceSq) {
-					closestDistanceSq = planeDist * planeDist;
-					closestVector = normal * planeDist;
-					closestVertex = InvalidIndex;
-					closestNormal = normal;
-					closestRegion = hasFaceRegions() ? faceRegion(face) : 0;
+			if(isInsideTriangle) {
+				FloatType normalLengthSq = normal.squaredLength();
+				if(std::abs(normalLengthSq) > FLOATTYPE_EPSILON) {
+					normal /= sqrt(normalLengthSq);
+					FloatType planeDist = normal.dot(r);
+					// In case the manifold is two-sided, skip face if it is facing toward the query point.
+					if(planeDist > -epsilon || !hasOppositeFace(face)) {
+						if(planeDist * planeDist < closestDistanceSq) {
+							closestDistanceSq = planeDist * planeDist;
+							closestVector = normal * planeDist;
+							closestVertex = InvalidIndex;
+							closestNormal = normal;
+							closestRegion = hasFaceRegions() ? faceRegion(face) : 0;
+						}
+					}
 				}
 			}
+			edge2 = nextFaceEdge(edge2);
 		}
 	}
 
@@ -396,7 +403,7 @@ void SurfaceMeshAccess::constructConvexHull(std::vector<Point3> vecs, FloatType 
 	createFace({tetverts[1], tetverts[2], tetverts[3]}, region);
 	// Connect opposite half-edges to link the four faces together.
 	for(size_t i = 0; i < 4; i++)
-		mutableTopology()->connectOppositeHalfedges(tetverts[i]);
+		mutableTopology()->connectOppositeHalfedgesAtVertex(tetverts[i]);
 
 	if(vecs.size() == 4)
 		return;	// If the input point set consists only of 4 points, then we are done after constructing the initial tetrahedron.

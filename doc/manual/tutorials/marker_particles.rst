@@ -8,12 +8,12 @@ Motion visualization with marker particles
    :width: 40%
    :align: right
 
-In this step-by-step tutorial you will create an animation from an MD simulation of a simple shearing experiment
+In this step-by-step tutorial, you will create an animation from an MD simulation of a simple shearing experiment
 as shown on the right. You will learn how to highlight a group of atoms,
 initially located in a narrow region, with a marker color to visualize the atomic motion 
 in the interior of the crystal during the course of the simulation.
 
-In particular you will learn more about the purpose of the :ref:`particles.modifiers.freeze_property` modifier in OVITO,
+In particular, you will learn more about the purpose of the :ref:`particles.modifiers.freeze_property` modifier in OVITO,
 which helps you preserve the initial selection state of a group of particles. 
 
 Step 1: Load simulation trajectory
@@ -72,7 +72,7 @@ Step 4: Color the marker particles
 
 OVITO highlights the selected particles using a bright red color. However, the actual color of these particles did not change
 yet. The red color is only visible in the interactive viewports of the program to indicate which particles are currently selected,
-but if you rendered an output image or a movie of the system now (see step 6), these particles would still appear 
+but if you would render an output image or a movie of the system now (see step 6), these particles would still appear 
 in their original gray color like the rest of the crystal.
 
 You have to actively change the color of the selected particles by inserting another modifier into the pipeline.
@@ -105,7 +105,7 @@ the course of the simulation.
 
 Often times this is exactly the behavior one needs, but here in this tutorial it is not: We'd rather like to create a static set of green marker 
 particles, which remains unaffected by the particle motion. In other words, once the particle selection has been defined at the beginning of the simulation, it needs to be *frozen* 
-to preserve it across the entire timeline. For this purpose OVITO provides the :ref:`particles.modifiers.freeze_property` modifier.
+to preserve it across the entire timeline. For this purpose, OVITO provides the :ref:`particles.modifiers.freeze_property` modifier.
 
 Add this modifier to the pipeline as usual and change the :guilabel:`Property to freeze` to ``Color``. This tells the modifier to 
 take the original colors of the particles from animation frame 0 and override the current colors with them in all other frames of the trajectory.

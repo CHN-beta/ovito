@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -87,6 +87,19 @@ SliceModifier::SliceModifier(ObjectCreationParams params) : MultiDelegatingModif
 		planeVis()->setHighlightEdges(true);
 		planeVis()->setTransparency(0.5);
 	}
+}
+
+/******************************************************************************
+* Is called when a RefTarget referenced by this object has generated an event.
+******************************************************************************/
+bool SliceModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+{
+	if(event.type() == ReferenceEvent::TargetChanged && (source == distanceController() || source == normalController())) {
+		// Changes of some modifier parameters affect the result of SliceModifier::getPipelineEditorShortInfo().
+		notifyDependents(ReferenceEvent::ObjectStatusChanged);
+	}
+
+	return MultiDelegatingModifier::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -377,6 +390,16 @@ void SliceModifier::centerPlaneInSimulationCell(ModifierApplication* modApp)
 
 		setDistance(centerDistance);
 	}
+}
+
+/******************************************************************************
+* Returns a short piece information (typically a string or color) to be 
+* displayed next to the modifier's title in the pipeline editor list.
+******************************************************************************/
+QVariant SliceModifier::getPipelineEditorShortInfo(ModifierApplication* modApp) const
+{ 
+	Vector3 normal = this->normal();
+	return tr("(%1 %2 %3), %4").arg(normal.x(), 0, 'g', 1).arg(normal.y(), 0, 'g', 1).arg(normal.z(), 0, 'g', 1).arg(distance(), 0, 'g', 6); 
 }
 
 }	// End of namespace

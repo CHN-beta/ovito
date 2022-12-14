@@ -6,6 +6,7 @@
 #define GEMMI_TO_PDB_HPP_
 
 #include "model.hpp"
+#include "polyheur.hpp"  // for are_connected
 #include <ostream>
 
 namespace gemmi {
@@ -13,6 +14,7 @@ namespace gemmi {
 struct PdbWriteOptions {
   bool seqres_records = true;
   bool ssbond_records = true;
+  bool cryst1_record = true;
   bool link_records = true;
   bool cispep_records = true;
   bool ter_records = true;
@@ -26,16 +28,6 @@ void write_pdb(const Structure& st, std::ostream& os,
 void write_minimal_pdb(const Structure& st, std::ostream& os,
                        PdbWriteOptions opt=PdbWriteOptions());
 std::string make_pdb_headers(const Structure& st);
-
-// Name as a string left-padded like in the PDB format:
-// the first two characters make the element name.
-inline std::string padded_atom_name(const Atom& atom) {
-  std::string s;
-  if (atom.element.uname()[1] == '\0' && atom.name.size() < 4)
-    s += ' ';
-  s += atom.name;
-  return s;
-}
 
 } // namespace gemmi
 
@@ -56,11 +48,13 @@ namespace gemmi {
 
 #define WRITE(...) do { \
     gf_snprintf(buf, 82, __VA_ARGS__); \
+    buf[80] = '\n'; \
     os.write(buf, 81); \
   } while(0)
 
 #define WRITEU(...) do { \
     gf_snprintf(buf, 82, __VA_ARGS__); \
+    buf[80] = '\n'; \
     for (int i_ = 0; i_ != 80; i_++) \
       if (buf[i_] >= 'a' && buf[i_] <= 'z') buf[i_] -= 0x20; \
     os.write(buf, 81); \
@@ -70,7 +64,7 @@ namespace gemmi {
     int length__ = gf_snprintf(buf, 82, __VA_ARGS__); \
     if (length__ < 80) \
       std::memset(buf + length__, ' ', 80 - length__); \
-    buf[81] = '\n'; \
+    buf[80] = '\n'; \
     os.write(buf, 81); \
   } while(0)
 
@@ -81,7 +75,8 @@ bool use_hetatm(const Residue& res) {
     return true;
   if (res.het_flag == 'A')
     return false;
-  if (res.entity_type == EntityType::NonPolymer ||
+  if (res.entity_type == EntityType::Branched ||
+      res.entity_type == EntityType::NonPolymer ||
       res.entity_type == EntityType::Water)
     return true;
   return !find_tabulated_residue(res.name).is_standard();
@@ -146,39 +141,49 @@ inline void write_multiline(std::ostream& os, const char* record_name,
   char buf[88]; // a few bytes extra, just in case
   const char *start = text.c_str();
   const char *end = find_last_break(start, lastcol-10);
-  WRITEU("%-6s    %-70.*s\n", record_name, static_cast<int>(end-start), start);
+  WRITEU("%-6s    %-70.*s", record_name, static_cast<int>(end-start), start);
   for (int n = 2; n < 1000 && *end != '\0'; ++n) {
     start = end;
     end = find_last_break(start, lastcol-11);
     int len = int(end - start);
-    WRITEU("%-6s %3d %-69.*s\n", record_name, n, len, start);
+    WRITEU("%-6s %3d %-69.*s", record_name, n, len, start);
   }
 }
 
 inline void write_cryst1(const Structure& st, std::ostream& os) {
   char buf[88];
   const UnitCell& cell = st.cell;
-  WRITE("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f %-11s%4s          \n",
+  WRITE("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f %-11s%4s          ",
         cell.a, cell.b, cell.c, cell.alpha, cell.beta, cell.gamma,
         st.spacegroup_hm.empty() ? "P 1" : st.spacegroup_hm.c_str(),
         st.get_info("_cell.Z_PDB").c_str());
 }
 
-inline void write_ncs(const Structure& st, std::ostream& os) {
+inline void write_ncs_op(const NcsOp& op, std::ostream& os) {
   char buf[88];
+  for (int i = 0; i < 3; ++i) {
+    WRITE("MTRIX%d %3.3s%10.6f%10.6f%10.6f %14.5f    %-21c", i+1,
+          op.id.c_str(), op.tr.mat[i][0], op.tr.mat[i][1], op.tr.mat[i][2],
+          op.tr.vec.at(i), op.given ? '1' : ' ');
+  }
+}
+
+inline void write_ncs(const Structure& st, std::ostream& os) {
+  if (st.ncs.empty())
+    return;
+  auto identity = st.info.find("_struct_ncs_oper.id");
+  if (identity != st.info.end() &&
+      !in_vector_f([&](const NcsOp& op) { return op.id == identity->second; }, st.ncs))
+    write_ncs_op(NcsOp{identity->second, true, {}}, os);
   for (const NcsOp& op : st.ncs)
-    for (int i = 0; i < 3; ++i) {
-      WRITE("MTRIX%d %3.3s%10.6f%10.6f%10.6f %14.5f    %-21c\n", i+1,
-            op.id.c_str(), op.tr.mat[i][0], op.tr.mat[i][1], op.tr.mat[i][2],
-            op.tr.vec.at(i), op.given ? '1' : ' ');
-    }
+    write_ncs_op(op, os);
 }
 
 inline void write_remarks(const Structure& st, std::ostream& os) {
   char buf[88];
   if (st.resolution > 0) {
-    WRITE("%-80s\n", "REMARK   2");
-    WRITE("REMARK   2 RESOLUTION. %7.2f %-49s\n", st.resolution, "ANGSTROMS.");
+    WRITE("%-80s", "REMARK   2");
+    WRITE("REMARK   2 RESOLUTION. %7.2f %-49s", st.resolution, "ANGSTROMS.");
   }
   if (!st.assemblies.empty()) {
     const char* preface[] = {
@@ -190,19 +195,19 @@ inline void write_remarks(const Structure& st, std::ostream& os) {
       "REMARK 350 CRYSTALLOGRAPHIC OPERATIONS ARE GIVEN."
     };
     for (const char* line : preface)
-      WRITE("%-80s\n", line);
+      WRITE("%-80s", line);
     int counter = 0;
     for (const Assembly& assem : st.assemblies) {
-      WRITE("%-80s\n", "REMARK 350");
-      WRITE("REMARK 350 BIOMOLECULE: %-56d\n", ++counter);
+      WRITE("%-80s", "REMARK 350");
+      WRITE("REMARK 350 BIOMOLECULE: %-56d", ++counter);
       if (assem.author_determined)
-        WRITEU("REMARK 350 AUTHOR DETERMINED BIOLOGICAL UNIT: %-34s\n",
+        WRITEU("REMARK 350 AUTHOR DETERMINED BIOLOGICAL UNIT: %-34s",
                assem.oligomeric_details.c_str());
       if (assem.software_determined) {
-        WRITEU("REMARK 350 SOFTWARE DETERMINED QUATERNARY STRUCTURE: %-27s\n",
+        WRITEU("REMARK 350 SOFTWARE DETERMINED QUATERNARY STRUCTURE: %-27s",
                assem.oligomeric_details.c_str());
         if (!assem.software_name.empty())
-          WRITEU("REMARK 350 SOFTWARE USED: %-54s\n",
+          WRITEU("REMARK 350 SOFTWARE USED: %-54s",
                  assem.software_name.c_str());
         if (!std::isnan(assem.absa))
           WRITELN("REMARK 350 TOTAL BURIED SURFACE AREA: %.0f ANGSTROM**2",
@@ -241,12 +246,12 @@ inline void write_remarks(const Structure& st, std::ostream& os) {
           WRITELN("REMARK 350                    AND CHAINS: %s",
                   chains_str.substr(begin, end - begin).c_str());
         }
-        for (const Assembly::Oper& oper : gen.opers) {
+        for (const Assembly::Operator& oper : gen.operators) {
           ++oper_cnt;
           const Transform& tr = oper.transform;
           for (int i = 0; i < 3; ++i)
             WRITE("REMARK 350   "
-                  "BIOMT%d %3d%10.6f%10.6f%10.6f %14.5f            \n",
+                  "BIOMT%d %3d%10.6f%10.6f%10.6f %14.5f            ",
                   i+1, oper_cnt,
                   tr.mat[i][0], tr.mat[i][1], tr.mat[i][2], tr.vec.at(i));
         }
@@ -260,6 +265,7 @@ inline void write_chain_atoms(const Chain& chain, std::ostream& os,
   char buf[88];
   char buf8[8];
   char buf8a[8];
+  buf[0] = '\0';
   if (chain.name.length() > 2)
     fail("long chain name: " + chain.name);
   for (const Residue& res : chain.residues) {
@@ -285,17 +291,17 @@ inline void write_chain_atoms(const Chain& chain, std::ostream& os,
       // 73-76      segment identifier, left-justified (non-standard)
       // 77-78  2s  element symbol, right-justified
       // 79-80  2s  charge
-      WRITE("%-6s%5s %-4s%c%3s"
+      WRITE("%-6s%5s %-4.4s%c%3s"
             "%2s%5s   %8.3f%8.3f%8.3f"
-            "%6.2f%6.2f      %-4.4s%2s%c%c\n",
+            "%6.2f%6.2f      %-4.4s%2s%c%c",
             as_het ? "HETATM" : "ATOM",
             impl::encode_serial_in_hybrid36(buf8, ++serial),
-            padded_atom_name(a).c_str(),
+            a.padded_name().c_str(),
             a.altloc ? std::toupper(a.altloc) : ' ',
             res.name.c_str(),
             chain.name.c_str(),
             impl::write_seq_id(buf8a, res.seqid),
-            // We want to avoid negative zero and round them numbers up
+            // We want to avoid negative zero and round the numbers up
             // if they originally had one digit more and that digit was 5.
             a.pos.x > -5e-4 && a.pos.x < 0 ? 0 : a.pos.x + 1e-10,
             a.pos.y > -5e-4 && a.pos.y < 0 ? 0 : a.pos.y + 1e-10,
@@ -306,7 +312,7 @@ inline void write_chain_atoms(const Chain& chain, std::ostream& os,
             // B is harder to get rounded right. It is stored as float,
             // and may be given with more than single precision in mmCIF
             // If it was originally %.5f (5TIS) we need to add 0.5 * 10^-5.
-            a.b_iso + 0.5e-5,
+            std::min(a.b_iso + 0.5e-5, 999.99),
             res.segment.c_str(),
             a.element.uname(),
             // Charge is written as 1+ or 2-, etc, or just empty space.
@@ -322,10 +328,11 @@ inline void write_chain_atoms(const Chain& chain, std::ostream& os,
                     a.aniso.u33*1e4 + eps, a.aniso.u12*1e4 + eps,
                     a.aniso.u13*1e4 + eps, a.aniso.u23*1e4 + eps);
         buf[28+42] = ' ';
+        buf[80] = '\n';
         os.write(buf, 81);
       }
     }
-    if (opt.ter_records &&
+    if (opt.ter_records && buf[0] != '\0' &&
         (opt.ter_ignores_type ? &res == &chain.residues.back()
                               : (res.entity_type == EntityType::Polymer &&
                                 (&res == &chain.residues.back() ||
@@ -337,9 +344,10 @@ inline void write_chain_atoms(const Chain& chain, std::ostream& os,
                     impl::encode_serial_in_hybrid36(buf8, ++serial));
         std::memset(buf+11, ' ', 6);
         std::memset(buf+28, ' ', 52);
+        buf[80] = '\n';
         os.write(buf, 81);
       } else {
-        WRITE("%-80s\n", "TER");
+        WRITE("%-80s", "TER");
       }
     }
   }
@@ -358,12 +366,12 @@ inline void write_atoms(const Structure& st, std::ostream& os,
           name = std::to_string(&model - &st.models[0] + 1);
           break;
         }
-      WRITE("MODEL %8s %65s\n", name.c_str(), "");
+      WRITE("MODEL %8s %65s", name.c_str(), "");
     }
     for (const Chain& chain : model.chains)
       write_chain_atoms(chain, os, serial, opt);
     if (st.models.size() > 1)
-      WRITE("%-80s\n", "ENDMDL");
+      WRITE("%-80s", "ENDMDL");
   }
 }
 
@@ -384,7 +392,7 @@ inline void write_header(const Structure& st, std::ostream& os,
     // "classification" in PDB == _struct_keywords.pdbx_keywords in mmCIF
     const std::string& keywords = st.get_info("_struct_keywords.pdbx_keywords");
     if (!pdb_date.empty() || !keywords.empty() || !entry_id.empty())
-      WRITEU("HEADER    %-40s%-9s   %-18s\n",
+      WRITEU("HEADER    %-40.40s%-9s   %-18.18s",
              keywords.c_str(), pdb_date.c_str(), entry_id.c_str());
   }
   write_multiline(os, "TITLE", st.get_info("_struct.title"), 80);
@@ -395,7 +403,7 @@ inline void write_header(const Structure& st, std::ostream& os,
                       [](const ExperimentInfo& e) { return e.method; });
   write_multiline(os, "EXPDTA", expdta, 79);
   if (st.models.size() > 1)
-    WRITE("NUMMDL    %-6zu %63s\n", st.models.size(), "");
+    WRITE("NUMMDL    %-6zu %63s", st.models.size(), "");
 
   if (!st.raw_remarks.empty()) {
     for (const std::string& line : st.raw_remarks) {
@@ -430,6 +438,7 @@ inline void write_header(const Structure& st, std::ostream& os,
     for (size_t i = 0; i != entity_list.size(); ++i)
       if (const Entity* entity = entity_list[i]) {
         const Chain& ch = st.models[0].chains[i];
+        const char* dbref_entry_id = entry_id.size() <= 4 ? entry_id.c_str() : "";
         for (const Entity::DbRef& dbref : entity->dbrefs) {
           bool short_record = *dbref.db_end.num < 100000 &&
                               dbref.accession_code.size() < 9 &&
@@ -444,11 +453,14 @@ inline void write_header(const Structure& st, std::ostream& os,
           char buf8[8];
           char buf8a[8];
           gf_snprintf(buf, 82, "DBREF  %4s%2s %5s %5s %-6s  ",
-                      entry_id.c_str(), ch.name.c_str(),
+                      dbref_entry_id, ch.name.c_str(),
                       impl::write_seq_id(buf8, begin),
                       impl::write_seq_id(buf8a, end),
                       dbref.db_name.c_str());
-          if (!(dbref.db_name == "PDB" && dbref.id_code == entry_id)) {
+          if (dbref.db_name == "PDB" && dbref.id_code == entry_id) {
+            // PDB uses self-reference for fragments that don't have real
+            // reference. No idea why. In such case the same begin/end is used.
+          } else {
             begin = dbref.db_begin;
             end = dbref.db_end;
           }
@@ -457,14 +469,15 @@ inline void write_header(const Structure& st, std::ostream& os,
                         dbref.accession_code.c_str(), dbref.id_code.c_str(),
                         *begin.num, begin.icode, *end.num, end.icode);
           } else {
-            buf[5] = '1';
+            buf[5] = '1';  // -> DBREF1
             gf_snprintf(buf+33, 82-33, "              %-33s\n",
                         dbref.id_code.c_str());
           }
+          buf[80] = '\n';
           os.write(buf, 81);
           if (!short_record)
-            WRITE("DBREF2 %4s%2s     %-22s     %10d  %10d             \n",
-                  entry_id.c_str(), ch.name.c_str(),
+            WRITE("DBREF2 %4s%2s     %-22s     %10d  %10d             ",
+                  dbref_entry_id, ch.name.c_str(),
                   dbref.accession_code.c_str(), *begin.num, *end.num);
         }
       }
@@ -488,8 +501,10 @@ inline void write_header(const Structure& st, std::ostream& os,
             col = 0;
           }
         }
-        if (col != 0)
+        if (col != 0) {
+          buf[80] = '\n';
           os.write(buf, 81);
+        }
       }
   }
 
@@ -511,6 +526,7 @@ inline void write_header(const Structure& st, std::ostream& os,
             (int) helix.pdb_helix_class, helix.length);
       if (helix.length < 0) // make 72-76 blank if the length is not given
         std::memset(buf+71, ' ', 5);
+      buf[80] = '\n';
       os.write(buf, 81);
     }
   }
@@ -524,7 +540,7 @@ inline void write_header(const Structure& st, std::ostream& os,
         const AtomAddress& a1 = strand.hbond_atom1;
         // H-bond atom names are expected to be O and N
         WRITE("SHEET%5d %3.3s%2zu %3s%2s%5s %3s%2s%5s%2d  %-3s%3s%2s%5s "
-              " %-3s%3s%2s%5s          \n",
+              " %-3s%3s%2s%5s          ",
               ++strand_counter, sheet.name.c_str(), sheet.strands.size(),
               strand.start.res_id.name.c_str(), strand.start.chain_name.c_str(),
               write_seq_id(buf8a, strand.start.res_id.seqid),
@@ -548,21 +564,21 @@ inline void write_header(const Structure& st, std::ostream& os,
       int counter = 0;
       for (const Connection& con : st.connections)
         if (con.type == Connection::Disulf) {
-          const_CRA cra1 = st.models[0].find_cra(con.partner1);
-          const_CRA cra2 = st.models[0].find_cra(con.partner2);
+          const_CRA cra1 = st.models[0].find_cra(con.partner1, true);
+          const_CRA cra2 = st.models[0].find_cra(con.partner2, true);
           if (!cra1.atom || !cra2.atom)
             continue;
-          SymImage im = st.cell.find_nearest_image(cra1.atom->pos,
-                                                   cra2.atom->pos, con.asu);
+          NearestImage im = st.cell.find_nearest_image(cra1.atom->pos,
+                                                       cra2.atom->pos, con.asu);
           if (++counter == 10000)
             counter = 0;
-          WRITE("SSBOND%4d %3s%2s %5s %5s%2s %5s %28s %6s %5.2f  \n",
+          WRITE("SSBOND%4d %3s%2s %5s %5s%2s %5s %28s %6s %5.2f  ",
              counter,
              cra1.residue->name.c_str(), cra1.chain->name.c_str(),
              write_seq_id(buf8, cra1.residue->seqid),
              cra2.residue->name.c_str(), cra2.chain->name.c_str(),
              write_seq_id(buf8a, cra2.residue->seqid),
-             "1555", im.pdb_symbol(false).c_str(), im.dist());
+             "1555", im.symmetry_code(false).c_str(), im.dist());
         }
     }
 
@@ -571,37 +587,46 @@ inline void write_header(const Structure& st, std::ostream& os,
       for (const Connection& con : st.connections)
         if (con.type == Connection::Covale || con.type == Connection::MetalC ||
             con.type == Connection::Unknown) {
-          const_CRA cra1 = st.models[0].find_cra(con.partner1);
-          const_CRA cra2 = st.models[0].find_cra(con.partner2);
-          if (!cra1.atom || !cra2.atom)
+          const_CRA cra1 = st.models[0].find_cra(con.partner1, true);
+          const_CRA cra2 = st.models[0].find_cra(con.partner2, true);
+          // In special cases (LINKR gap) atoms are not there.
+          if (!cra1.residue || !cra2.residue)
             continue;
-          SymImage im = st.cell.find_nearest_image(cra1.atom->pos,
-                                                   cra2.atom->pos, con.asu);
+          std::string im_pdb_symbol, im_dist_str;
+          bool im_same_asu = true;
+          if (cra1.atom && cra2.atom) {
+            NearestImage im = st.cell.find_nearest_image(cra1.atom->pos,
+                                                         cra2.atom->pos, con.asu);
+            im_pdb_symbol = im.symmetry_code(false);
+            im_dist_str = to_str_prec<2>(im.dist());
+            im_same_asu = im.same_asu();
+          }
           // Pdb spec: "sym1 and sym2 are right justified and are given as
           // blank when the identity operator (and no cell translation) is
           // to be applied to the atom." But all files from wwPDB have
           // 1555 not blank, so here we also write 1555,
           // except for LINKR (Refmac variant of LINK).
           gf_snprintf(buf, 82, "LINK        %-4s%c%3s%2s%5s   "
-                "            %-4s%c%3s%2s%5s  %6s %6s %5.2f  \n",
-                padded_atom_name(*cra1.atom).c_str(),
-                cra1.atom->altloc ? std::toupper(cra1.atom->altloc) : ' ',
+                "            %-4s%c%3s%2s%5s  %6s %6s %5s  \n",
+                cra1.atom ? cra1.atom->padded_name().c_str() : "",
+                cra1.atom && cra1.atom->altloc ? std::toupper(cra1.atom->altloc) : ' ',
                 cra1.residue->name.c_str(),
-                cra1.chain->name.c_str(),
+                con.partner1.chain_name.c_str(),
                 write_seq_id(buf8, cra1.residue->seqid),
-                padded_atom_name(*cra2.atom).c_str(),
-                cra2.atom->altloc ? std::toupper(cra2.atom->altloc) : ' ',
+                cra2.atom ? cra2.atom->padded_name().c_str() : "",
+                cra2.atom && cra2.atom->altloc ? std::toupper(cra2.atom->altloc) : ' ',
                 cra2.residue->name.c_str(),
-                cra2.chain->name.c_str(),
+                con.partner2.chain_name.c_str(),
                 write_seq_id(buf8a, cra2.residue->seqid),
-                "1555", im.pdb_symbol(false).c_str(), im.dist());
+                "1555", im_pdb_symbol.c_str(), im_dist_str.c_str());
           if (opt.use_linkr && !con.link_id.empty()) {
             buf[4] = 'R';  // LINK -> LINKR
-            if (im.same_asu())
+            if (im_same_asu)
               std::memset(buf+58, ' ', 14); // erase symmetry
             // overwrite distance with link_id
             gf_snprintf(buf+72, 82-72, "%-8s\n", con.link_id.c_str());
           }
+          buf[80] = '\n';
           os.write(buf, 81);
         }
 
@@ -613,11 +638,12 @@ inline void write_header(const Structure& st, std::ostream& os,
       for (const Model& model : st.models)
         for (const Chain& chain : model.chains)
           for (const Residue& res : chain.residues)
-            if (res.is_cis)
-              if (const Residue* next = chain.next_bonded_aa(res)) {
+            if (res.is_cis) {
+              const Residue* next = chain.next_residue(res);
+              if (next && are_connected(res, *next, PolymerType::PeptideL)) {
                 if (++counter == 10000)
                   counter = 0;
-                WRITE("CISPEP%4d %3s%2s %5s   %3s%2s %5s %9s %12.2f %20s\n",
+                WRITE("CISPEP%4d %3s%2s %5s   %3s%2s %5s %9s %12.2f %20s",
                       counter,
                       res.name.c_str(), chain.name.c_str(),
                       write_seq_id(buf8, res.seqid),
@@ -627,20 +653,22 @@ inline void write_header(const Structure& st, std::ostream& os,
                       deg(calculate_omega(res, *next)),
                       "");
               }
+            }
     }
   }
 
-  write_cryst1(st, os);
+  if(opt.cryst1_record)
+    write_cryst1(st, os);
   if (st.has_origx && !st.origx.is_identity()) {
     for (int i = 0; i < 3; ++i)
-      WRITE("ORIGX%d %13.6f%10.6f%10.6f %14.5f %24s\n", i+1,
+      WRITE("ORIGX%d %13.6f%10.6f%10.6f %14.5f %24s", i+1,
             st.origx.mat[i][0], st.origx.mat[i][1], st.origx.mat[i][2],
             st.origx.vec.at(i), "");
   }
   if (st.cell.explicit_matrices) {
     for (int i = 0; i < 3; ++i)
       // We add a small number to avoid negative 0.
-      WRITE("SCALE%d %13.6f%10.6f%10.6f %14.5f %24s\n", i+1,
+      WRITE("SCALE%d %13.6f%10.6f%10.6f %14.5f %24s", i+1,
             st.cell.frac.mat[i][0] + 1e-15, st.cell.frac.mat[i][1] + 1e-15,
             st.cell.frac.mat[i][2] + 1e-15, st.cell.frac.vec.at(i) + 1e-15, "");
   }
@@ -668,7 +696,7 @@ void write_pdb(const Structure& st, std::ostream& os, PdbWriteOptions opt) {
   impl::write_header(st, os, opt);
   impl::write_atoms(st, os, opt);
   char buf[88];
-  WRITE("%-80s\n", "END");
+  WRITE("%-80s", "END");
 }
 
 void write_minimal_pdb(const Structure& st, std::ostream& os,

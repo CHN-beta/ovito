@@ -47,8 +47,8 @@ void ModifierTemplatesPage::insertSettingsDialogPage(ApplicationSettingsDialog* 
 	layout1->setSpacing(2);
 
 	QLabel* label = new QLabel(tr(
-			"All templates you define here will appear in the list of available modifiers, from where they can be quickly inserted into the data pipeline. "
-			"A template may consist of several modifiers, making your life easier if you use the same modifier sequence repeatedly."));
+			"Modifier templates you define here will appear in the list of available modifiers, from where you can quickly insert them into a data pipeline. "
+			"Templates may consist of several modifiers, making your life easier if you repeatedly need the same pipeline sequence."));
 	label->setWordWrap(true);
 	layout1->addWidget(label, 0, 0, 1, 2);
 	layout1->setRowMinimumHeight(1, 10);
@@ -211,7 +211,7 @@ void ModifierTemplatesPage::onCreateTemplate()
 				}
 			}
 			OVITO_ASSERT(!selectedModifierList.empty());
-			MainThreadOperation operation = MainThreadOperation::create(_settingsDialog->mainWindow(), ExecutionContext::Interactive);
+			MainThreadOperation operation = MainThreadOperation::create(_settingsDialog->mainWindow());
 			int idx = ModifierTemplates::get()->createTemplate(nameBox->currentText().trimmed(), selectedModifierList, operation);
 			_listWidget->setCurrentIndex(_listWidget->model()->index(idx, 0));
 			_dirtyFlag = true;
@@ -281,7 +281,7 @@ void ModifierTemplatesPage::onExportTemplates()
 {
 	try {
 		if(ModifierTemplates::get()->templateList().empty())
-			throw Exception(tr("The are no modifier templates to export."));
+			throw Exception(tr("There are no modifier templates to export."));
 
 		QString filename = QFileDialog::getSaveFileName(_settingsDialog,
 			tr("Export Modifier Templates"), QString(), tr("OVITO Modifier Templates (*.ovmod)"));

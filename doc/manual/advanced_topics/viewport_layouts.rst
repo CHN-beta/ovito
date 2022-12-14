@@ -7,7 +7,7 @@ Viewport layouts
   :width: 60%
   :align: right
 
-Since OVITO 3.6 you have the possibility to edit the standard 2-by-2 layout of the :ref:`interactive viewport windows <usage.viewports>`.
+Since OVITO 3.6 you can edit the standard 2-by-2 layout of the :ref:`interactive viewport windows <usage.viewports>`.
 You can tailor the arrangement and the number of viewport windows to your specific needs. Furthermore, it's possible to insert
 :ref:`more than one dataset into the same scene <usage.import.multiple_datasets>` or use :ref:`branched data pipelines <clone_pipeline>` to visualize different datasets or analysis results
 side by side.
@@ -40,7 +40,7 @@ Any changes you make to the viewport layout can be undone if needed using the :m
 Controlling what is shown in the viewports
 """"""""""""""""""""""""""""""""""""""""""
 
-By default all viewports in the layout depict the same three-dimensional scene, just from different camera angles. 
+By default, all viewports in the layout depict the same three-dimensional scene, just from different camera angles. 
 If you add multiple datasets or pipelines to the scene, they will be visible in every viewport. However, using 
 the :menuselection:`Pipeline Visibility` function found in the viewport menu (see right screenshot above), you
 can turn the visibility of individual pipelines on or off on a per-viewport basis. This gives you the possibility to display different 

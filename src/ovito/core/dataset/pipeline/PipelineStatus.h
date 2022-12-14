@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,6 +36,7 @@ class OVITO_CORE_EXPORT PipelineStatus
 
 #ifdef OVITO_QML_GUI
 	Q_PROPERTY(QString text READ text)
+	Q_PROPERTY(QString shortInfo READ shortInfo)
 	Q_PROPERTY(int type READ type)
 #endif
 
@@ -57,6 +58,10 @@ public:
 	/// Constructs a status object with success status and a text string describing the status.
 	PipelineStatus(const QString& text) : _text(text) {}
 
+	/// Constructs a status object with success status, a text string describing the status, and a short info value.
+	template<typename T>
+	PipelineStatus(const QString& text, T&& shortInfo) : _text(text), _shortInfo(std::forward<T>(shortInfo)) {}
+
 	/// Constructs a status object with error status and a text string taken from the given exception object.
 	PipelineStatus(const Exception& exception, QChar messageSeparator = QChar('\n')) : _type(Error), _text(exception.messages().join(messageSeparator)) {}
 
@@ -72,9 +77,16 @@ public:
 	/// Changes the text string describing the status.
 	void setText(const QString& text) { _text = text; }
 
+	/// Returns the information to be displayed next to the pipeline item in the GUI.
+	const QVariant& shortInfo() const { return _shortInfo; }
+
+	/// Sets the information displayed next to the pipeline item in the GUI.
+	template<typename T>
+	void setShortInfo(T&& info) { _shortInfo.setValue(std::forward<T>(info)); }
+
 	/// Tests two status objects for equality.
 	bool operator==(const PipelineStatus& other) const {
-		return (_type == other._type) && (_text == other._text);
+		return (_type == other._type) && (_text == other._text) && (_shortInfo == other._shortInfo);
 	}
 
 	/// Tests two status objects for inequality.
@@ -87,6 +99,9 @@ private:
 
 	/// A human-readable string describing the status.
 	QString _text;
+
+	/// Some information to be displayed in the GUI next to a pipeline item.
+	QVariant _shortInfo;
 
 	friend OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const PipelineStatus& s);
 	friend OVITO_CORE_EXPORT LoadStream& operator>>(LoadStream& stream, PipelineStatus& s);

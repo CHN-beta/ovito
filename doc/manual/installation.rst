@@ -13,7 +13,7 @@ System Requirements
 
 OVITO requires a 64-bit operating system and runs on processors with x86-64 or arm64 architecture.
 The graphical user interface of OVITO requires 3D graphics hardware with support for the `OpenGL <https://en.wikipedia.org/wiki/OpenGL>`_ programming interface (OpenGL 2.1 or newer). 
-In general it is recommended that you install the latest graphics driver provided by your hardware vendor before running OVITO as some older drivers may not fully support modern OpenGL specifications, which can lead to compatibility problems.
+In general, it is recommended that you install the latest graphics driver provided by your hardware vendor before running OVITO as some older drivers may not fully support modern OpenGL specifications, which can lead to compatibility problems.
 
 Operating system compatibility:
 
@@ -33,7 +33,7 @@ Installation instructions
 
 *Windows*:
     Run the installer program :file:`ovito-x.y.z-win64.exe` to install OVITO in a directory of your choice.
-    Note that Windows might ask whether you really want to launch the installer, because it was downloaded from the web and it is not digitally signed.
+    Note that Windows might ask whether you really want to launch the installer because it was downloaded from the web and is not digitally signed.
 
 *macOS*:
     Double-click the downloaded :file:`.dmg` disk image file to open it, agree to the program license, and drag the :program:`Ovito` application bundle into your :file:`Applications` folder.
@@ -57,10 +57,10 @@ this kind of remote visualization mode is supported by the HPC cluster(s) you wo
 Python module installation
 ==========================
 
-The **OVITO Pro** program packages ship with an :ref:`integrated Python interpreter <ovitos_interpreter>` (:command:`ovitos`) that gets installed alongside with the desktop application,
+The **OVITO Pro** program packages ship with an :ref:`integrated Python interpreter <ovitos_interpreter>` (:command:`ovitos`) that gets installed alongside the desktop application,
 allowing you to execute Python scripts written for OVITO. 
-Optionally, you can install the ``ovito`` Python module into existing Python interpreters on your system  (e.g. :program:`Anaconda` or the standard :program:`CPython` interpreter) in case you would like to make use of 
-OVITO's functionality in script-based workflows. Please refer to :ref:`this section <use_ovito_with_system_interpreter>` for further setup instructions.
+Optionally, you can install the ``ovito`` Python module into an external Python interpreter on your system  (e.g. :program:`Anaconda` or the standard :program:`CPython` interpreter) in case you would like to make use of 
+OVITO's functionality in script-based workflows. Please refer to :ref:`this section <pydoc:use_ovito_with_system_interpreter>` for further setup instructions.
 
 .. _installation.troubleshooting:
 
@@ -68,7 +68,13 @@ Troubleshooting
 ===============
 
 If you run into any problems during the installation of OVITO, you can contact the developers through our `online support forum <https://www.ovito.org/forum/>`_. 
-The OVITO team will be happy to help you. The most commonly encountered installation issues are described here: 
+The OVITO team will be happy to help you. The most commonly encountered installation issues on different platforms are addressed here: 
+
+  - :ref:`installation.troubleshooting.windows`
+  - :ref:`installation.troubleshooting.linux`
+  - :ref:`installation.troubleshooting.macos`
+
+.. _installation.troubleshooting.windows:
 
 Windows
 -------
@@ -82,14 +88,16 @@ Windows 7 no longer supported
   .. admonition:: Solution
     
     Modern versions of OVITO are based on the Qt6 cross-platform framework, which `requires Windows 10 or later to run <https://doc.qt.io/qt-6/supported-platforms.html>`__. 
-    Windows 7 has reached its end of life and is no longer supported. Please upgrade your Windows operating system. With some luck you may be able to run the Anaconda versions of 
+    Windows 7 has reached its end of life and is no longer supported. Please upgrade your Windows operating system. With some luck, you may be able to run the Anaconda versions of 
     `OVITO Basic <https://anaconda.org/conda-forge/ovito>`__ or `OVITO Pro <https://www.ovito.org/python-downloads/>`__ on a Windows 7 computer, 
     because these are still built against the old Qt5 framework (as of April 2022).
+
+.. _installation.troubleshooting.linux:
 
 Linux
 -----
 
-Missing files or broken links
+Missing shared object files or broken links
   .. error::
 
     Starting the desktop application :command:`ovito` or the script interpreter :command:`ovitos` may fail with the following error::
@@ -97,8 +105,8 @@ Missing files or broken links
       ./ovito: error while loading shared libraries: libQt5DBus.so.5: 
               cannot open shared object file: No such file or directory
 
-    This error is typically caused by broken symbolic links inside the :file:`lib/ovito/` sub-directory after 
-    extracting the OVITO installation archive for Linux on a Windows computer. 
+    This error is typically caused by broken symbolic links in the :file:`lib/ovito/` sub-directory of the OVITO installation after 
+    extracting the installation package for Linux on a Windows computer. 
 
   .. admonition:: Solution
     
@@ -109,7 +117,7 @@ Missing files or broken links
 Missing XCB system libraries
   .. error::
 
-    You may see the the following error when running :command:`ovito` on a Linux machine::
+    You may see the following error when running :command:`ovito` on a Linux machine::
 
       qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
       This application failed to start because no Qt platform plugin could be initialized. 
@@ -135,18 +143,24 @@ Missing XCB system libraries
 
     Debian users should also pay attention to `this thread in the OVITO support forum <https://www.ovito.org/forum/topic/installation-problem/#postid-2272>`__.
 
-Missing or outdated OpenSSL system libraries
+.. _installation.troubleshooting.macos:
+
+macOS
+-----
+
+OVITO Pro license activation fails
   .. error::
 
-    OVITO depends on the OpenSSL libraries (version 1.1.*). If they are not present on your system, starting :command:`ovito` will typically fail with the error::
-
-      error while loading shared libraries: libssl.so.1.1: cannot open shared object file: No such file or directory
+    The activation step could not be completed due to an issue with the local license information store. File path: :file:`$HOME/.config/Ovito/LicenseStore.ini`.
+    Please check if file access permissions are correctly set. OVITO Pro requires read/write access to this filesystem path. 
 
   .. admonition:: Solution
+    
+    OVITO Pro needs to save its licensing information under the path :file:`$HOME/.config/Ovito/`, which is the `canonical storage location <https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html>`__ 
+    for configuration data of Linux/Unix applications.
+    On some macOS computers, the :file:`$HOME/.config/` directory may have been marked as write-protected by the system administrator, 
+    which lets the license activation process fail. Please ask your system administrator to make the :file:`$HOME/.config/Ovito/` subdirectory 
+    writable by applications running under your user account.  
 
-    Please install the OpenSSL 1.1.x libraries using the package manager of your Linux distribution. OVITO depends on the 
-    presence of the shared libraries :file:`libssl.so.1.1` and :file:`libcrypto.so.1.1` in your system directory. On CentOS 7, for example, 
-    you should install the package `openssl11-libs <https://pkgs.org/search/?q=openssl11-libs>`__.
-    On old Ubuntu 16.04 systems, the OpenSSL 1.1 libraries are not available through the package manager. In this case, please download an older OVITO package (e.g. version 3.5.4), because
-    past OVITO releases used to contain copies of the OpenSSL libraries. You can then copy the missing library files into the new program directory
-    to make them available to the current OVITO version.
+    If this is not possible for some reason, you can set the standard environment variable ``XDG_CONFIG_HOME`` to point to some directory other than :file:`$HOME/.config/`.
+    `This will redirect OVITO Pro <https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html>`__ to store its licensing information in a different location.

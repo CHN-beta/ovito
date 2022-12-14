@@ -456,6 +456,11 @@ private:
 
 	// Converts a disorientation to an edge weight for Node Pair Sampling algorithm
 	static FloatType calculateGraphWeight(FloatType disorientation) {
+		// This is a workaround for an issue in GrainSegmentationEngine1::node_pair_sampling_clustering(),
+		// which can get stuck in an infinite loop for pathological inputs, e.g. an ideal HCP crystal.
+        if(disorientation < 1e-5)
+            disorientation = 0;
+
 		// This is fairly arbitrary but it works well.
 		return std::exp(-FloatType(1)/3 * disorientation * disorientation);
 	}

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -112,7 +112,6 @@ ColorLegendOverlay::ColorLegendOverlay(ObjectCreationParams params) : ViewportOv
 		return true;
 	});
 
-
 	// If there is no ColorCodingModifier in the scene, initialize the overlay to use 
 	// the first available typed property as color source.
 	if(params.loadUserDefaults() && modifier() == nullptr && !sourceProperty()) {
@@ -141,7 +140,56 @@ void ColorLegendOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 		setOffsetX(0);
 		setOffsetY(0);
 	}
+	else if(field == PROPERTY_FIELD(ColorLegendOverlay::sourceProperty) && !isBeingLoaded()) {
+		// Changes of some the overlay's parameters affect the result of ColorLegendOverlay::getPipelineEditorShortInfo().
+		notifyDependents(ReferenceEvent::ObjectStatusChanged);
+	}
+
 	ViewportOverlay::propertyChanged(field);
+}
+
+/******************************************************************************
+* Is called when a RefTarget referenced by this object has generated an event.
+******************************************************************************/
+bool ColorLegendOverlay::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+{
+	if(event.type() == ReferenceEvent::TargetChanged && source == modifier()) {
+		// Changes of some the object's parameters affect the result of ColorLegendOverlay::getPipelineEditorShortInfo().
+		notifyDependents(ReferenceEvent::ObjectStatusChanged);
+	}
+
+	return ViewportOverlay::referenceEvent(source, event);
+}
+
+/******************************************************************************
+* Is called when the value of a reference field of this RefMaker changes.
+******************************************************************************/
+void ColorLegendOverlay::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+{
+	if((field == PROPERTY_FIELD(modifier) || field == PROPERTY_FIELD(colorMapping)) && !isBeingLoaded()) {
+		// Changes of some the object's parameters affect the result of ColorLegendOverlay::getPipelineEditorShortInfo().
+		notifyDependents(ReferenceEvent::ObjectStatusChanged);
+	}
+
+	ViewportOverlay::referenceReplaced(field, oldTarget, newTarget, listIndex);
+}
+
+/******************************************************************************
+* Returns a short piece information (typically a string or color) to be 
+* displayed next to the modifier's title in the pipeline editor list.
+******************************************************************************/
+QVariant ColorLegendOverlay::getPipelineEditorShortInfo() const
+{
+	if(modifier()) {
+		return modifier()->sourceProperty().nameWithComponent();
+	}
+	else if(colorMapping()) {
+		return colorMapping()->sourceProperty().nameWithComponent();
+	}
+	else if(sourceProperty()) {
+		return sourceProperty().dataTitleOrString();
+	}
+	return {};
 }
 
 /******************************************************************************
@@ -150,6 +198,10 @@ void ColorLegendOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
 {
 	DataOORef<const PropertyObject> typedProperty;
+
+	// Check alignment parameter.
+	if(!renderer->isInteractive())
+		checkAlignmentParameterValue(alignment());
 
 	// Check whether a source has been set for this color legend:
 	if(modifier() || colorMapping()) {

@@ -77,7 +77,7 @@ void AcklandJonesModifier::AcklandJonesAnalysisEngine::perform()
 
 	// Prepare the neighbor finder.
 	NearestNeighborFinder neighborFinder(14);
-	if(!neighborFinder.prepare(positions(), cell(), selection(), this))
+	if(!neighborFinder.prepare(positions(), cell(), selection()))
 		return;
 
 	PropertyAccess<int> output(structures());

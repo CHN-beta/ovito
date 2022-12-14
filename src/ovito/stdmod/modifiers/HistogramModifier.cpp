@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -107,10 +107,15 @@ void HistogramModifier::initializeModifier(const ModifierInitializationRequest& 
 ******************************************************************************/
 void HistogramModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-	// Whenever the selected property class of this modifier changes, update the source property reference accordingly.
 	if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isAboutToBeDeleted() && !dataset()->undoStack().isUndoingOrRedoing()) {
+		// Whenever the selected property class of this modifier changes, update the source property reference accordingly.
 		setSourceProperty(sourceProperty().convertToContainerClass(subject().dataClass()));
 	}
+	else if(field == PROPERTY_FIELD(HistogramModifier::sourceProperty) && !isBeingLoaded()) {
+		// Changes of some the modifier's parameters affect the result of HistogramModifier::getPipelineEditorShortInfo().
+		notifyDependents(ReferenceEvent::ObjectStatusChanged);
+	}
+
 	GenericPropertyModifier::propertyChanged(field);
 }
 
@@ -325,7 +330,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
 				.arg(container->getOOMetaClass().elementDescriptionName())
 				.arg((FloatType)numSelected * 100 / std::max((size_t)1,outputSelection.size()), 0, 'f', 1);
 	}
-	state.setStatus(PipelineStatus(PipelineStatus::Success, std::move(statusMessage)));
+	state.setStatus(PipelineStatus(std::move(statusMessage)));
 }
 
 }	// End of namespace

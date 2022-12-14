@@ -23,7 +23,27 @@
 # This function installs a third-party shared library/DLL in the OVITO program directory
 # so that it can be distributed together with the program.
 # On Unix/Linux based platforms it takes care of installing symbolic links as well.
-FUNCTION(OVITO_INSTALL_SHARED_LIB shared_lib destination_dir)
+# This macro creates an OVITO plugin module.
+MACRO(OVITO_INSTALL_SHARED_LIB shared_lib)
+
+    # Parse macro arguments.
+    CMAKE_PARSE_ARGUMENTS(ARG 
+		"" # options
+		"DESTINATION"  # one-value keywords
+		"" # multi-value keywords
+		${ARGN}) # strings to parse
+
+	# Validate argument values.
+	IF(ARG_UNPARSED_ARGUMENTS)
+		MESSAGE(FATAL_ERROR "Bad macro arguments: ${ARG_UNPARSED_ARGUMENTS}")
+	ENDIF()
+	SET(destination_dir ${ARG_DESTINATION})
+
+	# Install libs in third-party library directory by default.
+	IF(NOT destination_dir)
+		SET(destination_dir ".")
+	ENDIF()
+
 	IF(WIN32 OR OVITO_REDISTRIBUTABLE_PACKAGE OR OVITO_BUILD_PYPI)
 		# Replace backslashes in the path with regular slashes.
 		STRING(REGEX REPLACE "\\\\" "/" _shared_lib ${shared_lib}) 
@@ -32,11 +52,14 @@ FUNCTION(OVITO_INSTALL_SHARED_LIB shared_lib destination_dir)
 		FILE(MAKE_DIRECTORY "${_abs_dest_dir}")
 		# Strip version number from shared lib filename.
 		GET_FILENAME_COMPONENT(shared_lib_ext "${_shared_lib}" EXT)
-		STRING(REPLACE ${shared_lib_ext} "" shared_lib_new "${_shared_lib}")
-		FILE(GLOB lib_versions LIST_DIRECTORIES FALSE "${_shared_lib}" "${shared_lib_new}.*${CMAKE_SHARED_LIBRARY_SUFFIX}" "${shared_lib_new}${CMAKE_SHARED_LIBRARY_SUFFIX}.*")
+		STRING(REPLACE ${shared_lib_ext} "" lib_base_name "${_shared_lib}")
+
+		# Find all files/symlinks in the same directory having the same base name. 
+		FILE(GLOB lib_versions LIST_DIRECTORIES FALSE "${_shared_lib}" "${lib_base_name}.*${CMAKE_SHARED_LIBRARY_SUFFIX}" "${lib_base_name}${CMAKE_SHARED_LIBRARY_SUFFIX}.*")
 		IF(NOT lib_versions)
-			MESSAGE(FATAL_ERROR "Did not find any library files that match the file path ${_shared_lib} (globbing patterns: ${shared_lib_new}.*${CMAKE_SHARED_LIBRARY_SUFFIX}; ${shared_lib_new}${CMAKE_SHARED_LIBRARY_SUFFIX}.*)")
+			MESSAGE(FATAL_ERROR "Did not find any library files that match the file path ${_shared_lib} (globbing patterns: ${lib_base_name}.*${CMAKE_SHARED_LIBRARY_SUFFIX}; ${lib_base_name}${CMAKE_SHARED_LIBRARY_SUFFIX}.*)")
 		ENDIF()
+
 		# Find all variants of the shared library name, including symbolic links.
 		UNSET(lib_files)
 		FOREACH(lib_version ${lib_versions})
@@ -58,6 +81,7 @@ FUNCTION(OVITO_INSTALL_SHARED_LIB shared_lib destination_dir)
 			ENDIF()
 		ENDFOREACH()
 		LIST(REMOVE_DUPLICATES lib_files)
+
 		FOREACH(lib_file ${lib_files})
 			IF(NOT APPLE)
 				MESSAGE("Installing shared library ${lib_file}")
@@ -91,7 +115,7 @@ FUNCTION(OVITO_INSTALL_SHARED_LIB shared_lib destination_dir)
 		ENDFOREACH()
 		UNSET(lib_files)
 	ENDIF()
-ENDFUNCTION()
+ENDMACRO()
 
 # Helper function that recursively gathers a list of libraries and other targets that the given 
 # target depends on directly and indirectly.
@@ -195,14 +219,14 @@ FUNCTION(deploy_qt_framework_files)
 			INSTALL(DIRECTORY "${QtBinaryPath}/../plugins/bearer" DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/plugins_qt/")
 		ENDIF()
 		# The XcbQpa library is required by the Qt Gui module.
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/lib${OVITO_QT_MAJOR_VERSION}XcbQpa.so" "./lib")
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/lib${OVITO_QT_MAJOR_VERSION}XcbQpa.so" DESTINATION "./lib")
 
 		# Distribute libxkbcommon.so with Ovito, which is a dependency of the Qt XCB plugin that might not be present on all systems.
 		FIND_LIBRARY(OVITO_XKBCOMMON_DEP NAMES libxkbcommon.so.0 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH)
 		IF(NOT OVITO_XKBCOMMON_DEP)
 			MESSAGE(FATAL_ERROR "Could not find shared library libxkbcommon.so.0 in system path.")
 		ENDIF()
-		OVITO_INSTALL_SHARED_LIB("${OVITO_XKBCOMMON_DEP}" "./lib")
+		OVITO_INSTALL_SHARED_LIB("${OVITO_XKBCOMMON_DEP}" DESTINATION "./lib")
 		UNSET(OVITO_XKBCOMMON_DEP CACHE)
 		# Additionally, place a symlink into the parent lib/ovito/ directory.
 		EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "lib/libxkbcommon.so.0" "${OVITO_LIBRARY_DIRECTORY}/libxkbcommon.so.0")
@@ -213,7 +237,7 @@ FUNCTION(deploy_qt_framework_files)
 		IF(NOT OVITO_XKBCOMMONX11_DEP)
 			MESSAGE(FATAL_ERROR "Could not find shared library libxkbcommon-x11.so.0 in system path.")
 		ENDIF()
-		OVITO_INSTALL_SHARED_LIB("${OVITO_XKBCOMMONX11_DEP}" "./lib")
+		OVITO_INSTALL_SHARED_LIB("${OVITO_XKBCOMMONX11_DEP}" DESTINATION "./lib")
 		UNSET(OVITO_XKBCOMMONX11_DEP CACHE)
 
 		# Distribute libxcb-xinerama.so with Ovito, which is a dependency of the Qt XCB plugin that might not be present on all systems.
@@ -221,7 +245,7 @@ FUNCTION(deploy_qt_framework_files)
 		IF(NOT OVITO_XINERAMA_DEP)
 			MESSAGE(FATAL_ERROR "Could not find shared library libxcb-xinerama.so.0 in system path.")
 		ENDIF()
-		OVITO_INSTALL_SHARED_LIB("${OVITO_XINERAMA_DEP}" "./lib")
+		OVITO_INSTALL_SHARED_LIB("${OVITO_XINERAMA_DEP}" DESTINATION "./lib")
 		UNSET(OVITO_XINERAMA_DEP CACHE)
 		
 	ELSEIF(WIN32 AND NOT OVITO_BUILD_PYPI AND NOT OVITO_BUILD_CONDA)
@@ -233,7 +257,7 @@ FUNCTION(deploy_qt_framework_files)
 			IF(NOT TARGET ${OVITO_QT_MAJOR_VERSION}::${component} OR NOT dll)
 				MESSAGE(FATAL_ERROR "Target does not exist or has no LOCATION property: ${OVITO_QT_MAJOR_VERSION}::${component}")
 			ENDIF()
-			OVITO_INSTALL_SHARED_LIB("${dll}" ".")
+			OVITO_INSTALL_SHARED_LIB("${dll}")
 			IF(${component} MATCHES "Core")
 				GET_FILENAME_COMPONENT(QtBinaryPath ${dll} PATH)
 				IF(dll MATCHES "Cored.dll$")
@@ -245,23 +269,23 @@ FUNCTION(deploy_qt_framework_files)
 		ENDFOREACH()
 
 		# Install Qt plugins required by OVITO.
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platforms/qwindows${_qt_dll_suffix}.dll" "plugins/platforms/")
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qjpeg${_qt_dll_suffix}.dll" "plugins/imageformats/")
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qgif${_qt_dll_suffix}.dll" "plugins/imageformats/")
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qsvg${_qt_dll_suffix}.dll" "plugins/imageformats/")
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/iconengines/qsvgicon${_qt_dll_suffix}.dll" "plugins/iconengines/")
-		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/styles/qwindowsvistastyle${_qt_dll_suffix}.dll" "plugins/styles/")
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platforms/qwindows${_qt_dll_suffix}.dll" DESTINATION "plugins/platforms/")
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qjpeg${_qt_dll_suffix}.dll" DESTINATION "plugins/imageformats/")
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qgif${_qt_dll_suffix}.dll" DESTINATION "plugins/imageformats/")
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qsvg${_qt_dll_suffix}.dll" DESTINATION "plugins/imageformats/")
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/iconengines/qsvgicon${_qt_dll_suffix}.dll" DESTINATION "plugins/iconengines/")
+		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/styles/qwindowsvistastyle${_qt_dll_suffix}.dll" DESTINATION "plugins/styles/")
 		IF(OVITO_QT_MAJOR_VERSION STREQUAL "Qt6")
-			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qcertonlybackend${_qt_dll_suffix}.dll" "plugins/tls/")
-			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qopensslbackend${_qt_dll_suffix}.dll" "plugins/tls/")
-			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qschannelbackend${_qt_dll_suffix}.dll" "plugins/tls/")
+			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qcertonlybackend${_qt_dll_suffix}.dll" DESTINATION "plugins/tls/")
+			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qopensslbackend${_qt_dll_suffix}.dll" DESTINATION "plugins/tls/")
+			OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qschannelbackend${_qt_dll_suffix}.dll" DESTINATION "plugins/tls/")
 		ENDIF()
 
 		# Install QML modules.
 	#	IF(OVITO_QML_GUI)
-	#		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../qml/QtQuick.2/qtquick2plugin${_qt_dll_suffix}.dll" "qml/QtQuick.2/")
-	#		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../qml/QtQuick/Layouts/qquicklayoutsplugin${_qt_dll_suffix}.dll" "qml/QtQuick/Layouts/")
-	#		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../qml/QtQuick/Controls.2/qtquickcontrols2plugin${_qt_dll_suffix}.dll" "qml/QtQuick/Controls.2/")
+	#		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../qml/QtQuick.2/qtquick2plugin${_qt_dll_suffix}.dll" DESTINATION "qml/QtQuick.2/")
+	#		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../qml/QtQuick/Layouts/qquicklayoutsplugin${_qt_dll_suffix}.dll" DESTINATION "qml/QtQuick/Layouts/")
+	#		OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../qml/QtQuick/Controls.2/qtquickcontrols2plugin${_qt_dll_suffix}.dll" DESTINATION "qml/QtQuick/Controls.2/")
 
 	#		EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${QtBinaryPath}/../qml/QtQuick.2/qmldir" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick.2/")
 	#		EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${QtBinaryPath}/../qml/QtQuick.2/plugins.qmltypes" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick.2/")

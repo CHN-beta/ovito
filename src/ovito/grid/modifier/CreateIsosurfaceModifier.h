@@ -82,6 +82,9 @@ public:
 	/// Sets the level at which to create the isosurface.
 	void setIsolevel(FloatType value) { if(isolevelController()) isolevelController()->setCurrentFloatValue(value); }
 
+	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+	virtual QVariant getPipelineEditorShortInfo(ModifierApplication* modApp) const override { return tr("%1=%2").arg(sourceProperty().nameWithComponent()).arg(isolevel()); }
+
 	/// Transfers voxel grid properties to the vertices of a surfaces mesh.
 	static bool transferPropertiesFromGridToMesh(ProgressingTask& operation, SurfaceMeshAccess& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, VoxelGrid::GridDimensions gridShape);
 
@@ -89,6 +92,12 @@ protected:
 
 	/// Creates a computation engine that will compute the modifier's results.
 	virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+
+	/// Is called when the value of a property of this object has changed.
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+
+	/// Is called when a RefTarget referenced by this object has generated an event.
+	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 private:
 

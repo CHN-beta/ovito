@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,9 +28,14 @@
 #include <ovito/core/app/Application.h>
 #include "OffscreenOpenGLSceneRenderer.h"
 
+#include <QThreadStorage>
+
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(OffscreenOpenGLSceneRenderer);
+
+/// The OpenGL context from the last rendering pass, kept around to avoid recreating it over and over again when performing many independent renderings.
+static QThreadStorage<std::unique_ptr<QOpenGLContext>> globalOffscreenContext;
 
 /******************************************************************************
 * Constructor.
@@ -54,8 +59,16 @@ void OffscreenOpenGLSceneRenderer::createOffscreenSurface()
 { 
 	// Surface creation can only be performed in the main thread.
 	OVITO_ASSERT(QThread::currentThread() == qApp->thread());
-	OVITO_ASSERT(!_offscreenContext);
+	OVITO_ASSERT(!_offscreenContext && !_offscreenSurface);
 	
+	// OpenGL rendering and surface creation requires Qt to run in GUI mode.
+	if(Application::instance()->headlessMode()) {
+		throwRendererException(tr(
+				"OVITO's OpenGLRenderer cannot be used in headless mode, that is if the application is running without access to a graphics environment. "
+				"Please use a different rendering backend or see https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer for instructions "
+				"on how to enable OpenGL rendering in Python scripts."));
+	}
+
 	if(!_offscreenSurface)
 		_offscreenSurface = new QOffscreenSurface(nullptr, this);
 	if(QOpenGLContext::globalShareContext())
@@ -78,19 +91,24 @@ bool OffscreenOpenGLSceneRenderer::startRender(DataSet* dataset, RenderSettings*
 	if(!OpenGLSceneRenderer::startRender(dataset, settings, frameBufferSize))
 		return false;
 
-	// Create a OpenGL context for rendering to an offscreen buffer.
-	_offscreenContext = std::make_unique<QOpenGLContext>();
-	// The context should share its resources with interactive viewport renderers (only when operating in the same thread).
-	if(QOpenGLContext::globalShareContext() && QThread::currentThread() == QOpenGLContext::globalShareContext()->thread())
-		_offscreenContext->setShareContext(QOpenGLContext::globalShareContext());
-	if(!_offscreenContext->create())
-		throwRendererException(tr("Failed to create OpenGL context for rendering."));
+	if(!globalOffscreenContext.hasLocalData() || !globalOffscreenContext.localData()) {
+		// Create an OpenGL context for rendering to an offscreen buffer.
+		_offscreenContext = std::make_unique<QOpenGLContext>();
+		// The context should share its resources with interactive viewport renderers (only when operating in the same thread).
+		if(QOpenGLContext::globalShareContext() && QThread::currentThread() == QOpenGLContext::globalShareContext()->thread())
+			_offscreenContext->setShareContext(QOpenGLContext::globalShareContext());
+		if(!_offscreenContext->create())
+			throwRendererException(tr("Failed to create OpenGL context for rendering."));
+	}
+	else {
+		// Re-use existing GL context.
+		_offscreenContext = std::move(globalOffscreenContext.localData());
+	}
 
 	// Check offscreen surface (creation must have happened in the main thread).
 	OVITO_ASSERT(_offscreenSurface);
 	if(!_offscreenSurface->isValid())
 		throwRendererException(tr("Failed to create offscreen rendering surface."));
-	OVITO_ASSERT(_offscreenSurface->format() == _offscreenContext->format());
 
 	// Make the context current.
 	if(!_offscreenContext->makeCurrent(_offscreenSurface))
@@ -228,6 +246,11 @@ void OffscreenOpenGLSceneRenderer::endRender()
 	if(_offscreenContext && _offscreenContext.get() == QOpenGLContext::currentContext())
 		_offscreenContext->doneCurrent();
 	_framebufferObject.reset();
+
+	// Keep GL context alive to re-use it in subsequent render passes - even if the OffscreenOpenGLSceneRenderer gets destroyed.
+	if(_offscreenContext)
+		globalOffscreenContext.localData() = std::move(_offscreenContext);
+
 	_offscreenContext.reset();
 	setPrimaryFramebuffer(0);
 	// Keep offscreen surface alive and re-use it in subsequent render passes until the renderer is deleted.

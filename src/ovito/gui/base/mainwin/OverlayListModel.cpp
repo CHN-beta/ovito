@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -195,6 +195,9 @@ QVariant OverlayListModel::data(const QModelIndex& index, int role) const
 	}
 	else if(role == Qt::EditRole) {
 		return item->title(selectedViewport());
+	}
+	else if(role == StatusInfoRole) {
+		return item->shortInfo();
 	}
 	else if(role == Qt::DecorationRole) {
 		if(item->overlay()) {

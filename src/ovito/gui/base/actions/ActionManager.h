@@ -102,6 +102,10 @@ namespace Ovito {
 #define ACTION_PIPELINE_MAKE_INDEPENDENT	"PipelineMakeUnique"
 /// This action creates or dissolves a modifier group in the pipeline editor.
 #define ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP	"PipelineToggleModifierGroup"
+/// This action renames the selected entry in the pipeline editor.
+#define ACTION_PIPELINE_RENAME_ITEM    		"PipelineItemRename"
+/// Copies/clones a modifier or source from one pipeline to another.
+#define ACTION_PIPELINE_COPY_ITEM    		"PipelineItemCopyTo"
 
 /// This action deletes the currently selected viewport layer.
 #define ACTION_VIEWPORT_LAYER_DELETE			"ViewportLayerDelete"
@@ -109,6 +113,8 @@ namespace Ovito {
 #define ACTION_VIEWPORT_LAYER_MOVE_UP			"ViewportLayerMoveUp"
 /// This action moves the currently selected viewport layer down one entry in the stack.
 #define ACTION_VIEWPORT_LAYER_MOVE_DOWN			"ViewportLayerMoveDown"
+/// This action renames the currently selected viewport layer.
+#define ACTION_VIEWPORT_LAYER_RENAME			"ViewportLayerRename"
 
 /// This action jumps to the start of the animation
 #define ACTION_GOTO_START_OF_ANIMATION		"AnimationGotoStart"

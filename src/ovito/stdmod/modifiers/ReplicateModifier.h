@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -79,6 +79,14 @@ public:
 
 	/// Helper function that returns the range of replicated boxes.
 	Box3I replicaRange() const;
+
+	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+	virtual QVariant getPipelineEditorShortInfo(ModifierApplication* modApp) const override { return tr("%1 x %2 x %3").arg(numImagesX()).arg(numImagesY()).arg(numImagesZ()); }
+
+protected:
+
+	/// Is called when the value of a property of this object has changed.
+	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 private:
 

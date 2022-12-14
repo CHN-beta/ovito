@@ -178,7 +178,7 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 ******************************************************************************/
 Box3 DislocationVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	const RenderableDislocationLines* renderableObj = dynamic_object_cast<RenderableDislocationLines>(path.back());
+	const RenderableDislocationLines* renderableObj = path.lastAs<RenderableDislocationLines>();
 	if(!renderableObj) return {};
 	const PeriodicDomainDataObject* domainObj = dynamic_object_cast<PeriodicDomainDataObject>(renderableObj->sourceDataObject().get());
 	if(!domainObj) return {};
@@ -233,8 +233,8 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 {
 	// Ignore render calls for the original DislocationNetworkObject or MicrostrucureObject.
 	// We are only interested in the RenderableDIslocationLines.
-	if(dynamic_object_cast<DislocationNetworkObject>(path.back())) return {};
-	if(dynamic_object_cast<Microstructure>(path.back())) return {};
+	if(path.lastAs<DislocationNetworkObject>()) return {};
+	if(path.lastAs<Microstructure>()) return {};
 
 	// Just compute the bounding box of the rendered objects if requested.
 	if(renderer->isBoundingBoxPass()) {
@@ -267,7 +267,7 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 	};
 
 	// Get the renderable dislocation lines.
-	const RenderableDislocationLines* renderableLines = dynamic_object_cast<RenderableDislocationLines>(path.back());
+	const RenderableDislocationLines* renderableLines = path.lastAs<RenderableDislocationLines>();
 	if(!renderableLines) return {};
 
 	// Make sure we don't exceed our internal limits.
@@ -414,7 +414,6 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 		// Create rendering primitive for the line segments.
 		primitives.segments.setShape(showLineDirections() ? CylinderPrimitive::ArrowShape : CylinderPrimitive::CylinderShape);
 		primitives.segments.setShadingMode(shadingMode());
-		primitives.segments.setRenderingQuality(CylinderPrimitive::HighQuality);
 		primitives.segments.setUniformWidth(lineDiameter);
 		primitives.segments.setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
 		primitives.segments.setColors(segmentColors.take());
@@ -438,19 +437,14 @@ PipelineStatus DislocationVis::render(TimePoint time, const ConstDataObjectPath&
 					Point3 center = cellObject->wrapPoint(segment->getPointOnLine(FloatType(0.5)));
 					Vector3 dir = burgersVectorScaling() * segment->burgersVector.toSpatialVector();
 					// Check if arrow is clipped away by cutting planes.
-					for(const Plane3& plane : dislocationsObj->cuttingPlanes()) {
-						if(plane.classifyPoint(center) > 0) {
-							dir.setZero(); // Hide arrow by setting length to zero.
-							break;
-						}
-					}
+					if(dislocationsObj->isPointCulled(center))
+						dir.setZero(); // Hide arrow by setting length to zero.
 					baseArrowPoints[arrowIndex] = center;
 					headArrowPoints[arrowIndex++] = center + dir;
 				}
 				// Create rendering primitive for the Burgers vector arrows.
 				primitives.burgersArrows.setShape(CylinderPrimitive::ArrowShape);
 				primitives.burgersArrows.setShadingMode(shadingMode());
-				primitives.burgersArrows.setRenderingQuality(CylinderPrimitive::HighQuality);
 				primitives.burgersArrows.setUniformWidth(std::max(burgersVectorWidth(), FloatType(0)));
 				primitives.burgersArrows.setUniformColor(burgersVectorColor());
 				primitives.burgersArrows.setPositions(baseArrowPoints.take(), headArrowPoints.take());
@@ -535,7 +529,6 @@ void DislocationVis::renderOverlayMarker(TimePoint time, const DataObject* dataO
 	CylinderPrimitive segmentBuffer;
 	segmentBuffer.setShape(CylinderPrimitive::CylinderShape);
 	segmentBuffer.setShadingMode(CylinderPrimitive::FlatShading);
-	segmentBuffer.setRenderingQuality(CylinderPrimitive::HighQuality);
 	segmentBuffer.setUniformWidth(lineDiameter);
 	segmentBuffer.setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
 	segmentBuffer.setUniformColor(Color(1,1,1));

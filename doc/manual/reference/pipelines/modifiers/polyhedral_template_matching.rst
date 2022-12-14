@@ -148,36 +148,36 @@ This is a slight departure from the templates in the published PTM paper, in tha
     q = data.particles['Orientation']
     qx = q[:,0]; qy = q[:,1]; qz = q[:,2]; qw = q[:,3]
 
-  .. list-table::
-    :header-rows: 1
+  **Rotation axis and angle:**
+  The following Python code translates the quaternions to pairs of rotation axes and angles.
+  The two output arrays will contain the three-dimensional unit axis vectors 
+  and the corresponding rotation angles (in radians) for each particle::
 
-    * - Rotation axis and angle:
-      - Matrix representation:
-    
-    * - The following Python code translates the quaternions to pairs of rotation axes and angles.
-        The two output arrays will contain the three-dimensional unit axis vectors 
-        and the corresponding rotation angles (in radians) for each particle::
+    scale = numpy.sqrt(qx**2 + qy**2 + qz**2)
+    axes = numpy.full((len(q), 3), (0.0, 0.0, 1.0))
+    numpy.true_divide(qx, scale, out=axes[:,0], where=(scale>1e-12))
+    numpy.true_divide(qy, scale, out=axes[:,1], where=(scale>1e-12))
+    numpy.true_divide(qz, scale, out=axes[:,2], where=(scale>1e-12))
+    angles = numpy.zeros(len(q))
+    angles = 2.0 * numpy.arccos(qw, out=angles, where=(scale>1e-12))
 
-          scale = numpy.sqrt(qx**2 + qy**2 + qz**2)
-          axes = numpy.full((len(q), 3), (0.0, 0.0, 1.0))
-          numpy.true_divide(qx, scale, out=axes[:,0], where=(scale>1e-12))
-          numpy.true_divide(qy, scale, out=axes[:,1], where=(scale>1e-12))
-          numpy.true_divide(qz, scale, out=axes[:,2], where=(scale>1e-12))
-          angles = numpy.zeros(len(q))
-          angles = 2.0 * numpy.arccos(qw, out=angles, where=(scale>1e-12))
-    
-      - Alternatively, you can convert the quaternions to :math:`3 \times 3` orientation matrices::
+  **Matrix representation:**
+  Alternatively, you can convert the quaternions to :math:`3 \times 3` orientation matrices::
 
-          matrices = numpy.empty((len(q),3,3))
-          matrices[:,0,0] = 1.0-2.0*(qy*qy + qz*qz)
-          matrices[:,0,1] = 2.0*(qx*qy - qw*qz)
-          matrices[:,0,2] = 2.0*(qx*qz + qw*qy)
-          matrices[:,1,0] = 2.0*(qx*qy + qw*qz)
-          matrices[:,1,1] = 1.0-2.0*(qx*qx + qz*qz)
-          matrices[:,1,2] = 2.0*(qy*qz - qw*qx)
-          matrices[:,2,0] = 2.0*(qx*qz - qw*qy)
-          matrices[:,2,1] = 2.0*(qy*qz + qw*qx)
-          matrices[:,2,2] = 1.0-2.0*(qx*qx + qy*qy)   
+    matrices = numpy.empty((len(q),3,3))
+    matrices[:,0,0] = 1.0-2.0*(qy*qy + qz*qz)
+    matrices[:,0,1] = 2.0*(qx*qy - qw*qz)
+    matrices[:,0,2] = 2.0*(qx*qz + qw*qy)
+    matrices[:,1,0] = 2.0*(qx*qy + qw*qz)
+    matrices[:,1,1] = 1.0-2.0*(qx*qx + qz*qz)
+    matrices[:,1,2] = 2.0*(qy*qz - qw*qx)
+    matrices[:,2,0] = 2.0*(qx*qz - qw*qy)
+    matrices[:,2,1] = 2.0*(qy*qz + qw*qx)
+    matrices[:,2,2] = 1.0-2.0*(qx*qx + qy*qy)   
+
+  Another option is to use the :py:class:`scipy.spatial.transform.Rotation` facility of the 
+  :ref:`SciPy <scipy:user_guide>` package if available. It provides conversion functions
+  for various representations including the quaternion form used by OVITO.
 
 Elastic deformation gradients
 """""""""""""""""""""""""""""

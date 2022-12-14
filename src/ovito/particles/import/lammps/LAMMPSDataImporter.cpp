@@ -278,7 +278,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 						throw Exception(tr("Atom type %1 is out of range in Atoms section of LAMMPS data file. Number of types is %2.").arg(t).arg(natomtypes));
 				}
 
-				// Build look-up map of atom identifiers.
+				// Build lookup map of atom identifiers.
 				atomIdMap.reserve(natoms);
 				size_t index = 0;
 				for(const qlonglong id : ConstPropertyAccess<qlonglong>(particles()->expectProperty(ParticlesObject::IdentifierProperty))) {
@@ -436,22 +436,41 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				const char* start = stream.readLine();
 
 				// Parse mass information.
-				int atomType;
+				int atomType = 0;
 				FloatType mass;
-    			if(sscanf(start, "%i " FLOATTYPE_SCANF_STRING, &atomType, &mass) != 2 || atomType < 1 || atomType > natomtypes)
-					throw Exception(tr("Invalid mass specification (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
+				const ParticleType* type = nullptr;
+				// First, try numeric type parsing.
+    			if(sscanf(start, "%i " FLOATTYPE_SCANF_STRING, &atomType, &mass) != 2 || atomType < 1 || atomType > natomtypes) {
+					atomType = 0;
+					// Next, try named type parsing.
+					while(*start && *start <= 32) start++; // Skip whitespace
+					const char* nameBegin = start;
+					while(*start > 32 && *start != '#') start++; // Read non-whitespace characters (up to optional comment)
+					const char* nameEnd = start;
+					type = dynamic_object_cast<ParticleType>(typeProperty->elementType(QLatin1String(nameBegin, nameEnd)));
+					if(type) {
+						// Parse mass from second token.
+		    			if(sscanf(start, FLOATTYPE_SCANF_STRING, &mass) == 1) {
+							atomType = type->numericId();
+						}
+					}
+					if(atomType == 0)
+						throw Exception(tr("Invalid mass specification (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
+				}
 				massTable[atomType - 1] = mass;
 
-				// Parse atom type name, which may be appended to the line as a comment.
-				while(*start && *start != '#') start++;
-				QString atomTypeName;
-				if(*start) {
-					QStringList words = FileImporter::splitString(QString::fromLocal8Bit(start));
-					if(words.size() == 2)
-						atomTypeName = words[1];
-				}
+				if(type == nullptr) {
+					// Parse atom type name, which may be appended to the line as a comment.
+					QString atomTypeName;
+					while(*start && *start != '#') start++;
+					if(*start) {
+						QStringList words = FileImporter::splitString(QString::fromLocal8Bit(start));
+						if(words.size() == 2)
+							atomTypeName = words[1];
+					}
 
-				const ParticleType* type = static_object_cast<ParticleType>(addNumericType(ParticlesObject::OOClass(), typeProperty, atomType, atomTypeName));
+					type = static_object_cast<ParticleType>(addNumericType(ParticlesObject::OOClass(), typeProperty, atomType, atomTypeName));
+				}
 				if(mass != 0 && mass != type->mass()) {
 					ParticleType* mutableType = typeProperty->makeMutable(type);
 					mutableType->setMass(mass);
@@ -518,7 +537,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				// Try parsing numeric type id. 
 				bool ok = parseInt(tokenBegin, tokenEnd, *bondType);
 				if(!ok) {
-					// Try look-up by type name.
+					// Try lookup by type name.
 					if(const ElementType* etype = typeProperty.buffer()->elementType(QLatin1String(tokenBegin, tokenEnd)))
 						*bondType = etype->numericId();
 					else
@@ -594,7 +613,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				// Try parsing numeric type id. 
 				bool ok = parseInt(tokenBegin, tokenEnd, *angleType);
 				if(!ok) {
-					// Try look-up by type name.
+					// Try lookup by type name.
 					if(const ElementType* etype = typeProperty.buffer()->elementType(QLatin1String(tokenBegin, tokenEnd)))
 						*angleType = etype->numericId();
 					else
@@ -657,7 +676,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				// Try parsing numeric type id. 
 				bool ok = parseInt(tokenBegin, tokenEnd, *dihedralType);
 				if(!ok) {
-					// Try look-up by type name.
+					// Try lookup by type name.
 					if(const ElementType* etype = typeProperty.buffer()->elementType(QLatin1String(tokenBegin, tokenEnd)))
 						*dihedralType = etype->numericId();
 					else
@@ -720,7 +739,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 				// Try parsing numeric type id. 
 				bool ok = parseInt(tokenBegin, tokenEnd, *improperType);
 				if(!ok) {
-					// Try look-up by type name.
+					// Try lookup by type name.
 					if(const ElementType* etype = typeProperty.buffer()->elementType(QLatin1String(tokenBegin, tokenEnd)))
 						*improperType = etype->numericId();
 					else

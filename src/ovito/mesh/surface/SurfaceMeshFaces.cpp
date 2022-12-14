@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -130,6 +130,66 @@ QString SurfaceMeshFaces::OOMetaClass::formatDataObjectPath(const ConstDataObjec
 		str += obj->objectTitle();
 	}
 	return str;
+}
+
+/******************************************************************************
+* Returns the base point and vector information for visualizing a vector 
+* property from this container using a VectorVis element.
+******************************************************************************/
+std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state) const
+{
+	OVITO_ASSERT(path.lastAs<SurfaceMeshFaces>(1) == this);
+	if(const SurfaceMesh* mesh = path.lastAs<SurfaceMesh>(2)) {
+		mesh->verifyMeshIntegrity();
+		// Look up the face centroids in the cache.
+		using CacheKey = RendererResourceKey<struct SurfaceMeshFacesCentroidsCache, ConstDataObjectRef, ConstDataObjectRef>;
+		auto& [basePositions, vectorProperty] = dataset()->visCache().get<std::tuple<ConstDataBufferPtr,ConstDataBufferPtr>>(CacheKey(mesh, path.lastAs<DataBuffer>()));
+		if(!basePositions) {
+			DataBufferAccessAndRef<Vector3> filteredVectors;
+			vectorProperty = path.lastAs<DataBuffer>();
+			if(vectorProperty && vectorProperty->dataType() == PropertyObject::Float && vectorProperty->componentCount() == 3) {
+				// Does the mesh have cutting planes and do we need to perform point culling?
+				if(!mesh->cuttingPlanes().empty()) {
+					// Create a copy of the vector property in which the values of culled points
+					// will be nulled out to hide the arrow glyphs for these points.
+					filteredVectors = vectorProperty.makeCopy();
+				}
+			}
+
+			// Compute face centroids.
+			DataBufferAccessAndRef<Point3> centroids = DataBufferPtr::create(dataset(), mesh->faces()->elementCount(), DataBuffer::Float, 3);
+			const SurfaceMeshAccess meshAccess(mesh);
+			for(SurfaceMeshAccess::face_index face = 0; face < meshAccess.faceCount(); face++) {
+				Vector3 c = Vector3::Zero();
+				Vector3 com = Vector3::Zero();
+				int n = 0;
+				SurfaceMeshAccess::edge_index firstFaceEdge = meshAccess.firstFaceEdge(face);
+				if(firstFaceEdge != SurfaceMeshAccess::InvalidIndex) {
+					SurfaceMeshAccess::edge_index edge = firstFaceEdge;
+					do {
+						c += meshAccess.edgeVector(edge);
+						com += c;
+						n++;
+						edge = meshAccess.nextFaceEdge(edge);
+					}
+					while(edge != firstFaceEdge);
+					centroids[face] = meshAccess.wrapPoint(meshAccess.vertexPosition(meshAccess.vertex1(firstFaceEdge)) + (com / n));
+					if(filteredVectors && mesh->isPointCulled(centroids[face]))
+						filteredVectors[face].setZero();
+				}
+				else {
+					centroids[face] = Point3::Origin();
+					if(filteredVectors) 
+						filteredVectors[face].setZero();
+				}
+			}
+			basePositions = centroids.take();
+			if(filteredVectors) 
+				vectorProperty = filteredVectors.take();
+		}
+		return { basePositions, vectorProperty };
+	}
+	return {};
 }
 
 }	// End of namespace

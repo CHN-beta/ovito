@@ -338,9 +338,11 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
 						}
 					}
 
-					// Same for the "c_diameter[1..3]" columns being mapped to the "Aspherical Shape" property.
+					// Same for the "c_diameter[1..3]" columns or "shapex/shapey/shapez" columns being mapped to the "Aspherical Shape" property.
 					for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
-						if(columnMapping[i].property.type() == ParticlesObject::AsphericalShapeProperty && (fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]")) {
+						if(columnMapping[i].property.type() == ParticlesObject::AsphericalShapeProperty && 
+							(fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]" ||
+							 fileColumnNames[i] == "shapex" || fileColumnNames[i] == "shapey" || fileColumnNames[i] == "shapez")) {
 							if(PropertyAccess<Vector3> shapeProperty = particles()->getMutableProperty(ParticlesObject::AsphericalShapeProperty)) {
 								for(Vector3& s : shapeProperty) {
 									s.x() *= 0.5;
@@ -463,13 +465,13 @@ ParticleInputColumnMapping LAMMPSTextDumpImporter::generateAutomaticColumnMappin
 		else if(name == "c_stress[4]") columnMapping.mapStandardColumn(i, ParticlesObject::StressTensorProperty, 3);
 		else if(name == "c_stress[5]") columnMapping.mapStandardColumn(i, ParticlesObject::StressTensorProperty, 4);
 		else if(name == "c_stress[6]") columnMapping.mapStandardColumn(i, ParticlesObject::StressTensorProperty, 5);
-		else if(name == "c_orient[1]") columnMapping.mapStandardColumn(i, ParticlesObject::OrientationProperty, 0);
-		else if(name == "c_orient[2]") columnMapping.mapStandardColumn(i, ParticlesObject::OrientationProperty, 1);
-		else if(name == "c_orient[3]") columnMapping.mapStandardColumn(i, ParticlesObject::OrientationProperty, 2);
-		else if(name == "c_orient[4]") columnMapping.mapStandardColumn(i, ParticlesObject::OrientationProperty, 3);
-		else if(name == "c_shape[1]" || name == "c_diameter[1]") columnMapping.mapStandardColumn(i, ParticlesObject::AsphericalShapeProperty, 0);
-		else if(name == "c_shape[2]" || name == "c_diameter[2]") columnMapping.mapStandardColumn(i, ParticlesObject::AsphericalShapeProperty, 1);
-		else if(name == "c_shape[3]" || name == "c_diameter[3]") columnMapping.mapStandardColumn(i, ParticlesObject::AsphericalShapeProperty, 2);
+		else if(name == "c_orient[1]" || name == "quati") columnMapping.mapStandardColumn(i, ParticlesObject::OrientationProperty, 0);
+		else if(name == "c_orient[2]" || name == "quatj") columnMapping.mapStandardColumn(i, ParticlesObject::OrientationProperty, 1);
+		else if(name == "c_orient[3]" || name == "quatk") columnMapping.mapStandardColumn(i, ParticlesObject::OrientationProperty, 2);
+		else if(name == "c_orient[4]" || name == "quatw") columnMapping.mapStandardColumn(i, ParticlesObject::OrientationProperty, 3);
+		else if(name == "c_shape[1]" || name == "c_diameter[1]" || name == "shapex") columnMapping.mapStandardColumn(i, ParticlesObject::AsphericalShapeProperty, 0);
+		else if(name == "c_shape[2]" || name == "c_diameter[2]" || name == "shapey") columnMapping.mapStandardColumn(i, ParticlesObject::AsphericalShapeProperty, 1);
+		else if(name == "c_shape[3]" || name == "c_diameter[3]" || name == "shapez") columnMapping.mapStandardColumn(i, ParticlesObject::AsphericalShapeProperty, 2);
 		else if(name == "selection") columnMapping.mapStandardColumn(i, ParticlesObject::SelectionProperty, 0);
 		else {
 			columnMapping.mapCustomColumn(i, name, PropertyObject::Float);

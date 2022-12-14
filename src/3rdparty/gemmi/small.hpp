@@ -13,7 +13,9 @@
 #include <vector>
 #include "elem.hpp"      // Element
 #include "math.hpp"      // SMat33
+#include "symmetry.hpp"  // find_spacegroup_by_name
 #include "unitcell.hpp"  // UnitCell, Fractional
+#include "util.hpp"      // vector_remove_if
 
 namespace gemmi {
 
@@ -31,6 +33,15 @@ struct SmallStructure {
 
     Position orth(const gemmi::UnitCell& cell_) const {
       return cell_.orthogonalize(fract);
+    }
+
+    std::string element_and_charge_symbol() const {
+      std::string s = element.name();
+      if (charge != 0) {
+        s += std::to_string(std::abs(charge));
+        s += charge > 0 ? '+' : '-';
+      }
+      return s;
     }
   };
 
@@ -51,6 +62,10 @@ struct SmallStructure {
 
   std::vector<Site> get_all_unit_cell_sites() const;
 
+  const SpaceGroup* find_spacegroup() const {
+    return find_spacegroup_by_name(spacegroup_hm, cell.alpha, cell.gamma);
+  }
+
   const AtomType* get_atom_type(const std::string& symbol) const {
     for (const AtomType& at : atom_types)
       if (at.symbol == symbol)
@@ -68,6 +83,20 @@ struct SmallStructure {
 
   void remove_hydrogens() {
     vector_remove_if(sites, [](const Site& a) { return a.element.is_hydrogen(); });
+  }
+
+  // pre: atoms on special positions have "chemical" occupancy (i.e. not divided
+  // by n for n-fold symmetry)
+  void change_occupancies_to_crystallographic(double max_dist=0.4) {
+    for (Site& site : sites) {
+      int n_mates = cell.is_special_position(site.fract, max_dist);
+      if (n_mates != 0)
+        site.occ /= (n_mates + 1);
+    }
+  }
+
+  void setup_cell_images() {
+    cell.set_cell_images_from_spacegroup(find_spacegroup());
   }
 };
 

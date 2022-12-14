@@ -35,29 +35,6 @@ SET_PROPERTY_FIELD_LABEL(DataObject, visElements, "Visual elements");
 SET_PROPERTY_FIELD_LABEL(DataObject, editableProxy, "Editable proxy");
 
 /******************************************************************************
-* Produces a string representation of the object path.
-******************************************************************************/
-QString ConstDataObjectPath::toString() const
-{
-	QString s;
-	for(const DataObject* o : *this) {
-		if(!s.isEmpty()) s += QChar('/');
-		s += o->identifier();
-	}
-	return s;
-}
-
-/******************************************************************************
-* Returns a string representation of the object path that is suitable for 
-* display in the user interface.
-******************************************************************************/
-QString ConstDataObjectPath::toUIString() const
-{
-	if(empty()) return {};
-	return back()->getOOMetaClass().formatDataObjectPath(*this);
-}
-
-/******************************************************************************
 * Generates a human-readable string representation of the data object reference.
 ******************************************************************************/
 QString DataObject::OOMetaClass::formatDataObjectPath(const ConstDataObjectPath& path) const
@@ -181,6 +158,53 @@ DataObject* DataObject::makeMutable(const DataObject* subObject)
 }
 
 /******************************************************************************
+* Duplicates the given sub-object from this container object if it is shared
+* with others. After this method returns, the returned sub-object will be
+* exclusively owned by this container can be safely modified without unwanted
+* side effects.
+******************************************************************************/
+DataObject* DataObject::makeMutable(const DataObject* subObject, CloneHelper& cloneHelper)
+{
+	OVITO_CHECK_OBJECT_POINTER(this);
+	OVITO_ASSERT(subObject);
+	OVITO_ASSERT_MSG(!subObject || isSafeToModify(), "DataObject::makeMutable()", qPrintable(QString("Cannot make sub-object %1 mutable, because parent object %2 is not safe to modify.").arg(subObject->getOOClass().name()).arg(getOOClass().name())));
+
+	if(DataObject* clone = cloneHelper.lookupCloneOf(subObject)) {
+		OVITO_ASSERT(!hasReferenceTo(subObject));
+		OVITO_ASSERT(hasReferenceTo(clone));
+		OVITO_ASSERT(clone->isSafeToModify());
+		return clone;
+	}
+
+	OVITO_ASSERT(hasReferenceTo(subObject));
+	
+	if(subObject && !subObject->isSafeToModify()) {
+		OORef<DataObject> clone = cloneHelper.cloneObject(subObject, false);
+		replaceReferencesTo(subObject, clone);
+		OVITO_ASSERT(hasReferenceTo(clone));
+		OVITO_ASSERT(!hasReferenceTo(subObject));
+		subObject = clone;
+	}
+#ifdef OVITO_DEBUG
+	if(!subObject->isSafeToModify()) {
+		qDebug() << "ERROR: Data sub-object" << subObject << "owned by" << this << "is not mutable after a call to DataObject::makeMutable().";
+		qDebug() << "Data reference count of sub-object is" << subObject->_dataReferenceCount.loadAcquire();
+		qDebug() << "Listing dependents of sub-object:";
+		subObject->visitDependents([](RefMaker* dependent) {
+			qDebug() << "  -" << dependent; 
+		});
+		qDebug() << "Data reference count of parent object is" << _dataReferenceCount.loadAcquire();
+		qDebug() << "Listing dependents of parent object:";
+		visitDependents([](RefMaker* dependent) {
+			qDebug() << "  -" << dependent; 
+		});
+		OVITO_ASSERT(false);
+	}
+#endif
+	return const_cast<DataObject*>(subObject);
+}
+
+/******************************************************************************
 * Returns the absolute path of this DataObject within the DataCollection.
 * Returns an empty path if the DataObject is not exclusively owned by one
 * DataCollection.
@@ -217,6 +241,7 @@ void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObject
 
 	const DataObject* self = dataPath.back();
 	const OvitoClass& selfClass = self->getOOClass();
+	OVITO_ASSERT(self->dataset());
 	OVITO_ASSERT(selfClass == this->getOOClass());
 	OVITO_ASSERT(!self->dataset()->undoStack().isRecording());
 	

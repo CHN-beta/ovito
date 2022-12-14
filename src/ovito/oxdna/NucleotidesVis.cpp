@@ -50,7 +50,7 @@ NucleotidesVis::NucleotidesVis(ObjectCreationParams params) : ParticlesVis(param
 ******************************************************************************/
 Box3 NucleotidesVis::boundingBox(TimePoint time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(path.back());
+	const ParticlesObject* particles = path.lastAs<ParticlesObject>();
 	if(!particles) return {};
 	particles->verifyIntegrity();
 	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
@@ -190,7 +190,7 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 	}
 
 	// Get input data.
-	const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(path.back());
+	const ParticlesObject* particles = path.lastAs<ParticlesObject>();
 	if(!particles) return {};
 	particles->verifyIntegrity();
 	const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
@@ -313,7 +313,6 @@ PipelineStatus NucleotidesVis::render(TimePoint time, const ConstDataObjectPath&
 			// Create the rendering primitive for the connections between backbone and base sites.
 			visCache.connectionPrimitive.setShape(CylinderPrimitive::CylinderShape);
 			visCache.connectionPrimitive.setShadingMode(CylinderPrimitive::NormalShading);
-			visCache.connectionPrimitive.setRenderingQuality(CylinderPrimitive::HighQuality);
 			visCache.connectionPrimitive.setUniformWidth(2 * cylinderRadius());
 			visCache.connectionPrimitive.setColors(colors);
 			DataBufferAccessAndRef<Point3> headPositions = DataBufferPtr::create(dataset(), particles->elementCount(), DataBuffer::Float, 3);

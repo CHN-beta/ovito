@@ -226,6 +226,11 @@ public:
 	/// Computes the world size of an object that should appear one pixel wide in the rendered image.
 	FloatType projectedPixelSize(const Point3& worldPosition) const;
 
+	/// Indicates whether the scene renderer is allowed to block execution until long-running
+	/// operations, e.g. data pipeline evaluation, complete. By default, this method returns
+	/// true if isInteractive() returns false and vice versa.
+	virtual bool waitForLongOperationsEnabled() const { return !isInteractive(); }
+
 protected:
 
 	/// Constructor.
@@ -240,11 +245,6 @@ protected:
 	/// \brief This virtual method is responsible for rendering additional content that is only
 	///       visible in the interactive viewports.
 	virtual void renderInteractiveContent(MainThreadOperation& operation);
-
-	/// Indicates whether the scene renderer is allowed to block execution until long-running
-	/// operations, e.g. data pipeline evaluation, complete. By default, this method returns
-	/// true if isInteractive() returns false and vice versa.
-	virtual bool waitForLongOperationsEnabled() const { return !isInteractive(); }
 
 	/// \brief This is called during rendering whenever the rendering process has been temporarily
 	///        interrupted by an event loop and before rendering is resumed. It gives the renderer

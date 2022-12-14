@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -438,6 +438,11 @@ public:
         mutableTopology()->linkOppositeFaces(face1, face2);
     }
 
+    /// Tests if two faces connect the same sequence of vertices in reverse order. 
+    bool areOppositeFaces(face_index face1, face_index face2) const {
+        return topology()->areOppositeFaces(face1, face2);
+    }
+
     /// Transfers a segment of a face boundary, formed by the given edge and its successor edge,
     /// to a different vertex.
     void transferFaceBoundaryToVertex(edge_index edge, vertex_index newVertex) {
@@ -462,6 +467,11 @@ public:
     /// Wraps a vector at periodic boundaries of the simulation cell.
     Vector3 wrapVector(const Vector3& v) const {
         return cell() ? cell()->wrapVector(v) : v;
+    }
+
+    /// Wraps a point at periodic boundaries of the simulation cell.
+    Point3 wrapPoint(const Point3& p) const {
+        return cell() ? cell()->wrapPoint(p) : p;
     }
 
     /// Returns the vector corresponding to an half-edge of the surface mesh.

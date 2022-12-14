@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -64,6 +64,12 @@ void OpenGLSceneRenderer::renderThinLinesImplementation(const LinePrimitive& pri
 	shader.setVerticesPerInstance(primitive.positions()->size());
 	shader.setInstanceCount(1);
 
+    // Check size limits.
+    if(primitive.positions()->size() > std::numeric_limits<int32_t>::max() / sizeof(Point_3<float>)) {
+        qWarning() << "WARNING: OpenGL renderer - Trying to render too many lines at once, exceeding device limits.";
+        return;
+    }
+
 	// Upload vertex positions.
 	QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(primitive.positions(), OpenGLShaderHelper::PerVertex);
 	shader.bindBuffer(positionsBuffer, "position", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerVertex);
@@ -109,7 +115,13 @@ void OpenGLSceneRenderer::renderThickLinesImplementation(const LinePrimitive& pr
 	shader.setVerticesPerInstance(4);
 	shader.setInstanceCount(primitive.positions()->size() / 2);
 
-    // Put start/end vertex positions into one combined Vulkan buffer.
+    // Check size limits.
+    if(shader.instanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / (2 * sizeof(Point_3<float>))) {
+        qWarning() << "WARNING: OpenGL renderer - Trying to render too many lines at once, exceeding device limits.";
+        return;
+    }
+
+    // Put start/end vertex positions into one combined vertex buffer.
 	QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(primitive.positions(), OpenGLShaderHelper::PerInstance);
 	shader.bindBuffer(positionsBuffer, "position_from", GL_FLOAT, 3, 2 * sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
 	shader.bindBuffer(positionsBuffer, "position_to", GL_FLOAT, 3, 2 * sizeof(Point_3<float>), sizeof(Point_3<float>), OpenGLShaderHelper::PerInstance);

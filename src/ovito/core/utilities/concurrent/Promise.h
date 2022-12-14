@@ -186,7 +186,7 @@ public:
 
     /// Runs the given function in any case once this promise's task has reached the 'finished' or 'canceled' state.
     /// The continuation function will always be executed, even if this task was canceled or set to an error state.
-    /// The continuation function must accept a TaskPtr (pointing to the finished task) as a parameter.
+    /// The callable may take one optional parameter: a reference to the Task object that finished.
     template<typename Executor, typename Function>
     void finally(Executor&& executor, Function&& f) {
         OVITO_ASSERT_MSG(isValid(), "PromiseBase::finally()", "Promise must be valid.");

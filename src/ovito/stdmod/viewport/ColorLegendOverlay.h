@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,10 +55,19 @@ public:
 		setOffsetY(roundPercent(offsetY() + delta.y()));
 	}
 
+	/// Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
+	virtual QVariant getPipelineEditorShortInfo() const override;
+
 protected:
 
 	/// Is called when the value of a property of this object has changed.
 	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+
+	/// Is called when a RefTarget referenced by this object has generated an event.
+	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+
+	/// Is called when the value of a reference field of this object changes.
+	virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
 public:
 

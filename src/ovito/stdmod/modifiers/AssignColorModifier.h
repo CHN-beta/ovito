@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2022 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ class OVITO_STDMOD_EXPORT AssignColorModifierDelegate : public ModifierDelegate
 public:
 
 	/// \brief Applies the modifier operation to the data in a pipeline flow state.
-	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+	virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 
 	/// Returns the type of input property container that this delegate can process.
 	PropertyContainerClassPtr inputContainerClass() const {
@@ -101,7 +101,15 @@ public:
 	/// Sets the color that is assigned to the selected elements.
 	void setColor(const Color& color) { if(colorController()) colorController()->setCurrentColorValue(color); }
 
+	/// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+	virtual QVariant getPipelineEditorShortInfo(ModifierApplication* modApp) const override { return QVariant::fromValue(static_cast<QColor>(color())); }
+
 protected:
+
+	/// Is called when a RefTarget referenced by this object has generated an event.
+	virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+
+private:
 
 	/// This controller stores the color to be assigned.
 	DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Controller>, colorController, setColorController, PROPERTY_FIELD_MEMORIZE);
